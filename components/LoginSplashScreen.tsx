@@ -5,6 +5,8 @@ import EmailIcon from './EmailIcon';
 import PWAInstallBanner from './PWAInstallBanner';
 import { authService } from '../services/supabase';
 
+// 🧪 TESTING ONLY: This component includes navigation buttons for development purposes
+
 // Discord icon component
 const DiscordIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24">
@@ -144,6 +146,20 @@ const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, insta
             <div className="absolute top-0 left-0 w-full h-full bg-gradient-radial-at-top from-[#1C1C1C]/20 to-transparent pointer-events-none"></div>
             
             <main className="flex-1 flex flex-col items-center justify-center p-6 w-full max-w-sm">
+                {/* Testing Only: Back to Home Button */}
+                <div className="absolute top-6 left-6">
+                    <button
+                        onClick={() => window.location.href = '/'}
+                        className="flex items-center gap-2 bg-[#2E2E2E]/80 border border-[#424242] text-[#F5F5F5] px-4 py-2 rounded-lg hover:bg-[#424242] transition-colors text-sm font-medium"
+                        title="Back to Home (Testing Only)"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                        Back to Home
+                    </button>
+                </div>
+
                 <div className="flex-shrink-0 mb-6">
                     <Logo />
                 </div>
@@ -273,7 +289,7 @@ const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, insta
                 )}
                 
                 {!isEmailLogin && (
-                    <div className="mt-8">
+                    <div className="mt-8 space-y-3">
                         <button
                             onClick={handleSkip}
                             className="text-neutral-400 font-medium py-2 px-6 rounded-full hover:bg-neutral-800/50 transition-colors"
@@ -281,7 +297,19 @@ const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, insta
                         >
                             Skip for now
                         </button>
-                        <p className="text-xs text-neutral-500 mt-2">For testing and development only</p>
+                        <p className="text-xs text-neutral-500">For testing and development only</p>
+                        
+                        {/* Testing Only: Back to Home Button */}
+                        <div className="pt-2">
+                            <button
+                                onClick={() => window.location.href = '/'}
+                                className="text-blue-400 font-medium py-2 px-6 rounded-full hover:bg-blue-900/20 transition-colors border border-blue-500/30"
+                                title="Back to Home (Testing Only)"
+                            >
+                                ← Back to Home
+                            </button>
+                            <p className="text-xs text-blue-400/60 mt-1">Testing Navigation</p>
+                        </div>
                     </div>
                 )}
             </main>
