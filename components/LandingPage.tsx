@@ -3,6 +3,7 @@ import Logo from './Logo';
 import CheckIcon from './CheckIcon';
 import StarIcon from './StarIcon';
 import { waitlistService } from '../services/waitlistService';
+import FounderProfile from './FounderProfile';
 
 const GamepadIcon = ({ className }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -424,27 +425,25 @@ const EarnByPlayingSection = ({ onApplyClick }: { onApplyClick: () => void }) =>
 const FounderSection = () => (
     <section id="founder" className="py-16 md:py-20 bg-transparent">
         <div className="container mx-auto px-6 max-w-5xl">
-            <div className="bg-[#1C1C1C]/40 backdrop-blur-sm border border-neutral-800 rounded-2xl p-8 md:p-12 flex flex-col md:flex-row items-center gap-8 md:gap-12 animate-fade-slide-up">
-                <div className="md:w-1/3 w-full flex-shrink-0">
-                    <div className="w-48 h-48 md:w-full md:h-auto md:aspect-square mx-auto rounded-full bg-gradient-to-br from-[#E53A3A]/80 to-[#D98C1F]/80 p-1 shadow-lg overflow-hidden">
-                        <img src="https://i.imgur.com/3Y2iW2z.png" alt="Amaan, founder of Otakon" className="w-full h-full object-cover rounded-full bg-neutral-900" />
-                    </div>
-                </div>
-                <div className="md:w-2/3 w-full text-center md:text-left">
-                    <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-white mb-4">From One Gamer to Another</h2>
-                    <p className="text-lg text-neutral-300 mb-4 leading-relaxed">
-                        I built Otakon from a lifelong passion for gaming. From spending hours in internet cafes printing guides and cheat codes to getting lost in wikis for Souls-like games, I know the struggle of finding help without spoilers.
-                    </p>
-                    <p className="text-lg text-neutral-300 mb-6 leading-relaxed">
-                        My journey through Service Design at the Royal College of Art (RCA) shaped this passion into a purpose: to build a tool that respects your experience as a player. Otakon is that tool—designed to give you the nudge you need, so you can get back to the magic of discovery.
-                    </p>
+            <div className="text-center mb-12 animate-fade-slide-up">
+                <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-4">Meet Our Founder</h2>
+                <p className="text-lg text-neutral-300 max-w-2xl mx-auto">
+                    A passionate gamer and AI enthusiast who envisioned a future where every player 
+                    has an intelligent companion to enhance their gaming experience.
+                </p>
+            </div>
+            
+            <div className="bg-[#1C1C1C]/40 backdrop-blur-sm border border-neutral-800 rounded-2xl p-8 md:p-12 animate-fade-slide-up">
+                <FounderProfile variant="card" />
+                
+                <div className="mt-8 text-center">
                     <a
                         href="https://www.linkedin.com/in/readmetxt/"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 bg-neutral-700 hover:bg-neutral-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+                        className="inline-flex items-center gap-2 bg-[#0077B5] hover:bg-[#005885] text-white font-bold py-3 px-6 rounded-lg transition-colors"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
                         Connect on LinkedIn
                     </a>
                 </div>
