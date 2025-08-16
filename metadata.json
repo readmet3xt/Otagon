@@ -1,0 +1,6 @@
+{
+  "name": "Otakon",
+  "description": "An AI-powered gaming assistant that provides spoiler-free hints and lore for any game. Upload a screenshot to identify the game and receive instant, context-aware guidance without leaving your game.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}

@@ -1,0 +1,221 @@
+import { supabase } from './supabase';
+import { UserTier } from './types';
+
+export interface TierInfo {
+  tier: UserTier;
+  textLimit: number;
+  imageLimit: number;
+  price?: number;
+  features: string[];
+}
+
+export class TierService {
+  private static instance: TierService;
+
+  static getInstance(): TierService {
+    if (!TierService.instance) {
+      TierService.instance = new TierService();
+    }
+    return TierService.instance;
+  }
+
+  private readonly TIER_LIMITS: Record<UserTier, { text: number; image: number }> = {
+    free: { text: 55, image: 60 },
+    pro: { text: 1583, image: 328 },
+    vanguard_pro: { text: 1583, image: 328 },
+  };
+
+  private readonly TIER_FEATURES: Record<UserTier, string[]> = {
+    free: [
+      '55 text queries per month',
+      '60 image queries per month',
+      'Basic conversation features',
+      'Standard response quality'
+    ],
+    pro: [
+      '1,583 text queries per month',
+      '328 image queries per month',
+      'Enhanced conversation features',
+      'Improved response quality',
+      'Priority support'
+    ],
+    vanguard_pro: [
+      '1,583 text queries per month',
+      '328 image queries per month',
+      'All Pro features',
+      'Exclusive Vanguard content',
+      'VIP support',
+      'Early access to new features'
+    ],
+  };
+
+  private readonly TIER_PRICES: Record<UserTier, number | undefined> = {
+    free: undefined,
+    pro: 9.99,
+    vanguard_pro: 19.99,
+  };
+
+  /**
+   * Automatically assign free tier to new users
+   */
+  async assignFreeTier(userId: string): Promise<boolean> {
+    try {
+      // Check if user already has a usage record
+      const { data: existingUsage } = await supabase
+        .from('usage')
+        .select('id')
+        .eq('user_id', userId)
+        .single();
+
+      if (existingUsage) {
+        console.log('User already has usage record, skipping tier assignment');
+        return true;
+      }
+
+      // Create new usage record with free tier
+      const { error } = await supabase
+        .from('usage')
+        .insert({
+          user_id: userId,
+          text_count: 0,
+          image_count: 0,
+          text_limit: this.TIER_LIMITS.free.text,
+          image_limit: this.TIER_LIMITS.free.image,
+          tier: 'free',
+        });
+
+      if (error) {
+        console.error('Error assigning free tier:', error);
+        return false;
+      }
+
+      console.log('Successfully assigned free tier to user:', userId);
+      return true;
+    } catch (error) {
+      console.error('Error in assignFreeTier:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Upgrade user to Pro tier
+   */
+  async upgradeToPro(userId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('usage')
+        .update({
+          tier: 'pro',
+          text_limit: this.TIER_LIMITS.pro.text,
+          image_limit: this.TIER_LIMITS.pro.image,
+          text_count: 0, // Reset counts for new limits
+          image_count: 0,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('Error upgrading to Pro:', error);
+        return false;
+      }
+
+      console.log('User upgraded to Pro tier:', userId);
+      return true;
+    } catch (error) {
+      console.error('Error in upgradeToPro:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Upgrade user to Vanguard Pro tier
+   */
+  async upgradeToVanguardPro(userId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('usage')
+        .update({
+          tier: 'vanguard_pro',
+          text_limit: this.TIER_LIMITS.vanguard_pro.text,
+          image_limit: this.TIER_LIMITS.vanguard_pro.image,
+          text_count: 0, // Reset counts for new limits
+          image_count: 0,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('Error upgrading to Vanguard Pro:', error);
+        return false;
+      }
+
+      console.log('User upgraded to Vanguard Pro tier:', userId);
+      return true;
+    } catch (error) {
+      console.error('Error in upgradeToVanguardPro:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get current tier information for a user
+   */
+  async getUserTier(userId: string): Promise<TierInfo | null> {
+    try {
+      const { data, error } = await supabase
+        .from('usage')
+        .select('tier')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error getting user tier:', error);
+        return null;
+      }
+
+      const tier = data.tier as UserTier;
+      return {
+        tier,
+        textLimit: this.TIER_LIMITS[tier].text,
+        imageLimit: this.TIER_LIMITS[tier].image,
+        price: this.TIER_PRICES[tier],
+        features: this.TIER_FEATURES[tier],
+      };
+    } catch (error) {
+      console.error('Error in getUserTier:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get all available tiers for display
+   */
+  getAllTiers(): Record<UserTier, TierInfo> {
+    const tiers: Record<UserTier, TierInfo> = {} as Record<UserTier, TierInfo>;
+    
+    (Object.keys(this.TIER_LIMITS) as UserTier[]).forEach(tier => {
+      tiers[tier] = {
+        tier,
+        textLimit: this.TIER_LIMITS[tier].text,
+        imageLimit: this.TIER_LIMITS[tier].image,
+        price: this.TIER_PRICES[tier],
+        features: this.TIER_FEATURES[tier],
+      };
+    });
+
+    return tiers;
+  }
+
+  /**
+   * Check if user can upgrade to a specific tier
+   */
+  canUpgradeTo(currentTier: UserTier, targetTier: UserTier): boolean {
+    const tierHierarchy: UserTier[] = ['free', 'pro', 'vanguard_pro'];
+    const currentIndex = tierHierarchy.indexOf(currentTier);
+    const targetIndex = tierHierarchy.indexOf(targetTier);
+    
+    return targetIndex > currentIndex;
+  }
+}
+
+export const tierService = TierService.getInstance();

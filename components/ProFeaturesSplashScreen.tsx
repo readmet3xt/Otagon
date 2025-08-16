@@ -1,0 +1,91 @@
+import React, { useState } from 'react';
+import StarIcon from './StarIcon';
+import { HandsFreeIcon } from './HandsFreeToggle';
+import KeyboardIcon from './KeyboardIcon';
+
+interface ProFeaturesSplashScreenProps {
+    onComplete: () => void;
+    onUpgrade: () => void;
+    onUpgradeToVanguard: () => void;
+}
+
+const ProFeature: React.FC<{ title: string; description: string; children: React.ReactNode; }> = ({ title, description, children }) => (
+    <div className="flex items-start gap-4 p-4 bg-[#1C1C1C]/70 rounded-lg animate-fade-in">
+        <div className="flex-shrink-0 mt-1">
+             {children}
+        </div>
+        <div>
+            <h3 className="text-xl font-semibold text-white">{title}</h3>
+            <p className="text-[#A3A3A3] mt-1">{description}</p>
+        </div>
+    </div>
+);
+
+const proFeatures = [
+    { title: "Massively Increased Limits", description: "Get 1,583 text and 328 image queries every month, so you never have to hold back.", icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-[#FFAB40]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> },
+    { title: "Batch Screenshot Capture", description: "Instantly capture the last 5 minutes of gameplay with a hotkey. Otakon analyzes all key moments for a comprehensive summary.", icon: <KeyboardIcon className="w-8 h-8 text-[#FFAB40]" /> },
+    { title: "In-Depth Insight Tabs", description: "Go beyond a simple hint. Get detailed breakdowns on lore, character builds, missed items, and more.", icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-[#FFAB40]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" /></svg> },
+    { title: "Hands-Free Mode", description: "Stay focused on the action. Get hints read aloud to you without ever looking away from your screen.", icon: <HandsFreeIcon isActive={true} className="w-8 h-8 text-[#FFAB40]" /> }
+];
+
+const vanguardFeatures = [
+    { title: "Lifetime Price Guarantee", description: "Your price of $20/year will never increase. Ever.", icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg> },
+    { title: "Exclusive Founder's Badge", description: "A permanent in-app badge showing your early support.", icon: <StarIcon className="w-8 h-8 text-amber-300" /> },
+    { title: "Direct Influence", description: "Join the Founder's Council on Discord to help shape the future of Otakon.", icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> },
+    { title: "First Access & Rewards", description: "Get beta access to all new features and earn by helping train our AI on new games.", icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg> }
+];
+
+
+const ProFeaturesSplashScreen: React.FC<ProFeaturesSplashScreenProps> = ({ onComplete, onUpgrade, onUpgradeToVanguard }) => {
+    const [activeTab, setActiveTab] = useState<'pro' | 'vanguard'>('pro');
+
+    return (
+        <div className="h-screen bg-[#111111] text-[#F5F5F5] flex flex-col font-inter animate-fade-in">
+            <main className="flex-1 flex flex-col items-center justify-center overflow-y-auto p-6 text-center">
+                <div className="max-w-xl w-full">
+                    <div className="flex justify-center mb-4">
+                        <StarIcon className="w-16 h-16 text-[#FFAB40]" />
+                    </div>
+                    <h1 className="text-3xl sm:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#FF4D4D] to-[#FFAB40] mb-4">Supercharge with Otakon Pro</h1>
+                    <p className="text-lg text-neutral-400 mb-8">Unlock exclusive features for the ultimate gaming companion.</p>
+
+                    <div className="w-full max-w-sm mx-auto p-1 bg-[#2E2E2E]/60 rounded-xl flex items-center gap-1 mb-8">
+                        <button onClick={() => setActiveTab('pro')} className={`w-1/2 py-2 text-sm font-bold rounded-lg transition-colors ${activeTab === 'pro' ? 'bg-[#424242] text-white shadow' : 'text-neutral-300 hover:bg-neutral-700/50'}`}>Pro</button>
+                        <button onClick={() => setActiveTab('vanguard')} className={`w-1/2 py-2 text-sm font-bold rounded-lg transition-colors ${activeTab === 'vanguard' ? 'bg-[#424242] text-white shadow' : 'text-neutral-300 hover:bg-neutral-700/50'}`}>Pro Vanguard</button>
+                    </div>
+
+                    <div className="space-y-6 text-left">
+                       {activeTab === 'pro' && proFeatures.map(f => <ProFeature key={f.title} title={f.title} description={f.description}>{f.icon}</ProFeature>)}
+                       {activeTab === 'vanguard' && (
+                        <>
+                          <div className="text-center p-3 mb-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                               <p className="font-bold text-amber-300">All Pro features are included!</p>
+                           </div>
+                           {vanguardFeatures.map(f => <ProFeature key={f.title} title={f.title} description={f.description}>{f.icon}</ProFeature>)}
+                        </>
+                       )}
+                    </div>
+                </div>
+            </main>
+
+            <footer className="flex-shrink-0 px-6 pt-4 pb-12">
+                <div className="w-full max-w-md mx-auto space-y-3">
+                    <button
+                        onClick={activeTab === 'pro' ? onUpgrade : onUpgradeToVanguard}
+                        className="w-full bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-[#F5F5F5] font-bold py-3 px-4 rounded-full transition-all duration-300 transform hover:scale-105"
+                    >
+                        {activeTab === 'pro' ? 'Upgrade to Pro' : 'Upgrade to Vanguard'}
+                    </button>
+                    <button
+                        onClick={onComplete}
+                        className="w-full text-neutral-400 font-medium py-2 px-6 rounded-full hover:bg-neutral-800/50 transition-colors"
+                    >
+                        Maybe Later
+                    </button>
+                </div>
+            </footer>
+        </div>
+    );
+};
+
+export default React.memo(ProFeaturesSplashScreen);
