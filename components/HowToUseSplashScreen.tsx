@@ -83,20 +83,23 @@ const HowToUseSplashScreen: React.FC<HowToUseSplashScreenProps> = ({ onComplete 
                         title={<>3. Manage Insights<ProBadge /></>}
                     >
                         <p className="mb-3">
-                            Take direct control of your game wiki with chat commands.
+                            Take direct control of your game wiki with natural language commands.
                         </p>
                         <div className="space-y-3 text-sm p-3 bg-black/30 rounded-md">
                             <p>
-                                <strong className="text-neutral-200">Update a tab:</strong><br/>
-                                <kbd className="px-2 py-1 mt-1 inline-block font-sans font-semibold text-neutral-200 bg-neutral-900/50 border border-neutral-700 rounded-md w-full text-left">@Tab Name [your request]</kbd>
+                                <strong className="text-neutral-200">Add new tab:</strong><br/>
+                                <kbd className="px-2 py-1 mt-1 inline-block font-sans font-semibold text-neutral-200 bg-neutral-900/50 border border-neutral-700 rounded-md w-full text-left">"add tab [title]"</kbd>
                             </p>
                             <p>
-                                <strong className="text-neutral-200">Rewrite or rename a tab:</strong><br/>
-                                <kbd className="px-2 py-1 mt-1 inline-block font-sans font-semibold text-neutral-200 bg-neutral-900/50 border border-neutral-700 rounded-md w-full text-left">@Tab Name \modify [new content]</kbd>
+                                <strong className="text-neutral-200">Modify existing tab:</strong><br/>
+                                <kbd className="px-2 py-1 mt-1 inline-block font-sans font-semibold text-neutral-200 bg-neutral-900/50 border border-neutral-700 rounded-md w-full text-left">"modify tab [id] to [new title]"</kbd>
                             </p>
                             <p>
                                 <strong className="text-neutral-200">Delete a tab:</strong><br/>
-                                <kbd className="px-2 py-1 mt-1 inline-block font-sans font-semibold text-neutral-200 bg-neutral-900/50 border border-neutral-700 rounded-md w-full text-left">@Tab Name \delete</kbd>
+                                <kbd className="px-2 py-1 mt-1 inline-block font-sans font-semibold text-neutral-200 bg-neutral-900/50 border border-neutral-700 rounded-md w-full text-left">"delete tab [id] confirm"</kbd>
+                            </p>
+                            <p className="text-xs text-neutral-400 mt-2">
+                                💡 <strong>Examples:</strong> "add tab Game Progress", "modify tab tab_123 to Current Objectives"
                             </p>
                         </div>
                     </FeatureItem>

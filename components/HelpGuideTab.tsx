@@ -32,12 +32,25 @@ const HelpGuideTab: React.FC = () => {
                 </ul>
 
                 <h3 className="text-xl font-semibold text-white !mt-6 !mb-2">Insight Tabs <ProBadge /></h3>
-                <p>Pro users get a personalized wiki that grows as they play. You can manage these tabs directly from chat:</p>
+                <p>Pro users get a personalized wiki that grows as they play. You can manage these tabs directly from chat using natural language commands:</p>
+                
+                <h4 className="text-lg font-semibold text-white !mt-4 !mb-2">Simple Tab Management Commands:</h4>
                 <ul className="list-disc list-inside mt-2 space-y-2">
-                    <li>To update a tab's content, type: <code>@Tab Name [your new request]</code></li>
-                    <li>To rewrite or rename a tab, type: <code>@Tab Name \modify [new content or title]</code></li>
-                    <li>To delete a tab, type: <code>@Tab Name \delete</code></li>
+                    <li><strong>Add new tab:</strong> <code>"add tab [title]"</code> or <code>"create tab [title] with content [content]"</code></li>
+                    <li><strong>Modify existing tab:</strong> <code>"modify tab [id] to [new title]"</code> or <code>"edit tab [id] content to [new content]"</code></li>
+                    <li><strong>Delete tab:</strong> <code>"delete tab [id] confirm"</code> or <code>"remove tab [id] yes"</code></li>
+                    <li><strong>Reorder tabs:</strong> <code>"move tab [id] to position [number]"</code></li>
                 </ul>
+                
+                <h4 className="text-lg font-semibold text-white !mt-4 !mb-2">Examples:</h4>
+                <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
+                    <li><code>"add tab Game Progress"</code></li>
+                    <li><code>"modify tab tab_123 to Current Objectives"</code></li>
+                    <li><code>"delete tab tab_456 confirm"</code></li>
+                    <li><code>"move tab tab_789 to position 2"</code></li>
+                </ul>
+                
+                <p className="text-sm text-neutral-400 mt-2">💡 <strong>Tip:</strong> Tab IDs are shown in the URL or tab context menu. Use "confirm" or "yes" for deletions.</p>
 
                 <h3 className="text-xl font-semibold text-white !mt-6 !mb-2">Hands-Free Mode <ProBadge /></h3>
                 <p>Enable Hands-Free mode from the header to have hints and lore read aloud to you. This keeps you focused on your game, especially useful for console gaming or intense moments.</p>

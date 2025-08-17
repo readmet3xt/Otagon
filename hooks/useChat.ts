@@ -15,6 +15,7 @@ import {
     generateInsightStream,
     generateInsightWithSearch
 } from '../services/geminiService';
+import tabManagementService from '../services/tabManagementService';
 import { ttsService } from '../services/ttsService';
 import { unifiedUsageService } from '../services/unifiedUsageService';
 import { smartNotificationService } from '../services/smartNotificationService';
@@ -394,6 +395,18 @@ export const useChat = (isHandsFreeMode: boolean) => {
     }, [updateConversation]);
     
     const sendMessage = useCallback(async (text: string, images?: ImageFile[], isFromPC?: boolean): Promise<{ success: boolean; reason?: string }> => {
+        // Check if this is a tab management command
+        if (text.startsWith('[TAB_MANAGEMENT] ')) {
+            const commandText = text.replace('[TAB_MANAGEMENT] ', '');
+            const result = await handleTabManagementCommand(commandText);
+            
+            if (result) {
+                // Add a system message showing the result
+                addSystemMessage(result.message, activeConversationId, false);
+                return { success: result.success, reason: result.error };
+            }
+        }
+        
         const textQueries = text.trim().length > 0 ? 1 : 0;
         const imageQueries = images ? images.length : 0;
 
@@ -1428,6 +1441,56 @@ export const useChat = (isHandsFreeMode: boolean) => {
         return inventoryMatch ? inventoryMatch[1].trim() : null;
     };
 
+    // Tab management command handler
+    const handleTabManagementCommand = useCallback(async (text: string) => {
+        const command = tabManagementService.parseTabCommand(text);
+        if (!command) return null;
+
+        try {
+            const currentConversation = conversations[activeConversationId];
+            if (!currentConversation?.insights) return null;
+
+            const currentTabs = Object.values(currentConversation.insights).map(insight => ({
+                id: insight.id,
+                title: insight.title,
+                content: insight.content
+            }));
+
+            const result = await tabManagementService.executeTabCommand(
+                command,
+                currentTabs,
+                (updatedTabs) => {
+                    // Update the conversation with new tab structure
+                    const updatedInsights: Record<string, Insight> = {};
+                    updatedTabs.forEach((tab, index) => {
+                        updatedInsights[tab.id] = {
+                            id: tab.id,
+                            title: tab.title,
+                            content: tab.content,
+                            status: 'loaded' as any,
+                            lastUpdated: Date.now()
+                        };
+                    });
+
+                    updateConversation(activeConversationId, convo => ({
+                        ...convo,
+                        insights: updatedInsights,
+                        insightsOrder: updatedTabs.map(t => t.id)
+                    }));
+                }
+            );
+
+            return result;
+        } catch (error) {
+            console.error('Error executing tab management command:', error);
+            return {
+                success: false,
+                message: '❌ Error executing command',
+                error: error instanceof Error ? error.message : 'Unknown error'
+            };
+        }
+    }, [activeConversationId, conversations, updateConversation]);
+
     return {
         conversations,
         conversationsOrder,
@@ -1458,5 +1521,6 @@ export const useChat = (isHandsFreeMode: boolean) => {
         retryMessage,
         loadInsightContent,
         updateInsightsForProgress,
+        handleTabManagementCommand,
     };
 };

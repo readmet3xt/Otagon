@@ -164,7 +164,24 @@ const ChatInput: React.FC<ChatInputProps> = ({ value, onChange, onSendMessage, i
     
     const submitMessage = () => {
         if (!value.trim() && selectedImages.length === 0) return;
-        onSendMessage(value, selectedImages.length > 0 ? selectedImages : undefined);
+        
+        // Check if this is a tab management command
+        const trimmedValue = value.trim();
+        if (trimmedValue.toLowerCase().includes('tab') && 
+            (trimmedValue.toLowerCase().includes('add') || 
+             trimmedValue.toLowerCase().includes('create') || 
+             trimmedValue.toLowerCase().includes('modify') || 
+             trimmedValue.toLowerCase().includes('edit') || 
+             trimmedValue.toLowerCase().includes('delete') || 
+             trimmedValue.toLowerCase().includes('remove') || 
+             trimmedValue.toLowerCase().includes('move'))) {
+            // This looks like a tab management command, send it as a special message
+            onSendMessage(`[TAB_MANAGEMENT] ${trimmedValue}`, selectedImages.length > 0 ? selectedImages : undefined);
+        } else {
+            // Regular message
+            onSendMessage(value, selectedImages.length > 0 ? selectedImages : undefined);
+        }
+        
         setSelectedImages([]);
         setShowSuggestions(false);
     };

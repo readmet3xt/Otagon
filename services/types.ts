@@ -51,8 +51,36 @@ export const GEMINI_FLASH_MODEL: GeminiModel = 'gemini-2.5-flash';
 
 export type PendingInsightModification = {
   id: string; // The ID of the insight to modify/overwrite
+  type: 'add' | 'remove' | 'modify';
+  title?: string;
+  content?: string;
+  status?: InsightStatus;
+};
+
+// New simplified tab management types
+export type TabCommand = TabModificationCommand | TabDeletionCommand;
+
+export type TabActionType = 'add' | 'modify' | 'delete' | 'reorder';
+
+export type TabModificationCommand = {
+  action: 'add' | 'modify';
+  tabId?: string; // Required for modify, optional for add
   title: string;
-  content: string;
+  content?: string;
+  position?: number; // For reordering
+};
+
+export type TabDeletionCommand = {
+  action: 'delete';
+  tabId: string;
+  confirmation?: boolean; // For safety
+};
+
+export type TabCommandResult = {
+  success: boolean;
+  message: string;
+  updatedTabs?: string[];
+  error?: string;
 };
 
 export type ContextMenuItem = {
