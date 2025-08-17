@@ -119,7 +119,7 @@ const HowToUseSplashScreen: React.FC<HowToUseSplashScreenProps> = ({ onComplete 
                 <div className="w-full max-w-md mx-auto">
                     <button
                         onClick={onComplete}
-                        className="w-full bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-[#F5F5F5] font-bold py-3 px-4 rounded-full transition-all duration-300 transform hover:scale-105"
+                        className="w-full bg-neutral-700 hover:bg-neutral-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
                     >
                         Let's Begin
                     </button>

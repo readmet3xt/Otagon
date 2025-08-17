@@ -188,35 +188,32 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
             {isLastStep ? (
                 <div className="space-y-3">
                     {!isConnected && (
-                        <Button
+                        <button
                             onClick={handleConnectClick}
                             disabled={isConnecting || !isCodeValid}
-                            variant={isCodeValid && !isConnecting ? "success" : "secondary"}
-                            size="lg"
-                            fullWidth
-                            loading={isConnecting}
+                            className={`w-full font-bold py-3 px-6 rounded-lg transition-colors ${
+                                isCodeValid && !isConnecting 
+                                    ? 'bg-neutral-700 hover:bg-neutral-600 text-white' 
+                                    : 'bg-neutral-600 text-neutral-400 cursor-not-allowed'
+                            }`}
                         >
                             {isConnecting ? "Connecting..." : "Sync Now"}
-                        </Button>
+                        </button>
                     )}
-                    <Button
+                    <button
                         onClick={isConnected ? onComplete : onSkipConnection}
-                        variant="primary"
-                        size="lg"
-                        fullWidth
+                        className="w-full bg-neutral-700 hover:bg-neutral-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
                     >
                         {isConnected ? "Continue to App" : "Skip for Now"}
-                    </Button>
+                    </button>
             </div>
             ) : (
-                <Button
+                <button
                     onClick={handleNext}
-                    variant="primary"
-                    size="lg"
-                    fullWidth
+                    className="w-full bg-neutral-700 hover:bg-neutral-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
                 >
                     Next
-                </Button>
+                </button>
             )}
         </div>
       </footer>

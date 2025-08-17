@@ -110,9 +110,12 @@ const UpgradeSplashScreen: React.FC<UpgradeSplashScreenProps> = ({ onUpgrade, on
                             {proFeatures.map(feature => <CheckFeatureLine key={feature}>{feature}</CheckFeatureLine>)}
                         </ul>
                         <div className="mt-auto">
-                            <Button onClick={handleProUpgrade} variant="secondary" size="lg" fullWidth className="bg-neutral-700 hover:bg-neutral-600">
+                            <button 
+                                onClick={handleProUpgrade} 
+                                className="w-full bg-neutral-700 hover:bg-neutral-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+                            >
                                 Go Pro
-                            </Button>
+                            </button>
                         </div>
                     </div>
 
@@ -133,21 +136,23 @@ const UpgradeSplashScreen: React.FC<UpgradeSplashScreenProps> = ({ onUpgrade, on
                             {vanguardFeatures.map(feature => <StarFeatureLine key={feature.text} comingSoon={feature.comingSoon}>{feature.text}</StarFeatureLine>)}
                         </ul>
                         <div className="mt-auto">
-                            <Button onClick={handleVanguardUpgrade} variant="primary" size="lg" fullWidth>
+                            <button 
+                                onClick={handleVanguardUpgrade} 
+                                className="w-full bg-neutral-700 hover:bg-neutral-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+                            >
                                 Become a Vanguard
-                            </Button>
+                            </button>
                         </div>
                     </div>
                 </div>
 
                 <div className="mt-8">
-                    <Button
+                    <button
                         onClick={handleClose}
-                        variant="ghost"
-                        size="md"
+                        className="w-full text-neutral-400 font-medium py-2 px-6 rounded-lg hover:bg-neutral-800/50 transition-colors"
                     >
                         Maybe Later
-                    </Button>
+                    </button>
                 </div>
             </div>
         </div>

@@ -33,15 +33,12 @@ const InitialSplashScreen: React.FC<InitialSplashScreenProps> = ({ onComplete })
       <div 
         className="flex flex-col items-center gap-4 w-full max-w-xs"
       >
-        <Button
+        <button
           onClick={onComplete}
-          variant="primary"
-          size="xl"
-          fullWidth
-          className="animate-pulse-glow"
+          className="w-full bg-neutral-700 hover:bg-neutral-600 text-white font-bold py-3 px-6 rounded-lg transition-colors animate-pulse-glow"
         >
           Start the Adventure
-        </Button>
+        </button>
         
         <div className="w-full">
           <PCClientDownload 

@@ -67,7 +67,7 @@ const TierSplashScreen: React.FC<TierSplashScreenProps> = ({
             {isFreeTier ? (
               <button
                 onClick={onUpgradeToPro}
-                className="w-full bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105"
+                className="w-full bg-neutral-700 hover:bg-neutral-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
               >
                 <StarIcon className="w-5 h-5 inline mr-2" />
                 Upgrade to Pro
@@ -108,7 +108,7 @@ const TierSplashScreen: React.FC<TierSplashScreenProps> = ({
 
             <button
               onClick={onUpgradeToVanguard}
-              className="w-full bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105"
+              className="w-full bg-neutral-700 hover:bg-neutral-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
             >
               <StarIcon className="w-5 h-5 inline mr-2" />
               {isProTier ? 'Upgrade to Vanguard' : 'Become a Vanguard'}
