@@ -15,7 +15,7 @@ const SessionContinuationModal: React.FC<SessionContinuationModalProps> = ({
   onContinueSession,
   onStartNew,
   autoDismiss = true,
-  dismissDelay = 15000
+  dismissDelay = 5000
 }) => {
   const [sessionProgress, setSessionProgress] = useState<SessionProgress | null>(null);
   const [isVisible, setIsVisible] = useState(true);

@@ -11,7 +11,7 @@ interface DailyCheckinBannerProps {
 const DailyCheckinBanner: React.FC<DailyCheckinBannerProps> = ({ 
   onClose, 
   autoDismiss = true, 
-  dismissDelay = 10000 
+  dismissDelay = 5000 
 }) => {
   const [goals, setGoals] = useState<DailyGoal[]>([]);
   const [streaks, setStreaks] = useState<UserStreak | null>(null);

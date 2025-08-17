@@ -15,7 +15,7 @@ const AchievementNotification: React.FC<AchievementNotificationProps> = ({
   onClose,
   onShare,
   autoDismiss = true,
-  dismissDelay = 8000
+  dismissDelay = 5000
 }) => {
   const [isVisible, setIsVisible] = useState(true);
   const [timeRemaining, setTimeRemaining] = useState(dismissDelay / 1000);

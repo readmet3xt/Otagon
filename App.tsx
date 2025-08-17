@@ -1049,7 +1049,7 @@ const AppComponent: React.FC = () => {
               <DailyCheckinBanner
                 onClose={() => setShowDailyCheckin(false)}
                 autoDismiss={true}
-                dismissDelay={15000}
+                dismissDelay={5000}
               />
             )}
 
@@ -1069,7 +1069,7 @@ const AppComponent: React.FC = () => {
                   setShowSessionContinuation(false);
                 }}
                 autoDismiss={true}
-                dismissDelay={20000}
+                dismissDelay={5000}
               />
             )}
 
@@ -1082,7 +1082,7 @@ const AppComponent: React.FC = () => {
                   console.log('Sharing achievement:', currentAchievement.title);
                 }}
                 autoDismiss={true}
-                dismissDelay={10000}
+                dismissDelay={5000}
               />
             )}
 
