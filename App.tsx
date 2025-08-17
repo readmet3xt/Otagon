@@ -269,19 +269,30 @@ const AppComponent: React.FC = () => {
 
     // Daily Engagement Effects
     useEffect(() => {
+        console.log('Daily Engagement Effect - view:', view, 'onboardingStatus:', onboardingStatus, 'usage.tier:', usage.tier);
+        
         if (view === 'app' && onboardingStatus === 'complete') {
+            console.log('Checking daily engagement conditions...');
+            
             // Check if we should show daily check-in
-            if (dailyEngagementService.shouldShowDailyCheckin()) {
+            const shouldShowCheckin = dailyEngagementService.shouldShowDailyCheckin();
+            console.log('Should show daily checkin:', shouldShowCheckin);
+            if (shouldShowCheckin) {
+                console.log('Setting showDailyCheckin to true');
                 setShowDailyCheckin(true);
             }
             
             // Check if we should show session continuation
-            if (dailyEngagementService.shouldShowSessionContinuation()) {
+            const shouldShowSession = dailyEngagementService.shouldShowSessionContinuation();
+            console.log('Should show session continuation:', shouldShowSession);
+            if (shouldShowSession) {
+                console.log('Setting showSessionContinuation to true');
                 setShowSessionContinuation(true);
             }
             
             // Show progress bar for pro users
             if (usage.tier !== 'free') {
+                console.log('Setting showProgressBar to true for tier:', usage.tier);
                 setShowProgressBar(true);
             }
         }

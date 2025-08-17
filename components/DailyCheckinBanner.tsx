@@ -131,11 +131,26 @@ const DailyCheckinBanner: React.FC<DailyCheckinBannerProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 mt-4">
-          <button className="flex-1 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white py-2 px-4 rounded-lg font-medium hover:from-[#D42A2A] hover:to-[#C87A1A] transition-all duration-200 text-sm">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-4">
+          <button
+            onClick={() => {
+              // Navigate to progress tracking or goals
+              console.log('View Full Progress clicked');
+              // You can implement navigation here
+            }}
+            className="flex-1 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white py-2 px-4 rounded-lg font-medium hover:from-[#D42A2A] hover:to-[#C87A1A] transition-all duration-200 text-sm sm:text-base"
+          >
             View Full Progress
           </button>
-          <button className="px-4 py-2 border border-[#E53A3A]/30 text-[#FFAB40] rounded-lg hover:bg-white/10 transition-colors text-sm">
+          
+          <button
+            onClick={() => {
+              // Set daily goals
+              console.log('Set Goals clicked');
+              // You can implement goal setting here
+            }}
+            className="flex-1 bg-white/10 text-white py-2 px-4 rounded-lg font-medium hover:bg-white/20 transition-colors text-sm sm:text-base"
+          >
             Set Goals
           </button>
         </div>
