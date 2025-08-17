@@ -178,13 +178,13 @@ const AIContextDemo: React.FC = () => {
           <div>
             <span className="text-gray-400">Text Queries:</span>
             <span className="ml-2 text-white font-medium">
-              {unifiedUsageService.getUsage().text_count} / {unifiedUsageService.getUsage().text_limit}
+              {unifiedUsageService.getUsage().textCount} / {unifiedUsageService.getUsage().textLimit}
             </span>
           </div>
           <div>
             <span className="text-gray-400">Image Queries:</span>
             <span className="ml-2 text-white font-medium">
-              {unifiedUsageService.getUsage().image_count} / {unifiedUsageService.getUsage().image_limit}
+              {unifiedUsageService.getUsage().imageCount} / {unifiedUsageService.getUsage().imageLimit}
             </span>
           </div>
           <div>

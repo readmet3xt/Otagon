@@ -1,5 +1,7 @@
 import React from 'react';
 import StarIcon from './StarIcon';
+import Button from './ui/Button';
+import { useAnalytics } from '../hooks/useAnalytics';
 
 interface UpgradeSplashScreenProps {
     onUpgrade: () => void;
@@ -33,7 +35,8 @@ const proFeatures = [
     'Batch Screenshot Capture',
     'Hands-Free Voice Response',
     'In-depth Insight Tabs',
-    'Priority Support'
+    'Priority Support',
+    'No ads'
 ];
 
 const vanguardFeatures = [
@@ -45,6 +48,39 @@ const vanguardFeatures = [
 ];
 
 const UpgradeSplashScreen: React.FC<UpgradeSplashScreenProps> = ({ onUpgrade, onUpgradeToVanguard, onClose }) => {
+    const { trackTierUpgradeAttempt, trackButtonClick } = useAnalytics();
+
+    const handleProUpgrade = () => {
+        trackTierUpgradeAttempt({
+            fromTier: 'free',
+            toTier: 'pro',
+            attemptSource: 'splash_screen',
+            success: false, // Will be updated when payment succeeds
+            amount: 3.99,
+            metadata: { source: 'UpgradeSplashScreen' }
+        });
+        trackButtonClick('go_pro', 'UpgradeSplashScreen');
+        onUpgrade();
+    };
+
+    const handleVanguardUpgrade = () => {
+        trackTierUpgradeAttempt({
+            fromTier: 'free',
+            toTier: 'vanguard_pro',
+            attemptSource: 'splash_screen',
+            success: false, // Will be updated when payment succeeds
+            amount: 20.00,
+            metadata: { source: 'UpgradeSplashScreen' }
+        });
+        trackButtonClick('become_vanguard', 'UpgradeSplashScreen');
+        onUpgradeToVanguard();
+    };
+
+    const handleClose = () => {
+        trackButtonClick('maybe_later', 'UpgradeSplashScreen');
+        onClose();
+    };
+
     return (
         <div className="h-screen bg-black text-white flex flex-col items-center justify-center font-inter p-4 sm:p-6 animate-fade-in">
             <div className="absolute top-0 left-0 w-full h-full bg-gradient-radial-at-top from-[#FF4D4D]/20 to-transparent pointer-events-none"></div>
@@ -74,9 +110,9 @@ const UpgradeSplashScreen: React.FC<UpgradeSplashScreenProps> = ({ onUpgrade, on
                             {proFeatures.map(feature => <CheckFeatureLine key={feature}>{feature}</CheckFeatureLine>)}
                         </ul>
                         <div className="mt-auto">
-                            <button onClick={onUpgrade} className="w-full bg-neutral-700 hover:bg-neutral-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                            <Button onClick={handleProUpgrade} variant="secondary" size="lg" fullWidth className="bg-neutral-700 hover:bg-neutral-600">
                                 Go Pro
-                            </button>
+                            </Button>
                         </div>
                     </div>
 
@@ -97,20 +133,21 @@ const UpgradeSplashScreen: React.FC<UpgradeSplashScreenProps> = ({ onUpgrade, on
                             {vanguardFeatures.map(feature => <StarFeatureLine key={feature.text} comingSoon={feature.comingSoon}>{feature.text}</StarFeatureLine>)}
                         </ul>
                         <div className="mt-auto">
-                            <button onClick={onUpgradeToVanguard} className="w-full bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105">
+                            <Button onClick={handleVanguardUpgrade} variant="primary" size="lg" fullWidth>
                                 Become a Vanguard
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </div>
 
                 <div className="mt-8">
-                    <button
-                        onClick={onClose}
-                        className="text-neutral-400 font-medium py-2 px-6 rounded-lg hover:bg-neutral-800/50 transition-colors"
+                    <Button
+                        onClick={handleClose}
+                        variant="ghost"
+                        size="md"
                     >
                         Maybe Later
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>

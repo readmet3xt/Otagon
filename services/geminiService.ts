@@ -528,7 +528,7 @@ const trackAIResponse = async (
     hasImages: boolean = false
 ): Promise<void> => {
     try {
-        const userId = authService.getAuthState().user?.id;
+        const userId = (await import('./supabase')).authService.getAuthState().user?.id;
         if (!userId) return;
 
         // Analyze AI response context

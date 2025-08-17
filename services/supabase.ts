@@ -108,6 +108,10 @@ export class AuthService {
     return { ...this.authState };
   }
 
+  getCurrentUserId(): string | null {
+    return this.authState.user?.id || null;
+  }
+
   async signIn(email: string, password: string) {
     try {
       this.updateAuthState({ loading: true, error: null });

@@ -13,7 +13,7 @@ export interface VoiceResponse {
 }
 
 class VoiceService {
-  private recognition: SpeechRecognition | null = null;
+  private recognition: any = null;
   private synthesis: SpeechSynthesis | null = null;
   private isListening = false;
   private isSpeaking = false;
@@ -27,7 +27,7 @@ class VoiceService {
 
   private initializeSpeechRecognition() {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       this.recognition = new SpeechRecognition();
       
       this.recognition.continuous = false;

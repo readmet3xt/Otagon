@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { pwaNavigationService } from '../services/pwaNavigationService';
 
 export const HandsFreeIcon: React.FC<{ isActive: boolean; className?: string }> = ({ isActive, className }) => (
     <svg 
@@ -17,17 +18,24 @@ export const HandsFreeIcon: React.FC<{ isActive: boolean; className?: string }> 
     </svg>
 );
 
-
 interface HandsFreeToggleProps {
   isHandsFree: boolean;
   onToggle: () => void;
 }
 
 const HandsFreeToggle: React.FC<HandsFreeToggleProps> = ({ isHandsFree, onToggle }) => {
+  const handleToggle = () => {
+    // Update PWA navigation service with hands-free preference
+    pwaNavigationService.setHandsFreePreference(!isHandsFree);
+    
+    // Call the original toggle function
+    onToggle();
+  };
+
   return (
     <button
       type="button"
-      onClick={onToggle}
+      onClick={handleToggle}
       className={`flex items-center gap-2 px-3 h-10 rounded-lg text-sm font-medium transition-all duration-200 group
       ${
         isHandsFree

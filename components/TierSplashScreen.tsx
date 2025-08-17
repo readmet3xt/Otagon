@@ -61,6 +61,7 @@ const TierSplashScreen: React.FC<TierSplashScreenProps> = ({
               <li>• Advanced AI Model</li>
               <li>• Batch Screenshot Capture</li>
               <li>• Hands-Free Voice Response</li>
+              <li>• No ads</li>
             </ul>
 
             {isFreeTier ? (

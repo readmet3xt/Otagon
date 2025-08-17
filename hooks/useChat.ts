@@ -17,6 +17,9 @@ import {
 } from '../services/geminiService';
 import { ttsService } from '../services/ttsService';
 import { unifiedUsageService } from '../services/unifiedUsageService';
+import { smartNotificationService } from '../services/smartNotificationService';
+import { gameAnalyticsService } from '../services/gameAnalyticsService';
+import { analyticsService } from '../services/analyticsService';
 
 const COOLDOWN_KEY = 'geminiCooldownEnd';
 const COOLDOWN_DURATION = 60 * 60 * 1000; // 1 hour
@@ -199,9 +202,25 @@ export const useChat = (isHandsFreeMode: boolean) => {
     const deleteInsight = useCallback((convoId: string, insightId: string) => {
         updateConversation(convoId, convo => {
             if (!convo.insights || !convo.insightsOrder) return convo;
+            
+            const oldInsight = convo.insights[insightId];
             const newInsights = { ...convo.insights };
             delete newInsights[insightId];
             const newOrder = convo.insightsOrder.filter(id => id !== insightId);
+
+            // Track insight deletion for game analytics
+            const gameContext = gameAnalyticsService.extractGameContext(convo);
+            gameAnalyticsService.trackInsightTab({
+                conversationId: convoId,
+                tabId: insightId,
+                tabTitle: oldInsight.title,
+                tabContent: oldInsight.content,
+                tabType: 'custom',
+                isPinned: false,
+                orderIndex: 0,
+                metadata: { source: 'manual_deletion' }
+            }, 'deleted');
+
             return { ...convo, insights: newInsights, insightsOrder: newOrder };
         });
     }, [updateConversation]);
@@ -260,14 +279,29 @@ export const useChat = (isHandsFreeMode: boolean) => {
     const overwriteInsight = useCallback((convoId: string, insightId: string, newTitle: string, newContent: string) => {
         updateConversation(convoId, convo => {
             if (!convo.insights || !convo.insights[insightId]) return convo;
+            
+            const oldInsight = convo.insights[insightId];
             const newInsights = { ...convo.insights };
             newInsights[insightId] = {
-                ...newInsights[insightId],
+                ...oldInsight,
                 title: newTitle,
                 content: newContent,
                 status: 'loaded',
                 isNew: true,
             };
+
+            // Track insight modification for game analytics
+            const gameContext = gameAnalyticsService.extractGameContext(convo);
+            gameAnalyticsService.trackInsightModification({
+                conversationId: convoId,
+                insightId: insightId,
+                modificationType: 'updated',
+                oldContent: oldInsight.content,
+                newContent: newInsights[insightId].content,
+                changeSummary: `Title changed from "${oldInsight.title}" to "${newTitle}"`,
+                metadata: { source: 'manual_overwrite', oldTitle: oldInsight.title, newTitle, oldContent: oldInsight.content, newContent }
+            });
+
             return { ...convo, insights: newInsights };
         });
     }, [updateConversation]);
@@ -288,19 +322,73 @@ export const useChat = (isHandsFreeMode: boolean) => {
             };
             const newInsights = { ...(convo.insights || {}), [newId]: newInsight };
             const newOrder = [...(convo.insightsOrder || []), newId];
+
+            // Track insight creation for game analytics
+            const gameContext = gameAnalyticsService.extractGameContext(convo);
+            gameAnalyticsService.trackInsightCreated(
+                gameContext.gameId,
+                gameContext.gameTitle,
+                convoId,
+                newId,
+                newInsight,
+                { source: 'manual_creation', title, content }
+            );
+
             return { ...convo, insights: newInsights, insightsOrder: newOrder };
         });
     }, [updateConversation, addSystemMessage]);
 
     const updateMessageFeedback = useCallback((convoId: string, messageId: string, vote: ChatMessageFeedback) => {
         updateMessageInConversation(convoId, messageId, msg => ({ ...msg, feedback: vote }));
-    }, [updateMessageInConversation]);
+
+        // Track AI response feedback for game analytics
+        const conversation = conversations[convoId];
+        const gameContext = gameAnalyticsService.extractGameContext(conversation);
+        
+        gameAnalyticsService.trackAIResponseFeedback(
+            convoId,
+            messageId,
+            vote,
+            undefined, // No feedback text for thumbs up/down
+            { 
+                responseType: 'ai_message',
+                feedbackType: vote,
+                gameId: gameContext.gameId,
+                gameTitle: gameContext.gameTitle
+            },
+            { 
+                userTier: unifiedUsageService.getTier(),
+                source: 'message_feedback'
+            }
+        );
+    }, [updateMessageInConversation, conversations, unifiedUsageService]);
 
     const updateInsightFeedback = useCallback((convoId: string, insightId: string, vote: ChatMessageFeedback) => {
         updateConversation(convoId, convo => {
             if (!convo.insights?.[insightId]) return convo;
+            
+            const oldInsight = convo.insights[insightId];
             const newInsights = { ...convo.insights };
-            newInsights[insightId] = { ...newInsights[insightId], feedback: vote };
+            newInsights[insightId] = { ...oldInsight, feedback: vote };
+
+            // Track insight feedback for game analytics
+            const gameContext = gameAnalyticsService.extractGameContext(convo);
+            gameAnalyticsService.trackUserFeedback({
+                conversationId: convoId,
+                targetType: 'insight',
+                targetId: insightId,
+                feedbackType: vote === 'up' ? 'up' : 'down',
+                feedbackText: `${vote} on insight`,
+                aiResponseContext: null,
+                metadata: { 
+                    insightTitle: oldInsight.title,
+                    insightContent: oldInsight.content,
+                    feedbackType: vote,
+                    gameId: gameContext.gameId,
+                    gameTitle: gameContext.gameTitle
+                }
+            });
+
             return { ...convo, insights: newInsights };
         });
     }, [updateConversation]);
@@ -310,6 +398,34 @@ export const useChat = (isHandsFreeMode: boolean) => {
         const imageQueries = images ? images.length : 0;
 
         if (textQueries === 0 && imageQueries === 0) return { success: true };
+        
+        // Track feature usage
+        analyticsService.trackFeatureUsage({
+            featureName: 'send_message',
+            featureCategory: 'chat',
+            metadata: { 
+                hasText: textQueries > 0, 
+                hasImages: imageQueries > 0,
+                isFromPC: isFromPC || false
+            }
+        });
+
+        // Track user query for game analytics
+        const queryId = crypto.randomUUID();
+        const sourceConversation = conversationsRef.current[activeConversationId];
+        if (sourceConversation) {
+            gameAnalyticsService.trackUserQuery({
+                conversationId: activeConversationId,
+                queryType: imageQueries > 0 ? 'image' : 'text',
+                queryText: text.trim(),
+                hasImages: imageQueries > 0,
+                imageCount: imageQueries,
+                queryLength: text.trim().length,
+                responseTimeMs: 0, // Will be updated later
+                success: true,
+                gameContext: sourceConversation.id !== EVERYTHING_ELSE_ID ? { gameId: sourceConversation.id } : undefined
+            });
+        }
         
         ttsService.cancel();
 
@@ -351,7 +467,6 @@ export const useChat = (isHandsFreeMode: boolean) => {
         const controller = new AbortController();
         abortControllersRef.current[modelMessageId] = controller;
         
-        const sourceConversation = conversationsRef.current[sourceConvoId];
         if (!sourceConversation) return { success: false, reason: 'conversation_not_found' };
 
         const history = sourceConversation.messages || [];
@@ -363,8 +478,38 @@ export const useChat = (isHandsFreeMode: boolean) => {
         };
 
         try {
-            let metaNotes = '';
+            // --- Game Knowledge System Integration ---
+            // Try to get a smart response from our knowledge base first
+            const { gameKnowledgeService } = await import('../services/gameKnowledgeService');
+            const gameTitle = sourceConversation.id !== EVERYTHING_ELSE_ID ? sourceConversation.id : undefined;
+            
+            const smartResponse = await gameKnowledgeService.getSmartResponse(text.trim(), gameTitle);
+            
+            if (smartResponse.source === 'knowledge_base' && smartResponse.confidence >= 0.8) {
+                // Use knowledge base response instead of calling AI
+                console.log('Using knowledge base response:', smartResponse);
+                
+                // Update the message with the knowledge base response
+                const finalCleanedText = smartResponse.response;
+                updateMessageInConversation(activeConversationId, modelMessageId, msg => ({ ...msg, text: finalCleanedText }));
+                
+                // Track successful knowledge base usage
+                gameAnalyticsService.trackKnowledgeBaseUsage(
+                    gameTitle || 'unknown',
+                    text.trim(),
+                    smartResponse.confidence,
+                    smartResponse.metadata
+                );
+                
+                // Learn from this successful interaction
+                await gameKnowledgeService.learnFromAIResponse(text.trim(), smartResponse.response, gameTitle, true);
+                
+                setLoadingMessages(prev => prev.filter(id => id !== modelMessageId));
+                return { success: true, reason: 'knowledge_base_response' };
+            }
+            
             // --- Context Injection for Companion AI ---
+            let metaNotes = '';
             if(sourceConversation.id !== EVERYTHING_ELSE_ID) {
                 if (sourceConversation.insights?.story_so_far?.content) {
                     metaNotes += `[META_STORY_SO_FAR: ${sourceConversation.insights.story_so_far.content}]\n`;
@@ -490,6 +635,11 @@ export const useChat = (isHandsFreeMode: boolean) => {
                 .replace(/[\s`"\]\}]*$/, '')
                 .trim();
             
+            // Show notification for AI response if screen is locked
+            if (smartNotificationService.isScreenLocked()) {
+                smartNotificationService.showAINotification(finalCleanedText, sourceConvoId);
+            }
+            
             let finalTargetConvoId = sourceConvoId;
             const identifiedGameId = identifiedGameName ? generateGameId(identifiedGameName) : null;
             
@@ -597,11 +747,84 @@ export const useChat = (isHandsFreeMode: boolean) => {
             if (insightModifyPending) setPendingModification(insightModifyPending);
             if (insightDeleteRequest) deleteInsight(finalTargetConvoId, insightDeleteRequest.id);
 
+            // --- Game Knowledge Learning ---
+            // Learn from this AI response to improve our knowledge base
+            try {
+                const gameTitle = finalTargetConvoId !== EVERYTHING_ELSE_ID ? finalTargetConvoId : identifiedGameName;
+                if (gameTitle && finalCleanedText) {
+                    await gameKnowledgeService.learnFromAIResponse(
+                        text.trim(),
+                        finalCleanedText,
+                        gameTitle,
+                        true // Assume helpful response
+                    );
+                    
+                    // Track knowledge learning for analytics
+                    gameAnalyticsService.trackKnowledgeLearning(
+                        gameTitle,
+                        text.trim(),
+                        finalCleanedText.length,
+                        'ai_response'
+                    );
+                }
+            } catch (error) {
+                console.warn('Failed to learn from AI response:', error);
+            }
+
+            // Track successful user query completion for game analytics
+            const conversation = conversations[finalTargetConvoId];
+            const gameContext = gameAnalyticsService.extractGameContext(conversation);
+            
+            gameAnalyticsService.trackUserQuery({
+                conversationId: finalTargetConvoId,
+                queryType: imageQueries > 0 ? 'image' : 'text',
+                queryText: text,
+                hasImages: imageQueries > 0,
+                imageCount: imageQueries,
+                queryLength: text.length,
+                aiResponseLength: finalCleanedText.length,
+                responseTimeMs: Date.now() - (gameAnalyticsService as any).queryStartTime || 0,
+                success: true,
+                gameContext,
+                metadata: { 
+                    userTier: unifiedUsageService.getTier(),
+                    isFromPC: isFromPC || false,
+                    gameGenre,
+                    gameProgress,
+                    isGameUnreleased,
+                    hasInsights: !!insightUpdate,
+                    hasObjective: !!objectiveSet
+                }
+            });
+
             return { success: true };
 
         } catch(e) {
             const message = e instanceof Error ? e.message : 'An unknown error occurred.';
             onError(message);
+
+            // Track failed user query for game analytics
+            const conversation = conversations[sourceConvoId];
+            const gameContext = gameAnalyticsService.extractGameContext(conversation);
+            
+            gameAnalyticsService.trackUserQuery({
+                conversationId: sourceConvoId,
+                queryType: imageQueries > 0 ? 'image' : 'text',
+                queryText: text,
+                hasImages: imageQueries > 0,
+                imageCount: imageQueries,
+                queryLength: text.length,
+                responseTimeMs: Date.now() - (gameAnalyticsService as any).queryStartTime || 0,
+                success: false,
+                errorMessage: message,
+                gameContext,
+                metadata: { 
+                    userTier: unifiedUsageService.getTier(),
+                    isFromPC: isFromPC || false,
+                    error: message
+                }
+            });
+
             return { success: false, reason: 'error' };
         } finally {
             delete abortControllersRef.current[modelMessageId];
@@ -725,6 +948,39 @@ export const useChat = (isHandsFreeMode: boolean) => {
         }
     }, [conversations, updateConversation]);
 
+    // Retry function for failed messages
+    const retryMessage = useCallback(async (messageId: string): Promise<{ success: boolean; reason?: string }> => {
+        const conversation = conversations[activeConversationId];
+        if (!conversation) return { success: false, reason: 'Conversation not found' };
+
+        const message = conversation.messages.find(m => m.id === messageId);
+        if (!message || message.role !== 'user') return { success: false, reason: 'Message not found or not a user message' };
+
+        // Track retry usage
+        analyticsService.trackFeatureUsage({
+            featureName: 'retry_message',
+            featureCategory: 'chat',
+            metadata: { 
+                originalMessageId: messageId,
+                conversationId: activeConversationId
+            }
+        });
+
+        // Remove the failed AI response
+        updateConversation(activeConversationId, convo => ({
+            ...convo,
+            messages: convo.messages.filter(m => m.id !== messageId && m.role === 'user')
+        }));
+
+        // Resend the message - convert string[] to ImageFile[] if needed
+        const imageFiles = message.images ? message.images.map(img => ({
+            base64: img.split(',')[1] || img,
+            mimeType: img.startsWith('data:') ? img.split(';')[0].split(':')[1] : 'image/png',
+            dataUrl: img
+        })) : undefined;
+        return await sendMessage(message.text, imageFiles, message.isFromPC);
+    }, [conversations, activeConversationId, updateConversation, sendMessage]);
+
     return {
         conversations,
         conversationsOrder,
@@ -752,5 +1008,6 @@ export const useChat = (isHandsFreeMode: boolean) => {
         createNewInsight,
         updateMessageFeedback,
         updateInsightFeedback,
+        retryMessage,
     };
 };

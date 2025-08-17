@@ -29,6 +29,11 @@ class PWAInstallService {
 
     // Check if already installed
     this.checkIfInstalled();
+    
+    // Initial check for install criteria after a short delay
+    setTimeout(() => {
+      this.checkInstallCriteria();
+    }, 500);
   }
 
   private checkIfInstalled() {
@@ -41,6 +46,15 @@ class PWAInstallService {
     if (isStandalone || isIOSStandalone) {
       console.log('PWA is already installed');
       this.notifyListeners(null);
+    }
+  }
+
+  private checkInstallCriteria() {
+    const criteria = this.getInstallCriteria();
+    
+    // If we can install and haven't notified yet, notify listeners
+    if (criteria.canInstall && !this.deferredPrompt) {
+      this.notifyListeners(this.deferredPrompt);
     }
   }
 

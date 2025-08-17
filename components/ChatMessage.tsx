@@ -17,6 +17,7 @@ interface ChatMessageProps {
     onPromptClick: (prompt: string) => void;
     onUpgradeClick: () => void;
     onFeedback: (vote: 'up' | 'down') => void;
+    onRetry?: () => void;
 }
 
 const Confetti: React.FC = () => {
@@ -43,7 +44,7 @@ const Confetti: React.FC = () => {
     );
   };
 
-const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, onPromptClick, onUpgradeClick, onFeedback }) => {
+const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, onPromptClick, onUpgradeClick, onFeedback, onRetry }) => {
     const { id, role, text, images, suggestions, isFromPC, triumph, showUpgradeButton, feedback } = message;
     const [showConfetti, setShowConfetti] = useState(false);
 
@@ -89,6 +90,14 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
     if (role === 'model') {
         const CANCELLATION_TEXT = '*Request cancelled by user.*';
         const isCancelledMessage = text === CANCELLATION_TEXT;
+        
+        // Check if this is a failed response (error message)
+        const isFailedResponse = text.includes('Error:') || 
+                               text.includes('Failed') || 
+                               text.includes('QUOTA_EXCEEDED') ||
+                               text.includes('Network error') ||
+                               text.includes('Timeout') ||
+                               text.includes('Rate limit');
 
         if (isCancelledMessage) {
             return (
@@ -117,14 +126,20 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
                                         a: ({ node, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" />
                                     }}
                                 >
-                                    {text}
+                                    {/* Clean up any weird formatting during streaming */}
+                                    {text
+                                        .replace(/^[\s`"\]\}]*/, '') // Remove leading weird characters
+                                        .replace(/[\s`"\]\}]*$/, '') // Remove trailing weird characters
+                                        .replace(/\n{3,}/g, '\n\n') // Limit consecutive newlines
+                                        .trim()
+                                    }
                                 </ReactMarkdown>
                             </div>
                         </div>
                     )}
 
                     {isLoading && (
-                         <div className="flex items-center gap-4 py-1 px-4">
+                         <div className="flex items-center gap-4 py-2 px-4 bg-[#2E2E2E]/20 rounded-lg border border-[#424242]/30">
                             <TypingIndicator />
                             <button
                                 onClick={onStop}
@@ -136,9 +151,24 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
                         </div>
                     )}
 
-                    {!isLoading && text.trim() && !showUpgradeButton && (
+                    {!isLoading && text.trim() && !showUpgradeButton && !isFailedResponse && (
                          <div className="pl-2 pt-1">
                             <FeedbackButtons onFeedback={onFeedback} feedbackState={feedback} />
+                        </div>
+                    )}
+
+                    {/* Retry button for failed responses */}
+                    {!isLoading && isFailedResponse && onRetry && (
+                        <div className="pt-2 animate-fade-in">
+                            <button
+                                onClick={onRetry}
+                                className="flex items-center justify-center gap-2 w-auto text-sm bg-gradient-to-r from-[#5CBB7B] to-[#4CAF50] text-white font-bold py-2 px-4 rounded-lg transition-transform transform hover:scale-105"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                Try Again
+                            </button>
                         </div>
                     )}
 

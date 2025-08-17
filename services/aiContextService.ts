@@ -388,9 +388,9 @@ class AIContextService {
       patterns.push({
         learning_type: 'user_preference',
         pattern_data: {
-          user_tier,
-          game_genre,
-          user_progress,
+          userTier,
+          gameGenre,
+          userProgress,
           feedback_type: feedback.feedback_type,
           success: feedback.feedback_type === 'up',
           feedback_category: feedback.ai_response_context.feedback_category,

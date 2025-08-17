@@ -6,6 +6,8 @@ import HintIcon from './HintIcon';
 import DesktopIcon from './DesktopIcon';
 import BookmarkIcon from './BookmarkIcon';
 import { ConnectionStatus } from '../services/types';
+import PCClientDownload from './PCClientDownload';
+import Button from './ui/Button';
 
 const slides = [
   {
@@ -34,7 +36,6 @@ interface SplashScreenProps {
   onComplete: () => void;
   onSkipConnection: () => void;
   onConnect: (code: string) => void;
-  onDisconnect: () => void;
   status: ConnectionStatus;
   error: string | null;
   connectionCode: string | null;
@@ -66,6 +67,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
 
   const currentSlide = slides[step];
   const isLastStep = step === slides.length - 1;
+
   const isConnecting = status === ConnectionStatus.CONNECTING;
   const isConnected = status === ConnectionStatus.CONNECTED;
 
@@ -141,14 +143,11 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
           {isLastStep && (
               <div className="space-y-4 text-left">
                   <div className="text-center pb-2">
-                      <a
-                          href="https://drive.google.com/file/d/15d_Rp1lSBp6BjA9mr0dlNWwMMmtdAggh/view?usp=sharing"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm font-medium text-[#FF4D4D] hover:text-[#FF4D4D] hover:underline transition-colors"
-                      >
-                          Need the PC client? Download it here.
-                      </a>
+                      <PCClientDownload 
+                        variant="link" 
+                        showVersion={true}
+                        className="text-sm font-medium text-[#FF4D4D] hover:text-[#FF4D4D] hover:underline transition-colors"
+                      />
                   </div>
                   <div>
                       <label htmlFor="connection-code" className="block text-sm font-medium text-[#CFCFCF] mb-1">
@@ -189,41 +188,35 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
             {isLastStep ? (
                 <div className="space-y-3">
                     {!isConnected && (
-                        <button
+                        <Button
                             onClick={handleConnectClick}
                             disabled={isConnecting || !isCodeValid}
-                            className={`w-full flex items-center justify-center text-[#F5F5F5] font-bold py-3 px-4 rounded-full transition-all duration-200
-                                ${
-                                    isCodeValid && !isConnecting
-                                    ? 'bg-gradient-to-r from-[#5CBB7B] to-[#4CAF50] hover:brightness-110' // Green and ready state
-                                    : 'bg-[#424242] hover:bg-[#5A5A5A] disabled:bg-[#2E2E2E] disabled:text-[#6E6E6E] disabled:cursor-not-allowed' // Default gray/disabled state
-                                }
-                            `}
+                            variant={isCodeValid && !isConnecting ? "success" : "secondary"}
+                            size="lg"
+                            fullWidth
+                            loading={isConnecting}
                         >
-                        {isConnecting ? (
-                            <>
-                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[#F5F5F5] mr-3"></div>
-                                Connecting...
-                            </>
-                        ) : (
-                            'Sync Now'
-                        )}
-                        </button>
+                            {isConnecting ? "Connecting..." : "Sync Now"}
+                        </Button>
                     )}
-                    <button
+                    <Button
                         onClick={isConnected ? onComplete : onSkipConnection}
-                        className="w-full bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-[#F5F5F5] font-bold py-3 px-4 rounded-full transition-all duration-300 transform hover:scale-105"
+                        variant="primary"
+                        size="lg"
+                        fullWidth
                     >
-                    {isConnected ? "Continue to App" : "Skip for Now"}
-                    </button>
+                        {isConnected ? "Continue to App" : "Skip for Now"}
+                    </Button>
             </div>
             ) : (
-                <button
+                <Button
                     onClick={handleNext}
-                    className="w-full bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-[#F5F5F5] font-bold py-3 px-4 rounded-full transition-all duration-300 transform hover:scale-105"
+                    variant="primary"
+                    size="lg"
+                    fullWidth
                 >
-                Next
-                </button>
+                    Next
+                </Button>
             )}
         </div>
       </footer>

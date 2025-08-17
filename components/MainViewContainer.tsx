@@ -19,6 +19,7 @@ interface MainViewContainerProps {
   loadingMessages: string[];
   onUpgradeClick: () => void;
   onFeedback: (type: 'message' | 'insight', convId: string, targetId: string, originalText: string, vote: 'up' | 'down') => void;
+  onRetry: (id: string) => void;
 }
 
 const usePrevious = <T,>(value: T) => {
@@ -41,6 +42,7 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
   loadingMessages,
   onUpgradeClick,
   onFeedback,
+  onRetry,
 }) => {
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
@@ -107,6 +109,7 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
                     onPromptClick={onSendMessage}
                     onUpgradeClick={onUpgradeClick}
                     onFeedback={(vote) => onFeedback('message', activeConversation.id, msg.id, msg.text, vote)}
+                    onRetry={() => onRetry(msg.id)}
                   />
                 ))}
                 <div ref={chatEndRef} />

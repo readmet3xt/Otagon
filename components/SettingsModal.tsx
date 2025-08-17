@@ -3,6 +3,7 @@ import { Usage, UserTier } from '../services/types';
 import UserCircleIcon from './UserCircleIcon';
 import CreditCardIcon from './CreditCardIcon';
 import QuestionMarkCircleIcon from './QuestionMarkCircleIcon';
+import StarIcon from './StarIcon';
 import GeneralSettingsTab from './GeneralSettingsTab';
 import SubscriptionSettingsTab from './SubscriptionSettingsTab';
 import HelpGuideTab from './HelpGuideTab';

@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Logo from './Logo';
 import CheckIcon from './CheckIcon';
 import StarIcon from './StarIcon';
 import { waitlistService } from '../services/waitlistService';
-import FounderProfile from './FounderProfile';
+import FounderImage from './FounderImage';
 
 const GamepadIcon = ({ className }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -195,7 +195,8 @@ const PricingSection = ({ onCtaClick }: { onCtaClick: () => void }) => {
         'Batch Screenshot Capture',
         'Hands-Free Voice Response',
         'In-depth Insight Tabs',
-        'Priority Support'
+        'Priority Support',
+        'No ads'
     ];
     const vanguardFeatures = [
         { text: 'Permanent Price Lock-in' },
@@ -423,29 +424,77 @@ const EarnByPlayingSection = ({ onApplyClick }: { onApplyClick: () => void }) =>
 
 
 const FounderSection = () => (
-    <section id="founder" className="py-16 md:py-20 bg-transparent">
-        <div className="container mx-auto px-6 max-w-5xl">
-            <div className="text-center mb-12 animate-fade-slide-up">
-                <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-4">Meet Our Founder</h2>
-                <p className="text-lg text-neutral-300 max-w-2xl mx-auto">
-                    A passionate gamer and AI enthusiast who envisioned a future where every player 
-                    has an intelligent companion to enhance their gaming experience.
+    <section id="founder" className="py-16 md:py-24 bg-transparent">
+        <div className="container mx-auto px-4 md:px-6 max-w-4xl">
+            {/* Section Header */}
+            <div className="text-center mb-12 md:mb-16 animate-fade-slide-up">
+                <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-white mb-4">
+                    Meet Our Founder
+                </h2>
+                <p className="text-base md:text-lg text-neutral-300 max-w-2xl mx-auto leading-relaxed">
+                    Meet Amaan, a passionate gamer from Hyderabad who spent his early days printing cheat codes at internet cafes. 
+                    Now studying Service Design at the Royal College of Art in London, he's building the future of gaming assistance.
                 </p>
             </div>
             
-            <div className="bg-[#1C1C1C]/40 backdrop-blur-sm border border-neutral-800 rounded-2xl p-8 md:p-12 animate-fade-slide-up">
-                <FounderProfile variant="card" />
-                
-                <div className="mt-8 text-center">
-                    <a
-                        href="https://www.linkedin.com/in/readmetxt/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 bg-[#0077B5] hover:bg-[#005885] text-white font-bold py-3 px-6 rounded-lg transition-colors"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
-                        Connect on LinkedIn
-                    </a>
+            {/* Founder Card */}
+            <div className="bg-gradient-to-br from-[#1C1C1C]/80 to-[#2A2A2A]/60 backdrop-blur-sm border border-neutral-800/50 rounded-3xl p-6 md:p-10 animate-fade-slide-up">
+                <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
+                    {/* Founder Image */}
+                    <div className="flex-shrink-0">
+                        <FounderImage size="xl" />
+                    </div>
+                    
+                    {/* Founder Content */}
+                    <div className="flex-1 text-center md:text-left space-y-6">
+                        {/* Name and Title */}
+                        <div className="space-y-2">
+                            <h3 className="text-2xl md:text-3xl font-bold text-white">
+                                Amaan
+                            </h3>
+                            <p className="text-lg text-neutral-300 font-medium">
+                                Founder & CEO
+                            </p>
+                        </div>
+                        
+                        {/* Personal Quote */}
+                        <div className="bg-[#0F0F0F]/40 border border-neutral-700/50 rounded-2xl p-4 md:p-6">
+                            <p className="text-[#CFCFCF] leading-relaxed text-sm md:text-base italic">
+                                "Like you, I've spent my life passionate about games. From getting lost in the deep lore of modern RPGs 
+                                to the frustration of needing a small hint and getting a massive spoiler in return. That's why I built Otakon 
+                                - to preserve the magic of discovery while giving you just the nudge you need."
+                            </p>
+                        </div>
+                        
+                        {/* Contact Buttons */}
+                        <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-3 md:gap-4 pt-2">
+                            <a
+                                href="https://www.linkedin.com/in/readmetxt/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center justify-center gap-2 bg-[#0077B5] hover:bg-[#005885] text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 hover:scale-105 shadow-lg"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+                                    <rect x="2" y="9" width="4" height="12"></rect>
+                                    <circle cx="4" cy="4" r="2"></circle>
+                                </svg>
+                                <span className="hidden sm:inline">Connect on LinkedIn</span>
+                                <span className="sm:hidden">LinkedIn</span>
+                            </a>
+                            
+                            <a
+                                href="mailto:founder@otakon.ai"
+                                className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] hover:from-[#D42A2A] hover:to-[#C87A1A] text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 hover:scale-105 shadow-lg"
+                            >
+                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                </svg>
+                                <span className="hidden sm:inline">Email Amaan</span>
+                                <span className="sm:hidden">Email</span>
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -671,7 +720,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                      <div className="container mx-auto px-6 text-center relative">
                           <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-10">Your Next Adventure Awaits, Unspoiled</h2>
                           <button
-                            onClick={handleScrollTo('waitlist-form')}
+                            onClick={handleScrollToTop}
                             className="bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white font-bold py-4 px-10 rounded-lg transition-transform transform hover:scale-105 text-lg animate-pulse-glow"
                             >
                             Get Early Access

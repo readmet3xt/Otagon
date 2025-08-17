@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ConnectionStatus } from '../services/types';
+import PCClientDownload from './PCClientDownload';
 
 interface ConnectionModalProps {
   onClose: () => void;
@@ -10,6 +11,9 @@ interface ConnectionModalProps {
   status: ConnectionStatus;
   error: string | null;
   connectionCode: string | null;
+  isAutoConnecting?: boolean;
+  autoConnectAttempts?: number;
+  lastSuccessfulConnection?: number | null;
 }
 
 const ConnectionModal: React.FC<ConnectionModalProps> = ({
@@ -19,6 +23,9 @@ const ConnectionModal: React.FC<ConnectionModalProps> = ({
   status,
   error,
   connectionCode,
+  isAutoConnecting = false,
+  autoConnectAttempts = 0,
+  lastSuccessfulConnection = null,
 }) => {
   const [code, setCode] = useState('');
 
@@ -34,8 +41,21 @@ const ConnectionModal: React.FC<ConnectionModalProps> = ({
     e.preventDefault();
     onConnect(code);
   };
+
+  const formatLastConnection = (timestamp: number) => {
+    const now = Date.now();
+    const diff = now - timestamp;
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+    if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    return `${days} day${days > 1 ? 's' : ''} ago`;
+  };
   
-  const isConnecting = status === ConnectionStatus.CONNECTING;
+  const isConnecting = status === ConnectionStatus.CONNECTING || isAutoConnecting;
   const isConnected = status === ConnectionStatus.CONNECTED;
 
   return (
@@ -55,15 +75,41 @@ const ConnectionModal: React.FC<ConnectionModalProps> = ({
         <h2 className="text-2xl font-bold text-[#F5F5F5] mb-2">PC Connection</h2>
         <p className="text-[#A3A3A3] mb-4">Sync with the PC client to send screenshots directly from your game.</p>
         
-        <div className="mb-6 text-left">
-            <a
-                href="https://drive.google.com/file/d/15d_Rp1lSBp6BjA9mr0dlNWwMMmtdAggh/view?usp=sharing"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm font-medium text-[#FF4D4D] hover:text-[#FF4D4D] hover:underline transition-colors"
-            >
-                Need the PC client? Download it here.
-            </a>
+        {/* Auto-connection status */}
+        {isAutoConnecting && (
+          <div className="mb-4 p-3 bg-blue-600/20 border border-blue-600/30 rounded-lg">
+            <div className="flex items-center gap-2 text-blue-400">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400"></div>
+              <span className="text-sm font-medium">
+                Auto-connecting... (Attempt {autoConnectAttempts}/3)
+              </span>
+            </div>
+            <p className="text-xs text-blue-300 mt-1">
+              Using saved connection code: {connectionCode}
+            </p>
+          </div>
+        )}
+
+        {/* Saved connection info */}
+        {connectionCode && !isAutoConnecting && (
+          <div className="mb-4 p-3 bg-[#2E2E2E] border border-[#424242] rounded-lg">
+            <div className="text-sm text-[#A3A3A3]">
+              <span className="font-medium text-[#F5F5F5]">Saved connection:</span> {connectionCode}
+              {lastSuccessfulConnection && (
+                <span className="block text-xs text-[#6E6E6E] mt-1">
+                  Last connected: {formatLastConnection(lastSuccessfulConnection)}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+        
+        <div className="mb-6">
+          <PCClientDownload 
+            variant="card" 
+            showVersion={true} 
+            showReleaseNotes={true}
+          />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

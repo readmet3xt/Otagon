@@ -21,7 +21,6 @@ import { unifiedUsageService } from './services/unifiedUsageService';
 import { addFeedback } from './services/feedbackService';
 import UpgradeSplashScreen from './components/UpgradeSplashScreen';
 import ProFeaturesSplashScreen from './components/ProFeaturesSplashScreen';
-import TierSplashScreen from './components/TierSplashScreen';
 import SubTabs from './components/SubTabs';
 import MainViewContainer from './components/MainViewContainer';
 import CreditIndicator from './components/CreditIndicator';
@@ -48,6 +47,15 @@ import MigrationModal from './components/MigrationModal';
 import AuthModal from './components/AuthModal';
 import ErrorBoundary from './components/ErrorBoundary';
 import AuthCallbackHandler from './components/AuthCallbackHandler';
+import PWAInstallBanner from './components/PWAInstallBanner';
+import { pwaNavigationService, PWANavigationState } from './services/pwaNavigationService';
+import { smartNotificationService } from './services/smartNotificationService';
+import { pwaAnalyticsService } from './services/pwaAnalyticsService';
+import { offlineStorageService } from './services/offlineStorageService';
+import { pushNotificationService } from './services/pushNotificationService';
+import { appShortcutsService } from './services/appShortcutsService';
+import ScreenLockDebug from './components/ScreenLockDebug';
+import AutoConnectionNotification from './components/AutoConnectionNotification';
 
 
 // A data URL for a 1-second silent WAV file. This prevents needing to host an asset
@@ -75,7 +83,6 @@ const AppComponent: React.FC = () => {
     const [isCreditModalOpen, setIsCreditModalOpen] = useState(false);
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
     const [hasRestored, setHasRestored] = useState(false);
-    const [installPrompt, setInstallPrompt] = useState<any>(null);
     const [isHandsFreeMode, setIsHandsFreeMode] = useState(false);
     const [isManualUploadMode, setIsManualUploadMode] = useState(false);
     const [showUpgradeScreen, setShowUpgradeScreen] = useState(false);
@@ -87,6 +94,9 @@ const AppComponent: React.FC = () => {
     // Authentication State
     const [authState, setAuthState] = useState<AuthState>(() => authService.getAuthState());
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    
+    // PWA Navigation State
+    const [pwaNavigationState, setPwaNavigationState] = useState<PWANavigationState>(() => pwaNavigationService.getNavigationState());
     
     // OAuth Callback State
     const [isOAuthCallback, setIsOAuthCallback] = useState(false);
@@ -120,6 +130,42 @@ const AppComponent: React.FC = () => {
         };
     }, []);
     
+    // PWA Navigation effect - handle post-install navigation
+    useEffect(() => {
+        if (pwaNavigationState.isRunningInPWA) {
+            const recommendedPath = pwaNavigationService.getRecommendedNavigationPath();
+            
+            if (recommendedPath === 'login' && onboardingStatus !== 'login') {
+                // PWA installed, user not logged in - show login
+                setOnboardingStatus('login');
+                setView('app');
+            } else if (recommendedPath === 'chat' && onboardingStatus !== 'complete') {
+                // PWA installed, user logged in - go to main app
+                setOnboardingStatus('complete');
+                setView('app');
+            }
+        }
+    }, [pwaNavigationState, onboardingStatus]);
+
+    // PWA Post-install handler
+    useEffect(() => {
+        if (pwaNavigationState.isPWAInstalled && !pwaNavigationState.isRunningInPWA) {
+            // PWA was just installed, handle post-install flow
+            console.log('PWA Navigation: PWA just installed, handling post-install flow');
+            
+            // Check if user is already logged in
+            if (authState.user && !authState.loading) {
+                // User is logged in, go directly to main app
+                setOnboardingStatus('complete');
+                setView('app');
+            } else {
+                // User not logged in, show login
+                setOnboardingStatus('login');
+                setView('app');
+            }
+        }
+    }, [pwaNavigationState.isPWAInstalled, pwaNavigationState.isRunningInPWA, authState.user, authState.loading]);
+    
     // Check for OAuth callback on component mount
     useEffect(() => {
         const checkOAuthCallback = async () => {
@@ -145,13 +191,13 @@ const AppComponent: React.FC = () => {
                 // Show migration modal if there's data to migrate
                 setIsMigrationModalOpen(true);
             } else {
-                // No data to migrate, go directly to splash screen
-                setOnboardingStatus('initial');
+                // No data to migrate, go directly to main app
+                setOnboardingStatus('complete');
                 setView('app');
             }
         } else if (authState.user && migrationState.hasMigrated) {
-            // Migration is complete (either successful or skipped), go to splash screen
-            setOnboardingStatus('initial');
+            // Migration is complete (either successful or skipped), go to main app
+            setOnboardingStatus('complete');
             setView('app');
         }
     }, [authState.user, migrationState.hasMigrated, migrationState.isMigrating]);
@@ -161,7 +207,7 @@ const AppComponent: React.FC = () => {
         if (authState.user && !authState.loading) {
             refreshUsage();
         }
-    }, [authState.user, authState.loading, refreshUsage]);
+    }, [authState.user, authState.loading]);
 
     useEffect(() => {
         ttsService.init(); // Initialize TTS service on app load.
@@ -169,10 +215,45 @@ const AppComponent: React.FC = () => {
         const handler = (e: Event) => {
             e.preventDefault();
             console.log('beforeinstallprompt event captured.');
-            setInstallPrompt(e);
+            // setInstallPrompt(e); // This line is removed
         };
         window.addEventListener('beforeinstallprompt', handler);
         return () => window.removeEventListener('beforeinstallprompt', handler);
+    }, []);
+
+    // Initialize PWA-related services
+    useEffect(() => {
+        const initializePWAServices = async () => {
+            try {
+                // Initialize offline storage
+                if (offlineStorageService.isAvailable()) {
+                    await offlineStorageService.initialize();
+                    console.log('Offline storage initialized');
+                }
+
+                // Initialize app shortcuts
+                if (appShortcutsService.isSupported()) {
+                    await appShortcutsService.installShortcuts();
+                    console.log('App shortcuts initialized');
+                }
+
+                // Track session start
+                pwaAnalyticsService.trackSessionStart();
+                console.log('PWA analytics initialized');
+
+                // Note: Notification services are initialized on-demand, not at startup
+                // to avoid confusing permission requests
+                // 
+                // IMPORTANT: Otakon does NOT need browser screen/audio permissions!
+                // Screenshots are captured by the external PC client and sent via WebSocket.
+                // The browser only displays the UI and processes chat responses.
+                
+            } catch (error) {
+                console.error('Failed to initialize PWA services:', error);
+            }
+        };
+
+        initializePWAServices();
     }, []);
 
     const {
@@ -202,6 +283,7 @@ const AppComponent: React.FC = () => {
         createNewInsight,
         updateMessageFeedback,
         updateInsightFeedback,
+        retryMessage,
     } = useChat(isHandsFreeMode);
     
      useEffect(() => {
@@ -234,7 +316,7 @@ const AppComponent: React.FC = () => {
             window.removeEventListener('click', closeContextMenu);
             window.removeEventListener('scroll', closeContextMenu, true);
         };
-    }, [refreshUsage]);
+    }, []);
 
     useEffect(() => {
         const audioEl = silentAudioRef.current;
@@ -315,6 +397,10 @@ const AppComponent: React.FC = () => {
         disconnect,
         connectionCode,
         send,
+        isAutoConnecting,
+        autoConnectAttempts,
+        lastSuccessfulConnection,
+        forceReconnect,
     } = useConnection(handleScreenshotReceived);
     
     const prevLoadingMessagesRef = useRef(loadingMessages);
@@ -388,7 +474,7 @@ const AppComponent: React.FC = () => {
         setIsHandsFreeMode(false);
         setIsConnectionModalOpen(false);
         setView('landing');
-    }, [send, disconnect, resetConversations, refreshUsage]);
+    }, [send, disconnect, resetConversations]);
     
     const handleLogout = useCallback(async () => {
         setConfirmationModal({
@@ -430,7 +516,7 @@ const AppComponent: React.FC = () => {
                 }
             },
         });
-    }, [send, disconnect, resetConversations, refreshUsage, executeFullReset]);
+    }, [send, disconnect, resetConversations, executeFullReset]);
     
     const handleResetApp = useCallback(() => {
         setConfirmationModal({
@@ -445,14 +531,14 @@ const AppComponent: React.FC = () => {
         setShowUpgradeScreen(false);
         setIsCreditModalOpen(false);
         refreshUsage();
-    }, [refreshUsage]);
+    }, []);
     
     const handleUpgradeToVanguard = useCallback(async () => {
         await unifiedUsageService.upgradeToVanguard();
         setShowUpgradeScreen(false);
         setIsCreditModalOpen(false);
         refreshUsage();
-    }, [refreshUsage]);
+    }, []);
     
     const handleUpgradeClick = useCallback(() => setShowUpgradeScreen(true), []);
 
@@ -468,13 +554,13 @@ const AppComponent: React.FC = () => {
 
     const handleFeaturesSplashComplete = useCallback(() => {
         if (connectionStatus === ConnectionStatus.CONNECTED) {
-            setOnboardingStatus('how-to-use');
+            setOnboardingStatus('pro-features');
         } else {
             setOnboardingStatus('pro-features');
         }
     }, [connectionStatus]);
     const handleProFeaturesComplete = useCallback(() => completeOnboarding(), [completeOnboarding]);
-    const handleHowToUseComplete = useCallback(() => setOnboardingStatus('pro-features'), []);
+    const handleHowToUseComplete = useCallback(() => completeOnboarding(), []);
     
     const handleSendMessage = useCallback(async (text: string, images?: ImageFile[], isFromPC: boolean = false) => {
         setChatInputValue(''); // Clear controlled input on send
@@ -487,20 +573,42 @@ const AppComponent: React.FC = () => {
         } else if (result?.reason === 'limit_reached') {
             setShowUpgradeScreen(true);
         }
-    }, [sendMessage, refreshUsage]);
+    }, [sendMessage]);
     
     const clearImagesForReview = useCallback(() => {
         setImagesForReview([]);
     }, []);
 
     
-    const handleHandsFreeClick = useCallback(() => {
+    const handleHandsFreeClick = useCallback(async () => {
         if (usage.tier === 'free') {
             setShowUpgradeScreen(true);
-        } else {
-            setIsHandsFreeModalOpen(true);
+            return;
         }
-    }, [usage.tier]);
+        
+        if (!isHandsFreeMode) {
+            // Initialize notification services when enabling hands-free mode
+            try {
+                if (smartNotificationService.isSupported()) {
+                    await smartNotificationService.initialize();
+                    console.log('Smart notifications initialized for hands-free mode');
+                }
+                if (pushNotificationService.isSupported()) {
+                    await pushNotificationService.initialize();
+                    console.log('Push notifications initialized for hands-free mode');
+                }
+            } catch (error) {
+                console.error('Failed to initialize notification services:', error);
+            }
+        }
+        
+        setIsHandsFreeMode(!isHandsFreeMode);
+        if (!isHandsFreeMode) {
+            setIsHandsFreeModalOpen(true);
+        } else {
+            setIsHandsFreeModalOpen(false);
+        }
+    }, [isHandsFreeMode, usage.tier]);
 
     const handleToggleHandsFree = useCallback(() => {
         setIsHandsFreeMode(prev => !prev);
@@ -519,7 +627,7 @@ const AppComponent: React.FC = () => {
             setOnboardingStatus('initial');
         }
     }, []);
-    const handleInitialSplashComplete = useCallback(() => setOnboardingStatus('tier-splash'), []);
+    const handleInitialSplashComplete = useCallback(() => setOnboardingStatus('features'), []);
     const handleCloseUpgradeScreen = useCallback(() => setShowUpgradeScreen(false), []);
     const handleOpenConnectionModal = useCallback(() => setIsConnectionModalOpen(true), []);
     const handleCloseConnectionModal = useCallback(() => setIsConnectionModalOpen(false), []);
@@ -704,22 +812,15 @@ const AppComponent: React.FC = () => {
 
 
     if (onboardingStatus === 'login') {
-        return <LoginSplashScreen onComplete={handleLoginComplete} installPrompt={installPrompt} setInstallPrompt={setInstallPrompt} />;
+        return <LoginSplashScreen 
+            onComplete={handleLoginComplete} 
+            onOpenPrivacy={() => setActiveModal('privacy')}
+            onOpenTerms={() => setActiveModal('about')}
+        />;
     }
 
     if (onboardingStatus === 'initial') {
         return <InitialSplashScreen onComplete={handleInitialSplashComplete} />;
-    }
-
-    if (onboardingStatus === 'tier-splash') {
-        return (
-            <TierSplashScreen
-                userTier={usage.tier}
-                onContinue={() => setOnboardingStatus('features')}
-                onUpgradeToPro={handleUpgradeAndContinue}
-                onUpgradeToVanguard={handleUpgradeToVanguardAndContinue}
-            />
-        );
     }
 
     if (onboardingStatus === 'features') {
@@ -728,7 +829,6 @@ const AppComponent: React.FC = () => {
                 onComplete={handleFeaturesSplashComplete}
                 onSkipConnection={handleFeaturesSplashComplete}
                 onConnect={connect}
-                onDisconnect={handleDisconnect}
                 status={connectionStatus}
                 error={connectionError}
                 connectionCode={connectionCode}
@@ -737,12 +837,12 @@ const AppComponent: React.FC = () => {
         );
     }
     
-    if (onboardingStatus === 'how-to-use') {
-        return <HowToUseSplashScreen onComplete={handleHowToUseComplete} />;
-    }
-
     if (onboardingStatus === 'pro-features') {
         return <ProFeaturesSplashScreen onComplete={handleProFeaturesComplete} onUpgrade={handleUpgradeAndContinue} onUpgradeToVanguard={handleUpgradeToVanguardAndContinue} />;
+    }
+    
+    if (onboardingStatus === 'how-to-use') {
+        return <HowToUseSplashScreen onComplete={handleHowToUseComplete} />;
     }
 
     
@@ -792,19 +892,44 @@ const AppComponent: React.FC = () => {
                             : 'bg-[#2E2E2E] border border-[#424242] text-[#CFCFCF] hover:bg-[#424242] hover:border-[#5A5A5A]'
                         }
                         ${
-                            connectionStatus === ConnectionStatus.CONNECTING ? 'animate-pulse' : ''
+                            connectionStatus === ConnectionStatus.CONNECTING || isAutoConnecting ? 'animate-pulse' : ''
                         }
                         `}
+                        title={
+                            isAutoConnecting 
+                                ? `Auto-connecting... (Attempt ${autoConnectAttempts}/3)` 
+                                : connectionStatus === ConnectionStatus.CONNECTED 
+                                    ? 'Connected to PC' 
+                                    : 'Connect to PC'
+                        }
                     >
                         <DesktopIcon className="w-5 h-5" />
                         <span className="hidden sm:inline">
                         {
                             connectionStatus === ConnectionStatus.CONNECTED ? 'Connected' :
                             connectionStatus === ConnectionStatus.CONNECTING ? 'Connecting...' :
+                            isAutoConnecting ? `Auto-connecting (${autoConnectAttempts}/3)` :
                             'Connect to PC'
                         }
                         </span>
                     </button>
+                    
+                    {/* Force Reconnect Button - Only show when disconnected and have a saved code */}
+                    {connectionStatus === ConnectionStatus.DISCONNECTED && 
+                     connectionCode && 
+                     !isAutoConnecting && (
+                        <button
+                            type="button"
+                            onClick={forceReconnect}
+                            className="flex items-center justify-center gap-2 px-2 h-10 rounded-lg text-xs font-medium bg-[#2E2E2E] border border-[#424242] text-[#CFCFCF] hover:bg-[#424242] hover:border-[#5A5A5A] transition-all duration-200"
+                            title="Force reconnect with saved code"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            <span className="hidden sm:inline">Reconnect</span>
+                        </button>
+                    )}
                     
                     {/* Authentication Button */}
                     {!authState.user ? (
@@ -871,6 +996,7 @@ const AppComponent: React.FC = () => {
                     loadingMessages={loadingMessages}
                     onUpgradeClick={handleUpgradeClick}
                     onFeedback={handleFeedback}
+                    onRetry={retryMessage}
                 />
             ) : (
                  <main className="flex-1 flex flex-col px-4 pt-4 pb-2 overflow-y-auto">
@@ -889,6 +1015,7 @@ const AppComponent: React.FC = () => {
                                     onPromptClick={(prompt) => handleSendMessage(prompt)}
                                     onUpgradeClick={handleUpgradeClick}
                                     onFeedback={(vote) => handleFeedback('message', activeConversationId, msg.id, msg.text, vote)}
+                                    onRetry={() => retryMessage(msg.id)}
                                 />
                             ))}
                             <div ref={chatEndRef} />
@@ -937,7 +1064,7 @@ const AppComponent: React.FC = () => {
                     onShowVanguardUpgrade={handleUpgradeToVanguard}
                     onLogout={handleLogout}
                     onResetApp={handleResetApp}
-                                            userEmail={authState.user?.email}
+                    userEmail={authState.user?.email}
                 />
             )}
 
@@ -987,6 +1114,9 @@ const AppComponent: React.FC = () => {
                     status={connectionStatus}
                     error={connectionError}
                     connectionCode={connectionCode}
+                    isAutoConnecting={isAutoConnecting}
+                    autoConnectAttempts={autoConnectAttempts}
+                    lastSuccessfulConnection={lastSuccessfulConnection}
                 />
             )}
 
@@ -1051,6 +1181,17 @@ const AppComponent: React.FC = () => {
                     }}
                 />
             )}
+
+            {/* PWA Install Banner */}
+            <PWAInstallBanner />
+            <ScreenLockDebug />
+            <AutoConnectionNotification
+                isAutoConnecting={isAutoConnecting}
+                autoConnectAttempts={autoConnectAttempts}
+                connectionStatus={connectionStatus}
+                connectionCode={connectionCode}
+                lastSuccessfulConnection={lastSuccessfulConnection}
+            />
         </div>
     );
 };

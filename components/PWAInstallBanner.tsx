@@ -5,6 +5,7 @@ import DownloadIcon from './DownloadIcon';
 import CloseIcon from './CloseIcon';
 import StarIcon from './StarIcon';
 import { pwaInstallService } from '../services/pwaInstallService';
+import { smartNotificationService } from '../services/smartNotificationService';
 
 interface PWAInstallBannerProps {
   className?: string;
@@ -16,6 +17,7 @@ const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({ className = "" }) =
   const [isInstalling, setIsInstalling] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
   const [showMobileFeatures, setShowMobileFeatures] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   useEffect(() => {
     // Set up PWA install service listener
@@ -25,22 +27,38 @@ const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({ className = "" }) =
       
       setCanInstall(canInstallPWA);
       setIsInstalled(isInstalledPWA);
+      setDeferredPrompt(prompt);
       
-      // Show banner if can install
-      if (canInstallPWA) {
+      // Show banner if can install and not dismissed
+      if (canInstallPWA && !localStorage.getItem('otakonInstallDismissed')) {
         setShowBanner(true);
       }
       
-      // Show mobile features banner if mobile and not installed
-      if (pwaInstallService.isMobile() && !isInstalledPWA && !canInstallPWA) {
+      // Show mobile features banner if mobile and not installed and not dismissed
+      if (pwaInstallService.isMobile() && !isInstalledPWA && !canInstallPWA && !localStorage.getItem('otakonInstallDismissed')) {
         setShowMobileFeatures(true);
       }
     };
 
     pwaInstallService.addListener(handleInstallPromptChange);
 
-    // Debug install criteria
-    pwaInstallService.debugInstallCriteria();
+    // Check if banner was previously dismissed
+    const wasDismissed = localStorage.getItem('otakonInstallDismissed') === 'true';
+    
+    if (!wasDismissed) {
+      // Show banner after a short delay to ensure PWA service is initialized
+      const timer = setTimeout(() => {
+        const criteria = pwaInstallService.getInstallCriteria();
+        
+        if (criteria.canInstall && !criteria.isInstalled) {
+          setShowBanner(true);
+        } else if (criteria.isMobile && !criteria.isInstalled && !criteria.canInstall) {
+          setShowMobileFeatures(true);
+        }
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
 
     return () => {
       pwaInstallService.removeListener(handleInstallPromptChange);
@@ -54,8 +72,8 @@ const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({ className = "" }) =
     
     try {
       const success = await pwaInstallService.showInstallPrompt();
+      
       if (success) {
-        console.log('PWA installation successful');
         setIsInstalled(true);
         setShowBanner(false);
       }
@@ -67,6 +85,7 @@ const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({ className = "" }) =
   };
 
   const handleDismiss = () => {
+    localStorage.setItem('otakonInstallDismissed', 'true');
     setShowBanner(false);
     setShowMobileFeatures(false);
   };
@@ -77,6 +96,10 @@ const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({ className = "" }) =
     if (deferredPrompt) {
       setShowBanner(true);
     }
+  };
+
+  const handleTestNotification = () => {
+    smartNotificationService.showTestNotification();
   };
 
   if (isInstalled) {

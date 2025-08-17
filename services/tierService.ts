@@ -37,7 +37,8 @@ export class TierService {
       '328 image queries per month',
       'Enhanced conversation features',
       'Improved response quality',
-      'Priority support'
+      'Priority support',
+      'No ads'
     ],
     vanguard_pro: [
       '1,583 text queries per month',

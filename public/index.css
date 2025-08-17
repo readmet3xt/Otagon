@@ -1,0 +1,72 @@
+/* Base styles for Otakon app */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom scrollbar styles */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* Custom focus styles */
+.focus-ring:focus {
+  outline: 2px solid #8b5cf6;
+  outline-offset: 2px;
+}
+
+/* Animation utilities */
+.animate-pulse-slow {
+  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Custom button styles */
+.btn-primary {
+  @apply bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+}
+
+.btn-secondary {
+  @apply bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+}
+
+/* Chat message styles */
+.chat-message {
+  @apply p-4 rounded-lg mb-4;
+}
+
+.chat-message.user {
+  @apply bg-blue-600 text-white ml-auto max-w-xs;
+}
+
+.chat-message.model {
+  @apply bg-gray-700 text-white mr-auto max-w-2xl;
+}
+
+/* Loading animation */
+.loading-dots {
+  @apply flex space-x-1;
+}
+
+.loading-dots span {
+  @apply w-2 h-2 bg-current rounded-full animate-pulse;
+}
+
+.loading-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.loading-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
