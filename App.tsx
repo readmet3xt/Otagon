@@ -64,6 +64,10 @@ import AchievementNotification from './components/AchievementNotification';
 import dailyEngagementService, { Achievement } from './services/dailyEngagementService';
 import { PlayerProfileSetupModal } from './components/PlayerProfileSetupModal';
 import { playerProfileService } from './services/playerProfileService';
+import { ProactiveInsightsPanel } from './components/ProactiveInsightsPanel';
+import { useEnhancedInsights } from './hooks/useEnhancedInsights';
+import { proactiveInsightService } from './services/proactiveInsightService';
+import { databaseService } from './services/databaseService';
 
 
 // A data URL for a 1-second silent WAV file. This prevents needing to host an asset
@@ -128,6 +132,11 @@ const AppComponent: React.FC = () => {
     // Player Profile Setup State
     const [showProfileSetup, setShowProfileSetup] = useState(false);
     const [isFirstTime, setIsFirstTime] = useState(false);
+    
+    // Enhanced Features State
+    const [showProactiveInsights, setShowProactiveInsights] = useState(false);
+    const [databaseSyncStatus, setDatabaseSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
+    const [lastDatabaseSync, setLastDatabaseSync] = useState<number>(Date.now());
     
     // Track processed batches to prevent duplicates
     const processedBatches = useRef(new Set<string>());
@@ -392,6 +401,64 @@ const AppComponent: React.FC = () => {
         retryMessage,
 
     } = useChat(isHandsFreeMode);
+    
+    // Enhanced Insights Hook
+    const enhancedInsights = useEnhancedInsights(
+        activeConversationId,
+        activeConversation?.id,
+        activeConversation?.genre,
+        activeConversation?.progress
+    );
+    
+    // Database synchronization function
+    const syncToDatabase = useCallback(async () => {
+        if (!authState.user) return;
+        
+        try {
+            setDatabaseSyncStatus('syncing');
+            
+            // Sync player profile
+            const profile = playerProfileService.getProfile();
+            if (profile) {
+                await databaseService.syncPlayerProfile(profile);
+            }
+            
+            // Sync game contexts for all conversations
+            for (const [conversationId, conversation] of Object.entries(conversations)) {
+                if (conversation.id !== 'everything-else') {
+                    const gameContext = playerProfileService.getGameContext(conversation.id);
+                    if (gameContext) {
+                        await databaseService.syncGameContext(conversation.id, gameContext);
+                    }
+                }
+            }
+            
+            setDatabaseSyncStatus('success');
+            setLastDatabaseSync(Date.now());
+            
+            // Reset status after 3 seconds
+            setTimeout(() => setDatabaseSyncStatus('idle'), 3000);
+            
+        } catch (error) {
+            console.error('Database sync failed:', error);
+            setDatabaseSyncStatus('error');
+            
+            // Reset status after 5 seconds
+            setTimeout(() => setDatabaseSyncStatus('idle'), 5000);
+        }
+    }, [authState.user, conversations]);
+    
+    // Auto-sync to database when user is authenticated
+    useEffect(() => {
+        if (authState.user && databaseSyncStatus === 'idle') {
+            // Sync after a short delay to ensure app is fully loaded
+            const syncTimer = setTimeout(() => {
+                syncToDatabase();
+            }, 2000);
+            
+            return () => clearTimeout(syncTimer);
+        }
+    }, [authState.user, syncToDatabase]);
     
     // Function to log current stop flag status (for debugging)
     const logStopFlagStatus = useCallback(() => {
@@ -1455,6 +1522,62 @@ const AppComponent: React.FC = () => {
                         </div>
                     </div>
                 </button>
+                
+                {/* Enhanced Features Status Bar */}
+                <div className="flex items-center gap-3">
+                    {/* Database Sync Status */}
+                    {authState.user && (
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={syncToDatabase}
+                                disabled={databaseSyncStatus === 'syncing'}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                                    databaseSyncStatus === 'syncing' 
+                                        ? 'bg-blue-600/20 text-blue-400 cursor-not-allowed' 
+                                        : databaseSyncStatus === 'success'
+                                        ? 'bg-green-600/20 text-green-400 hover:bg-green-600/30'
+                                        : databaseSyncStatus === 'error'
+                                        ? 'bg-red-600/20 text-red-400 hover:bg-red-600/30'
+                                        : 'bg-gray-600/20 text-gray-400 hover:bg-gray-600/30'
+                                }`}
+                                title={`Database sync: ${databaseSyncStatus === 'syncing' ? 'Syncing...' : databaseSyncStatus === 'success' ? 'Last sync: ' + new Date(lastDatabaseSync).toLocaleTimeString() : 'Click to sync'}`}
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    {databaseSyncStatus === 'syncing' ? (
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    ) : databaseSyncStatus === 'success' ? (
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                    ) : databaseSyncStatus === 'error' ? (
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                    ) : (
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    )}
+                                </svg>
+                                <span className="hidden sm:inline">
+                                    {databaseSyncStatus === 'syncing' ? 'Syncing...' : 'Sync'}
+                                </span>
+                            </button>
+                        </div>
+                    )}
+                    
+                    {/* Proactive Insights Toggle */}
+                    {authState.user && (
+                        <button
+                            onClick={() => setShowProactiveInsights(!showProactiveInsights)}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                                showProactiveInsights 
+                                    ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30' 
+                                    : 'bg-gray-600/20 text-gray-400 hover:bg-gray-600/30'
+                            }`}
+                            title="Toggle proactive insights panel"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                            </svg>
+                            <span className="hidden sm:inline">Insights</span>
+                        </button>
+                    )}
+                </div>
                 <div className="flex items-center gap-3">
                      <CreditIndicator usage={usage} onClick={handleOpenCreditModal} />
                      <DevTierSwitcher currentTier={usage.tier} onSwitch={refreshUsage} />
@@ -1604,6 +1727,29 @@ const AppComponent: React.FC = () => {
                 dismissDelay={0}
               />
             )}
+            
+            {/* Enhanced Features Notifications */}
+            {databaseSyncStatus === 'success' && (
+              <div className="fixed top-20 right-4 z-50 bg-green-600/90 backdrop-blur-xl text-white px-4 py-3 rounded-lg shadow-2xl border border-green-500/30 animate-fade-in">
+                <div className="flex items-center gap-3">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="text-sm font-medium">Database synced successfully!</span>
+                </div>
+              </div>
+            )}
+            
+            {databaseSyncStatus === 'error' && (
+              <div className="fixed top-20 right-4 z-50 bg-red-600/90 backdrop-blur-xl text-white px-4 py-3 rounded-lg shadow-2xl border border-red-500/30 animate-fade-in">
+                <div className="flex items-center gap-3">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  <span className="text-sm font-medium">Database sync failed. Click sync button to retry.</span>
+                </div>
+              </div>
+            )}
 
             <ConversationTabs
                 conversations={conversations}
@@ -1614,6 +1760,18 @@ const AppComponent: React.FC = () => {
                 onContextMenu={handleConversationContextMenu}
                 onReorder={reorderConversations}
             />
+            
+            {/* Proactive Insights Panel */}
+            {showProactiveInsights && authState.user && (
+                <ProactiveInsightsPanel
+                    isOpen={showProactiveInsights}
+                    onClose={() => setShowProactiveInsights(false)}
+                    onInsightAction={(insight) => {
+                        console.log('Proactive insight action:', insight);
+                        // TODO: Implement insight actions
+                    }}
+                />
+            )}
             
             {isProView ? (
                  <MainViewContainer
