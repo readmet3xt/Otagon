@@ -86,3 +86,4 @@ This schema covers **100%** of your Otakon app's data needs:
 **🚀 This is your ultimate database solution! Run it once and you're done forever!**
 
 
+

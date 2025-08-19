@@ -767,15 +767,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
             {/* Footer */}
             <footer className="bg-transparent border-t border-neutral-800/50">
                 <div className="container mx-auto px-6 py-8">
-                    <div className="flex flex-col md:flex-row justify-between items-center text-center md:text-left gap-6">
-                        <div>
-                            <button onClick={handleScrollToTop} className="flex items-center gap-3 transition-opacity hover:opacity-80 mx-auto md:mx-0">
+                    <div className="flex flex-col-reverse md:flex-row justify-between items-center text-center md:text-left gap-6">
+                        <div className="flex flex-col items-center md:items-start">
+                            <button onClick={handleScrollToTop} className="flex items-center gap-3 transition-opacity hover:opacity-80">
                                 <Logo className="h-8 w-8" />
                                 <span className="text-xl font-bold">Otakon</span>
                             </button>
                              <p className="text-neutral-400 mt-2 text-sm">&copy; {new Date().getFullYear()} Otakon. All rights reserved.</p>
                         </div>
-                        <div className="flex items-center gap-6 text-sm font-medium text-neutral-400">
+                        <div className="flex items-center gap-6 text-sm font-medium text-neutral-400 mb-4 md:mb-0">
                            <a href="#pricing" onClick={handleScrollTo('pricing')} className="hover:text-white transition-colors">Pricing</a>
                            <button type="button" onClick={onOpenAbout} className="hover:text-white transition-colors">About</button>
                            <button type="button" onClick={onOpenPrivacy} className="hover:text-white transition-colors">Privacy</button>
