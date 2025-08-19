@@ -83,12 +83,19 @@ ai_feedback           -- AI response quality metrics
 2. **PostgreSQL 14+**: Required for advanced features
 3. **Admin Access**: To create tables and policies
 
-### Step 1: Run Schema Script
+### Step 1: Run Safe Migration Script (Recommended)
 ```bash
 # Connect to your Supabase database
 psql "postgresql://postgres:[YOUR-PASSWORD]@db.[YOUR-PROJECT-REF].supabase.co:5432/postgres"
 
-# Run the schema script
+# Run the safe migration script (checks existing tables)
+\i OTAKON_V19_MIGRATION_SCRIPT.sql
+```
+
+**⚠️ Alternative: Clean Slate (DESTROYS ALL DATA)**
+If you want a completely fresh start and don't mind losing existing data:
+```bash
+# WARNING: This will delete ALL existing tables and data!
 \i OTAKON_V19_ENHANCED_SCHEMA.sql
 ```
 
@@ -182,6 +189,50 @@ await databaseService.cleanupOldData();
 ```
 
 ## 🚨 Troubleshooting
+
+### Migration Issues
+
+#### **"relation already exists" Error**
+If you get errors like `ERROR: 42P07: relation "user_profiles" already exists`:
+
+1. **Use the Safe Migration Script** (Recommended):
+   ```bash
+   \i OTAKON_V19_MIGRATION_SCRIPT.sql
+   ```
+   This script checks for existing tables and only creates new ones.
+
+2. **Check Existing Tables**:
+   ```sql
+   SELECT table_name FROM information_schema.tables 
+   WHERE table_schema = 'public' 
+   ORDER BY table_name;
+   ```
+
+3. **Verify Table Structure**:
+   ```sql
+   \d user_profiles
+   \d conversations
+   \d usage
+   ```
+
+#### **RLS Policy Conflicts**
+If you get policy creation errors:
+
+1. **Check Existing Policies**:
+   ```sql
+   SELECT * FROM pg_policies 
+   WHERE tablename = 'player_profiles';
+   ```
+
+2. **Drop Conflicting Policies** (if needed):
+   ```sql
+   DROP POLICY IF EXISTS "Users can view own player profile" ON player_profiles;
+   ```
+
+3. **Re-run Migration**:
+   ```bash
+   \i OTAKON_V19_MIGRATION_SCRIPT.sql
+   ```
 
 ### Common Issues
 
