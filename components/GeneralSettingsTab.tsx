@@ -9,6 +9,7 @@ interface GeneralSettingsTabProps {
   onShowVanguardUpgrade: () => void;
   onResetApp: () => void;
   onLogout: () => void;
+  onShowHowToUse: () => void;
   userEmail?: string;
 }
 
@@ -18,7 +19,7 @@ const TIER_NAMES: Record<UserTier, string> = {
     vanguard_pro: 'Founder (Vanguard Pro)'
 };
 
-const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({ usage, onShowUpgrade, onShowVanguardUpgrade, onResetApp, onLogout, userEmail }) => {
+const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({ usage, onShowUpgrade, onShowVanguardUpgrade, onResetApp, onLogout, onShowHowToUse, userEmail }) => {
     const [showTierUpgrade, setShowTierUpgrade] = useState(false);
     
     const displayEmail = userEmail || (localStorage.getItem('otakonAuthMethod') !== 'skip' 
@@ -104,6 +105,22 @@ const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({ usage, onShowUp
                 </div>
             </div>
 
+            {/* Help & Support */}
+            <div>
+                <h2 className="text-xl font-bold text-blue-400 mb-4">Help & Support</h2>
+                <div className="space-y-4">
+                    <div className="bg-blue-900/20 border border-blue-500/30 p-4 rounded-lg flex items-center justify-between">
+                        <div>
+                            <p className="font-semibold text-white">How to Use Guide</p>
+                            <p className="text-sm text-neutral-400">Learn about hotkeys, screenshot modes, and app features.</p>
+                        </div>
+                        <button onClick={onShowHowToUse} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition-colors flex-shrink-0">
+                            Open Guide
+                        </button>
+                    </div>
+                </div>
+            </div>
+
              {/* Danger Zone */}
             <div>
                 <h2 className="text-xl font-bold text-red-500 mb-4">Danger Zone</h2>
@@ -134,8 +151,8 @@ const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({ usage, onShowUp
                 onClose={() => setShowTierUpgrade(false)}
                 onUpgradeSuccess={() => {
                     setShowTierUpgrade(false);
-                    // Refresh the page to show updated tier info
-                    window.location.reload();
+                    // Instead of reloading, we'll let the parent component handle the state update
+                    // The tier info will be refreshed through the normal data flow
                 }}
             />
         </div>

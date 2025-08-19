@@ -71,34 +71,34 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ originalText, onSubmit, o
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in" onClick={onClose}>
+    <div className="fixed inset-0 bg-gradient-to-br from-black/80 to-[#0A0A0A]/80 backdrop-blur-xl flex items-center justify-center z-50 animate-fade-in" onClick={onClose}>
       <div
-        className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl p-8 w-full max-w-lg m-4 relative flex flex-col max-h-[90vh] animate-scale-in"
+        className="bg-gradient-to-r from-[#1C1C1C]/95 to-[#0A0A0A]/95 backdrop-blur-xl border-2 border-[#424242]/60 rounded-3xl shadow-2xl p-10 w-full max-w-2xl m-6 relative flex flex-col max-h-[90vh] animate-scale-in hover:border-[#424242]/80 transition-all duration-500"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-2xl font-bold text-white mb-2">Provide Feedback</h2>
-        <p className="text-neutral-400 mb-4">Your feedback is valuable. Please tell us what was wrong with the response so we can improve.</p>
+        <h2 className="text-3xl font-bold text-white mb-4 leading-tight">Provide Feedback</h2>
+        <p className="text-neutral-300 mb-6 text-lg leading-relaxed">Your feedback is valuable. Please tell us what was wrong with the response so we can improve.</p>
 
-        <div className="mb-4 p-3 bg-black/30 rounded-lg border border-neutral-700 max-h-32 overflow-y-auto">
-            <p className="text-sm text-neutral-500 italic line-clamp-4">Original response: "{originalText}"</p>
+        <div className="mb-6 p-4 bg-gradient-to-r from-black/40 to-neutral-900/40 rounded-2xl border-2 border-neutral-700/60 max-h-40 overflow-y-auto backdrop-blur-sm">
+            <p className="text-base text-neutral-400 italic line-clamp-4">Original response: "{originalText}"</p>
         </div>
 
         {/* AI Learning Insights */}
         {aiInsights && (
-          <div className="mb-4 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-              <h4 className="text-sm font-medium text-blue-300">AI Learning Insights</h4>
+          <div className="mb-6 p-4 bg-gradient-to-r from-blue-900/20 to-sky-900/20 border-2 border-blue-500/40 rounded-2xl backdrop-blur-sm">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse"></div>
+              <h4 className="text-base font-medium text-blue-300">AI Learning Insights</h4>
             </div>
-            <p className="text-sm text-blue-200 whitespace-pre-line">{aiInsights}</p>
+            <p className="text-base text-blue-200 whitespace-pre-line leading-relaxed">{aiInsights}</p>
           </div>
         )}
 
         {isLoadingInsights && (
-          <div className="mb-4 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
-            <div className="flex items-center gap-2">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400"></div>
-              <span className="text-sm text-blue-300">Analyzing feedback patterns...</span>
+          <div className="mb-6 p-4 bg-gradient-to-r from-blue-900/20 to-sky-900/20 border-2 border-blue-500/40 rounded-2xl backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-400"></div>
+              <span className="text-base text-blue-300">Analyzing feedback patterns...</span>
             </div>
           </div>
         )}
@@ -109,21 +109,21 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ originalText, onSubmit, o
             onChange={(e) => setFeedbackText(e.target.value)}
             placeholder="e.g., The hint was a spoiler, the information was incorrect, the formatting was bad..."
             required
-            className="flex-grow w-full bg-[#2E2E2E] border border-[#424242] rounded-md py-2 px-3 text-[#F5F5F5] placeholder-[#6E6E6E] focus:outline-none focus:ring-2 focus:ring-[#FFAB40] resize-none mb-6"
+            className="flex-grow w-full bg-gradient-to-r from-[#2E2E2E] to-[#1A1A1A] border-2 border-[#424242]/60 rounded-xl py-3 px-4 text-[#F5F5F5] placeholder-[#6E6E6E] focus:outline-none focus:ring-2 focus:ring-[#FFAB40] focus:border-[#FFAB40]/60 resize-none mb-8 text-base backdrop-blur-sm"
             rows={5}
           />
-          <div className="flex flex-col sm:flex-row-reverse gap-3">
+          <div className="flex flex-col sm:flex-row-reverse gap-4">
             <button
               type="submit"
               disabled={!feedbackText.trim()}
-              className="w-full sm:w-auto bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white font-bold py-2.5 px-6 rounded-md transition-opacity disabled:opacity-50"
+              className="w-full sm:w-auto bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#E53A3A]/25 disabled:opacity-50"
             >
               Send Feedback
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="w-full sm:w-auto bg-neutral-600 hover:bg-neutral-700 text-white font-medium py-2.5 px-6 rounded-md transition-colors"
+              className="w-full sm:w-auto bg-gradient-to-r from-neutral-600 to-neutral-700 hover:from-neutral-700 hover:to-neutral-800 text-white font-medium py-4 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
             >
               Cancel
             </button>

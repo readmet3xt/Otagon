@@ -200,12 +200,12 @@ class SmartNotificationServiceImpl implements SmartNotificationService {
     notification.onclick = (event) => {
       event.preventDefault();
       
-      // Open the app and focus on the conversation
-      if (conversationId) {
-        window.location.href = `/?conversation=${conversationId}`;
-      } else {
-        window.location.href = '/';
-      }
+      // Instead of changing location, dispatch a custom event
+      // The app can listen for this event and handle navigation internally
+      const navigationEvent = new CustomEvent('otakonNotificationClick', {
+        detail: { conversationId }
+      });
+      window.dispatchEvent(navigationEvent);
       
       notification.close();
     };

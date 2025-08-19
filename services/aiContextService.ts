@@ -239,16 +239,48 @@ class AIContextService {
 
       // Get user preferences for AI personalization
       const userPrefs = await userPreferencesService.getUserPreferences();
-      const gameSpecificContext = userPrefs ? await userPreferencesService.getGameSpecificContext(userPrefs.game_genre) : '';
-      const personalizedInstructions = userPrefs ? await userPreferencesService.getPersonalizedAIInstructions() : '';
-
-      // Add game-specific context
-      if (gameSpecificContext) {
+      
+      // Add game-specific context (using fallback since method was removed)
+      if (userPrefs?.game_genre) {
+        const gameContextMap: Record<string, string> = {
+          rpg: 'RPG games focus on character development, story progression, and strategic combat.',
+          fps: 'FPS games emphasize quick reflexes, map knowledge, and weapon mastery.',
+          strategy: 'Strategy games require long-term planning, resource management, and tactical thinking.',
+          adventure: 'Adventure games focus on exploration, puzzle-solving, and story discovery.',
+          puzzle: 'Puzzle games challenge logical thinking and pattern recognition.',
+          simulation: 'Simulation games model real-world systems and require understanding of complex mechanics.',
+          sports: 'Sports games require understanding of rules, strategies, and player management.',
+          racing: 'Racing games focus on vehicle control, track knowledge, and racing lines.',
+          fighting: 'Fighting games require frame data knowledge, combo execution, and matchup understanding.',
+          mmo: 'MMO games involve social interaction, group coordination, and long-term progression.'
+        };
+        const gameSpecificContext = gameContextMap[userPrefs.game_genre] || gameContextMap.rpg;
         contextString += `[GAME_GENRE_CONTEXT: ${gameSpecificContext}]\n`;
       }
 
-      // Add personalized AI instructions
-      if (personalizedInstructions) {
+      // Add personalized AI instructions (using fallback since method was removed)
+      if (userPrefs) {
+        const personalizedInstructions = [
+          `**User Preferences:**`,
+          `- Game Genre: ${userPrefs.game_genre?.toUpperCase() || 'RPG'}`,
+          `- Hint Style: ${userPrefs.hint_style?.replace('_', ' ') || 'progressive'}`,
+          `- Detail Level: ${userPrefs.detail_level || 'concise'}`,
+          `- Spoiler Sensitivity: ${userPrefs.spoiler_sensitivity?.replace('_', ' ') || 'moderate'}`,
+          `- AI Personality: ${userPrefs.ai_personality || 'encouraging'}`,
+          `- Response Format: ${userPrefs.preferred_response_format?.replace('_', ' ') || 'text with bullets'}`,
+          `- Skill Level: ${userPrefs.skill_level || 'intermediate'}`,
+          `- Gaming Patterns: ${userPrefs.gaming_patterns?.session_duration || 'medium'} sessions, ${userPrefs.gaming_patterns?.frequency || 'weekly'} play`,
+          ``,
+          `**Adaptation Instructions:**`,
+          `- Adjust response detail based on user's detail level preference`,
+          `- Use the specified hint style (${userPrefs.hint_style || 'progressive'})`,
+          `- Maintain spoiler sensitivity level: ${userPrefs.spoiler_sensitivity || 'moderate'}`,
+          `- Match the ${userPrefs.ai_personality || 'encouraging'} personality style`,
+          `- Format responses according to ${userPrefs.preferred_response_format || 'text_with_bullets'} preference`,
+          `- Consider user's ${userPrefs.skill_level || 'intermediate'} skill level`,
+          `- Adapt to ${userPrefs.gaming_patterns?.session_duration || 'medium'} session preferences`
+        ].join('\n');
+        
         contextString += `[PERSONALIZED_INSTRUCTIONS: ${personalizedInstructions}]\n`;
       }
 

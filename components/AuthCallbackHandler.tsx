@@ -117,7 +117,7 @@ const AuthCallbackHandler: React.FC<AuthCallbackHandlerProps> = ({ onAuthSuccess
         <h1 className="text-2xl font-bold mb-2 text-red-400">Sign In Failed</h1>
         <p className="text-[#A3A3A3] mb-4">{error}</p>
         <button
-          onClick={() => window.location.href = '/'}
+          onClick={() => window.location.reload()}
           className="bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105"
         >
           Try Again

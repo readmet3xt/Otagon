@@ -8,13 +8,14 @@ import InitialSplashScreen from './components/InitialSplashScreen';
 import HowToUseSplashScreen from './components/HowToUseSplashScreen';
 import LoginSplashScreen from './components/LoginSplashScreen';
 import Logo from './components/Logo';
-import ChatMessage from './components/ChatMessage';
+import ChatMessageComponent from './components/ChatMessage';
 import ChatInput from './components/ChatInput';
 import SuggestedPrompts from './components/SuggestedPrompts';
 import { useChat } from './hooks/useChat';
 import { useConnection } from './hooks/useConnection';
 import ConversationTabs from './components/ConversationTabs';
 import LandingPage from './components/LandingPage';
+import ContactUsModal from './components/ContactUsModal';
 import HandsFreeToggle from './components/HandsFreeToggle';
 import { ttsService } from './services/ttsService';
 import { unifiedUsageService } from './services/unifiedUsageService';
@@ -74,7 +75,7 @@ type FeedbackModalState = {
     targetId: string; // messageId or insightId
     originalText: string;
 };
-type ActiveModal = 'about' | 'privacy' | 'refund' | null;
+type ActiveModal = 'about' | 'privacy' | 'refund' | 'contact' | null;
 
 
 const AppComponent: React.FC = () => {
@@ -121,6 +122,50 @@ const AppComponent: React.FC = () => {
     const [showSessionContinuation, setShowSessionContinuation] = useState(false);
     const [currentAchievement, setCurrentAchievement] = useState<Achievement | null>(null);
     const [showProgressBar, setShowProgressBar] = useState(false);
+    
+    // Track processed batches to prevent duplicates
+    const processedBatches = useRef(new Set<string>());
+    
+    // Track processed single shots to prevent duplicates
+    const processedSingleShots = useRef(new Set<string>());
+    
+    // Track when stop was last pressed to prevent immediate restart
+    const lastStopTime = useRef<number>(0);
+    const STOP_COOLDOWN_MS = 2000; // 2 second cooldown after stop
+    
+    // Track if cooldown message has been shown to prevent spam
+    const cooldownMessageShown = useRef<boolean>(false);
+    
+    // Global stop flag to prevent new analysis from starting
+    const isStopped = useRef<boolean>(false);
+    
+    // Ref to store the stop timeout for proper cleanup
+    const stopTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    
+    // Cleanup deduplication sets periodically to prevent memory issues
+    useEffect(() => {
+        const cleanupInterval = setInterval(() => {
+            if (processedBatches.current.size > 100) { 
+                processedBatches.current.clear(); 
+                console.log("🧹 Cleaned up processed batches set"); 
+            }
+            if (processedSingleShots.current.size > 100) { 
+                processedSingleShots.current.clear(); 
+                console.log("🧹 Cleaned up processed single shots set"); 
+            }
+        }, 60000); // Clean up every minute
+        
+        return () => {
+            clearInterval(cleanupInterval);
+            // Also clear the stop timeout on cleanup
+            if (stopTimeoutRef.current) {
+                clearTimeout(stopTimeoutRef.current);
+                stopTimeoutRef.current = null;
+            }
+        };
+    }, []);
+    
+    // Note: Old multi-shot state variables removed - PC client now sends screenshot_batch messages
 
     const chatInputRef = useRef<HTMLTextAreaElement>(null);
     const chatEndRef = useRef<HTMLDivElement>(null);
@@ -271,7 +316,8 @@ const AppComponent: React.FC = () => {
     useEffect(() => {
         console.log('Daily Engagement Effect - view:', view, 'onboardingStatus:', onboardingStatus, 'usage.tier:', usage.tier);
         
-        if (view === 'app' && onboardingStatus === 'complete') {
+        // Show daily engagement for both onboarding and main app
+        if (view === 'app' && onboardingStatus !== 'complete') {
             console.log('Checking daily engagement conditions...');
             
             // Check if we should show daily check-in
@@ -326,8 +372,59 @@ const AppComponent: React.FC = () => {
         updateMessageFeedback,
         updateInsightFeedback,
         retryMessage,
-        loadInsightContent,
+
     } = useChat(isHandsFreeMode);
+    
+    // Function to log current stop flag status (for debugging)
+    const logStopFlagStatus = useCallback(() => {
+        const timeSinceLastStop = Date.now() - lastStopTime.current;
+        console.log(`📊 Stop Flag Status:`, {
+            isStopped: isStopped.current,
+            timeSinceLastStop: `${timeSinceLastStop}ms`,
+            cooldownRemaining: Math.max(0, STOP_COOLDOWN_MS - timeSinceLastStop),
+            hasTimeout: !!stopTimeoutRef.current,
+            timeoutId: stopTimeoutRef.current
+        });
+    }, []);
+    
+    // Wrapper for stopMessage that records when stop is pressed
+    const handleStopMessage = useCallback((messageId: string) => {
+        console.log(`🛑 Stop requested for message: ${messageId}`);
+        
+        // Clear any existing stop timeout
+        if (stopTimeoutRef.current) {
+            clearTimeout(stopTimeoutRef.current);
+            stopTimeoutRef.current = null;
+        }
+        
+        lastStopTime.current = Date.now();
+        isStopped.current = true; // Set global stop flag
+        console.log(`⏰ Stop cooldown started, will prevent new analysis for ${STOP_COOLDOWN_MS}ms`);
+        console.log(`🚫 Global stop flag set - no new analysis will start`);
+        logStopFlagStatus(); // Log the status change
+        stopMessage(messageId);
+        
+        // Reset the stop flag after cooldown period
+        stopTimeoutRef.current = setTimeout(() => {
+            isStopped.current = false;
+            stopTimeoutRef.current = null;
+            console.log(`✅ Global stop flag reset - new analysis can start`);
+            logStopFlagStatus(); // Log the status change
+        }, STOP_COOLDOWN_MS);
+    }, [stopMessage, logStopFlagStatus]);
+    
+    // Function to manually reset the stop flag (for debugging)
+    const resetStopFlag = useCallback(() => {
+        console.log(`🔄 Manually resetting stop flag`);
+        if (stopTimeoutRef.current) {
+            clearTimeout(stopTimeoutRef.current);
+            stopTimeoutRef.current = null;
+        }
+        isStopped.current = false;
+        lastStopTime.current = 0;
+        console.log(`✅ Stop flag manually reset`);
+        logStopFlagStatus(); // Log the status change
+    }, [logStopFlagStatus]);
     
      useEffect(() => {
         const handleBeforeUnload = () => {
@@ -378,6 +475,96 @@ const AppComponent: React.FC = () => {
         }
     }, [isHandsFreeMode, addSystemMessage]);
 
+    // Helper function to display screenshots in chat
+    const displayScreenshotInChat = useCallback((img: HTMLImageElement, index: number, total: number, processImmediate: boolean, timestamp: number) => {
+        console.log(`🖼️ Displaying screenshot ${index}/${total} in chat`);
+        
+        // Create image data object for your app's format
+        const imageData = {
+            base64: img.src.split(',')[1] || img.src,
+            mimeType: 'image/png',
+            dataUrl: img.src,
+            source: `connector_single_${index}`
+        };
+        
+        // Add to images for review if not processing immediately
+        if (!processImmediate) {
+            setImagesForReview(prevImages => {
+                const limit = usage.tier === 'pro' ? 5 : 1;
+                const newImages = [...prevImages, imageData];
+                if (newImages.length > limit) {
+                    addSystemMessage(`You can add a maximum of ${limit} image(s) for review.`);
+                    return newImages.slice(-limit);
+                }
+                return newImages;
+            });
+        }
+        
+        // If processing immediately, send for analysis
+        if (processImmediate) {
+            // Check if we're globally stopped
+            if (isStopped.current) {
+                console.log("🚫 Analysis blocked - global stop flag is active");
+                addSystemMessage("Analysis is currently stopped. Please wait a moment before sending new screenshots.");
+                return;
+            }
+            
+            if (usage.tier === 'free' && loadingMessages.length > 0) {
+                addSystemMessage("An analysis is already in progress. Please wait for it to complete before sending new screenshots.");
+                return;
+            }
+            
+            // Send message with image for AI analysis
+            sendMessage('', [imageData], true);
+        }
+    }, [usage.tier, loadingMessages, addSystemMessage, sendMessage]);
+
+    // Helper function to process screenshots automatically
+    const processScreenshotAutomatically = useCallback(async (imageData: any, index: number, total: number) => {
+        console.log(`🤖 Auto-processing screenshot ${index}/${total}`);
+        
+        // The image is already being processed by sendMessage above
+        // This function can be used for additional processing if needed
+        console.log(`✅ Screenshot ${index}/${total} auto-processing initiated`);
+    }, []);
+
+    // Note: Old multi-shot grouping functions removed - PC client now sends screenshot_batch messages
+
+    // Dedicated function for displaying multi-shot batches
+    const displayMultiShotBatch = useCallback(async (imageDataArray: any[], processImmediate: boolean) => {
+        // ✅ CORRECT: Pass all images as separate ImageFile objects to sendMessage
+        // sendMessage will group them together in one user message
+        const formattedImageFiles = imageDataArray.map((imgData, index) => ({
+            base64: imgData.base64,
+            mimeType: imgData.mimeType || 'image/png',
+            dataUrl: imgData.dataUrl,
+            source: imgData.source
+        }));
+        
+        console.log(`🔄 Processing multi-shot batch with ${formattedImageFiles.length} images:`, formattedImageFiles.map(f => f.source));
+        
+        // Use sendMessage to display the images grouped together in one message
+        // sendMessage will create one userMessage with all images in the images array
+        const result = await sendMessage(`📸 Multi-shot capture: ${formattedImageFiles.length} screenshots`, formattedImageFiles, true);
+        
+        if (processImmediate) {
+            console.log(`🚀 Multi-shot batch sent for AI analysis`);
+        }
+        
+        console.log(`✅ Multi-shot batch displayed successfully with ${formattedImageFiles.length} images grouped together`);
+        
+        // Verify the images were added to the conversation
+        const currentConvo = conversations[activeConversationId];
+        if (currentConvo && currentConvo.messages.length > 0) {
+            const lastMessage = currentConvo.messages[currentConvo.messages.length - 2]; // User message (before AI placeholder)
+            if (lastMessage && lastMessage.images && lastMessage.images.length > 0) {
+                console.log(`✅ Verified: ${lastMessage.images.length} images added to conversation`);
+            } else {
+                console.warn(`⚠️ Warning: No images found in last user message`);
+            }
+        }
+    }, [sendMessage, conversations, activeConversationId]);
+
     const handleScreenshotReceived = useCallback(async (data: any) => {
         if (data.type === 'history_restore') {
             if (data.payload && Object.keys(data.payload).length > 0) {
@@ -388,44 +575,235 @@ const AppComponent: React.FC = () => {
             }
             setHasRestored(true);
             return;
-        } else if (data.type === 'screenshot' && data.dataUrl) {
+        } 
+        
+        // Handle screenshot_batch from enhanced connector
+        else if (data.type === 'screenshot_batch') {
             setActiveSubView('chat');
-            const { dataUrl } = data;
+            
+            // Check if we've already processed this batch (prevent duplicates)
+            // Use a more robust key that includes the actual image content hash
+            const firstImageHash = data.images?.[0]?.substring(data.images[0].length - 100) || 'no_images';
+            const batchKey = `batch_${data.timestamp}_${data.images?.length}_${firstImageHash}`;
+            
+            if (processedBatches.current.has(batchKey)) {
+                console.log("⚠️ Duplicate batch detected, skipping:", batchKey);
+                return;
+            }
+            
+            // Add to processed set BEFORE processing to prevent race conditions
+            processedBatches.current.add(batchKey);
+            
+            // Clean up old entries to prevent memory leaks (keep only last 100)
+            if (processedBatches.current.size > 100) {
+                const entries = Array.from(processedBatches.current);
+                processedBatches.current.clear();
+                entries.slice(-50).forEach(entry => processedBatches.current.add(entry));
+            }
+            
             try {
-                const [meta, base64] = dataUrl.split(',');
-                if (!meta || !base64) throw new Error("Invalid Data URL from WebSocket.");
+                const { images, processImmediate } = data;
                 
-                const mimeTypeMatch = meta.match(/:(.*?);/);
-                if (!mimeTypeMatch?.[1]) throw new Error("Could not extract MIME type.");
+                if (!images || !Array.isArray(images) || images.length === 0) {
+                    console.warn("⚠️ Invalid screenshot batch payload - no images");
+                    return;
+                }
                 
-                setIsConnectionModalOpen(false);
-                const imageData = { base64, mimeType: mimeTypeMatch[1], dataUrl };
-
-                if (isManualUploadMode) {
-                     if (usage.tier === 'free' && imagesForReview.length > 0) {
-                        addSystemMessage("Multiple hotkeys detected in manual review mode. Free users can only analyze one screenshot at a time. Please send or clear the current image before capturing a new one.");
-                        return; // Ignore the new screenshot for free users
-                    }
-                    setImagesForReview(prevImages => {
-                        const limit = usage.tier === 'pro' ? 5 : 1;
-                        const newImages = [...prevImages, imageData];
-                        if (newImages.length > limit) {
-                            addSystemMessage(`You can add a maximum of ${limit} image(s) for review.`);
-                            return newImages.slice(-limit); // Keep the latest N images
+                // Convert base64 strings to image data objects
+                const imageDataArray = images.map((base64: string, index: number) => ({
+                    base64,
+                    mimeType: 'image/png', // Connector sends PNG format
+                    dataUrl: `data:image/png;base64,${base64}`,
+                    source: `connector_batch_${index + 1}`
+                }));
+                
+                if (processImmediate) {
+                    // Check if we're globally stopped
+                    if (isStopped.current) {
+                        // Check if the stop flag has been stuck for too long (more than 10 seconds)
+                        const timeSinceLastStop = Date.now() - lastStopTime.current;
+                        if (timeSinceLastStop > 10000) { // 10 seconds
+                            console.log("⚠️ Stop flag stuck for too long, auto-resetting");
+                            resetStopFlag();
+                        } else {
+                            console.log("🚫 Analysis blocked - global stop flag is active");
+                            addSystemMessage("Analysis is currently stopped. Please wait a moment before sending new screenshots.");
+                            return;
                         }
-                        return newImages;
-                    });
-                } else {
+                    }
+                    
+                    // Auto-process mode - display and analyze immediately
+                    // Allow multiple screenshots to be processed simultaneously for better UX
                     if (usage.tier === 'free' && loadingMessages.length > 0) {
-                        addSystemMessage("An analysis is already in progress. Please wait for it to complete before sending a new screenshot.");
+                        // For free users, allow up to 1 concurrent analysis
+                        console.log("⚠️ Free user - analysis in progress, but will queue multi-shot batch");
+                        // Don't return, continue processing
+                    }
+                    
+                    // Check if we're in cooldown period after stop was pressed
+                    const timeSinceLastStop = Date.now() - lastStopTime.current;
+                    if (timeSinceLastStop < STOP_COOLDOWN_MS) {
+                        console.log(`⚠️ Stop cooldown active (${STOP_COOLDOWN_MS - timeSinceLastStop}ms remaining), skipping multi-shot batch`);
+                        addSystemMessage("Please wait a moment after stopping before sending new screenshots.");
                         return;
                     }
-                    await sendMessage('', [imageData], true);
+                    
+                    // Add system message to show batch receipt
+                    addSystemMessage(`📸 Multi-shot batch received: ${imageDataArray.length} screenshots captured`);
+                    
+                    // Display the batch and send for analysis using our dedicated function
+                    await displayMultiShotBatch(imageDataArray, true);
+                } else {
+                    // Manual review mode - just display the batch
+                    await displayMultiShotBatch(imageDataArray, false);
                 }
+                
+                setIsConnectionModalOpen(false);
+                console.log("✅ Screenshot batch processing completed successfully");
+            } catch (e) {
+                const errorText = e instanceof Error ? e.message : 'Unknown error processing screenshot batch.';
+                console.error("❌ Failed to process screenshot batch:", e);
+                addSystemMessage(`Failed to process received screenshots. ${errorText}`);
+            }
+            return;
+        }
+        
+        // Handle individual screenshot messages from PC client (single and multi-shot)
+        else if (data.type === 'screenshot') {
+            setActiveSubView('chat');
+            
+            try {
+                const { dataUrl, index, total, processImmediate, timestamp } = data;
+                
+                // Validate image data
+                if (!dataUrl || !dataUrl.startsWith('data:image/')) {
+                    console.error('❌ Invalid image data received');
+                    addSystemMessage('Invalid image data received from PC client.');
+                    return;
+                }
+                
+                // Create image data object
+                const imageData = {
+                    base64: dataUrl.split(',')[1] || dataUrl,
+                    mimeType: 'image/png',
+                    dataUrl: dataUrl,
+                    source: `connector_single_${index + 1}`
+                };
+                
+                // Check if we've already processed this screenshot (prevent duplicates)
+                // Use a more robust key that includes the actual image content hash
+                const imageHash = dataUrl.substring(dataUrl.length - 100); // Last 100 chars for uniqueness
+                const singleShotKey = `screenshot_${index}_${total}_${timestamp || Date.now()}_${imageHash}`;
+                
+                if (processedSingleShots.current.has(singleShotKey)) {
+                    console.log("⚠️ Duplicate single shot detected, skipping:", singleShotKey);
+                    return;
+                }
+                
+                // Add to processed set BEFORE processing to prevent race conditions
+                processedSingleShots.current.add(singleShotKey);
+                
+                // Clean up old entries to prevent memory leaks (keep only last 100)
+                if (processedSingleShots.current.size > 100) {
+                    const entries = Array.from(processedSingleShots.current);
+                    processedSingleShots.current.clear();
+                    entries.slice(-50).forEach(entry => processedSingleShots.current.add(entry));
+                }
+                
+                // Check if this is part of a multi-shot sequence
+                if (total > 1) {
+                    console.log(`🔄 Multi-shot detected: ${index + 1}/${total} - but PC client should send screenshot_batch instead`);
+                    console.log(`⚠️ This individual screenshot handling is deprecated. PC client should send screenshot_batch.`);
+                    console.log(`❌ REJECTING individual screenshot with total > 1 - this should be a screenshot_batch message`);
+                    
+                    // Remove from processed set since we're rejecting it
+                    processedSingleShots.current.delete(singleShotKey);
+                    
+                    // Don't add any system message to avoid spam
+                    return;
+                } else {
+                    // Single screenshot - process normally
+                    console.log(`📸 Single screenshot - processing normally`);
+                    
+                    if (processImmediate) {
+                        // Check if we're globally stopped
+                        if (isStopped.current) {
+                            // Check if the stop flag has been stuck for too long (more than 10 seconds)
+                            const timeSinceLastStop = Date.now() - lastStopTime.current;
+                            if (timeSinceLastStop > 10000) { // 10 seconds
+                                console.log(`⚠️ Stop flag stuck for ${timeSinceLastStop}ms, auto-resetting`);
+                                resetStopFlag();
+                            } else {
+                                console.log(`🚫 Analysis blocked - global stop flag is active`);
+                                addSystemMessage("Analysis is currently stopped. Please wait a moment before sending new screenshots.");
+                                return;
+                            }
+                        }
+                        
+                        // Auto-process mode - allow multiple screenshots to be processed
+                        if (usage.tier === 'free' && loadingMessages.length > 0) {
+                            // For free users, allow up to 1 concurrent analysis
+                            console.log(`⚠️ Free user - analysis in progress, but will queue single shot`);
+                            // Don't return, continue processing
+                        }
+                        
+                        // Check if we're in cooldown period after stop was pressed
+                        const timeSinceLastStop = Date.now() - lastStopTime.current;
+                        if (timeSinceLastStop < STOP_COOLDOWN_MS) {
+                            console.log(`⚠️ Stop cooldown active (${STOP_COOLDOWN_MS - timeSinceLastStop}ms remaining), skipping single shot`);
+                            // Only show cooldown message once to avoid spam
+                            if (!cooldownMessageShown.current) {
+                                addSystemMessage("Please wait a moment after stopping before sending new screenshots.");
+                                cooldownMessageShown.current = true;
+                                // Reset the flag after cooldown period
+                                setTimeout(() => {
+                                    cooldownMessageShown.current = false;
+                                }, STOP_COOLDOWN_MS);
+                            }
+                            return;
+                        }
+                        
+                        // Process immediately - sendMessage will handle the display
+                        await sendMessage('', [imageData], true);
+                        
+                    } else {
+                        // Manual review mode
+                        if (usage.tier === 'free' && imagesForReview.length > 0) {
+                            // Only show this message once, don't spam the user
+                            console.log(`⚠️ Manual review queue has images, skipping single shot`);
+                            return;
+                        }
+                        
+                        // Display in chat and add to review queue
+                        displayScreenshotInChat(new Image(), 1, 1, false, timestamp);
+                        setImagesForReview(prevImages => {
+                            const limit = usage.tier === 'pro' ? 5 : 1;
+                            const newImages = [...prevImages, imageData];
+                            if (newImages.length > limit) {
+                                addSystemMessage(`You can add a maximum of ${limit} image(s) for review.`);
+                                return newImages.slice(-limit);
+                            }
+                            return newImages;
+                        });
+                    }
+                }
+                
+                setIsConnectionModalOpen(false);
+                console.log("✅ Screenshot processing completed successfully");
+                
             } catch (e) {
                 const errorText = e instanceof Error ? e.message : 'Unknown error processing screenshot.';
+                console.error("❌ Failed to process screenshot:", e);
                 addSystemMessage(`Failed to process received screenshot. ${errorText}`);
             }
+            return;
+        }
+        
+        // Handle other message types
+        if (data.type === 'connection_test') {
+            console.log('✅ Connection test received from PC client');
+            addSystemMessage("Connection test successful - PC client is ready!");
+            return;
         } else if (data.type === 'partner_connected') {
             console.log("Partner PC client has connected.");
         } else {
@@ -446,6 +824,18 @@ const AppComponent: React.FC = () => {
         forceReconnect,
     } = useConnection(handleScreenshotReceived);
     
+    const testConnection = useCallback(() => {
+        if (send) {
+            console.log("🧪 Testing WebSocket connection...");
+            console.log("✅ WebSocket is connected and ready");
+            console.log(`Connection code: ${connectionCode}`);
+            console.log(`Relay URL: wss://otakon-relay.onrender.com/${connectionCode}`);
+            send({ type: 'test_connection' });
+        } else {
+            console.log("❌ WebSocket not connected");
+        }
+    }, [send, connectionCode]);
+
     const prevLoadingMessagesRef = useRef(loadingMessages);
 
     useEffect(() => {
@@ -475,10 +865,10 @@ const AppComponent: React.FC = () => {
 
         if (connectionStatus === ConnectionStatus.CONNECTED && !hasConnectedBefore) {
             localStorage.setItem('otakonHasConnectedBefore', 'true');
-            if (onboardingStatus === 'complete') {
-                setIsConnectionModalOpen(false);
-                setOnboardingStatus('how-to-use');
-            }
+            // Always show "How to Use" screen after first connection, regardless of onboarding status
+            setIsConnectionModalOpen(false);
+            setOnboardingStatus('how-to-use');
+            console.log('🎉 First PC connection! Showing "How to Use" splash screen');
         }
     }, [connectionStatus, onboardingStatus]);
     
@@ -883,10 +1273,12 @@ const AppComponent: React.FC = () => {
                     onOpenAbout={() => setActiveModal('about')}
                     onOpenPrivacy={() => setActiveModal('privacy')}
                     onOpenRefund={() => setActiveModal('refund')}
+                    onOpenContact={() => setActiveModal('contact')}
                 />
                 {activeModal === 'about' && <PolicyModal title="About Otakon" onClose={() => setActiveModal(null)}><AboutPage /></PolicyModal>}
                 {activeModal === 'privacy' && <PolicyModal title="Privacy Policy" onClose={() => setActiveModal(null)}><PrivacyPolicyPage /></PolicyModal>}
                 {activeModal === 'refund' && <PolicyModal title="Refund Policy" onClose={() => setActiveModal(null)}><RefundPolicyPage /></PolicyModal>}
+                {activeModal === 'contact' && <ContactUsModal onClose={() => setActiveModal(null)} />}
             </>
         );
     }
@@ -943,20 +1335,26 @@ const AppComponent: React.FC = () => {
     const hasInsights = usage.tier !== 'free' && !!(activeConversation?.insightsOrder && activeConversation.insightsOrder.length > 0);
 
     return (
-        <div className="h-screen bg-black text-[#F5F5F5] flex flex-col font-inter relative animate-fade-in" onContextMenu={(e) => e.preventDefault()}>
+        <div className="h-screen bg-black text-[#F5F5F5] flex flex-col font-inter relative animate-fade-in overflow-hidden" onContextMenu={(e) => e.preventDefault()}>
             <audio ref={silentAudioRef} src={SILENT_AUDIO_URL} loop playsInline />
 
-            <div className="absolute top-0 left-0 w-full h-full bg-gradient-radial-at-top from-[#1C1C1C]/30 to-transparent -z-0 pointer-events-none"></div>
-            <header className={`relative flex-shrink-0 flex items-center justify-between p-4 bg-black/70 backdrop-blur-lg z-20`}>
+            <div className="absolute top-0 left-0 w-full h-full bg-gradient-radial-at-top from-[#1C1C1C]/40 to-transparent -z-0 pointer-events-none"></div>
+            <div className="absolute bottom-0 left-0 w-full h-full bg-gradient-radial-at-bottom from-[#0A0A0A]/30 to-transparent -z-0 pointer-events-none"></div>
+            
+            <header className={`relative flex-shrink-0 flex items-center justify-between p-4 sm:p-6 bg-black/80 backdrop-blur-xl z-20 border-b border-[#424242]/20 shadow-2xl`}>
                 <button
                     type="button"
                     onClick={() => setView('landing')}
-                    className="transition-opacity hover:opacity-80"
+                    className="transition-all duration-200 hover:opacity-80 hover:scale-105 group"
                     aria-label="Reset application and return to landing page"
                 >
-                    {headerContent}
+                    <div className="flex items-center gap-4">
+                        <div className="group-hover:scale-110 transition-transform duration-200">
+                            {headerContent}
+                        </div>
+                    </div>
                 </button>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                      <CreditIndicator usage={usage} onClick={handleOpenCreditModal} />
                      <DevTierSwitcher currentTier={usage.tier} onSwitch={refreshUsage} />
                      <HandsFreeToggle
@@ -966,11 +1364,11 @@ const AppComponent: React.FC = () => {
                     <button
                         type="button"
                         onClick={handleOpenConnectionModal}
-                        className={`flex items-center justify-center gap-2 px-3 h-10 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-50
+                        className={`flex items-center justify-center gap-3 px-4 h-12 rounded-xl text-sm font-semibold transition-all duration-300 disabled:opacity-50
                         ${
                             connectionStatus === ConnectionStatus.CONNECTED
-                            ? 'border border-[#5CBB7B]/50 text-[#5CBB7B] hover:bg-[#5CBB7B]/10 shadow-[0_0_12px_rgba(92,187,123,0.3)]'
-                            : 'bg-[#2E2E2E] border border-[#424242] text-[#CFCFCF] hover:bg-[#424242] hover:border-[#5A5A5A]'
+                            ? 'border-2 border-[#5CBB7B]/60 text-[#5CBB7B] hover:bg-[#5CBB7B]/10 hover:border-[#5CBB7B] shadow-[0_0_20px_rgba(92,187,123,0.4)] hover:shadow-[0_0_30px_rgba(92,187,123,0.6)]'
+                            : 'bg-gradient-to-r from-[#2E2E2E] to-[#1C1C1C] border-2 border-[#424242]/60 text-[#CFCFCF] hover:bg-gradient-to-r hover:from-[#424242] hover:to-[#2E2E2E] hover:border-[#5A5A5A] hover:scale-105'
                         }
                         ${
                             connectionStatus === ConnectionStatus.CONNECTING || isAutoConnecting ? 'animate-pulse' : ''
@@ -985,7 +1383,7 @@ const AppComponent: React.FC = () => {
                         }
                     >
                         <DesktopIcon className="w-5 h-5" />
-                        <span className="hidden sm:inline">
+                        <span className="hidden sm:inline font-medium">
                         {
                             connectionStatus === ConnectionStatus.CONNECTED ? 'Connected' :
                             connectionStatus === ConnectionStatus.CONNECTING ? 'Connecting...' :
@@ -1002,7 +1400,7 @@ const AppComponent: React.FC = () => {
                         <button
                             type="button"
                             onClick={forceReconnect}
-                            className="flex items-center justify-center gap-2 px-2 h-10 rounded-lg text-xs font-medium bg-[#2E2E2E] border border-[#424242] text-[#CFCFCF] hover:bg-[#424242] hover:border-[#5A5A5A] transition-all duration-200"
+                            className="flex items-center justify-center gap-2 px-3 h-12 rounded-xl text-xs font-semibold bg-gradient-to-r from-[#2E2E2E] to-[#1C1C1C] border-2 border-[#424242]/60 text-[#CFCFCF] hover:from-[#424242] hover:to-[#2E2E2E] hover:border-[#5A5A5A] hover:scale-105 transition-all duration-300 shadow-lg"
                             title="Force reconnect with saved code"
                         >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1017,7 +1415,7 @@ const AppComponent: React.FC = () => {
                         <button
                             type="button"
                             onClick={handleOpenAuthModal}
-                            className="flex items-center justify-center gap-2 px-3 h-10 rounded-lg text-sm font-medium bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white transition-transform hover:scale-105"
+                            className="flex items-center justify-center gap-3 px-4 h-12 rounded-xl text-sm font-semibold bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#E53A3A]/25"
                         >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -1028,7 +1426,7 @@ const AppComponent: React.FC = () => {
                         <button
                             type="button"
                             onClick={handleLogout}
-                            className="flex items-center justify-center gap-2 px-3 h-10 rounded-lg text-sm font-medium bg-[#2E2E2E] border border-[#424242] text-white/80 transition-colors hover:bg-[#424242]"
+                            className="flex items-center justify-center gap-3 px-4 h-12 rounded-xl text-sm font-semibold bg-gradient-to-r from-[#2E2E2E] to-[#1C1C1C] border-2 border-[#424242]/60 text-white/90 transition-all duration-300 hover:from-[#424242] hover:to-[#2E2E2E] hover:scale-105 hover:shadow-lg"
                         >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -1041,7 +1439,7 @@ const AppComponent: React.FC = () => {
                         type="button"
                         onClick={handleSettingsClick}
                         onContextMenu={handleSettingsClick}
-                        className="flex items-center justify-center w-10 h-10 rounded-lg text-sm font-medium bg-[#2E2E2E] border border-[#424242] text-white/80 transition-colors hover:bg-[#424242]"
+                        className="flex items-center justify-center w-12 h-12 rounded-xl text-sm font-semibold bg-gradient-to-r from-[#2E2E2E] to-[#1C1C1C] border-2 border-[#424242]/60 text-white/90 transition-all duration-300 hover:from-[#424242] hover:to-[#2E2E2E] hover:scale-105 hover:shadow-lg"
                         aria-label="Open settings"
                     >
                         <SettingsIcon className="w-5 h-5" />
@@ -1050,7 +1448,7 @@ const AppComponent: React.FC = () => {
             </header>
             
             {usage.tier === 'free' && (
-              <div className="pb-2">
+              <div className="pb-3">
                 <AdBanner />
               </div>
             )}
@@ -1113,7 +1511,7 @@ const AppComponent: React.FC = () => {
                     activeSubView={activeSubView}
                     onSubViewChange={handleSubTabClick}
                     onSendMessage={(prompt) => handleSendMessage(prompt)}
-                    stopMessage={stopMessage}
+                    stopMessage={handleStopMessage}
                     isInputDisabled={isInputDisabled}
                     messages={messages}
                     loadingMessages={loadingMessages}
@@ -1122,19 +1520,19 @@ const AppComponent: React.FC = () => {
                     onRetry={retryMessage}
                 />
             ) : (
-                 <main className="flex-1 flex flex-col px-4 pt-4 pb-2 overflow-y-auto">
+                 <main className="flex-1 flex flex-col px-4 sm:px-6 pt-4 sm:pt-6 pb-4 overflow-y-auto">
                     {messages.length === 0 && loadingMessages.length === 0 ? (
                         <div className="flex-1 flex flex-col justify-end">
                             <SuggestedPrompts onPromptClick={(prompt) => handleSendMessage(prompt)} isInputDisabled={isInputDisabled} />
                         </div>
                     ) : (
-                        <div className="flex flex-col gap-6 w-full max-w-4xl mx-auto my-4">
+                        <div className="flex flex-col gap-6 sm:gap-8 w-full max-w-4xl sm:max-w-5xl mx-auto my-4 sm:my-6">
                             {messages.map(msg => (
-                                <ChatMessage
+                                <ChatMessageComponent
                                     key={msg.id}
                                     message={msg}
                                     isLoading={loadingMessages.includes(msg.id)}
-                                    onStop={() => stopMessage(msg.id)}
+                                    onStop={() => handleStopMessage(msg.id)}
                                     onPromptClick={(prompt) => handleSendMessage(prompt)}
                                     onUpgradeClick={handleUpgradeClick}
                                     onFeedback={(vote) => handleFeedback('message', activeConversationId, msg.id, msg.text, vote)}
@@ -1155,11 +1553,10 @@ const AppComponent: React.FC = () => {
                     userTier={usage.tier}
                     onReorder={reorderInsights}
                     onContextMenu={handleInsightContextMenu}
-                    onLoadInsight={loadInsightContent}
                 />
             )}
 
-            <div className="flex-shrink-0 bg-black/50 backdrop-blur-sm z-10">
+            <div className="flex-shrink-0 bg-black/60 backdrop-blur-xl z-10 border-t border-[#424242]/20 shadow-2xl">
                 {/* Progress Tracking Bar for Pro Users */}
                 {showProgressBar && activeConversation && activeConversation.id !== 'everything-else' && (
                   <ProgressTrackingBar
@@ -1204,6 +1601,7 @@ const AppComponent: React.FC = () => {
                     onShowVanguardUpgrade={handleUpgradeToVanguard}
                     onLogout={handleLogout}
                     onResetApp={handleResetApp}
+                    onShowHowToUse={() => setOnboardingStatus('how-to-use')}
                     userEmail={authState.user?.email}
                 />
             )}
@@ -1248,15 +1646,18 @@ const AppComponent: React.FC = () => {
 
             {isConnectionModalOpen && (
                 <ConnectionModal
+                    isOpen={isConnectionModalOpen}
                     onClose={handleCloseConnectionModal}
                     onConnect={connect}
                     onDisconnect={handleDisconnect}
                     status={connectionStatus}
                     error={connectionError}
                     connectionCode={connectionCode}
-                    isAutoConnecting={isAutoConnecting}
-                    autoConnectAttempts={autoConnectAttempts}
-                    lastSuccessfulConnection={lastSuccessfulConnection}
+                    lastSuccessfulConnection={lastSuccessfulConnection ? new Date(lastSuccessfulConnection) : null}
+                    onShowHowToUse={() => {
+                        setIsConnectionModalOpen(false);
+                        setOnboardingStatus('how-to-use');
+                    }}
                 />
             )}
 

@@ -14,12 +14,13 @@ const connect = (
     return;
   }
 
-  if (!/^\d{4}$/.test(code)) {
-    onError("Invalid code format. Please enter a 4-digit code.");
+  // Only accept 6-digit codes
+  if (!/^\d{6}$/.test(code)) {
+    onError("Invalid code format. Please enter a 6-digit code.");
     return;
   }
 
-  // The 4-digit code is used to identify the connection channel on the server.
+  // The 6-digit code is used to identify the connection channel on the server.
   const fullUrl = `${SERVER_ADDRESS}/${code}`;
 
   try {
@@ -38,7 +39,8 @@ const connect = (
   ws.onmessage = (event) => {
     try {
       const data = JSON.parse(event.data);
-      console.log("WebSocket message received:", data);
+      console.log("🔌 WebSocket message received:", data);
+      console.log("🔌 Message type:", data.type);
       onMessage(data);
     } catch (e) {
       console.error("Failed to parse WebSocket message:", event.data, e);

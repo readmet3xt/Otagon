@@ -58,8 +58,11 @@ const HelpGuideTab: React.FC = () => {
 
             <HelpSection title="Hotkeys">
                  <div className="space-y-3">
-                    <p><strong className="text-white">Single Shot:</strong> Use <kbd className="px-2 py-1 mx-1 font-sans font-semibold text-neutral-200 bg-neutral-900/50 border border-neutral-700 rounded-md">Ctrl+Shift+Z</kbd> to capture your primary monitor.</p>
-                    <p><strong className="text-white">Batch Shot<ProBadge />:</strong> Use <kbd className="px-2 py-1 mx-1 font-sans font-semibold text-neutral-200 bg-neutral-900/50 border border-neutral-700 rounded-md">Ctrl+Shift+X</kbd> to analyze multiple key moments from the last few minutes of gameplay.</p>
+                    <p><strong className="text-white">Single Shot:</strong> Use <kbd className="px-2 py-1 mx-1 font-sans font-semibold text-neutral-200 bg-neutral-900/50 border border-neutral-700 rounded-md">F1</kbd> to capture your primary monitor.</p>
+                    <p><strong className="text-white">Multi Shot:</strong> Use <kbd className="px-2 py-1 mx-1 font-sans font-semibold text-neutral-200 bg-neutral-900/50 border border-neutral-700 rounded-md">F2</kbd> to capture multiple screenshots in sequence.</p>
+                    <p className="text-sm text-neutral-400 mt-2">
+                        💡 <strong>Custom Hotkeys:</strong> You can configure your own hotkeys in the PC client settings for personalized control.
+                    </p>
                 </div>
             </HelpSection>
 

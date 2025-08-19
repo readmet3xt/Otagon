@@ -102,7 +102,7 @@ export const useConnection = (onMessage: MessageHandler) => {
             },
             (data) => { // onMessage
                 if (data.type === 'partner_connected') {
-                    console.log("Partner connected message received. Finalizing connection.");
+                    console.log("✅ Partner PC client has connected!");
                     if (statusRef.current === ConnectionStatus.CONNECTING) {
                         clearConnectionTimeout();
                         setStatus(ConnectionStatus.CONNECTED);
@@ -110,7 +110,31 @@ export const useConnection = (onMessage: MessageHandler) => {
                         setIsAutoConnecting(false);
                         saveSuccessfulConnection(code);
                     }
+                } else if (data.type === 'partner_disconnected') {
+                    console.log("Partner PC client has disconnected.");
+                    // Don't change status here - just log it
+                } else if (data.type === 'waiting_for_client') {
+                    console.log("Waiting for PC client to connect...");
+                    // This is a status update from the relay server
+                } else if (data.type === 'screenshot_batch') {
+                    console.log("📸 Screenshot batch received from enhanced connector");
+                    // Let the main handler process this
+                } else if (data.type === 'screenshot') {
+                    console.log("📸 Individual screenshot received from PC client");
+                    console.log("📸 Screenshot details:", {
+                        index: data.index,
+                        total: data.total,
+                        processImmediate: data.processImmediate,
+                        timestamp: data.timestamp,
+                        dataUrlLength: data.dataUrl?.length || 0
+                    });
+                    // Let the main handler process this
+                } else if (data.type === 'connection_test') {
+                    console.log("✅ Connection test received from PC client");
+                    // Let the main handler process this
                 }
+                
+                // Always forward all messages to the main handler
                 onMessageRef.current(data);
             },
             (err) => { // onError - This is usually called for unclean disconnects.
@@ -174,21 +198,44 @@ export const useConnection = (onMessage: MessageHandler) => {
             // 1. We have a saved code
             // 2. We're not currently connected
             // 3. We're not already trying to auto-connect
-            // 4. The last successful connection was within the last 24 hours (optional)
             
-            const shouldAutoConnect = lastConnection ? 
-                (Date.now() - parseInt(lastConnection)) < (24 * 60 * 60 * 1000) : // Within 24 hours
-                true; // Always try if no timestamp
+            console.log("Attempting to auto-reconnect with saved code:", savedCode);
+            // Small delay to ensure app is fully initialized
+            const autoConnectDelay = setTimeout(() => {
+                connect(savedCode, true);
+            }, 1000); // Reduced to 1 second delay
             
-            if (shouldAutoConnect) {
-                console.log("Attempting to auto-reconnect with saved code:", savedCode);
-                // Small delay to ensure app is fully initialized
-                const autoConnectDelay = setTimeout(() => {
+            return () => clearTimeout(autoConnectDelay);
+        }
+    }, [connect, status, isAutoConnecting]);
+
+    // Additional auto-reconnect on error status
+    useEffect(() => {
+        const savedCode = localStorage.getItem('lastConnectionCode');
+        
+        if (savedCode && status === ConnectionStatus.ERROR && !isAutoConnecting) {
+            console.log("Connection error detected, attempting auto-reconnect...");
+            const errorReconnectDelay = setTimeout(() => {
+                connect(savedCode, true);
+            }, 3000); // 3 second delay after error
+            
+            return () => clearTimeout(errorReconnectDelay);
+        }
+    }, [connect, status, isAutoConnecting]);
+
+    // Persistent connection check - keep trying to reconnect if disconnected
+    useEffect(() => {
+        const savedCode = localStorage.getItem('lastConnectionCode');
+        
+        if (savedCode && status === ConnectionStatus.DISCONNECTED && !isAutoConnecting) {
+            const persistentReconnect = setInterval(() => {
+                if (status === ConnectionStatus.DISCONNECTED && !isAutoConnecting) {
+                    console.log("Persistent reconnection attempt...");
                     connect(savedCode, true);
-                }, 2000); // 2 second delay
-                
-                return () => clearTimeout(autoConnectDelay);
-            }
+                }
+            }, 10000); // Try every 10 seconds
+            
+            return () => clearInterval(persistentReconnect);
         }
     }, [connect, status, isAutoConnecting]);
 

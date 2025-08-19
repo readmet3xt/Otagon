@@ -646,12 +646,15 @@ export const useChat = (isHandsFreeMode: boolean) => {
 
             // --- Step 2: Clean the text and update conversation state ---
             const hintTagsRegex = /\[OTAKON_HINT_START\]|\[OTAKON_HINT_END\]/g;
+            
             let finalCleanedText = rawTextResponse
                 .replace(hintTagsRegex, '') // Remove hint tags for display
                 .replace(tagCleanupRegex, '')
                 .replace(/^Game Progress: \d+%\s*$/m, '')
                 .replace(/^[\s`"\]\}]*/, '')
                 .replace(/[\s`"\]\}]*$/, '')
+                .replace(/\s+/g, ' ') // Clean up multiple spaces
+                .replace(/\n\s*\n/g, '\n') // Clean up multiple newlines
                 .trim();
             
             // Show notification for AI response if screen is locked
@@ -711,7 +714,7 @@ export const useChat = (isHandsFreeMode: boolean) => {
                             instantInsights[tab.id] = { 
                                 id: tab.id, 
                                 title: tab.title, 
-                                content: `📋 **${tab.title}**\n\n✨ This insight will be generated when you need it!\n\n💡 **Click the tab to load personalized content**\n\n🎮 Based on your current progress: ${gameProgress || 0}%`, 
+                                content: `📋 **${tab.title}**\n\n✨ Generating comprehensive insights for you!\n\n🔄 **All insights will be ready shortly**\n\n🎮 Based on your current progress: ${gameProgress || 0}%`, 
                                 status: 'idle' as any,
                                 isPlaceholder: true,
                                 lastUpdated: Date.now(),
@@ -721,9 +724,9 @@ export const useChat = (isHandsFreeMode: boolean) => {
                         targetConvoForUpdate.insights = instantInsights;
                         targetConvoForUpdate.insightsOrder = insightsOrder;
                         
-                        // Start generating insights progressively in background (non-blocking)
+                        // Generate all insights in one API call for better performance
                         if (gameProgress !== null) {
-                            generateInsightsInBackground(identifiedGameName, gameGenre, gameProgress, finalTargetConvoId);
+                            generateAllInsightsAtOnce(identifiedGameName, gameGenre, gameProgress, finalTargetConvoId);
                         }
                     }
                     if (gameProgress !== null) targetConvoForUpdate.progress = gameProgress;
@@ -766,8 +769,8 @@ export const useChat = (isHandsFreeMode: boolean) => {
                 updateInsightsWithFinalResponse(finalCleanedText, finalTargetConvoId, identifiedGameName, gameGenre, gameProgress);
             }
 
-            // Note: generateUnifiedInsights is replaced by generateInsightsInBackground for better performance
-            // Insights are now generated progressively in the background when tabs are created
+            // Note: Insights are now generated in one unified API call for better performance
+            // All insight tabs are populated simultaneously when the user makes a query
 
             if (insightModifyPending) setPendingModification(insightModifyPending);
             if (insightDeleteRequest) deleteInsight(finalTargetConvoId, insightDeleteRequest.id);
@@ -1006,110 +1009,77 @@ export const useChat = (isHandsFreeMode: boolean) => {
         return await sendMessage(message.text, imageFiles, message.isFromPC);
     }, [conversations, activeConversationId, updateConversation, sendMessage]);
 
-    // Load insight content on demand when user clicks on a tab
-    const loadInsightContent = useCallback(async (insightId: string) => {
-        if (!activeConversationId || !activeConversation) return;
-        
-        const insight = activeConversation.insights?.[insightId];
-        if (!insight) return;
 
-        // If it's already loaded or loading, don't do anything
-        if (insight.status === 'loaded' || insight.status === 'loading') return;
 
-        // If it's a placeholder or failed, generate it immediately
-        if (insight.isPlaceholder || insight.status === 'error') {
-            // Mark as loading
-            setChatState(prev => {
-                const newConversations = { ...prev.conversations };
-                if (newConversations[activeConversationId]?.insights?.[insightId]) {
-                    newConversations[activeConversationId].insights![insightId].status = 'loading';
-                    newConversations[activeConversationId].insights![insightId].content = '🚀 Generating your personalized insight...';
-                }
-                return { ...prev, conversations: newConversations };
-            });
 
-            try {
-                const gameName = activeConversation.title || 'Unknown Game';
-                const genre = activeConversation.genre || 'default';
-                const progress = activeConversation.progress || 0;
-                
-                const tabs = insightTabsConfig[genre] || insightTabsConfig.default;
-                const tabConfig = tabs.find(t => t.id === insightId);
-                
-                if (tabConfig) {
-                    // Use the existing insight generation service
-                    const insightContent = await generateInsightContent(
-                        gameName,
-                        genre,
-                        progress,
-                        tabConfig.instruction,
-                        insightId
-                    );
 
-                    if (insightContent && insightContent !== 'Content is being generated...') {
-                        setChatState(prev => {
-                            const newConversations = { ...prev.conversations };
-                            if (newConversations[activeConversationId]?.insights?.[insightId]) {
-                                newConversations[activeConversationId].insights![insightId].content = insightContent;
-                                newConversations[activeConversationId].insights![insightId].status = 'loaded';
-                                newConversations[activeConversationId].insights![insightId].isPlaceholder = false;
-                                newConversations[activeConversationId].insights![insightId].isNew = true;
-                                newConversations[activeConversationId].insights![insightId].lastUpdated = Date.now();
-                            }
-                            return { ...prev, conversations: newConversations };
-                        });
-                    }
-                }
-            } catch (error) {
-                console.error('Error loading insight content:', error);
-                // Mark as failed but keep it retryable
-                setChatState(prev => {
-                    const newConversations = { ...prev.conversations };
-                    if (newConversations[activeConversationId]?.insights?.[insightId]) {
-                        newConversations[activeConversationId].insights![insightId].content = `❌ Failed to load ${insight.title}\n\n💡 Click again to retry!`;
-                        newConversations[activeConversationId].insights![insightId].status = 'error';
-                        newConversations[activeConversationId].insights![insightId].generationAttempts = (newConversations[activeConversationId].insights![insightId].generationAttempts || 0) + 1;
-                    }
-                    return { ...prev, conversations: newConversations };
-                });
-            }
-        }
-    }, [activeConversationId, activeConversation]);
-
-    // Helper function to generate insight content
-    const generateInsightContent = async (
+    // Generate all insights in one API call for better performance
+    const generateAllInsightsAtOnce = async (
         gameName: string,
         genre: string,
         progress: number,
-        instruction: string,
-        insightId: string
-    ): Promise<string | null> => {
+        conversationId: string
+    ) => {
         try {
-            // Use the existing Gemini service to generate content
-            const response = await generateInsightStream(
+            const tabs = insightTabsConfig[genre] || insightTabsConfig.default;
+            
+            // Update all tabs to loading status
+            updateConversation(conversationId, convo => {
+                if (convo.insights) {
+                    Object.keys(convo.insights).forEach(tabId => {
+                        if (convo.insights![tabId].isPlaceholder) {
+                            convo.insights![tabId].status = 'loading';
+                            convo.insights![tabId].content = '🔄 Generating all insights...';
+                        }
+                    });
+                }
+                return convo;
+            });
+            
+            // Generate all insights in one API call using the unified service
+            const result = await generateUnifiedInsights(
                 gameName,
                 genre,
                 progress,
-                instruction,
-                insightId,
-                (chunk) => {}, // No onChunk callback for this helper
-                (error) => {
-                    console.error('Error generating insight content:', error);
-                    return;
-                },
-                new AbortController().signal // Add the required signal parameter
+                `Generate comprehensive insights for ${gameName} at ${progress}% progress`,
+                (error) => console.error('Unified insight generation error:', error),
+                new AbortController().signal
             );
             
-            // Since generateInsightStream returns void, we need to handle this differently
-            // For now, return a placeholder - the actual content will be loaded via the streaming callback
-            return 'Content is being generated...';
+            if (result && result.insights) {
+                // Update all insights with generated content
+                updateConversation(conversationId, convo => {
+                    if (convo.insights) {
+                        Object.keys(result.insights).forEach(tabId => {
+                            if (convo.insights![tabId]) {
+                                convo.insights![tabId].content = result.insights[tabId].content;
+                                convo.insights![tabId].title = result.insights[tabId].title;
+                                convo.insights![tabId].status = 'loaded';
+                                convo.insights![tabId].isPlaceholder = false;
+                                convo.insights![tabId].lastUpdated = Date.now();
+                                convo.insights![tabId].isNew = true;
+                            }
+                        });
+                    }
+                    return convo;
+                });
+                
+                console.log(`Successfully generated all insights for ${gameName} in one API call`);
+            } else {
+                // Fallback to progressive generation if unified approach fails
+                console.warn('Unified insight generation failed, falling back to progressive generation');
+                generateInsightsInBackground(gameName, genre, progress, conversationId);
+            }
+            
         } catch (error) {
-            console.error('Error generating insight content:', error);
-            return null;
+            console.error('Unified insight generation failed:', error);
+            
+            // Fallback to progressive generation
+            generateInsightsInBackground(gameName, genre, progress, conversationId);
         }
     };
 
-    // Generate insights progressively in background for better performance
+    // Generate insights progressively in background for better performance (fallback method)
     const generateInsightsInBackground = async (
         gameName: string,
         genre: string,
@@ -1139,20 +1109,22 @@ export const useChat = (isHandsFreeMode: boolean) => {
                         return convo;
                     });
                     
-                    // Generate content using the existing service
-                    const content = await generateInsightContent(
+                    // Generate content using the unified service for this specific tab
+                    const result = await generateUnifiedInsights(
                         gameName,
                         genre,
                         progress,
-                        tab.instruction,
-                        tab.id
+                        `Generate insight for ${tab.title}`,
+                        (error) => console.error(`Error generating ${tab.title}:`, error),
+                        new AbortController().signal
                     );
                     
-                    if (content && content !== 'Content is being generated...') {
+                    if (result && result.insights && result.insights[tab.id]) {
                         // Update with real content
                         updateConversation(conversationId, convo => {
                             if (convo.insights?.[tab.id]) {
-                                convo.insights[tab.id].content = content;
+                                convo.insights[tab.id].content = result.insights[tab.id].content;
+                                convo.insights[tab.id].title = result.insights[tab.id].title;
                                 convo.insights[tab.id].status = 'loaded';
                                 convo.insights[tab.id].isPlaceholder = false;
                                 convo.insights[tab.id].lastUpdated = Date.now();
@@ -1228,19 +1200,21 @@ export const useChat = (isHandsFreeMode: boolean) => {
                         return convo;
                     });
 
-                    // Generate new content
-                    const newContent = await generateInsightContent(
+                    // Generate new content using unified service
+                    const result = await generateUnifiedInsights(
                         conversation.title,
                         conversation.genre,
                         newProgress,
-                        tab.instruction,
-                        tab.id
+                        `Update ${tab.title} for new progress`,
+                        (error) => console.error(`Error updating ${tab.title}:`, error),
+                        new AbortController().signal
                     );
 
-                    if (newContent && newContent !== 'Content is being generated...') {
+                    if (result && result.insights && result.insights[tab.id]) {
                         updateConversation(conversationId, convo => {
                             if (convo.insights?.[tab.id]) {
-                                convo.insights[tab.id].content = newContent;
+                                convo.insights[tab.id].content = result.insights[tab.id].content;
+                                convo.insights[tab.id].title = result.insights[tab.id].title;
                                 convo.insights[tab.id].status = 'loaded';
                                 convo.insights[tab.id].isNew = true;
                                 convo.insights[tab.id].lastUpdated = Date.now();
@@ -1519,7 +1493,7 @@ export const useChat = (isHandsFreeMode: boolean) => {
         updateMessageFeedback,
         updateInsightFeedback,
         retryMessage,
-        loadInsightContent,
+
         updateInsightsForProgress,
         handleTabManagementCommand,
     };

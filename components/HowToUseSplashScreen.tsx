@@ -22,13 +22,13 @@ const ProBadge = () => (
 
 const FeatureItem: React.FC<{ icon: React.ReactNode; title: React.ReactNode; children: React.ReactNode; }> = ({ icon, title, children }) => {
     return (
-        <div className="flex items-start gap-4 p-4 transition-all duration-300">
-            <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 mt-1 rounded-lg bg-gradient-to-br from-[#FF4D4D]/10 to-[#FFAB40]/10 border border-neutral-700/50">
+        <div className="flex items-start gap-6 p-6 transition-all duration-500 hover:scale-105">
+            <div className="flex-shrink-0 flex items-center justify-center h-16 w-16 mt-1 rounded-2xl bg-gradient-to-br from-[#FF4D4D]/20 to-[#FFAB40]/20 border-2 border-neutral-700/60 backdrop-blur-sm">
                 {icon}
             </div>
             <div className="flex-grow">
-                <h3 className="text-lg font-bold text-white mb-1 flex items-center">{title}</h3>
-                <div className="text-neutral-400 text-base leading-relaxed">{children}</div>
+                <h3 className="text-xl font-bold text-white mb-3 flex items-center">{title}</h3>
+                <div className="text-neutral-300 text-base leading-relaxed">{children}</div>
             </div>
         </div>
     );
@@ -36,41 +36,45 @@ const FeatureItem: React.FC<{ icon: React.ReactNode; title: React.ReactNode; chi
 
 const HowToUseSplashScreen: React.FC<HowToUseSplashScreenProps> = ({ onComplete }) => {
     return (
-        <div className="h-screen bg-[#111111] text-[#F5F5F5] flex flex-col font-inter animate-fade-in">
+        <div className="h-screen bg-gradient-to-br from-[#111111] to-[#0A0A0A] text-[#F5F5F5] flex flex-col font-inter animate-fade-in">
             {/* Fixed Header */}
-            <header className="flex-shrink-0 px-6 pt-12 pb-6 text-center z-10 bg-[#111111]">
-                <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">You're Connected!</h1>
-                <p className="text-lg text-neutral-400">Master Otakon in four easy steps.</p>
+            <header className="flex-shrink-0 px-8 pt-16 pb-8 text-center z-10 bg-gradient-to-br from-[#111111] to-[#0A0A0A]">
+                <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4 leading-tight">You're Connected!</h1>
+                <p className="text-xl text-neutral-300 leading-relaxed">Master Otakon in four easy steps.</p>
             </header>
 
             {/* Scrollable Main Content */}
-            <main className="flex-1 overflow-y-auto px-4 sm:px-6 pb-6">
-                <div className="max-w-2xl mx-auto space-y-4">
+            <main className="flex-1 overflow-y-auto px-6 sm:px-8 pb-8">
+                <div className="max-w-3xl mx-auto space-y-6">
                     {/* Item 1: Capture */}
                     <FeatureItem
-                        icon={<KeyboardIcon className="w-7 h-7 text-[#FFAB40]" />}
+                        icon={<KeyboardIcon className="w-8 h-8 text-[#FFAB40]" />}
                         title="1. Instant Capture"
                     >
-                        <p className="mb-3">Use hotkeys to instantly analyze your game screen. Toggle the 
-                            <span className="inline-flex items-center align-middle mx-1.5 px-1.5 py-0.5 rounded-md bg-black/50 border border-neutral-700">
+                        <p className="mb-4">Use hotkeys to instantly analyze your game screen. Toggle the 
+                            <span className="inline-flex items-center align-middle mx-2 px-2 py-1 rounded-lg bg-black/50 border-2 border-neutral-700/60">
                                 <PauseIcon className="w-4 h-4 text-sky-400" />
-                                <span className="text-white mx-0.5">/</span>
+                                <span className="text-white mx-1">/</span>
                                 <PlayIcon className="w-4 h-4 text-neutral-400" />
                             </span>
                              button to switch between auto-sending and manual review.</p>
-                        <div className="space-y-2 text-sm p-3 bg-black/30 rounded-md">
-                            <p><strong className="text-neutral-200">Single Shot:</strong> <kbd className="px-2 py-1 mx-1 font-sans font-semibold text-neutral-200 bg-neutral-900/50 border border-neutral-700 rounded-md">Ctrl+Shift+Z</kbd></p>
-                            <p><strong className="text-neutral-200">Batch Shot<ProBadge />:</strong> <kbd className="px-2 py-1 mx-1 font-sans font-semibold text-neutral-200 bg-neutral-900/50 border border-neutral-700 rounded-md">Ctrl+Shift+X</kbd></p>
+                        <div className="space-y-3 text-sm p-4 bg-gradient-to-r from-black/40 to-neutral-900/40 rounded-xl border border-neutral-700/60 backdrop-blur-sm">
+                            <p><strong className="text-neutral-200">Single Shot:</strong> <kbd className="px-3 py-1.5 mx-2 font-sans font-semibold text-neutral-200 bg-gradient-to-r from-neutral-900/60 to-neutral-800/60 border-2 border-neutral-700/60 rounded-lg">F1</kbd></p>
+                            <p><strong className="text-neutral-200">Multi Shot:</strong> <kbd className="px-3 py-1.5 mx-2 font-sans font-semibold text-neutral-200 bg-gradient-to-r from-neutral-900/60 to-neutral-800/60 border-2 border-neutral-700/60 rounded-lg">F2</kbd></p>
+                            <p className="text-xs text-neutral-400 mt-2">
+                                💡 <strong>Custom Hotkeys:</strong> You can configure your own hotkeys in the PC client settings
+                            </p>
                         </div>
+
                     </FeatureItem>
 
                     {/* Item 2: Screenshot Quality */}
                     <FeatureItem
-                        icon={<ScreenshotIcon className="w-7 h-7 text-[#FFAB40]" />}
+                        icon={<ScreenshotIcon className="w-8 h-8 text-[#FFAB40]" />}
                         title="2. The Perfect Screenshot"
                     >
                         <p>For the best hints, capture clear, full-screen views of:</p>
-                        <ul className="list-disc list-inside mt-2 space-y-1">
+                        <ul className="list-disc list-inside mt-3 space-y-2">
                             <li>Your inventory, skill tree, or map screen.</li>
                             <li>The entire boss arena, including the boss.</li>
                             <li>The specific puzzle or object you're stuck on.</li>
@@ -79,24 +83,24 @@ const HowToUseSplashScreen: React.FC<HowToUseSplashScreenProps> = ({ onComplete 
 
                     {/* Item 3: Insights */}
                     <FeatureItem
-                        icon={<InsightsIcon className="w-7 h-7 text-[#FFAB40]" />}
+                        icon={<InsightsIcon className="w-8 h-8 text-[#FFAB40]" />}
                         title={<>3. Manage Insights<ProBadge /></>}
                     >
-                        <p className="mb-3">
+                        <p className="mb-4">
                             Take direct control of your game wiki with natural language commands.
                         </p>
-                        <div className="space-y-3 text-sm p-3 bg-black/30 rounded-md">
+                        <div className="space-y-4 text-sm p-4 bg-gradient-to-r from-black/40 to-neutral-900/40 rounded-xl border border-neutral-700/60 backdrop-blur-sm">
                             <p>
                                 <strong className="text-neutral-200">Add new tab:</strong><br/>
-                                <kbd className="px-2 py-1 mt-1 inline-block font-sans font-semibold text-neutral-200 bg-neutral-900/50 border border-neutral-700 rounded-md w-full text-left">"add tab [title]"</kbd>
+                                <kbd className="px-3 py-1.5 mt-2 inline-block font-sans font-semibold text-neutral-200 bg-gradient-to-r from-neutral-900/60 to-neutral-800/60 border-2 border-neutral-700/60 rounded-lg w-full text-left">"add tab [title]"</kbd>
                             </p>
                             <p>
                                 <strong className="text-neutral-200">Modify existing tab:</strong><br/>
-                                <kbd className="px-2 py-1 mt-1 inline-block font-sans font-semibold text-neutral-200 bg-neutral-900/50 border border-neutral-700 rounded-md w-full text-left">"modify tab [id] to [new title]"</kbd>
+                                <kbd className="px-3 py-1.5 mt-1 inline-block font-sans font-semibold text-neutral-200 bg-gradient-to-r from-neutral-900/60 to-neutral-800/60 border-2 border-neutral-700/60 rounded-lg w-full text-left">"modify tab [id] to [new title]"</kbd>
                             </p>
                             <p>
                                 <strong className="text-neutral-200">Delete a tab:</strong><br/>
-                                <kbd className="px-2 py-1 mt-1 inline-block font-sans font-semibold text-neutral-200 bg-neutral-900/50 border border-neutral-700 rounded-md w-full text-left">"delete tab [id] confirm"</kbd>
+                                <kbd className="px-3 py-1.5 mt-1 inline-block font-sans font-semibold text-neutral-200 bg-gradient-to-r from-neutral-900/60 to-neutral-800/60 border-2 border-neutral-700/60 rounded-lg w-full text-left">"delete tab [id] confirm"</kbd>
                             </p>
                             <p className="text-xs text-neutral-400 mt-2">
                                 💡 <strong>Examples:</strong> "add tab Game Progress", "modify tab tab_123 to Current Objectives"
@@ -106,7 +110,7 @@ const HowToUseSplashScreen: React.FC<HowToUseSplashScreenProps> = ({ onComplete 
 
                     {/* Item 4: Hands-Free */}
                     <FeatureItem
-                        icon={<HandsFreeIcon isActive={true} className="w-7 h-7 text-[#FFAB40]" />}
+                        icon={<HandsFreeIcon isActive={true} className="w-8 h-8 text-[#FFAB40]" />}
                         title={<>4. Go Hands-Free<ProBadge /></>}
                     >
                         <p>Stay immersed in the action. Enable Hands-Free mode to have hints and lore read aloud to you, keeping you focused on your game.</p>
@@ -115,11 +119,11 @@ const HowToUseSplashScreen: React.FC<HowToUseSplashScreenProps> = ({ onComplete 
             </main>
 
             {/* Fixed Footer */}
-            <footer className="flex-shrink-0 px-6 pt-4 pb-12 z-10 bg-[#111111]">
-                <div className="w-full max-w-md mx-auto">
+            <footer className="flex-shrink-0 px-8 pt-6 pb-16 z-10 bg-gradient-to-br from-[#111111] to-[#0A0A0A]">
+                <div className="w-full max-w-lg mx-auto">
                     <button
                         onClick={onComplete}
-                        className="w-full bg-neutral-700 hover:bg-neutral-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+                        className="w-full bg-gradient-to-r from-neutral-700 to-neutral-600 hover:from-neutral-600 hover:to-neutral-500 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg text-lg"
                     >
                         Let's Begin
                     </button>

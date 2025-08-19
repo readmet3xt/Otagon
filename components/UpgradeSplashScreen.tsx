@@ -10,19 +10,19 @@ interface UpgradeSplashScreenProps {
 }
 
 const CheckFeatureLine: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <li className="flex items-start gap-3">
-        <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-        <span className="text-neutral-300">{children}</span>
+    <li className="flex items-start gap-4">
+        <svg className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+        <span className="text-neutral-200 text-base leading-relaxed">{children}</span>
     </li>
 );
 
 const StarFeatureLine: React.FC<{ children: React.ReactNode; comingSoon?: boolean }> = ({ children, comingSoon }) => (
-    <li className="flex items-start gap-3">
-        <StarIcon className="w-5 h-5 mt-1 text-[#FFAB40] flex-shrink-0" />
-        <span className="text-neutral-200 font-medium">
+    <li className="flex items-start gap-4">
+        <StarIcon className="w-6 h-6 mt-1 text-[#FFAB40] flex-shrink-0" />
+        <span className="text-neutral-200 font-medium text-base leading-relaxed">
             {children}
             {comingSoon && (
-                 <span className="ml-2 text-xs font-semibold align-middle bg-sky-500/20 text-sky-400 border border-sky-500/30 px-2 py-0.5 rounded-full uppercase">Coming Soon</span>
+                 <span className="ml-3 text-xs font-semibold align-middle bg-gradient-to-r from-sky-500/20 to-blue-500/20 text-sky-300 border-2 border-sky-500/40 px-3 py-1 rounded-full uppercase">Coming Soon</span>
             )}
         </span>
     </li>
@@ -82,22 +82,22 @@ const UpgradeSplashScreen: React.FC<UpgradeSplashScreenProps> = ({ onUpgrade, on
     };
 
     return (
-        <div className="h-screen bg-black text-white flex flex-col items-center justify-center font-inter p-4 sm:p-6 animate-fade-in">
-            <div className="absolute top-0 left-0 w-full h-full bg-gradient-radial-at-top from-[#FF4D4D]/20 to-transparent pointer-events-none"></div>
+        <div className="h-screen bg-gradient-to-br from-black to-[#0A0A0A] text-white flex flex-col items-center justify-center font-inter p-6 sm:p-8 animate-fade-in">
+            <div className="absolute top-0 left-0 w-full h-full bg-gradient-radial-at-top from-[#FF4D4D]/30 to-transparent pointer-events-none"></div>
             
-            <div className="w-full max-w-4xl mx-auto bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl p-6 sm:p-8 text-center animate-scale-in relative">
+            <div className="w-full max-w-5xl mx-auto bg-gradient-to-r from-[#1C1C1C]/90 to-[#0A0A0A]/90 backdrop-blur-xl border-2 border-[#424242]/60 rounded-3xl shadow-2xl p-8 sm:p-12 text-center animate-scale-in relative hover:border-[#424242]/80 transition-all duration-500">
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 text-neutral-500 hover:text-white transition-colors z-10"
+                    className="absolute top-6 right-6 text-neutral-400 hover:text-white transition-all duration-300 z-10 hover:scale-110"
                     aria-label="Close modal"
                 >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
 
-                <h1 className="text-3xl sm:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#FF4D4D] to-[#FFAB40] mb-2">Upgrade Your Plan</h1>
-                <p className="text-neutral-400 mb-8">Unlock your full potential and support the community.</p>
+                <h1 className="text-4xl sm:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#FF4D4D] to-[#FFAB40] mb-4 leading-tight">Upgrade Your Plan</h1>
+                <p className="text-neutral-300 text-xl mb-10 leading-relaxed">Unlock your full potential and support the community.</p>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8 text-left">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10 text-left">
                     {/* Pro Plan */}
                     <div className="bg-neutral-900/50 border border-neutral-700 rounded-xl p-6 flex flex-col">
                         <h3 className="text-2xl font-bold text-white">Pro</h3>

@@ -45,7 +45,11 @@ export default defineConfig(({ mode }) => {
   // Optimize development server
   server: {
     hmr: {
-      overlay: false
+      overlay: false,
+      // Prevent excessive hot reloads
+      timeout: 5000,
+      // Only reload on actual file changes
+      reloadOnFailure: false
     }
   },
   // Optimize dependencies

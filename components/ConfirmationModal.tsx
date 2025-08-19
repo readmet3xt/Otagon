@@ -10,24 +10,24 @@ interface ConfirmationModalProps {
 
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ title, message, onConfirm, onCancel }) => {
     return (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in" onClick={onCancel}>
+        <div className="fixed inset-0 bg-gradient-to-br from-black/80 to-[#0A0A0A]/80 backdrop-blur-xl flex items-center justify-center z-50 animate-fade-in" onClick={onCancel}>
             <div
-                className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl p-8 w-full max-w-sm m-4 relative animate-scale-in"
+                className="bg-gradient-to-r from-[#1C1C1C]/95 to-[#0A0A0A]/95 backdrop-blur-xl border-2 border-[#424242]/60 rounded-3xl shadow-2xl p-6 sm:p-8 md:p-10 w-full max-w-md m-4 sm:m-6 relative animate-scale-in hover:border-[#424242]/80 transition-all duration-500"
                 onClick={(e) => e.stopPropagation()}
             >
-                <h2 className="text-2xl font-bold text-white mb-2">{title}</h2>
-                <p className="text-neutral-400 mb-8">{message}</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3 sm:mb-4 text-left leading-tight">{title}</h2>
+                <p className="text-neutral-300 mb-8 sm:mb-10 text-left leading-relaxed text-base sm:text-lg">{message}</p>
 
-                <div className="flex flex-col sm:flex-row-reverse gap-3">
+                <div className="flex flex-col sm:flex-row-reverse gap-3 sm:gap-4 justify-start">
                     <button
                         onClick={onConfirm}
-                        className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-6 rounded-md transition-colors"
+                        className="w-full sm:w-auto bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-red-600/25 text-sm sm:text-base"
                     >
                         Confirm
                     </button>
                     <button
                         onClick={onCancel}
-                        className="w-full sm:w-auto bg-neutral-600 hover:bg-neutral-700 text-white font-medium py-2.5 px-6 rounded-md transition-colors"
+                        className="w-full sm:w-auto bg-gradient-to-r from-neutral-600 to-neutral-700 hover:from-neutral-700 hover:to-neutral-800 text-white font-medium py-3 sm:py-4 px-6 sm:px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg text-sm sm:text-base"
                     >
                         Cancel
                     </button>

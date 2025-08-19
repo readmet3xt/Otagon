@@ -7,57 +7,145 @@ import CommandSuggestions from './CommandSuggestions';
 
 type ImageFile = { base64: string; mimeType: string, dataUrl: string };
 
-const fileToBase64 = (file: File): Promise<ImageFile> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-      const [meta, data] = dataUrl.split(',');
-      if (!meta || !data) {
-        return reject(new Error('Invalid data URL format.'));
-      }
-      const mimeType = meta.split(';')[0].split(':')[1];
-      resolve({ base64: data, mimeType, dataUrl });
-    };
-    reader.onerror = (error) => reject(error);
-  });
+const fileToBase64 = async (file: File): Promise<ImageFile> => {
+    try {
+        // Compress image if it's larger than 1MB
+        let processedFile = file;
+        if (file.size > 1024 * 1024) {
+            processedFile = await compressImage(file);
+        }
+        
+        const base64 = await convertToBase64(processedFile);
+        const mimeType = processedFile.type;
+        const dataUrl = base64;
+        
+        return {
+            base64: base64.split(',')[1], // Remove data URL prefix
+            mimeType,
+            dataUrl
+        };
+    } catch (error) {
+        console.error('Error processing file:', error);
+        throw new Error('Failed to process image file');
+    }
 };
 
-const convertImage = (file: File, targetMimeType: 'image/jpeg' | 'image/png'): Promise<ImageFile> => {
-  return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
-          if (!event.target?.result) {
-              return reject(new Error("Couldn't read file."));
-          }
-          const img = new Image();
-          img.src = event.target.result as string;
-          img.onload = () => {
-              const canvas = document.createElement('canvas');
-              canvas.width = img.width;
-              canvas.height = img.height;
-              const ctx = canvas.getContext('2d');
-              if (!ctx) {
-                  return reject(new Error('Could not get canvas context'));
-              }
-              if (targetMimeType === 'image/jpeg') {
-                ctx.fillStyle = '#FFFFFF';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-              }
-              ctx.drawImage(img, 0, 0);
-              const dataUrl = canvas.toDataURL(targetMimeType, 0.9);
-              const [meta, data] = dataUrl.split(',');
-              if (!meta || !data) {
-                return reject(new Error('Could not convert image to data URL.'));
-              }
-              resolve({ base64: data, mimeType: targetMimeType, dataUrl });
-          };
-          img.onerror = (error) => reject(error);
-      };
-      reader.onerror = (error) => reject(error);
-  });
+const convertImage = async (file: File, targetMimeType: 'image/jpeg' | 'image/png' | 'image/webp'): Promise<ImageFile> => {
+    return new Promise((resolve, reject) => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d')!;
+        const img = new Image();
+        
+        img.onload = () => {
+            // Calculate new dimensions while maintaining aspect ratio
+            const maxWidth = 1920;
+            const maxHeight = 1080;
+            let { width, height } = img;
+            
+            if (width > maxWidth) {
+                height = (height * maxWidth) / width;
+                width = maxWidth;
+            }
+            if (height > maxHeight) {
+                width = (width * maxHeight) / height;
+                height = maxHeight;
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Draw image
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Convert to target format with compression
+            const quality = 0.8; // High quality compression
+            canvas.toBlob(
+                (blob) => {
+                    if (blob) {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            const base64 = reader.result as string;
+                            resolve({
+                                base64: base64.split(',')[1],
+                                mimeType: targetMimeType,
+                                dataUrl: base64
+                            });
+                        };
+                        reader.onerror = reject;
+                        reader.readAsDataURL(blob);
+                    } else {
+                        reject(new Error('Failed to convert image'));
+                    }
+                },
+                targetMimeType,
+                quality
+            );
+        };
+        
+        img.onerror = reject;
+        img.src = URL.createObjectURL(file);
+    });
+};
+
+const compressImage = async (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d')!;
+        const img = new Image();
+        
+        img.onload = () => {
+            // Calculate new dimensions while maintaining aspect ratio
+            const maxWidth = 1920;
+            const maxHeight = 1080;
+            let { width, height } = img;
+            
+            if (width > maxWidth) {
+                height = (height * maxWidth) / width;
+                width = maxWidth;
+            }
+            if (height > maxHeight) {
+                width = (width * maxHeight) / height;
+                height = maxHeight;
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Draw and compress image
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Try WebP first, fallback to JPEG
+            const mimeType = 'image/webp';
+            canvas.toBlob(
+                (blob) => {
+                    if (blob) {
+                        // Create new file with compressed data
+                        const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, '.webp'), {
+                            type: mimeType,
+                            lastModified: Date.now()
+                        });
+                        resolve(compressedFile);
+                    } else {
+                        // Fallback to original file if compression fails
+                        resolve(file);
+                    }
+                },
+                mimeType,
+                0.8 // Quality setting for WebP
+            );
+        };
+        
+        img.src = URL.createObjectURL(file);
+    });
+};
+
+const convertToBase64 = async (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
 };
 
 
@@ -297,27 +385,34 @@ const ChatInput: React.FC<ChatInputProps> = ({ value, onChange, onSendMessage, i
     const maxImages = usage.tier !== 'free' ? 5 : 1;
 
     return (
-        <div className="pt-2 pb-4 px-4">
-            <form onSubmit={handleSubmit} className="w-full max-w-4xl mx-auto flex flex-col gap-2">
+        <div className="pt-3 sm:pt-4 pb-4 sm:pb-6 px-4 sm:px-6">
+            <form onSubmit={handleSubmit} className="w-full max-w-4xl sm:max-w-5xl mx-auto flex flex-col gap-3 sm:gap-4">
                 {selectedImages.length > 0 && (
-                     <div className="flex overflow-x-auto space-x-2 p-2 scroll-smooth">
+                     <div className="flex overflow-x-auto space-x-2 sm:space-x-3 p-2 sm:p-3 scroll-smooth bg-[#1C1C1C]/40 rounded-2xl border border-[#424242]/30">
                         {selectedImages.map((image, index) => (
-                            <div key={index} className="relative flex-shrink-0 animate-fade-in">
-                                <img src={image.dataUrl} alt={`Selected preview ${index + 1}`} className="h-20 w-auto rounded-md"/>
+                            <div key={index} className="relative flex-shrink-0 animate-fade-in group">
+                                <img 
+                                    src={image.dataUrl} 
+                                    alt={`Selected preview ${index + 1}`} 
+                                    className="h-20 sm:h-24 w-auto rounded-xl object-cover border-2 border-[#424242]/40 group-hover:border-[#E53A3A]/60 transition-all duration-300 group-hover:scale-105"
+                                />
                                 <button 
                                     type="button"
                                     onClick={() => handleRemoveImage(index)}
-                                    className="absolute -top-2 -right-2 bg-[#E53A3A] text-[#F5F5F5] rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold hover:bg-[#E53A3A] hover:brightness-90 transition-transform hover:scale-110"
+                                    className="absolute -top-2 -right-2 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white rounded-full w-7 h-7 flex items-center justify-center text-sm font-bold hover:scale-110 transition-all duration-200 shadow-lg hover:shadow-[#E53A3A]/50"
                                     aria-label={`Remove image ${index + 1}`}
                                 >
                                     &times;
                                 </button>
+                                <div className="absolute bottom-1 left-1 bg-black/80 backdrop-blur-sm text-white text-xs font-semibold px-2 py-1 rounded-full border border-white/20">
+                                    {index + 1}
+                                </div>
                             </div>
                         ))}
                     </div>
                 )}
-                <div className="p-[1px] bg-neutral-800/80 rounded-full focus-within:bg-gradient-to-r from-[#FF4D4D] to-[#FFAB40] transition-colors duration-200">
-                    <div className="flex items-center bg-[#181818] rounded-full w-full px-2 gap-2">
+                <div className="p-[2px] bg-gradient-to-r from-[#FF4D4D] to-[#FFAB40] rounded-2xl focus-within:shadow-[0_0_30px_rgba(255,77,77,0.3)] transition-all duration-300">
+                    <div className="flex items-center bg-gradient-to-r from-[#1C1C1C] to-[#0A0A0A] rounded-2xl w-full px-3 sm:px-4 gap-2 sm:gap-3 py-2">
                         <input 
                             type="file" 
                             ref={fileInputRef} 
@@ -331,9 +426,9 @@ const ChatInput: React.FC<ChatInputProps> = ({ value, onChange, onSendMessage, i
                             onClick={() => fileInputRef.current?.click()}
                             aria-label="Upload screenshot"
                             disabled={isProcessing || selectedImages.length >= maxImages}
-                            className="flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-full text-[#FF4D4D] hover:bg-[#2E2E2E] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                            className="flex-shrink-0 flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl text-[#FF4D4D] hover:bg-[#2E2E2E]/60 hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:scale-100 border border-[#424242]/40 hover:border-[#FF4D4D]/40"
                         >
-                            <CameraIcon className="w-5 h-5"/>
+                            <CameraIcon className="w-4 h-4 sm:w-5 sm:h-5"/>
                         </button>
                         <div className="relative flex-grow">
                              {showSuggestions && (
@@ -352,13 +447,13 @@ const ChatInput: React.FC<ChatInputProps> = ({ value, onChange, onSendMessage, i
                                 onChange={handleValueChange}
                                 onKeyDown={handleKeyDown}
                                 placeholder={placeholderText}
-                                className="flex-grow w-full bg-transparent py-2.5 px-2 text-[#F5F5F5] placeholder-[#A3A3A3] focus:outline-none resize-none overflow-y-auto disabled:opacity-60"
+                                className="flex-grow w-full bg-transparent py-2.5 sm:py-3 px-2 sm:px-3 text-[#F5F5F5] placeholder-[#A3A3A3] focus:outline-none resize-none overflow-y-auto disabled:opacity-60 text-sm sm:text-base leading-relaxed"
                                 aria-label="Chat input"
                                 disabled={isProcessing}
                             />
                         </div>
 
-                        <div className="flex-shrink-0 flex items-center gap-1">
+                        <div className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2">
                             {showReviewToggle && (
                                 <ManualUploadToggle
                                     isManualMode={isManualUploadMode}
@@ -369,13 +464,13 @@ const ChatInput: React.FC<ChatInputProps> = ({ value, onChange, onSendMessage, i
                                 type="submit"
                                 disabled={!canSubmit}
                                 aria-label="Send message"
-                                className={`flex items-center justify-center w-9 h-9 rounded-full transition-all duration-200 disabled:cursor-not-allowed ${
+                                className={`flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl transition-all duration-300 disabled:cursor-not-allowed ${
                                     canSubmit 
-                                    ? 'bg-[#FFAB40] text-[#181818] scale-100 hover:brightness-95 active:scale-95' 
-                                    : 'bg-neutral-800 text-neutral-600 scale-100'
+                                    ? 'bg-gradient-to-r from-[#FFAB40] to-[#FF8C00] text-[#181818] scale-100 hover:scale-105 hover:shadow-lg hover:shadow-[#FFAB40]/25 active:scale-95 font-semibold' 
+                                    : 'bg-[#2E2E2E]/60 text-[#A3A3A3] scale-100 border border-[#424242]/40'
                                 }`}
                             >
-                                <SendIcon className="w-5 h-5" />
+                                <SendIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                             </button>
                         </div>
                     </div>

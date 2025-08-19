@@ -82,10 +82,10 @@ const ConversationTabs: React.FC<ConversationTabsProps> = ({ conversations, conv
 
     return (
         <div 
-            className={`flex-shrink-0 ${activeConversation?.title !== 'Everything else' ? 'border-b border-[#2E2E2E]/60' : ''}`}
+            className={`flex-shrink-0 ${activeConversation?.title !== 'Everything else' ? 'border-b border-[#424242]/30' : ''} bg-black/40 backdrop-blur-sm`}
             onDragLeave={() => setDragOverItem(null)}
         >
-            <div ref={containerRef} className="flex items-center gap-2 p-2 overflow-x-auto scroll-smooth">
+            <div ref={containerRef} className="flex items-center gap-3 p-4 overflow-x-auto scroll-smooth">
                 {orderedConversations.map((convo, index) => {
                     const isActive = convo.id === activeConversationId;
                     const isEverythingElse = convo.title === 'Everything else';
@@ -119,33 +119,35 @@ const ConversationTabs: React.FC<ConversationTabsProps> = ({ conversations, conv
                                     onContextMenu(e, convo);
                                 }
                             }}
-                            className={`select-none flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 border flex items-center gap-2 active:scale-95
+                            className={`select-none flex-shrink-0 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 border-2 flex items-center gap-2.5 active:scale-95 shadow-lg
                                 ${isActive
-                                    ? 'bg-[#E53A3A]/30 border-[#E53A3A]/70 text-[#F5F5F5] shadow-sm'
-                                    : 'bg-[#2E2E2E]/80 text-[#CFCFCF] hover:bg-[#424242]/70 hover:border-[#5A5A5A]'
+                                    ? 'bg-gradient-to-r from-[#E53A3A]/20 to-[#D98C1F]/20 border-[#E53A3A]/60 text-[#F5F5F5] shadow-[0_0_20px_rgba(229,61,61,0.3)] hover:shadow-[0_0_30px_rgba(229,61,61,0.5)]'
+                                    : 'bg-gradient-to-r from-[#2E2E2E]/80 to-[#1C1C1C]/80 text-[#CFCFCF] hover:bg-gradient-to-r hover:from-[#424242]/80 hover:to-[#2E2E2E]/80 hover:border-[#5A5A5A] hover:scale-105 hover:shadow-xl'
                                 }
-                                ${isBeingDraggedOver && !isEverythingElse ? 'border-amber-400 scale-105' : 'border-[#424242]'}
+                                ${isBeingDraggedOver && !isEverythingElse ? 'border-amber-400 scale-110 shadow-[0_0_30px_rgba(251,191,36,0.5)]' : 'border-[#424242]/60'}
                             `}
                         >
-                            {convo.isPinned && !isEverythingElse && <PinIcon className="w-3.5 h-3.5 text-white/70" />}
-                            {convo.title}
+                            {convo.isPinned && !isEverythingElse && (
+                                <PinIcon className="w-4 h-4 text-[#E53A3A] drop-shadow-sm" />
+                            )}
+                            <span className="whitespace-nowrap">{convo.title}</span>
                         </button>
                     );
                 })}
             </div>
             {typeof progress === 'number' && activeConversation?.title !== 'Everything else' && (
-                <div className="px-4 pb-3 pt-3 animate-fade-in" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label={`Game story progress: ${progress}%`}>
-                    <div className="w-full h-1.5 bg-[#2E2E2E] rounded-full relative">
+                <div className="px-6 pb-4 pt-2 animate-fade-in" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label={`Game story progress: ${progress}%`}>
+                    <div className="w-full h-2 bg-[#1C1C1C]/80 rounded-full relative overflow-hidden border border-[#424242]/40">
                         <div
-                            className="h-full bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] rounded-full transition-all duration-500"
+                            className="h-full bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] rounded-full transition-all duration-700 shadow-[0_0_10px_rgba(229,61,61,0.5)]"
                             style={{ width: `${progress}%` }}
                         ></div>
                         <div
-                            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.7)] transition-all duration-500"
+                            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 bg-white rounded-full shadow-[0_0_12px_rgba(255,255,255,0.8)] transition-all duration-700 border-2 border-[#E53A3A]/60"
                             style={{ left: `${progress}%` }}
                         ></div>
                     </div>
-                    <p className="text-xs text-left text-[#A3A3A3] mt-2">Story completed so far...</p>
+                    <p className="text-xs text-left text-[#A3A3A3] mt-3 font-medium">Story completed so far...</p>
                 </div>
             )}
         </div>

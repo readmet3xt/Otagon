@@ -1,23 +1,16 @@
 {
-  "name": "Otakon AI Gaming Companion",
+  "name": "Otakon AI - Your Gaming Companion",
   "short_name": "Otakon",
-  "description": "Your AI-Native Gaming Companion with voice commands, personalized AI responses, and comprehensive game assistance.",
+  "description": "Get spoiler-free gaming hints and help with AI-powered assistance",
   "start_url": "/",
-  "scope": "/",
   "display": "standalone",
-  "orientation": "portrait-primary",
   "background_color": "#111111",
   "theme_color": "#E53A3A",
-  "categories": ["games", "productivity", "utilities"],
+  "orientation": "portrait-primary",
+  "scope": "/",
   "lang": "en",
-  "dir": "ltr",
+  "categories": ["games", "productivity", "utilities"],
   "icons": [
-    {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
@@ -33,26 +26,41 @@
   ],
   "shortcuts": [
     {
-      "name": "Ask AI",
-      "short_name": "Ask",
-      "description": "Quickly ask Otakon AI for help",
-      "url": "/?action=ask",
+      "name": "New Chat",
+      "short_name": "Chat",
+      "description": "Start a new conversation",
+      "url": "/?shortcut=new-chat",
       "icons": [
         {
-          "src": "/icon.svg",
-          "sizes": "96x96"
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     },
     {
       "name": "Voice Commands",
       "short_name": "Voice",
-      "description": "Use voice commands for hands-free gaming",
-      "url": "/?action=voice",
+      "description": "Use hands-free voice commands",
+      "url": "/?shortcut=voice",
       "icons": [
         {
-          "src": "/icon.svg",
-          "sizes": "96x96"
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Settings",
+      "short_name": "Settings",
+      "description": "Manage your preferences",
+      "url": "/?shortcut=settings",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     }

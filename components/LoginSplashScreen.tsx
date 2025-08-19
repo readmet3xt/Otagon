@@ -199,35 +199,45 @@ const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, onOpe
             case 'signin':
                 return (
                     <form onSubmit={handleEmailSignIn} className="w-full space-y-4">
-                        <div className="text-center mb-6">
-                            <h2 className="text-2xl font-bold text-white mb-2">Sign In</h2>
-                            <p className="text-[#A3A3A3]">Welcome back! Sign in to your account</p>
+                        <div className="text-center mb-8">
+                            <h2 className="text-3xl font-bold text-white mb-3 bg-clip-text text-transparent bg-gradient-to-r from-[#FF4D4D] to-[#FFAB40]">Sign In</h2>
+                            <p className="text-[#A3A3A3] text-lg">Welcome back! Sign in to your account</p>
                         </div>
                         
                         {errorMessage && (
-                            <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg text-sm">
+                            <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm backdrop-blur-sm">
                                 {errorMessage}
                             </div>
                         )}
                         
-                        <div>
+                        {successMessage && (
+                            <div className="bg-green-500/10 border border-green-500/20 text-green-400 px-4 py-3 rounded-xl text-sm backdrop-blur-sm">
+                                {successMessage}
+                            </div>
+                        )}
+                        
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-[#CFCFCF]">Email Address</label>
                             <input
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="Enter your email"
                                 required
-                                className="w-full bg-[#2E2E2E] border border-[#424242] rounded-lg py-3 px-4 text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-[#FFAB40] transition-colors"
+                                disabled={isLoading}
+                                className="w-full bg-gradient-to-r from-[#2E2E2E] to-[#1A1A1A] border-2 border-[#424242]/60 rounded-xl py-3 px-4 text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-[#FFAB40] focus:border-[#FFAB40]/60 transition-all duration-300 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
                             />
                         </div>
-                        <div>
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-[#CFCFCF]">Password</label>
                             <input
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="Enter your password"
                                 required
-                                className="w-full bg-[#2E2E2E] border border-[#424242] rounded-lg py-3 px-4 text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-[#FFAB40] transition-colors"
+                                disabled={isLoading}
+                                className="w-full bg-gradient-to-r from-[#2E2E2E] to-[#1A1A1A] border-2 border-[#424242]/60 rounded-xl py-3 px-4 text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-[#FFAB40] focus:border-[#FFAB40]/60 transition-all duration-300 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
                             />
                         </div>
                         
@@ -235,14 +245,14 @@ const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, onOpe
                             <button
                                 type="button"
                                 onClick={handleBackToOptions}
-                                className="flex-1 bg-[#2E2E2E] border border-[#424242] text-[#F5F5F5] font-semibold py-3 px-6 rounded-lg transition-colors hover:bg-[#424242]"
+                                className="flex-1 bg-gradient-to-r from-[#2E2E2E] to-[#1C1C1C] border-2 border-[#424242]/60 text-[#F5F5F5] font-semibold py-3 px-6 rounded-xl transition-all duration-300 hover:from-[#424242] hover:to-[#2E2E2E] hover:scale-105 hover:shadow-lg"
                             >
                                 Back
                             </button>
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="flex-1 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                className="flex-1 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#E53A3A]/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                             >
                                 {isLoading ? (
                                     <div className="flex items-center justify-center">
@@ -259,7 +269,7 @@ const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, onOpe
                             <button
                                 type="button"
                                 onClick={() => setEmailMode('forgot-password')}
-                                className="text-sm text-[#FFAB40] hover:text-[#FFAB40]/80 transition-colors"
+                                className="text-sm text-[#FFAB40] hover:text-[#FFAB40]/80 transition-colors underline"
                             >
                                 Forgot your password?
                             </button>
@@ -268,7 +278,7 @@ const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, onOpe
                                 <button
                                     type="button"
                                     onClick={() => setEmailMode('signup')}
-                                    className="text-[#FFAB40] hover:text-[#FFAB40]/80 transition-colors"
+                                    className="text-[#FFAB40] hover:text-[#FFAB40]/80 transition-colors underline"
                                 >
                                     Sign up
                                 </button>
@@ -280,45 +290,57 @@ const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, onOpe
             case 'signup':
                 return (
                     <form onSubmit={handleEmailSignUp} className="w-full space-y-4">
-                        <div className="text-center mb-6">
-                            <h2 className="text-2xl font-bold text-white mb-2">Create Account</h2>
-                            <p className="text-[#A3A3A3]">Join Otakon AI and start your gaming journey</p>
+                        <div className="text-center mb-8">
+                            <h2 className="text-3xl font-bold text-white mb-3 bg-clip-text text-transparent bg-gradient-to-r from-[#FF4D4D] to-[#FFAB40]">Create Account</h2>
+                            <p className="text-[#A3A3A3] text-lg">Join Otakon AI and start your gaming journey</p>
                         </div>
                         
                         {errorMessage && (
-                            <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg text-sm">
+                            <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm backdrop-blur-sm">
                                 {errorMessage}
                             </div>
                         )}
                         
-                        <div>
+                        {successMessage && (
+                            <div className="bg-green-500/10 border border-green-500/20 text-green-400 px-4 py-3 rounded-xl text-sm backdrop-blur-sm">
+                                {successMessage}
+                            </div>
+                        )}
+                        
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-[#CFCFCF]">Email Address</label>
                             <input
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="Enter your email"
                                 required
-                                className="w-full bg-[#2E2E2E] border border-[#424242] rounded-lg py-3 px-4 text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-[#FFAB40] transition-colors"
+                                disabled={isLoading}
+                                className="w-full bg-gradient-to-r from-[#2E2E2E] to-[#1A1A1A] border-2 border-[#424242]/60 rounded-xl py-3 px-4 text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-[#FFAB40] focus:border-[#FFAB40]/60 transition-all duration-300 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
                             />
                         </div>
-                        <div>
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-[#CFCFCF]">Password</label>
                             <input
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="Create a password"
                                 required
-                                className="w-full bg-[#2E2E2E] border border-[#424242] rounded-lg py-3 px-4 text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-[#FFAB40] transition-colors"
+                                disabled={isLoading}
+                                className="w-full bg-gradient-to-r from-[#2E2E2E] to-[#1A1A1A] border-2 border-[#424242]/60 rounded-xl py-3 px-4 text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-[#FFAB40] focus:border-[#FFAB40]/60 transition-all duration-300 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
                             />
                         </div>
-                        <div>
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-[#CFCFCF]">Confirm Password</label>
                             <input
                                 type="password"
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                 placeholder="Confirm your password"
                                 required
-                                className="w-full bg-[#2E2E2E] border border-[#424242] rounded-lg py-3 px-4 text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-[#FFAB40] transition-colors"
+                                disabled={isLoading}
+                                className="w-full bg-gradient-to-r from-[#2E2E2E] to-[#1A1A1A] border-2 border-[#424242]/60 rounded-xl py-3 px-4 text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-[#FFAB40] focus:border-[#FFAB40]/60 transition-all duration-300 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
                             />
                         </div>
                         
@@ -326,14 +348,14 @@ const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, onOpe
                             <button
                                 type="button"
                                 onClick={handleBackToOptions}
-                                className="flex-1 bg-[#2E2E2E] border border-[#424242] text-[#F5F5F5] font-semibold py-3 px-6 rounded-lg transition-colors hover:bg-[#424242]"
+                                className="flex-1 bg-gradient-to-r from-[#2E2E2E] to-[#1C1C1C] border-2 border-[#424242]/60 text-[#F5F5F5] font-semibold py-3 px-6 rounded-xl transition-all duration-300 hover:from-[#424242] hover:to-[#2E2E2E] hover:scale-105 hover:shadow-lg"
                             >
                                 Back
                             </button>
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="flex-1 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                className="flex-1 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#E53A3A]/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                             >
                                 {isLoading ? (
                                     <div className="flex items-center justify-center">
@@ -351,7 +373,7 @@ const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, onOpe
                             <button
                                 type="button"
                                 onClick={() => setEmailMode('signin')}
-                                className="text-[#FFAB40] hover:text-[#FFAB40]/80 transition-colors"
+                                className="text-[#FFAB40] hover:text-[#FFAB40]/80 transition-colors underline"
                             >
                                 Sign in
                             </button>
@@ -362,31 +384,33 @@ const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, onOpe
             case 'forgot-password':
                 return (
                     <form onSubmit={handleForgotPassword} className="w-full space-y-4">
-                        <div className="text-center mb-6">
-                            <h2 className="text-2xl font-bold text-white mb-2">Reset Password</h2>
-                            <p className="text-[#A3A3A3]">Enter your email to receive a password reset link</p>
+                        <div className="text-center mb-8">
+                            <h2 className="text-3xl font-bold text-white mb-3 bg-clip-text text-transparent bg-gradient-to-r from-[#FF4D4D] to-[#FFAB40]">Reset Password</h2>
+                            <p className="text-[#A3A3A3] text-lg">Enter your email to receive a password reset link</p>
                         </div>
                         
                         {errorMessage && (
-                            <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg text-sm">
+                            <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm backdrop-blur-sm">
                                 {errorMessage}
                             </div>
                         )}
                         
                         {successMessage && (
-                            <div className="bg-green-500/10 border border-green-500/20 text-green-400 px-4 py-3 rounded-lg text-sm">
+                            <div className="bg-green-500/10 border border-green-500/20 text-green-400 px-4 py-3 rounded-xl text-sm backdrop-blur-sm">
                                 {successMessage}
                             </div>
                         )}
                         
-                        <div>
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-[#CFCFCF]">Email Address</label>
                             <input
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="Enter your email"
                                 required
-                                className="w-full bg-[#2E2E2E] border border-[#424242] rounded-lg py-3 px-4 text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-[#FFAB40] transition-colors"
+                                disabled={isLoading}
+                                className="w-full bg-gradient-to-r from-[#2E2E2E] to-[#1A1A1A] border-2 border-[#424242]/60 rounded-xl py-3 px-4 text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-[#FFAB40] focus:border-[#FFAB40]/60 transition-all duration-300 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
                             />
                         </div>
                         
@@ -394,14 +418,14 @@ const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, onOpe
                             <button
                                 type="button"
                                 onClick={handleBackToOptions}
-                                className="flex-1 bg-[#2E2E2E] border border-[#424242] text-[#F5F5F5] font-semibold py-3 px-6 rounded-lg transition-colors hover:bg-[#424242]"
+                                className="flex-1 bg-gradient-to-r from-[#2E2E2E] to-[#1C1C1C] border-2 border-[#424242]/60 text-[#F5F5F5] font-semibold py-3 px-6 rounded-xl transition-all duration-300 hover:from-[#424242] hover:to-[#2E2E2E] hover:scale-105 hover:shadow-lg"
                             >
                                 Back
                             </button>
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="flex-1 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                className="flex-1 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#E53A3A]/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                             >
                                 {isLoading ? (
                                     <div className="flex items-center justify-center">
@@ -419,7 +443,7 @@ const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, onOpe
                             <button
                                 type="button"
                                 onClick={() => setEmailMode('signin')}
-                                className="text-[#FFAB40] hover:text-[#FFAB40]/80 transition-colors"
+                                className="text-[#FFAB40] hover:text-[#FFAB40]/80 transition-colors underline"
                             >
                                 Sign in
                             </button>
@@ -433,183 +457,87 @@ const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, onOpe
     };
 
     return (
-        <div className="min-h-screen bg-[#111111] text-white flex flex-col">
-            {/* Main Content - Centered vertically with proper spacing */}
-            <div className="flex-1 flex flex-col items-center justify-center px-6">
-                <div className="w-full max-w-sm text-center space-y-4">
-                    {/* Logo and Title Section - Grouped together at top */}
-                    <div className="space-y-3">
-                        <div className="flex justify-center">
-                            <Logo />
-                        </div>
-                        <h1 className="text-3xl font-bold text-white">
-                            Welcome to Otakon
-                        </h1>
-                        <p className="text-lg text-white">
-                            Your spoiler-free gaming companion.
-                        </p>
-                    </div>
-                    
-                    {/* Much Smaller Gap - Minimal space between header and buttons */}
-                    <div className="h-8"></div>
-                    
-                    {/* Dynamic Form Section */}
-                    {emailMode === 'options' ? (
-                        /* Social Login Options */
-                        <div className="space-y-3">
-                        <Button
-                            onClick={() => handleAuth('google')}
-                            disabled={buttonAnimations.google}
-                            variant="ghost"
-                            size="lg"
-                            fullWidth
-                            className={`bg-white text-gray-800 shadow-md relative overflow-hidden ${
-                                buttonAnimations.google 
-                                    ? 'scale-95 opacity-80 cursor-not-allowed animate-pulse' 
-                                    : 'hover:scale-[1.02] active:scale-98'
-                            }`}
-                        >
-                            {buttonAnimations.google ? (
-                                <>
-                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-800 mr-2"></div>
-                                    <span>Connecting...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <GoogleIcon className="w-5 h-5" />
-                                    <span>Continue with Google</span>
-                                </>
-                            )}
-                        </Button>
-                        
-                        <Button
-                            onClick={() => handleAuth('discord')}
-                            disabled={buttonAnimations.discord}
-                            variant="ghost"
-                            size="lg"
-                            fullWidth
-                            className={`bg-gradient-to-r from-[#5865F2] to-[#4752C4] text-white shadow-md relative overflow-hidden ${
-                                buttonAnimations.discord 
-                                    ? 'scale-95 opacity-80 cursor-not-allowed animate-pulse' 
-                                    : 'hover:scale-[1.02] active:scale-98'
-                            }`}
-                        >
-                            {buttonAnimations.discord ? (
-                                <>
-                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                                    <span>Connecting...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <DiscordIcon className="w-5 h-5 text-white" />
-                                    <span>Continue with Discord</span>
-                                </>
-                            )}
-                        </Button>
-                        
-                        {/* Separation Line */}
-                        <div className="flex items-center py-2">
-                            <div className="flex-1 border-t border-[#424242]"></div>
-                            <span className="px-4 text-sm text-[#6E6E6E]">or</span>
-                            <div className="flex-1 border-t border-[#424242]"></div>
-                        </div>
-                        
-                        {/* Email Input Fields */}
-                        <div className="space-y-3">
-                            <div className="relative">
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="Email address"
-                                    className="w-full bg-[#2E2E2E] border border-[#424242] rounded-lg py-3 px-4 text-white placeholder-[#A3A3A3] focus:outline-none focus:ring-2 focus:ring-[#FFAB40] transition-colors"
-                                />
-                            </div>
-                            
-                            {/* Forgot Password and Create Account Links - Between email and password */}
-                            <div className="flex justify-between items-center">
-                                <button
-                                    onClick={() => setEmailMode('forgot-password')}
-                                    className="text-sm text-[#A3A3A3] hover:text-white transition-colors"
-                                >
-                                    Forgot your password?
-                                </button>
-                                <button
-                                    onClick={() => setEmailMode('signup')}
-                                    className="text-sm text-[#FFAB40] hover:text-[#FF4D4D] transition-colors font-medium"
-                                >
-                                    Create account
-                                </button>
-                            </div>
-                            
-                            <div className="relative">
-                                <input
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="Password"
-                                    className="w-full bg-[#2E2E2E] border border-[#424242] rounded-lg py-3 px-4 text-white placeholder-[#A3A3A3] focus:outline-none focus:ring-2 focus:ring-[#FFAB40] transition-colors"
-                                />
-                            </div>
-                            
-                            {/* Sign In Button */}
-                            <Button
-                                onClick={handleEmailSignIn}
-                                disabled={isLoading || !email || !password}
-                                variant={isLoading || !email || !password ? "secondary" : "primary"}
-                                size="lg"
-                                fullWidth
-                                loading={isLoading}
-                            >
-                                {!isLoading && <EmailIcon className="w-5 h-5" />}
-                                <span>{isLoading ? "Signing in..." : "Sign In"}</span>
-                            </Button>
-                        </div>
-                        
-                        {/* Guest Mode and Go Back Buttons - Moved further below with consistent sizing */}
-                        <div className="pt-6 space-y-3">
-                            <Button
-                                onClick={handleSkip}
-                                variant="outline"
-                                size="lg"
-                                fullWidth
-                                title="Skip for now - For testing and development only"
-                            >
-                                Enter Guest Mode
-                            </Button>
-                            
-                            <Button
-                                onClick={() => window.location.href = '/'}
-                                variant="outline"
-                                size="lg"
-                                fullWidth
-                                title="Go back to landing page - For testing purposes"
-                            >
-                                Go Back
-                            </Button>
-                        </div>
-                        </div>
-                    ) : (
-                        /* Email Forms (Sign In, Sign Up, Forgot Password) */
-                        <div className="w-full">
-                            {renderEmailForm()}
-                            
-                            {/* Back to Options Button */}
-                            <div className="pt-4 text-center">
-                                <button
-                                    onClick={() => setEmailMode('options')}
-                                    className="text-[#A3A3A3] hover:text-white transition-colors text-sm"
-                                >
-                                    ← Back to login options
-                                </button>
-                            </div>
-                        </div>
-                    )}
+        <div className="h-screen bg-gradient-to-br from-[#111111] to-[#0A0A0A] text-[#F5F5F5] flex flex-col items-center justify-center font-inter px-4 sm:px-6 md:px-8 pt-12 sm:pt-16 pb-16 sm:pb-20 text-center overflow-hidden animate-fade-in">
+            <div className="absolute top-0 left-0 w-full h-full bg-gradient-radial-at-top from-[#1C1C1C]/30 to-transparent pointer-events-none"></div>
+            
+            {/* Main Content - Centered */}
+            <div className="flex-1 flex flex-col items-center justify-center">
+                <div className="animate-fade-slide-up">
+                    <Logo className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24" />
                 </div>
+
+                            <h1 
+                className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#FF4D4D] to-[#FFAB40] mt-6 sm:mt-8 mb-4 sm:mb-6 animate-fade-slide-up leading-tight"
+               
+            >
+                Welcome to Otakon
+            </h1>
+
+            <p 
+                className="text-lg sm:text-xl md:text-2xl text-[#CFCFCF] mb-12 sm:mb-16 leading-relaxed animate-fade-slide-up"
+               
+            >
+                Your Spoiler-Free Gaming Companion
+            </p>
+
+                {emailMode === 'options' ? (
+                    <div 
+                        className="flex flex-col items-center justify-center gap-4 sm:gap-6 w-full max-w-lg px-4 sm:px-0 animate-fade-slide-up"
+                       
+                    >
+                    <button
+                        onClick={() => handleAuth('google')}
+                        disabled={isLoading}
+                        className={`w-full flex items-center justify-center gap-3 bg-gradient-to-r from-white to-gray-100 hover:from-gray-100 hover:to-gray-200 text-gray-800 font-bold py-4 sm:py-5 px-6 sm:px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 text-base sm:text-lg ${buttonAnimations.google ? 'animate-pulse-glow' : ''}`}
+                    >
+                        <GoogleIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+                        Continue with Google
+                    </button>
+                    
+                    <button
+                        onClick={() => handleAuth('discord')}
+                        disabled={isLoading}
+                        className={`w-full flex items-center justify-center gap-3 bg-gradient-to-r from-[#5865F2] to-[#4752C4] hover:from-[#4752C4] hover:to-[#3C45A5] text-white font-bold py-4 sm:py-5 px-6 sm:px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#5865F2]/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 text-base sm:text-lg ${buttonAnimations.discord ? 'animate-pulse-glow' : ''}`}
+                    >
+                        <DiscordIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+                        Continue with Discord
+                    </button>
+                    
+                    <button
+                        onClick={() => handleAuth('email')}
+                        disabled={isLoading}
+                        className={`w-full flex items-center justify-center gap-3 bg-gradient-to-r from-neutral-700 to-neutral-600 hover:from-neutral-600 hover:to-neutral-500 text-white font-bold py-4 sm:py-5 px-6 sm:px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 text-base sm:text-lg ${buttonAnimations.email ? 'animate-pulse-glow' : ''}`}
+                    >
+                        <EmailIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+                        Continue with Email
+                    </button>
+
+                                            <button
+                            onClick={handleSkip}
+                            className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-neutral-700 to-neutral-600 hover:from-neutral-600 hover:to-neutral-500 text-white font-bold py-4 sm:py-5 px-6 sm:px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg text-base sm:text-lg"
+                        >
+                            Enter Guest Mode
+                        </button>
+
+                        <button
+                            onClick={() => window.history.back()}
+                            className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-neutral-600 to-neutral-500 hover:from-neutral-500 hover:to-neutral-400 text-neutral-200 font-medium py-4 sm:py-5 px-6 sm:px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg text-base sm:text-lg"
+                        >
+                            Go Back
+                        </button>
+                    </div>
+                ) : (
+                    <div 
+                        className="w-full max-w-md px-4 sm:px-0 animate-fade-slide-up"
+                       
+                    >
+                        {renderEmailForm()}
+                    </div>
+                )}
             </div>
             
-            {/* Footer */}
-            <div className="flex-shrink-0 px-6 pb-6 text-center">
+            {/* Footer - Moved to bottom */}
+            <div className="flex-shrink-0 px-4 sm:px-6 pb-4 sm:pb-6 text-center">
                 <p className="text-xs text-[#A3A3A3]">
                     By continuing, you agree to our{' '}
                     {onOpenTerms ? (

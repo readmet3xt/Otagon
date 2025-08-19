@@ -211,7 +211,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuccess })
           >
             {loading ? (
               <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-transparent border-t-white border-r-white border-b-white mr-2"></div>
                 {mode === 'login' && 'Signing In...'}
                 {mode === 'signup' && 'Creating Account...'}
                 {mode === 'forgot-password' && 'Sending Email...'}

@@ -50,12 +50,12 @@ const FeedbackButtons: React.FC<FeedbackButtonsProps> = ({ onFeedback, feedbackS
   };
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
       {/* AI Context Toggle */}
       {aiContext && !hasVoted && (
         <button
           onClick={() => setShowContext(!showContext)}
-          className="text-xs text-blue-400 hover:text-blue-300 transition-colors self-start"
+          className="text-xs text-[#5B99E3] hover:text-[#7BB3F0] transition-all duration-200 self-start font-medium hover:scale-105"
         >
           {showContext ? 'Hide' : 'Show'} AI Context
         </button>
@@ -63,43 +63,43 @@ const FeedbackButtons: React.FC<FeedbackButtonsProps> = ({ onFeedback, feedbackS
 
       {/* AI Context Display */}
       {showContext && aiContext && (
-        <div className="text-xs text-blue-300 bg-blue-900/20 border border-blue-500/30 rounded p-2 mb-2 max-w-xs">
-          <div className="font-medium mb-1">AI Context:</div>
-          <div className="text-blue-200 text-xs opacity-80 truncate">
+        <div className="text-xs text-[#5B99E3] bg-[#1C1C1C]/60 border border-[#5B99E3]/30 rounded-xl p-3 mb-2 max-w-xs backdrop-blur-sm">
+          <div className="font-semibold mb-2 text-[#7BB3F0]">AI Context:</div>
+          <div className="text-[#5B99E3] text-xs opacity-90 leading-relaxed">
             {aiContext.replace(/\[.*?\]/g, '').trim().slice(0, 100)}...
           </div>
         </div>
       )}
 
       {/* Feedback Buttons */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         <button
           onClick={() => handleFeedback('up')}
           disabled={hasVoted}
           aria-pressed={feedbackState === 'up'}
-          className={`p-1.5 rounded-full transition-colors duration-200
+          className={`p-2.5 rounded-xl transition-all duration-300 hover:scale-105
             ${feedbackState === 'up'
-              ? 'bg-green-500/20 text-green-400'
-              : 'text-neutral-400 hover:bg-green-700/50 hover:text-white disabled:hover:bg-transparent disabled:opacity-50'
+              ? 'bg-gradient-to-r from-[#5CBB7B]/20 to-[#4CAF50]/20 text-[#5CBB7B] border-2 border-[#5CBB7B]/60 shadow-[0_0_15px_rgba(92,187,123,0.3)]'
+              : 'text-[#A3A3A3] hover:bg-gradient-to-r hover:from-[#5CBB7B]/20 hover:to-[#4CAF50]/20 hover:text-[#5CBB7B] hover:border-2 hover:border-[#5CBB7B]/40 disabled:hover:bg-transparent disabled:opacity-50 disabled:hover:scale-100'
             }`}
           aria-label="Good response"
           title="This response was helpful"
         >
-          <ThumbUpIcon className="w-4 h-4" />
+          <ThumbUpIcon className="w-5 h-5" />
         </button>
         <button
           onClick={() => handleFeedback('down')}
           disabled={hasVoted}
           aria-pressed={feedbackState === 'down' || feedbackState === 'submitted'}
-          className={`p-1.5 rounded-full transition-colors duration-200
+          className={`p-2.5 rounded-xl transition-all duration-300 hover:scale-105
             ${feedbackState === 'down' || feedbackState === 'submitted'
-              ? 'bg-red-500/20 text-red-400'
-              : 'text-neutral-400 hover:bg-red-700/50 hover:text-white disabled:hover:bg-transparent disabled:opacity-50'
+              ? 'bg-gradient-to-r from-[#FF4D4D]/20 to-[#FF6B6B]/20 text-[#FF4D4D] border-2 border-[#FF4D4D]/60 shadow-[0_0_15px_rgba(255,77,77,0.3)]'
+              : 'text-[#A3A3A3] hover:bg-gradient-to-r hover:from-[#FF4D4D]/20 hover:to-[#FF6B6B]/20 hover:text-[#FF4D4D] hover:border-2 hover:border-[#FF4D4D]/40 disabled:hover:bg-transparent disabled:opacity-50 disabled:hover:scale-100'
             }`}
           aria-label="Bad response"
           title="This response needs improvement"
         >
-          <ThumbDownIcon className="w-4 h-4" />
+          <ThumbDownIcon className="w-5 h-5" />
         </button>
       </div>
     </div>

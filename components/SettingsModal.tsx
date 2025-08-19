@@ -18,12 +18,13 @@ interface SettingsModalProps {
   onShowVanguardUpgrade: () => void;
   onLogout: () => void;
   onResetApp: () => void;
+  onShowHowToUse: () => void;
   userEmail?: string;
 }
 
 type ActiveTab = 'general' | 'preferences' | 'subscription' | 'help';
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, usage, onShowUpgrade, onShowVanguardUpgrade, onLogout, onResetApp, userEmail }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, usage, onShowUpgrade, onShowVanguardUpgrade, onLogout, onResetApp, onShowHowToUse, userEmail }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('general');
 
   if (!isOpen) {
@@ -33,10 +34,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, usage, o
   const TabButton: React.FC<{ id: ActiveTab; label: string; icon: React.ReactNode }> = ({ id, label, icon }) => (
     <button
       onClick={() => setActiveTab(id)}
-      className={`w-full flex items-center justify-center md:justify-start gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
+      className={`w-full flex items-center justify-center md:justify-start gap-4 px-4 py-3 text-base font-medium rounded-xl transition-all duration-300 ${
         activeTab === id
-          ? 'bg-[#E53A3A]/20 text-white'
-          : 'text-neutral-400 hover:bg-neutral-700/50 hover:text-white'
+          ? 'bg-gradient-to-r from-[#E53A3A]/20 to-[#D98C1F]/20 text-white border-2 border-[#E53A3A]/40 shadow-lg shadow-[#E53A3A]/10'
+          : 'text-neutral-400 hover:bg-gradient-to-r hover:from-neutral-700/50 hover:to-neutral-600/50 hover:text-white hover:scale-105'
       }`}
     >
       {icon}
@@ -45,35 +46,35 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, usage, o
   );
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in" onClick={onClose}>
+    <div className="fixed inset-0 bg-gradient-to-br from-black/80 to-[#0A0A0A]/80 backdrop-blur-xl flex items-center justify-center z-50 animate-fade-in" onClick={onClose}>
       <div
-        className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative animate-scale-in flex flex-col max-h-[90vh] h-auto md:h-[70vh]"
+        className="bg-gradient-to-r from-[#1C1C1C]/95 to-[#0A0A0A]/95 backdrop-blur-xl border-2 border-[#424242]/60 rounded-3xl shadow-2xl w-full max-w-5xl m-6 relative animate-scale-in flex flex-col max-h-[90vh] h-auto md:h-[75vh] hover:border-[#424242]/80 transition-all duration-500"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-neutral-500 hover:text-white transition-colors z-10 md:hidden"
+          className="absolute top-6 right-6 text-neutral-400 hover:text-white transition-all duration-300 z-10 md:hidden hover:scale-110"
           aria-label="Close settings"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
 
         <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
-            <nav className="flex-shrink-0 w-full md:w-56 p-4 border-b md:border-b-0 md:border-r border-neutral-800 flex flex-row md:flex-col justify-between">
+            <nav className="flex-shrink-0 w-full md:w-64 p-6 border-b-2 md:border-b-0 md:border-r-2 border-neutral-800/60 flex flex-row md:flex-col justify-between">
                 <div>
-                    <h2 className="text-lg font-bold text-white mb-4 px-2 hidden md:block">Settings</h2>
-                    <ul className="flex flex-row md:flex-col gap-1 w-full">
-                        <li className="flex-1 md:flex-none"><TabButton id="general" label="General" icon={<UserCircleIcon className="w-5 h-5" />} /></li>
-                        <li className="flex-1 md:flex-none"><TabButton id="preferences" label="AI Preferences" icon={<StarIcon className="w-5 h-5" />} /></li>
+                    <h2 className="text-xl font-bold text-white mb-6 px-2 hidden md:block leading-tight">Settings</h2>
+                    <ul className="flex flex-row md:flex-col gap-2 w-full">
+                        <li className="flex-1 md:flex-none"><TabButton id="general" label="General" icon={<UserCircleIcon className="w-6 h-6" />} /></li>
+                        <li className="flex-1 md:flex-none"><TabButton id="preferences" label="AI Preferences" icon={<StarIcon className="w-6 h-6" />} /></li>
                         {usage.tier !== 'free' && (
-                            <li className="flex-1 md:flex-none"><TabButton id="subscription" label="Subscription" icon={<CreditCardIcon className="w-5 h-5" />} /></li>
+                            <li className="flex-1 md:flex-none"><TabButton id="subscription" label="Subscription" icon={<CreditCardIcon className="w-6 h-6" />} /></li>
                         )}
-                        <li className="flex-1 md:flex-none"><TabButton id="help" label="Help Guide" icon={<QuestionMarkCircleIcon className="w-5 h-5" />} /></li>
+                        <li className="flex-1 md:flex-none"><TabButton id="help" label="Help Guide" icon={<QuestionMarkCircleIcon className="w-6 h-6" />} /></li>
                     </ul>
                 </div>
             </nav>
 
-            <main className="flex-1 overflow-y-auto p-6 sm:p-8">
+            <main className="flex-1 overflow-y-auto p-8 sm:p-10">
                 {activeTab === 'general' && (
                     <GeneralSettingsTab
                         usage={usage}
@@ -81,6 +82,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, usage, o
                         onShowVanguardUpgrade={() => { onShowVanguardUpgrade(); onClose(); }}
                         onResetApp={() => { onResetApp(); onClose(); }}
                         onLogout={() => { onLogout(); onClose(); }}
+                        onShowHowToUse={() => { onShowHowToUse(); onClose(); }}
                         userEmail={userEmail}
                     />
                 )}
