@@ -802,7 +802,7 @@ export const generateInsightWithSearch = async (
                 'paid', // Default tier, can be overridden
                 1000, // Default token estimate
                 true
-            );
+            ).catch(error => console.error('Error tracking API cost:', error));
             
             return response.text;
         } else {
@@ -817,7 +817,7 @@ export const generateInsightWithSearch = async (
             'paid', // Default tier, can be overridden
             1000, // Default token estimate
             true
-        );
+        ).catch(error => console.error('Error tracking API cost:', error));
         
         return response.text;
         }

@@ -8,6 +8,7 @@ import GeneralSettingsTab from './GeneralSettingsTab';
 import SubscriptionSettingsTab from './SubscriptionSettingsTab';
 import HelpGuideTab from './HelpGuideTab';
 import UserPreferencesTab from './UserPreferencesTab';
+import { AdminCostDashboard } from './AdminCostDashboard';
 
 
 interface SettingsModalProps {
@@ -22,10 +23,11 @@ interface SettingsModalProps {
   userEmail?: string;
 }
 
-type ActiveTab = 'general' | 'preferences' | 'subscription' | 'help';
+type ActiveTab = 'general' | 'preferences' | 'subscription' | 'help' | 'admin';
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, usage, onShowUpgrade, onShowVanguardUpgrade, onLogout, onResetApp, onShowHowToUse, userEmail }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('general');
+  const [showAdminDashboard, setShowAdminDashboard] = useState(false);
 
   if (!isOpen) {
     return null;
@@ -70,6 +72,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, usage, o
                             <li className="flex-1 md:flex-none"><TabButton id="subscription" label="Subscription" icon={<CreditCardIcon className="w-6 h-6" />} /></li>
                         )}
                         <li className="flex-1 md:flex-none"><TabButton id="help" label="Help Guide" icon={<QuestionMarkCircleIcon className="w-6 h-6" />} /></li>
+                        {/* Admin tab - only show for admin users */}
+                        <li className="flex-1 md:flex-none">
+                            <button
+                                onClick={() => setShowAdminDashboard(true)}
+                                className="w-full flex items-center justify-center md:justify-start gap-4 px-4 py-3 text-base font-medium rounded-xl transition-all duration-300 text-neutral-400 hover:bg-gradient-to-r hover:from-neutral-700/50 hover:to-neutral-600/50 hover:text-white hover:scale-105"
+                            >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                                </svg>
+                                <span className="hidden md:inline">Admin</span>
+                            </button>
+                        </li>
                     </ul>
                 </div>
             </nav>
@@ -92,6 +106,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, usage, o
             </main>
         </div>
       </div>
+      
+      {/* Admin Cost Dashboard */}
+      <AdminCostDashboard
+        isOpen={showAdminDashboard}
+        onClose={() => setShowAdminDashboard(false)}
+      />
     </div>
   );
 };

@@ -3,15 +3,25 @@
  * 
  * This service ensures we only make API calls when explicitly requested by users
  * and uses the most cost-effective models for different use cases.
+ * 
+ * ADMIN ONLY: All cost data is synced to Supabase for admin monitoring
  */
+
+import { supabase } from './supabase';
 
 export interface APICallRecord {
     timestamp: number;
     model: 'flash' | 'pro';
-    purpose: 'new_game_pill' | 'user_query' | 'insight_update' | 'retry';
+    purpose: 'new_game_pill' | 'user_query' | 'insight_update' | 'retry' | 'chat_message';
     userTier: 'free' | 'paid';
     cost: number; // Estimated cost in USD
     success: boolean;
+    errorMessage?: string;
+    conversationId?: string;
+    gameName?: string;
+    genre?: string;
+    progress?: number;
+    metadata?: Record<string, any>;
 }
 
 export interface APICostSummary {
@@ -27,7 +37,7 @@ export interface APICostSummary {
 class APICostService {
     private static instance: APICostService;
     private readonly COST_KEY = 'otakon_api_cost_records';
-    private readonly MAX_RECORDS = 1000; // Keep last 1000 calls
+    private readonly MAX_RECORDS = 100; // Keep last 100 calls locally for offline fallback
     
     // Estimated costs per 1K tokens (approximate)
     private readonly COST_PER_1K_TOKENS = {
@@ -45,15 +55,21 @@ class APICostService {
     }
 
     /**
-     * Record an API call for cost tracking
+     * Record an API call for cost tracking (syncs to Supabase)
      */
-    recordAPICall(
+    async recordAPICall(
         model: 'flash' | 'pro',
-        purpose: 'new_game_pill' | 'user_query' | 'insight_update' | 'retry',
+        purpose: 'new_game_pill' | 'user_query' | 'insight_update' | 'retry' | 'chat_message',
         userTier: 'free' | 'paid',
         estimatedTokens: number = 1000, // Default estimate
-        success: boolean = true
-    ): void {
+        success: boolean = true,
+        errorMessage?: string,
+        conversationId?: string,
+        gameName?: string,
+        genre?: string,
+        progress?: number,
+        metadata?: Record<string, any>
+    ): Promise<void> {
         try {
             const record: APICallRecord = {
                 timestamp: Date.now(),
@@ -61,23 +77,26 @@ class APICostService {
                 purpose,
                 userTier,
                 cost: this.calculateCost(model, estimatedTokens),
-                success
+                success,
+                errorMessage,
+                conversationId,
+                gameName,
+                genre,
+                progress,
+                metadata
             };
 
-            const records = this.getAPICallRecords();
-            records.push(record);
+            // Store locally for offline fallback
+            this.storeLocally(record);
 
-            // Keep only the last MAX_RECORDS
-            if (records.length > this.MAX_RECORDS) {
-                records.splice(0, records.length - this.MAX_RECORDS);
-            }
-
-            localStorage.setItem(this.COST_KEY, JSON.stringify(records));
+            // Sync to Supabase (admin monitoring)
+            await this.syncToSupabase(record);
             
             console.log(`💰 API Call Recorded: ${model} model for ${purpose} (${userTier} user) - Cost: $${record.cost.toFixed(6)}`);
             
         } catch (error) {
             console.error('Error recording API call:', error);
+            // Still store locally even if Supabase sync fails
         }
     }
 
@@ -90,23 +109,154 @@ class APICostService {
     }
 
     /**
-     * Get all API call records
+     * Store record locally for offline fallback
      */
-    private getAPICallRecords(): APICallRecord[] {
+    private storeLocally(record: APICallRecord): void {
+        try {
+            const records = this.getLocalAPICallRecords();
+            records.push(record);
+
+            // Keep only the last MAX_RECORDS
+            if (records.length > this.MAX_RECORDS) {
+                records.splice(0, records.length - this.MAX_RECORDS);
+            }
+
+            localStorage.setItem(this.COST_KEY, JSON.stringify(records));
+        } catch (error) {
+            console.error('Error storing API call locally:', error);
+        }
+    }
+
+    /**
+     * Sync record to Supabase for admin monitoring
+     */
+    private async syncToSupabase(record: APICallRecord): Promise<void> {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                console.warn('No authenticated user for API cost tracking');
+                return;
+            }
+
+            const { error } = await supabase
+                .from('api_cost_tracking')
+                .insert({
+                    user_id: user.id,
+                    timestamp: new Date(record.timestamp).toISOString(),
+                    model: record.model,
+                    purpose: record.purpose,
+                    user_tier: record.userTier,
+                    estimated_tokens: record.estimatedTokens || 1000,
+                    estimated_cost: record.cost,
+                    success: record.success,
+                    error_message: record.errorMessage,
+                    conversation_id: record.conversationId,
+                    game_name: record.gameName,
+                    genre: record.genre,
+                    progress: record.progress,
+                    metadata: record.metadata || {}
+                });
+
+            if (error) {
+                console.error('Error syncing API cost to Supabase:', error);
+            }
+        } catch (error) {
+            console.error('Error in Supabase sync:', error);
+        }
+    }
+
+    /**
+     * Get local API call records (offline fallback)
+     */
+    private getLocalAPICallRecords(): APICallRecord[] {
         try {
             const stored = localStorage.getItem(this.COST_KEY);
             return stored ? JSON.parse(stored) : [];
         } catch (error) {
-            console.error('Error reading API call records:', error);
+            console.error('Error reading local API call records:', error);
             return [];
         }
     }
 
     /**
-     * Get cost summary for monitoring
+     * Get cost summary from Supabase (admin only)
      */
-    getCostSummary(): APICostSummary {
-        const records = this.getAPICallRecords();
+    async getCostSummary(): Promise<APICostSummary> {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                throw new Error('No authenticated user');
+            }
+
+            // Check if user is admin
+            const { data: profile } = await supabase
+                .from('user_profiles')
+                .select('is_admin')
+                .eq('user_id', user.id)
+                .single();
+
+            if (!profile?.is_admin) {
+                throw new Error('Admin access required for cost summary');
+            }
+
+            // Get last 30 days of data
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+            const { data: records, error } = await supabase
+                .from('api_cost_tracking')
+                .select('*')
+                .gte('timestamp', thirtyDaysAgo.toISOString())
+                .order('timestamp', { ascending: false });
+
+            if (error) {
+                throw error;
+            }
+
+            return this.processCostSummary(records || []);
+        } catch (error) {
+            console.error('Error getting cost summary from Supabase:', error);
+            // Fallback to local data
+            return this.getLocalCostSummary();
+        }
+    }
+
+    /**
+     * Process cost summary from Supabase data
+     */
+    private processCostSummary(records: any[]): APICostSummary {
+        const callsByModel: Record<'flash' | 'pro', number> = { flash: 0, pro: 0 };
+        const callsByPurpose: Record<string, number> = {};
+        const callsByTier: Record<'free' | 'paid', number> = { free: 0, paid: 0 };
+
+        let totalCost = 0;
+
+        records.forEach(record => {
+            callsByModel[record.model]++;
+            callsByPurpose[record.purpose] = (callsByPurpose[record.purpose] || 0) + 1;
+            callsByTier[record.user_tier]++;
+            totalCost += parseFloat(record.estimated_cost);
+        });
+
+        // Estimate monthly cost based on 30-day average
+        const estimatedMonthlyCost = totalCost * (30 / 30); // Simple projection
+
+        return {
+            totalCalls: records.length,
+            totalCost,
+            callsByModel,
+            callsByPurpose,
+            callsByTier,
+            lastCall: records.length > 0 ? new Date(records[0].timestamp).getTime() : 0,
+            estimatedMonthlyCost
+        };
+    }
+
+    /**
+     * Get local cost summary (offline fallback)
+     */
+    private getLocalCostSummary(): APICostSummary {
+        const records = this.getLocalAPICallRecords();
         const now = Date.now();
         const thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000);
 
@@ -141,89 +291,87 @@ class APICostService {
     }
 
     /**
-     * Get cost breakdown by model
+     * Get cost breakdown by model from Supabase (admin only)
      */
-    getModelCostBreakdown(): { flash: number; pro: number } {
-        const records = this.getAPICallRecords();
-        const now = Date.now();
-        const thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000);
-
-        const recentRecords = records.filter(record => record.timestamp > thirtyDaysAgo);
-        
-        let flashCost = 0;
-        let proCost = 0;
-
-        recentRecords.forEach(record => {
-            if (record.model === 'flash') {
-                flashCost += record.cost;
-            } else {
-                proCost += record.cost;
-            }
-        });
-
-        return { flash: flashCost, pro: proCost };
-    }
-
-    /**
-     * Get usage recommendations for cost optimization
-     */
-    getCostOptimizationRecommendations(): string[] {
-        const summary = this.getCostSummary();
-        const recommendations: string[] = [];
-
-        // Check Pro model usage
-        if (summary.callsByModel.pro > summary.callsByModel.flash * 0.1) {
-            recommendations.push('Consider using Flash model more frequently for cost optimization');
-        }
-
-        // Check new game pill frequency
-        if (summary.callsByPurpose.new_game_pill > summary.totalCalls * 0.2) {
-            recommendations.push('New game pill generation is high - ensure this only happens when explicitly requested');
-        }
-
-        // Check free user API usage
-        if (summary.callsByTier.free > 0) {
-            recommendations.push('Free users should not generate API calls - review implementation');
-        }
-
-        // Check overall cost
-        if (summary.estimatedMonthlyCost > 10) {
-            recommendations.push('Monthly API cost is high - review usage patterns and optimize');
-        }
-
-        return recommendations.length > 0 ? recommendations : ['API usage is within optimal ranges'];
-    }
-
-    /**
-     * Clear old records to save storage
-     */
-    cleanupOldRecords(): void {
+    async getModelCostBreakdown(): Promise<{ flash: number; pro: number }> {
         try {
-            const records = this.getAPICallRecords();
-            const now = Date.now();
-            const ninetyDaysAgo = now - (90 * 24 * 60 * 60 * 1000);
-
-            const recentRecords = records.filter(record => record.timestamp > ninetyDaysAgo);
-            
-            if (recentRecords.length < records.length) {
-                localStorage.setItem(this.COST_KEY, JSON.stringify(recentRecords));
-                console.log(`🧹 Cleaned up ${records.length - recentRecords.length} old API call records`);
-            }
+            const summary = await this.getCostSummary();
+            return summary.callsByModel;
         } catch (error) {
-            console.error('Error cleaning up old records:', error);
+            console.error('Error getting model cost breakdown:', error);
+            return { flash: 0, pro: 0 };
         }
     }
 
     /**
-     * Export cost data for analysis
+     * Get usage recommendations for cost optimization (admin only)
      */
-    exportCostData(): string {
+    async getCostOptimizationRecommendations(): Promise<string[]> {
         try {
-            const records = this.getAPICallRecords();
+            const summary = await this.getCostSummary();
+            const recommendations: string[] = [];
+
+            // Check Pro model usage
+            if (summary.callsByModel.pro > summary.callsByModel.flash * 0.1) {
+                recommendations.push('Consider using Flash model more frequently for cost optimization');
+            }
+
+            // Check new game pill frequency
+            if (summary.callsByPurpose.new_game_pill > summary.totalCalls * 0.2) {
+                recommendations.push('New game pill generation is high - ensure this only happens when explicitly requested');
+            }
+
+            // Check free user API usage
+            if (summary.callsByTier.free > 0) {
+                recommendations.push('Free users should not generate API calls - review implementation');
+            }
+
+            // Check overall cost
+            if (summary.estimatedMonthlyCost > 10) {
+                recommendations.push('Monthly API cost is high - review usage patterns and optimize');
+            }
+
+            return recommendations.length > 0 ? recommendations : ['API usage is within optimal ranges'];
+        } catch (error) {
+            console.error('Error getting cost optimization recommendations:', error);
+            return ['Unable to generate recommendations'];
+        }
+    }
+
+    /**
+     * Export cost data for analysis (admin only)
+     */
+    async exportCostData(): Promise<string> {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                throw new Error('No authenticated user');
+            }
+
+            // Check if user is admin
+            const { data: profile } = await supabase
+                .from('user_profiles')
+                .select('is_admin')
+                .eq('user_id', user.id)
+                .single();
+
+            if (!profile?.is_admin) {
+                throw new Error('Admin access required for data export');
+            }
+
+            const { data: records, error } = await supabase
+                .from('api_cost_tracking')
+                .select('*')
+                .order('timestamp', { ascending: false });
+
+            if (error) {
+                throw error;
+            }
+
             const csv = [
-                'Timestamp,Model,Purpose,UserTier,Cost,Success',
-                ...records.map(record => 
-                    `${new Date(record.timestamp).toISOString()},${record.model},${record.purpose},${record.userTier},${record.cost},${record.success}`
+                'Timestamp,Model,Purpose,UserTier,EstimatedTokens,EstimatedCost,Success,ErrorMessage,ConversationId,GameName,Genre,Progress',
+                ...(records || []).map(record => 
+                    `${record.timestamp},${record.model},${record.purpose},${record.user_tier},${record.estimated_tokens},${record.estimated_cost},${record.success},${record.error_message || ''},${record.conversation_id || ''},${record.game_name || ''},${record.genre || ''},${record.progress || ''}`
                 )
             ].join('\n');
 
@@ -235,11 +383,78 @@ class APICostService {
     }
 
     /**
-     * Reset all cost tracking (for testing/debugging)
+     * Cleanup old records (admin only)
      */
-    resetCostTracking(): void {
+    async cleanupOldRecords(daysToKeep: number = 90): Promise<void> {
         try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                throw new Error('No authenticated user');
+            }
+
+            // Check if user is admin
+            const { data: profile } = await supabase
+                .from('user_profiles')
+                .select('is_admin')
+                .eq('user_id', user.id)
+                .single();
+
+            if (!profile?.is_admin) {
+                throw new Error('Admin access required for cleanup');
+            }
+
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
+
+            const { error } = await supabase
+                .from('api_cost_tracking')
+                .delete()
+                .lt('timestamp', cutoffDate.toISOString());
+
+            if (error) {
+                throw error;
+            }
+
+            console.log(`🧹 Cleaned up old API cost records older than ${daysToKeep} days`);
+        } catch (error) {
+            console.error('Error cleaning up old records:', error);
+        }
+    }
+
+    /**
+     * Reset all cost tracking (admin only - for testing/debugging)
+     */
+    async resetCostTracking(): Promise<void> {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                throw new Error('No authenticated user');
+            }
+
+            // Check if user is admin
+            const { data: profile } = await supabase
+                .from('user_profiles')
+                .select('is_admin')
+                .eq('user_id', user.id)
+                .single();
+
+            if (!profile?.is_admin) {
+                throw new Error('Admin access required for reset');
+            }
+
+            // Clear Supabase data
+            const { error } = await supabase
+                .from('api_cost_tracking')
+                .delete()
+                .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+
+            if (error) {
+                throw error;
+            }
+
+            // Clear local data
             localStorage.removeItem(this.COST_KEY);
+            
             console.log('🔄 API cost tracking reset');
         } catch (error) {
             console.error('Error resetting cost tracking:', error);

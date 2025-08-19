@@ -201,6 +201,41 @@ BEGIN
 END $$;
 
 -- =====================================================
+-- STEP 8.5: API COST TRACKING TABLE (ADMIN ONLY - v19 NEW)
+-- =====================================================
+
+-- Check if api_cost_tracking exists, create if not
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'api_cost_tracking') THEN
+        RAISE NOTICE 'Creating api_cost_tracking table...';
+        
+        CREATE TABLE api_cost_tracking (
+            id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+            user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+            timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            model TEXT NOT NULL CHECK (model IN ('flash', 'pro')),
+            purpose TEXT NOT NULL CHECK (purpose IN ('new_game_pill', 'user_query', 'insight_update', 'retry', 'chat_message')),
+            user_tier TEXT NOT NULL CHECK (user_tier IN ('free', 'paid')),
+            estimated_tokens INTEGER DEFAULT 1000,
+            estimated_cost DECIMAL(10, 8) NOT NULL,
+            success BOOLEAN DEFAULT TRUE,
+            error_message TEXT,
+            conversation_id TEXT REFERENCES conversations(id) ON DELETE SET NULL,
+            game_name TEXT,
+            genre TEXT,
+            progress INTEGER,
+            metadata JSONB DEFAULT '{}',
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+        
+        RAISE NOTICE '✅ api_cost_tracking table created successfully';
+    ELSE
+        RAISE NOTICE 'ℹ️  api_cost_tracking table already exists, skipping...';
+    END IF;
+END $$;
+
+-- =====================================================
 -- STEP 9: PROACTIVE TRIGGERS TABLE (v19 NEW)
 -- =====================================================
 
@@ -337,6 +372,15 @@ CREATE INDEX IF NOT EXISTS idx_enhanced_insights_user ON enhanced_insights(user_
 CREATE INDEX IF NOT EXISTS idx_enhanced_insights_status ON enhanced_insights(status);
 CREATE INDEX IF NOT EXISTS idx_enhanced_insights_priority ON enhanced_insights(priority);
 
+-- API cost tracking indexes (ADMIN MONITORING)
+CREATE INDEX IF NOT EXISTS idx_api_cost_tracking_user ON api_cost_tracking(user_id);
+CREATE INDEX IF NOT EXISTS idx_api_cost_tracking_timestamp ON api_cost_tracking(timestamp);
+CREATE INDEX IF NOT EXISTS idx_api_cost_tracking_model ON api_cost_tracking(model);
+CREATE INDEX IF NOT EXISTS idx_api_cost_tracking_purpose ON api_cost_tracking(purpose);
+CREATE INDEX IF NOT EXISTS idx_api_cost_tracking_user_tier ON api_cost_tracking(user_tier);
+CREATE INDEX IF NOT EXISTS idx_api_cost_tracking_success ON api_cost_tracking(success);
+CREATE INDEX IF NOT EXISTS idx_api_cost_tracking_created ON api_cost_tracking(created_at);
+
 -- Proactive triggers indexes
 CREATE INDEX IF NOT EXISTS idx_proactive_triggers_user ON proactive_triggers(user_id);
 CREATE INDEX IF NOT EXISTS idx_proactive_triggers_type ON proactive_triggers(trigger_type);
@@ -360,6 +404,7 @@ ALTER TABLE build_snapshots ENABLE ROW LEVEL SECURITY;
 ALTER TABLE session_summaries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE conversation_contexts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE enhanced_insights ENABLE ROW LEVEL SECURITY;
+ALTER TABLE api_cost_tracking ENABLE ROW LEVEL SECURITY;
 ALTER TABLE proactive_triggers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE proactive_insights ENABLE ROW LEVEL SECURITY;
 
@@ -456,6 +501,41 @@ BEGIN
         RAISE NOTICE '✅ Created enhanced_insights INSERT policy';
     ELSE
         RAISE NOTICE 'ℹ️  enhanced_insights INSERT policy already exists';
+    END IF;
+END $$;
+
+-- API cost tracking RLS policies (ADMIN ONLY)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_policies WHERE tablename = 'api_cost_tracking' AND policyname = 'Users can view own API cost records') THEN
+        CREATE POLICY "Users can view own API cost records" ON api_cost_tracking
+            FOR SELECT USING (auth.uid() = user_id);
+        RAISE NOTICE '✅ Created api_cost_tracking SELECT policy';
+    ELSE
+        RAISE NOTICE 'ℹ️  api_cost_tracking SELECT policy already exists';
+    END IF;
+    
+    IF NOT EXISTS (SELECT FROM pg_policies WHERE tablename = 'api_cost_tracking' AND policyname = 'Users can insert own API cost records') THEN
+        CREATE POLICY "Users can insert own API cost records" ON api_cost_tracking
+            FOR INSERT WITH CHECK (auth.uid() = user_id);
+        RAISE NOTICE '✅ Created api_cost_tracking INSERT policy';
+    ELSE
+        RAISE NOTICE 'ℹ️  api_cost_tracking INSERT policy already exists';
+    END IF;
+    
+    -- Admin can view all records (for cost monitoring)
+    IF NOT EXISTS (SELECT FROM pg_policies WHERE tablename = 'api_cost_tracking' AND policyname = 'Admins can view all API cost records') THEN
+        CREATE POLICY "Admins can view all API cost records" ON api_cost_tracking
+            FOR SELECT USING (
+                EXISTS (
+                    SELECT 1 FROM user_profiles 
+                    WHERE user_profiles.user_id = auth.uid() 
+                    AND user_profiles.is_admin = true
+                )
+            );
+        RAISE NOTICE '✅ Created api_cost_tracking admin SELECT policy';
+    ELSE
+        RAISE NOTICE 'ℹ️  api_cost_tracking admin SELECT policy already exists';
     END IF;
 END $$;
 
