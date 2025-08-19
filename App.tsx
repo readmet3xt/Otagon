@@ -532,6 +532,8 @@ const AppComponent: React.FC = () => {
 
     // Dedicated function for displaying multi-shot batches
     const displayMultiShotBatch = useCallback(async (imageDataArray: any[], processImmediate: boolean) => {
+        console.log(`🔄 displayMultiShotBatch called with ${imageDataArray.length} images:`, imageDataArray);
+        
         // ✅ CORRECT: Pass all images as separate ImageFile objects to sendMessage
         // sendMessage will group them together in one user message
         const formattedImageFiles = imageDataArray.map((imgData, index) => ({
@@ -542,6 +544,11 @@ const AppComponent: React.FC = () => {
         }));
         
         console.log(`🔄 Processing multi-shot batch with ${formattedImageFiles.length} images:`, formattedImageFiles.map(f => f.source));
+        console.log(`🔄 Formatted image files:`, formattedImageFiles.map(f => ({
+            source: f.source,
+            dataUrlLength: f.dataUrl?.length || 0,
+            base64Length: f.base64?.length || 0
+        })));
         
         // Use sendMessage to display the images grouped together in one message
         // sendMessage will create one userMessage with all images in the images array
@@ -581,10 +588,15 @@ const AppComponent: React.FC = () => {
         else if (data.type === 'screenshot_batch') {
             setActiveSubView('chat');
             
+            console.log("📸 Processing screenshot batch:", data);
+            
+            // Extract data from payload if it exists, otherwise use data directly
+            const batchData = data.payload || data;
+            
             // Check if we've already processed this batch (prevent duplicates)
             // Use a more robust key that includes the actual image content hash
-            const firstImageHash = data.images?.[0]?.substring(data.images[0].length - 100) || 'no_images';
-            const batchKey = `batch_${data.timestamp}_${data.images?.length}_${firstImageHash}`;
+            const firstImageHash = batchData.images?.[0]?.substring(batchData.images[0].length - 100) || 'no_images';
+            const batchKey = `batch_${batchData.timestamp}_${batchData.images?.length}_${firstImageHash}`;
             
             if (processedBatches.current.has(batchKey)) {
                 console.log("⚠️ Duplicate batch detected, skipping:", batchKey);
@@ -602,7 +614,7 @@ const AppComponent: React.FC = () => {
             }
             
             try {
-                const { images, processImmediate } = data;
+                const { images, processImmediate } = batchData;
                 
                 if (!images || !Array.isArray(images) || images.length === 0) {
                     console.warn("⚠️ Invalid screenshot batch payload - no images");
@@ -610,12 +622,37 @@ const AppComponent: React.FC = () => {
                 }
                 
                 // Convert base64 strings to image data objects
-                const imageDataArray = images.map((base64: string, index: number) => ({
-                    base64,
-                    mimeType: 'image/png', // Connector sends PNG format
-                    dataUrl: `data:image/png;base64,${base64}`,
-                    source: `connector_batch_${index + 1}`
-                }));
+                const imageDataArray = images.map((imageData: string, index: number) => {
+                    // Handle both formats: base64 string or full data URL
+                    let base64: string;
+                    let dataUrl: string;
+                    
+                    console.log(`📸 Processing image ${index + 1}:`, {
+                        originalLength: imageData.length,
+                        startsWithDataUrl: imageData.startsWith('data:image/'),
+                        firstChars: imageData.substring(0, 50),
+                        lastChars: imageData.substring(imageData.length - 20)
+                    });
+                    
+                    if (imageData.startsWith('data:image/')) {
+                        // Already a data URL
+                        dataUrl = imageData;
+                        base64 = imageData.split(',')[1] || imageData;
+                        console.log(`📸 Image ${index + 1}: Already data URL format`);
+                    } else {
+                        // Base64 string - convert to data URL
+                        dataUrl = `data:image/png;base64,${imageData}`;
+                        base64 = imageData;
+                        console.log(`📸 Image ${index + 1}: Converted base64 to data URL`);
+                    }
+                    
+                    return {
+                        base64,
+                        mimeType: 'image/png', // Connector sends PNG format
+                        dataUrl,
+                        source: `connector_batch_${index + 1}`
+                    };
+                });
                 
                 if (processImmediate) {
                     // Check if we're globally stopped
@@ -672,8 +709,13 @@ const AppComponent: React.FC = () => {
         else if (data.type === 'screenshot') {
             setActiveSubView('chat');
             
+            console.log("📸 Processing individual screenshot:", data);
+            
+            // Extract data from payload if it exists, otherwise use data directly
+            const screenshotData = data.payload || data;
+            
             try {
-                const { dataUrl, index, total, processImmediate, timestamp } = data;
+                const { dataUrl, index, total, processImmediate, timestamp } = screenshotData;
                 
                 // Validate image data
                 if (!dataUrl || !dataUrl.startsWith('data:image/')) {
