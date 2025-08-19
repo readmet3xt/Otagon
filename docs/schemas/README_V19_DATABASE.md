@@ -88,8 +88,8 @@ ai_feedback           -- AI response quality metrics
 # Connect to your Supabase database
 psql "postgresql://postgres:[YOUR-PASSWORD]@db.[YOUR-PROJECT-REF].supabase.co:5432/postgres"
 
-# Run the safe migration script (checks existing tables)
-\i OTAKON_V19_MIGRATION_SCRIPT.sql
+# Run the FIXED safe migration script (no transaction block issues)
+\i OTAKON_V19_MIGRATION_SCRIPT_FIXED.sql
 ```
 
 **⚠️ Alternative: Clean Slate (DESTROYS ALL DATA)**
@@ -97,6 +97,13 @@ If you want a completely fresh start and don't mind losing existing data:
 ```bash
 # WARNING: This will delete ALL existing tables and data!
 \i OTAKON_V19_ENHANCED_SCHEMA.sql
+```
+
+**🔄 Optional: Production Index Optimization**
+For production databases with heavy load, you can optimize indexes after migration:
+```bash
+# Run during maintenance windows (low activity periods)
+\i INDEX_RECREATION_PRODUCTION.sql
 ```
 
 ### Step 2: Verify Setup
