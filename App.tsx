@@ -1159,7 +1159,14 @@ const AppComponent: React.FC = () => {
         playerProfileService.completeFirstTimeSetup();
         setShowProfileSetup(false);
         setIsFirstTime(false);
-    }, []);
+        
+        // Add welcome message after profile setup completion
+        addSystemMessage(
+            "Welcome to Otakon! I'm here to be your spoiler-free guide through any game. To get started, you can upload a screenshot from a game you're currently playing, or just tell me about a game that's on your mind. What have you been playing lately?",
+            'everything-else',
+            false
+        );
+    }, [addSystemMessage]);
 
     const handleProfileSetupSkip = useCallback(() => {
         // Set default profile
@@ -1167,7 +1174,14 @@ const AppComponent: React.FC = () => {
         playerProfileService.saveProfile(defaultProfile);
         setShowProfileSetup(false);
         setIsFirstTime(false);
-    }, []);
+        
+        // Add welcome message after profile setup completion (even when skipped)
+        addSystemMessage(
+            "Welcome to Otakon! I'm here to be your spoiler-free guide through any game. To get started, you can upload a screenshot from a game you're currently playing, or just tell me about a game that's on your mind. What have you been playing lately?",
+            'everything-else',
+            false
+        );
+    }, [addSystemMessage]);
 
     const handleCloseUpgradeScreen = useCallback(() => setShowUpgradeScreen(false), []);
     const handleOpenConnectionModal = useCallback(() => setIsConnectionModalOpen(true), []);
@@ -1334,6 +1348,23 @@ const AppComponent: React.FC = () => {
         
         setFeedbackModalState(null);
     };
+
+    // Add welcome message for returning users who have completed profile setup
+    useEffect(() => {
+        if (view === 'app' && onboardingStatus === 'complete' && !isFirstTime) {
+            // User has completed profile setup, add welcome message if this is their first time opening the chat
+            const hasSeenWelcome = localStorage.getItem('otakon_welcome_message_shown');
+            if (!hasSeenWelcome) {
+                // Add welcome message to the "Everything Else" conversation
+                addSystemMessage(
+                    "Welcome to Otakon! I'm here to be your spoiler-free guide through any game. To get started, you can upload a screenshot from a game you're currently playing, or just tell me about a game that's on your mind. What have you been playing lately?",
+                    'everything-else',
+                    false
+                );
+                localStorage.setItem('otakon_welcome_message_shown', 'true');
+            }
+        }
+    }, [view, onboardingStatus, isFirstTime, addSystemMessage]);
 
     if (view === 'landing') {
         return (
@@ -1597,12 +1628,17 @@ const AppComponent: React.FC = () => {
                     onUpgradeClick={handleUpgradeClick}
                     onFeedback={handleFeedback}
                     onRetry={retryMessage}
+                    isFirstTime={isFirstTime}
                 />
             ) : (
                  <main className="flex-1 flex flex-col px-4 sm:px-6 pt-4 sm:pt-6 pb-4 overflow-y-auto">
                     {messages.length === 0 && loadingMessages.length === 0 ? (
                         <div className="flex-1 flex flex-col justify-end">
-                            <SuggestedPrompts onPromptClick={(prompt) => handleSendMessage(prompt)} isInputDisabled={isInputDisabled} />
+                            <SuggestedPrompts 
+                                onPromptClick={(prompt) => handleSendMessage(prompt)} 
+                                isInputDisabled={isInputDisabled}
+                                isFirstTime={isFirstTime}
+                            />
                         </div>
                     ) : (
                         <div className="flex flex-col gap-6 sm:gap-8 w-full max-w-4xl sm:max-w-5xl mx-auto my-4 sm:my-6">

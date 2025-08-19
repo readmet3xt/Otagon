@@ -20,6 +20,7 @@ interface MainViewContainerProps {
   onUpgradeClick: () => void;
   onFeedback: (type: 'message' | 'insight', convId: string, targetId: string, originalText: string, vote: 'up' | 'down') => void;
   onRetry: (id: string) => void;
+  isFirstTime?: boolean;
 }
 
 const usePrevious = <T,>(value: T) => {
@@ -43,6 +44,7 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
   onUpgradeClick,
   onFeedback,
   onRetry,
+  isFirstTime,
 }) => {
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
@@ -96,7 +98,7 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
           <div key="chat-view" className="flex-shrink-0 w-full h-full overflow-y-auto px-6 pt-6 pb-4">
             {messages.length === 0 && loadingMessages.length === 0 ? (
               <div className="flex-1 flex flex-col justify-end h-full">
-                <SuggestedPrompts onPromptClick={onSendMessage} isInputDisabled={isInputDisabled} />
+                <SuggestedPrompts onPromptClick={onSendMessage} isInputDisabled={isInputDisabled} isFirstTime={isFirstTime} />
               </div>
             ) : (
               <div className="flex flex-col gap-8 w-full max-w-5xl mx-auto my-6">
