@@ -1792,13 +1792,27 @@ const AppComponent: React.FC = () => {
                 />
             ) : (
                  <main className="flex-1 flex flex-col px-4 sm:px-6 pt-4 sm:pt-6 pb-4 overflow-y-auto">
-                    {messages.length === 0 && loadingMessages.length === 0 ? (
-                        <div className="flex-1 flex flex-col justify-end">
+                    {/* Always show suggested prompts for "Everything Else" tab */}
+                    {activeConversation?.id === 'everything-else' && (
+                        <div className="mb-6">
                             <SuggestedPrompts 
                                 onPromptClick={(prompt) => handleSendMessage(prompt)} 
                                 isInputDisabled={isInputDisabled}
                                 isFirstTime={isFirstTime}
                             />
+                        </div>
+                    )}
+                    
+                    {messages.length === 0 && loadingMessages.length === 0 ? (
+                        <div className="flex-1 flex flex-col justify-end">
+                            {/* Show suggested prompts for other tabs when no messages */}
+                            {activeConversation?.id !== 'everything-else' && (
+                                <SuggestedPrompts 
+                                    onPromptClick={(prompt) => handleSendMessage(prompt)} 
+                                    isInputDisabled={isInputDisabled}
+                                    isFirstTime={isFirstTime}
+                                />
+                            )}
                         </div>
                     ) : (
                         <div className="flex flex-col gap-6 sm:gap-8 w-full max-w-4xl sm:max-w-5xl mx-auto my-4 sm:my-6">

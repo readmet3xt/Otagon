@@ -19,7 +19,7 @@ const SuggestedPrompts: React.FC<SuggestedPromptsProps> = ({ onPromptClick, isIn
             return {
                 title: "Welcome to Otakon! 🎮",
                 subtitle: "I'm here to be your spoiler-free guide through any game. To get started, you can upload a screenshot from a game you're currently playing, or just tell me about a game that's on your mind. What have you been playing lately?",
-                showPrompts: true // FIXED: Always show prompts for all users
+                showPrompts: true
             };
         }
         
