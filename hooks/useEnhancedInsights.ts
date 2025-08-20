@@ -27,6 +27,12 @@ export interface UseEnhancedInsightsReturn {
     needsProModel: boolean;
 }
 
+/**
+ * 🚨 API COST OPTIMIZATION:
+ * - NO automatic API calls - only when user explicitly requests help
+ * - Free users: Always use Gemini 2.5 Flash
+ * - Paid users: Pro model ONLY for new game pill insights, Flash for everything else
+ */
 export const useEnhancedInsights = (
     conversationId: string, 
     gameName?: string, 
@@ -43,7 +49,8 @@ export const useEnhancedInsights = (
     const profile = playerProfileService.getProfile();
     const gameContext = gameName ? playerProfileService.getGameContext(gameName) : null;
 
-    // Initialize insights with placeholder tabs (no API calls)
+    // Initialize insights with placeholder tabs (NO API CALLS - cost optimization)
+    // This only creates the tab structure, no content generation happens automatically
     useEffect(() => {
         if (genre && profile && gameContext) {
             const tabs = enhancedInsightService.generateProfileAwareTabsForNewGame(
@@ -282,9 +289,13 @@ export const useEnhancedInsights = (
 
     /**
      * Check if insights should be updated (only for explicit user requests)
+     * 
+     * CRITICAL: This function ALWAYS returns false to prevent automatic API calls
+     * Insights are only updated when user explicitly requests help
      */
     const shouldUpdateInsights = useCallback((lastUpdateTime: number): boolean => {
-        // No automatic updates - only when user explicitly requests
+        // NO AUTOMATIC UPDATES - Only update when explicitly requested by user
+        // This prevents any background API calls and ensures cost optimization
         return false;
     }, []);
 

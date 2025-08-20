@@ -3,6 +3,18 @@ import { playerProfileService } from './playerProfileService';
 import { generateInsightWithSearch } from './geminiService';
 import { PlayerProfile, GameContext, EnhancedInsightTab } from './types';
 
+/**
+ * 🚨 API COST OPTIMIZATION STRATEGY:
+ * 
+ * 1. NO AUTOMATIC API CALLS - Only when user explicitly requests help
+ * 2. FREE USERS: Always use Gemini 2.5 Flash for all queries
+ * 3. PAID USERS: 
+ *    - Gemini 2.5 Flash for regular queries (text, image, image+text)
+ *    - Gemini 2.5 Pro ONLY ONCE when new game pill is created for insights
+ *    - After that, always use Flash for updates and follow-up queries
+ * 
+ * This ensures maximum cost efficiency while maintaining quality for paid users
+ */
 export interface ProfileAwareInsightResult {
     tabId: string;
     title: string;
@@ -68,21 +80,37 @@ class ProfileAwareInsightService {
                 }));
             }
 
-            // For paid users, generate content with Gemini 2.5 Pro (only for new game pills)
+            // For NEW GAME PILLS: Use Pro model for paid users, Flash for free users
             const results: ProfileAwareInsightResult[] = [];
             
             for (const tab of tabs) {
                 if (tab.isNewGamePill) {
                     try {
-                        // Use Gemini 2.5 Pro for new game pill content
-                        const content = await this.generateContentWithProModel(
-                            tab, 
-                            gameName, 
-                            genre, 
-                            progress, 
-                            profile, 
-                            gameContext
-                        );
+                        let content: string;
+                        
+                        if (userTier === 'paid') {
+                            // PAID USERS: Use Pro model for new game pill insights (ONLY time Pro is used)
+                            console.log(`💰 Using Gemini 2.5 Pro for new game pill insight: ${tab.title}`);
+                            content = await this.generateContentWithProModel(
+                                tab, 
+                                gameName, 
+                                genre, 
+                                progress, 
+                                profile, 
+                                gameContext
+                            );
+                        } else {
+                            // FREE USERS: Use Flash model for new game pill insights
+                            console.log(`🆓 Using Gemini 2.5 Flash for new game pill insight: ${tab.title}`);
+                            content = await this.generateContentWithFlashModel(
+                                tab, 
+                                gameName, 
+                                genre, 
+                                progress, 
+                                profile, 
+                                gameContext
+                            );
+                        }
                         
                         results.push({
                             tabId: tab.id,
@@ -90,7 +118,7 @@ class ProfileAwareInsightService {
                             content: content,
                             priority: tab.priority,
                             isProfileSpecific: tab.isProfileSpecific,
-                            generationModel: 'pro',
+                            generationModel: userTier === 'paid' ? 'pro' : 'flash',
                             lastUpdated: Date.now()
                         });
                     } catch (error) {
@@ -152,7 +180,8 @@ class ProfileAwareInsightService {
             
             for (const tab of updatedTabs) {
                 try {
-                    // Always use Flash model for updates (cost optimization)
+                    // ALWAYS use Flash model for updates (cost optimization for ALL users)
+                    console.log(`🔄 Using Gemini 2.5 Flash for insight update: ${tab.title}`);
                     const content = await this.generateContentWithFlashModel(
                         tab, 
                         gameName, 
@@ -279,10 +308,13 @@ Provide updated, relevant content that matches the player's current progress and
 
     /**
      * Check if insights need updating (only for explicit user requests)
+     * 
+     * CRITICAL: NO AUTOMATIC UPDATES - API calls only happen when user explicitly requests them
      */
     shouldUpdateInsights(currentProfile: PlayerProfile, currentGameContext: GameContext, lastUpdateTime: number): boolean {
-        // Only update when explicitly requested by user
-        return false; // No automatic updates
+        // NO AUTOMATIC UPDATES - Only update when explicitly requested by user
+        // This prevents any background API calls and ensures cost optimization
+        return false;
     }
 
     /**
