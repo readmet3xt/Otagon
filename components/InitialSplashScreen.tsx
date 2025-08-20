@@ -10,7 +10,7 @@ interface InitialSplashScreenProps {
 const InitialSplashScreen: React.FC<InitialSplashScreenProps> = ({ onComplete }) => {
   const handleDownloadPCClient = () => {
     // Hardcoded download URL for the specific file
-    const downloadUrl = 'https://github.com/readmet3xt/otakon-pc-client/releases/download/v1.0.0/Otakon.Connector.Setup.1.0.0.exe';
+    const downloadUrl = 'https://github.com/readmet3xt/readmet3xt.github.io/releases/download/Otakon-connector/Otakon.Connector.Setup.1.0.0.exe';
     window.open(downloadUrl, '_blank');
   };
 

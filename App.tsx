@@ -42,6 +42,7 @@ import PrivacyPolicyPage from './components/PrivacyPolicyPage';
 import RefundPolicyPage from './components/RefundPolicyPage';
 import EditIcon from './components/EditIcon';
 import LogoutIcon from './components/LogoutIcon';
+import UserIcon from './components/UserIcon';
 import { authService, AuthState } from './services/supabase';
 import { useMigration } from './hooks/useMigration';
 import MigrationModal from './components/MigrationModal';
@@ -227,25 +228,14 @@ const AppComponent: React.FC = () => {
         }
     }, []);
 
-    // Check if suggested prompts should be shown based on 24-hour cooldown
-    const shouldShowSuggestedPrompts = useCallback((): boolean => {
-        const now = Date.now();
-        const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-        
-        // Show prompts if:
-        // 1. First run experience (isFirstTime is true)
-        // 2. No messages in conversation (first time or cleared)
-        // 3. 24 hours have passed since last shown
-        return isFirstTime || 
-               lastSuggestedPromptsShown === 0 || 
-               (now - lastSuggestedPromptsShown) >= TWENTY_FOUR_HOURS_MS;
-    }, [lastSuggestedPromptsShown, isFirstTime]);
 
-    // Reset suggested prompts cooldown (useful for testing or manual reset)
+
+    // Reset suggested prompts (useful for testing or manual reset)
     const resetSuggestedPromptsCooldown = useCallback(() => {
         setLastSuggestedPromptsShown(0);
         localStorage.removeItem('lastSuggestedPromptsShown');
-        console.log('🔄 Reset suggested prompts cooldown - will show prompts again');
+        localStorage.removeItem('otakon_has_interacted_with_chat');
+        console.log('🔄 Reset suggested prompts - will show prompts again');
     }, []);
 
     // PWA Post-install handler
@@ -439,6 +429,22 @@ const AppComponent: React.FC = () => {
         activeConversation?.genre,
         activeConversation?.progress
     );
+    
+    // Enhanced suggested prompts logic that can access conversations
+    const shouldShowSuggestedPromptsEnhanced = useCallback((): boolean => {
+        // Show prompts if:
+        // 1. First run experience (isFirstTime is true)
+        // 2. No messages in conversation (first time or cleared)
+        // 3. User hasn't interacted with chat yet (no text queries or images)
+        // 4. Game pill hasn't been created yet (keep available in "Everything Else" tab)
+        
+        const hasInteractedWithChat = localStorage.getItem('otakon_has_interacted_with_chat') === 'true';
+        const hasGamePill = Object.keys(conversations).some(id => id !== 'everything-else');
+        
+        return isFirstTime || 
+               lastSuggestedPromptsShown === 0 || 
+               (!hasInteractedWithChat && !hasGamePill);
+    }, [lastSuggestedPromptsShown, isFirstTime, conversations]);
     
     // Database synchronization function
     const syncToDatabase = useCallback(async () => {
@@ -1153,13 +1159,14 @@ const AppComponent: React.FC = () => {
     const handleHowToUseComplete = useCallback(() => completeOnboarding(), []);
     
     const handleSendMessage = useCallback(async (text: string, images?: ImageFile[], isFromPC: boolean = false) => {
-        // Record when suggested prompts are shown (for 24-hour cooldown)
-        // Only record if it's not the first run experience
+        // Record when user interacts with chat (any text query or image upload)
         if (activeConversation?.id === 'everything-else' && !isFirstTime) {
-            const now = Date.now();
-            setLastSuggestedPromptsShown(now);
-            localStorage.setItem('lastSuggestedPromptsShown', now.toString());
-            console.log('📝 Recorded suggested prompts shown timestamp for 24-hour cooldown');
+            // Check if this is any kind of user interaction
+            if (text.trim().length > 0 || (images && images.length > 0)) {
+                // User has interacted with chat - hide suggested prompts
+                localStorage.setItem('otakon_has_interacted_with_chat', 'true');
+                console.log('📝 User interacted with chat - hiding suggested prompts');
+            }
         }
         
         setChatInputValue(''); // Clear controlled input on send
@@ -1168,6 +1175,15 @@ const AppComponent: React.FC = () => {
         refreshUsage();
 
         if (result?.success) {
+            // Check if a new game pill was created (conversation switched from everything-else to a game)
+            if (activeConversation?.id === 'everything-else' && 
+                activeConversationId !== 'everything-else' && 
+                activeConversationId !== activeConversation.id) {
+                // Game pill was created - hide suggested prompts
+                localStorage.setItem('otakon_has_interacted_with_chat', 'true');
+                console.log('🎮 Game pill created - hiding suggested prompts');
+            }
+            
             // Track daily engagement progress
             if (activeConversation && activeConversation.id !== 'everything-else') {
                 // Update game session progress
@@ -1210,7 +1226,7 @@ const AppComponent: React.FC = () => {
         } else if (result?.reason === 'limit_reached') {
             setShowUpgradeScreen(true);
         }
-    }, [sendMessage, activeConversation]);
+    }, [sendMessage, activeConversation, activeConversationId, isFirstTime, setChatInputValue, setActiveSubView, refreshUsage, dailyEngagementService, setCurrentAchievement, setShowUpgradeScreen]);
     
     const clearImagesForReview = useCallback(() => {
         setImagesForReview([]);
@@ -1408,6 +1424,12 @@ const AppComponent: React.FC = () => {
                 icon: SettingsIcon,
                 action: () => setIsSettingsModalOpen(true),
             },
+            // Add Sign In option for unauthenticated users
+            ...(!authState.user ? [{
+                label: 'Sign In',
+                icon: UserIcon,
+                action: handleOpenAuthModal,
+            }] : []),
             {
                 label: 'Logout & Reset',
                 icon: LogoutIcon,
@@ -1617,12 +1639,12 @@ const AppComponent: React.FC = () => {
                         </button>
                     )}
 
-                    {/* Debug: Reset Suggested Prompts Cooldown */}
+                    {/* Debug: Reset Suggested Prompts */}
                     {process.env.NODE_ENV === 'development' && (
                         <button
                             onClick={resetSuggestedPromptsCooldown}
                             className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 bg-orange-600/20 text-orange-400 hover:bg-orange-600/30"
-                            title="Reset suggested prompts cooldown (dev only)"
+                            title="Reset suggested prompts (dev only)"
                         >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1689,30 +1711,7 @@ const AppComponent: React.FC = () => {
                         </button>
                     )}
                     
-                    {/* Authentication Button */}
-                    {!authState.user ? (
-                        <button
-                            type="button"
-                            onClick={handleOpenAuthModal}
-                            className="flex items-center justify-center gap-3 px-4 h-12 rounded-xl text-sm font-semibold bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#E53A3A]/25"
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                            <span className="hidden sm:inline">Sign In</span>
-                        </button>
-                    ) : (
-                        <button
-                            type="button"
-                            onClick={handleLogout}
-                            className="flex items-center justify-center gap-3 px-4 h-12 rounded-xl text-sm font-semibold bg-gradient-to-r from-[#2E2E2E] to-[#1C1C1C] border-2 border-[#424242]/60 text-white/90 transition-all duration-300 hover:from-[#424242] hover:to-[#2E2E2E] hover:scale-105 hover:shadow-lg"
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                            </svg>
-                            <span className="hidden sm:inline">Sign Out</span>
-                        </button>
-                    )}
+
                     
                     <button
                         type="button"
@@ -1887,9 +1886,9 @@ const AppComponent: React.FC = () => {
                 />
             )}
 
-            {/* Suggested Prompts Above Chat Input for "Everything Else" tab - Show based on 24-hour cooldown */}
+            {/* Suggested Prompts Above Chat Input for "Everything Else" tab - Show based on user interaction */}
             {activeConversation?.id === 'everything-else' && 
-             shouldShowSuggestedPrompts() && (
+             shouldShowSuggestedPromptsEnhanced() && (
                 <div className="flex-shrink-0 bg-black/40 backdrop-blur-sm border-t border-[#424242]/20 px-4 py-3">
                     <SuggestedPrompts 
                         onPromptClick={(prompt) => handleSendMessage(prompt)} 

@@ -19,8 +19,8 @@ The desktop companion app for Otakon AI - your spoiler-free gaming companion.
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/otakon-pc-client.git
-   cd otakon-pc-client
+   git clone https://github.com/readmet3xt/readmet3xt.github.io.git
+cd readmet3xt.github.io
    ```
 
 2. **Install dependencies**
@@ -136,7 +136,7 @@ The `electron-builder` configuration in `package.json`:
 ## 📁 Project Structure
 
 ```
-otakon-pc-client/
+readmet3xt.github.io/
 ├── src/                    # Source code
 │   ├── main/              # Main process
 │   ├── renderer/           # Renderer process
@@ -189,7 +189,7 @@ otakon-pc-client/
 ### For Users
 
 Users can download the latest version from:
-- **GitHub Releases**: https://github.com/YOUR_USERNAME/otakon-pc-client/releases
+- **GitHub Releases**: https://github.com/readmet3xt/readmet3xt.github.io/releases
 - **Direct download links** for their platform
 
 ### For Developers
@@ -228,9 +228,9 @@ Users can download the latest version from:
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/YOUR_USERNAME/otakon-pc-client/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/YOUR_USERNAME/otakon-pc-client/discussions)
-- **Documentation**: [Wiki](https://github.com/YOUR_USERNAME/otakon-pc-client/wiki)
+- **Issues**: [GitHub Issues](https://github.com/readmet3xt/readmet3xt.github.io/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/readmet3xt/readmet3xt.github.io/discussions)
+- **Documentation**: [Wiki](https://github.com/readmet3xt/readmet3xt.github.io/wiki)
 
 ---
 

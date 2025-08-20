@@ -684,8 +684,9 @@ export const useChat = (isHandsFreeMode: boolean) => {
                 .replace(/^Game Progress: \d+%\s*$/m, '')
                 .replace(/^[\s`"\]\}]*/, '')
                 .replace(/[\s`"\]\}]*$/, '')
-                .replace(/\s+/g, ' ') // Clean up multiple spaces
-                .replace(/\n\s*\n/g, '\n') // Clean up multiple newlines
+                // Remove these problematic lines that filter out formatting:
+                // .replace(/\s+/g, ' ') // Clean up multiple spaces
+                // .replace(/\n\s*\n/g, '\n') // Clean up multiple newlines
                 .trim();
             
             // Show notification for AI response if screen is locked

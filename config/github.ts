@@ -5,14 +5,14 @@ export const GITHUB_CONFIG = {
   // Your GitHub username
   REPO_OWNER: 'readmet3xt',
   
-  // Repository name for the PC client
-  REPO_NAME: 'otakon-pc-client',
+  // Repository name for the PC client (now hosted on readmet3xt.github.io)
+  REPO_NAME: 'readmet3xt.github.io',
   
   // Full repository URL
-  REPO_URL: 'https://github.com/readmet3xt/otakon-pc-client',
+  REPO_URL: 'https://github.com/readmet3xt/readmet3xt.github.io',
   
   // Releases page URL
-  RELEASES_URL: 'https://github.com/readmet3xt/otakon-pc-client/releases',
+  RELEASES_URL: 'https://github.com/readmet3xt/readmet3xt.github.io/releases',
   
   // API base URL (usually don't change this)
   API_BASE: 'https://api.github.com'

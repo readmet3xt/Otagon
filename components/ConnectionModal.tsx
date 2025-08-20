@@ -160,7 +160,7 @@ const ConnectionModal: React.FC<ConnectionModalProps> = ({
               
               <button
                 onClick={() => {
-                  const downloadUrl = 'https://github.com/readmet3xt/otakon-pc-client/releases/download/v2.0.0/Otakon.Connector.Setup.2.0.0.exe';
+                  const downloadUrl = 'https://github.com/readmet3xt/readmet3xt.github.io/releases/download/Otakon-connector/Otakon.Connector.Setup.1.0.0.exe';
                   window.open(downloadUrl, '_blank');
                 }}
                 className="w-full bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white px-6 py-3 rounded-xl font-medium hover:from-[#D42A2A] hover:to-[#C87A1A] transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#E53A3A]/25"
