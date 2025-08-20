@@ -42,7 +42,7 @@ const ProFeaturesSplashScreen: React.FC<ProFeaturesSplashScreenProps> = ({ onCom
 
     return (
         <div className="h-screen bg-gradient-to-br from-[#111111] to-[#0A0A0A] text-[#F5F5F5] flex flex-col font-inter animate-fade-in">
-            <main className="flex-1 flex flex-col items-center justify-center overflow-y-auto px-4 sm:px-6 md:px-8 pt-16 sm:pt-20 pb-6 sm:pb-8 text-center">
+            <main className="flex-1 flex flex-col items-center justify-center overflow-y-auto px-4 sm:px-6 md:px-8 pt-20 sm:pt-24 pb-20 sm:pb-24 text-center">
                 <div className="max-w-2xl w-full">
                     <div className="flex justify-center mb-4 sm:mb-6 animate-fade-slide-up">
                         <StarIcon className="w-16 h-16 sm:w-20 sm:h-20 text-[#FFAB40]" />
@@ -69,7 +69,7 @@ const ProFeaturesSplashScreen: React.FC<ProFeaturesSplashScreenProps> = ({ onCom
                 </div>
             </main>
 
-            <footer className="flex-shrink-0 px-4 sm:px-6 md:px-8 pt-4 sm:pt-6 pb-12 sm:pb-16">
+            <footer className="flex-shrink-0 px-4 sm:px-6 md:px-8 pt-8 sm:pt-10 pb-8 sm:pb-10">
                 <div className="w-full max-w-lg mx-auto space-y-3 sm:space-y-4">
                     <button
                         onClick={activeTab === 'pro' ? onUpgrade : onUpgradeToVanguard}
