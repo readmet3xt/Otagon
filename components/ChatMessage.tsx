@@ -217,7 +217,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
                         {showConfetti && <Confetti />}
                         {text.trim() && (
                             <div className={bubbleClasses}>
-                                <div className="prose prose-invert prose-sm sm:prose-base max-w-none prose-p:text-[#CFCFCF] prose-headings:text-[#F5F5F5] prose-strong:text-[#F5F5F5] prose-a:text-[#FFAB40] prose-a:no-underline hover:prose-a:underline prose-code:text-[#FFAB40] prose-code:bg-[#1C1C1C]/50 prose-code:p-1 prose-code:rounded-md prose-li:marker:text-[#FFAB40]">
+                                <div className="ai-response max-w-none text-[#CFCFCF]">
                                     <ReactMarkdown
                                         remarkPlugins={[remarkGfm]}
                                         components={{
