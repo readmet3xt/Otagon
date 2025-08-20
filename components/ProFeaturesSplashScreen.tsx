@@ -73,13 +73,13 @@ const ProFeaturesSplashScreen: React.FC<ProFeaturesSplashScreenProps> = ({ onCom
                 <div className="w-full max-w-lg mx-auto space-y-3 sm:space-y-4">
                     <button
                         onClick={activeTab === 'pro' ? onUpgrade : onUpgradeToVanguard}
-                        className="w-full bg-gradient-to-r from-neutral-700 to-neutral-600 hover:from-neutral-600 hover:to-neutral-500 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg text-sm sm:text-base"
+                        className="w-full bg-gradient-to-r from-neutral-700 to-neutral-600 hover:from-neutral-600 hover:to-neutral-500 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg text-sm sm:text-base flex items-center justify-center"
                     >
                         {activeTab === 'pro' ? 'Upgrade to Pro' : 'Upgrade to Vanguard'}
                     </button>
                     <button
                         onClick={onComplete}
-                        className="w-full text-neutral-300 font-medium py-2.5 sm:py-3 px-6 sm:px-8 rounded-xl hover:bg-neutral-800/50 transition-all duration-300 hover:scale-105 text-sm sm:text-base"
+                        className="w-full text-neutral-300 font-medium py-2.5 sm:py-3 px-6 sm:px-8 rounded-xl hover:bg-neutral-800/50 transition-all duration-300 hover:scale-105 text-sm sm:text-base flex items-center justify-center"
                     >
                         Maybe Later
                     </button>

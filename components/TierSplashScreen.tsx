@@ -67,9 +67,9 @@ const TierSplashScreen: React.FC<TierSplashScreenProps> = ({
             {isFreeTier ? (
               <button
                 onClick={onUpgradeToPro}
-                className="w-full bg-gradient-to-r from-neutral-700 to-neutral-600 hover:from-neutral-600 hover:to-neutral-500 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                className="w-full bg-gradient-to-r from-neutral-700 to-neutral-600 hover:from-neutral-600 hover:to-neutral-500 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg flex items-center justify-center"
               >
-                <StarIcon className="w-6 h-6 inline mr-3" />
+                <StarIcon className="w-6 h-6 mr-3" />
                 Upgrade to Pro
               </button>
             ) : (
@@ -108,9 +108,9 @@ const TierSplashScreen: React.FC<TierSplashScreenProps> = ({
 
             <button
               onClick={onUpgradeToVanguard}
-              className="w-full bg-neutral-700 hover:bg-neutral-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+              className="w-full bg-neutral-700 hover:bg-neutral-600 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center"
             >
-              <StarIcon className="w-5 h-5 inline mr-2" />
+              <StarIcon className="w-5 h-5 mr-2" />
               {isProTier ? 'Upgrade to Vanguard' : 'Become a Vanguard'}
             </button>
           </div>
@@ -119,7 +119,7 @@ const TierSplashScreen: React.FC<TierSplashScreenProps> = ({
         {/* Continue Button */}
         <button
           onClick={onContinue}
-          className="w-full bg-neutral-700 hover:bg-neutral-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+          className="w-full bg-neutral-700 hover:bg-neutral-600 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center"
         >
           Continue with Current Plan
         </button>

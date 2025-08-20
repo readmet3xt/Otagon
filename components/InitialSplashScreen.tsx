@@ -39,14 +39,14 @@ const InitialSplashScreen: React.FC<InitialSplashScreenProps> = ({ onComplete })
       >
         <button
           onClick={onComplete}
-          className="w-full bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] hover:from-[#D42A2A] hover:to-[#C87A1A] text-white font-bold py-5 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#E53A3A]/25 animate-pulse-glow text-lg"
+          className="w-full bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] hover:from-[#D42A2A] hover:to-[#C87A1A] text-white font-bold py-5 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#E53A3A]/25 animate-pulse-glow text-lg flex items-center justify-center"
         >
           Start the Adventure
         </button>
         
         <button
           onClick={handleDownloadPCClient}
-          className="w-full bg-gradient-to-r from-neutral-700 to-neutral-600 hover:from-neutral-600 hover:to-neutral-500 text-white font-bold py-5 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg text-lg"
+          className="w-full bg-gradient-to-r from-neutral-700 to-neutral-600 hover:from-neutral-600 hover:to-neutral-500 text-white font-bold py-5 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg text-lg flex items-center justify-center"
         >
           Download PC Client
         </button>

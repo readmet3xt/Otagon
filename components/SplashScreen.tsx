@@ -194,7 +194,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
                         <button
                             onClick={handleConnectClick}
                             disabled={isConnecting || !isCodeValid}
-                            className={`w-full font-bold py-4 px-8 rounded-xl transition-all duration-300 ${
+                            className={`w-full font-bold py-4 px-8 rounded-xl transition-all duration-300 flex items-center justify-center ${
                                 isCodeValid && !isConnecting 
                                     ? 'bg-gradient-to-r from-neutral-700 to-neutral-600 hover:from-neutral-600 hover:to-neutral-500 text-white hover:scale-105 hover:shadow-lg' 
                                     : 'bg-gradient-to-r from-neutral-600 to-neutral-500 text-neutral-300 cursor-not-allowed'
@@ -205,7 +205,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
                     )}
                     <button
                         onClick={isConnected ? onComplete : onSkipConnection}
-                        className="w-full bg-gradient-to-r from-neutral-700 to-neutral-600 hover:from-neutral-600 hover:to-neutral-500 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                        className="w-full bg-gradient-to-r from-neutral-700 to-neutral-600 hover:from-neutral-600 hover:to-neutral-500 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg flex items-center justify-center"
                     >
                         {isConnected ? "Continue to App" : "Skip for Now"}
                     </button>
@@ -213,7 +213,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
             ) : (
                 <button
                     onClick={handleNext}
-                    className="w-full bg-gradient-to-r from-neutral-700 to-neutral-600 hover:from-neutral-600 hover:to-neutral-500 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                    className="w-full bg-gradient-to-r from-neutral-700 to-neutral-600 hover:from-neutral-600 hover:to-neutral-500 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg flex items-center justify-center"
                 >
                     Next
                 </button>
