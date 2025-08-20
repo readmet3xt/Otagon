@@ -233,10 +233,13 @@ const AppComponent: React.FC = () => {
         const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
         
         // Show prompts if:
-        // 1. No messages in conversation (first time or cleared)
-        // 2. 24 hours have passed since last shown
-        return lastSuggestedPromptsShown === 0 || (now - lastSuggestedPromptsShown) >= TWENTY_FOUR_HOURS_MS;
-    }, [lastSuggestedPromptsShown]);
+        // 1. First run experience (isFirstTime is true)
+        // 2. No messages in conversation (first time or cleared)
+        // 3. 24 hours have passed since last shown
+        return isFirstTime || 
+               lastSuggestedPromptsShown === 0 || 
+               (now - lastSuggestedPromptsShown) >= TWENTY_FOUR_HOURS_MS;
+    }, [lastSuggestedPromptsShown, isFirstTime]);
 
     // Reset suggested prompts cooldown (useful for testing or manual reset)
     const resetSuggestedPromptsCooldown = useCallback(() => {
@@ -1151,7 +1154,8 @@ const AppComponent: React.FC = () => {
     
     const handleSendMessage = useCallback(async (text: string, images?: ImageFile[], isFromPC: boolean = false) => {
         // Record when suggested prompts are shown (for 24-hour cooldown)
-        if (activeConversation?.id === 'everything-else' && activeConversation.messages.length === 0) {
+        // Only record if it's not the first run experience
+        if (activeConversation?.id === 'everything-else' && !isFirstTime) {
             const now = Date.now();
             setLastSuggestedPromptsShown(now);
             localStorage.setItem('lastSuggestedPromptsShown', now.toString());
@@ -1885,7 +1889,6 @@ const AppComponent: React.FC = () => {
 
             {/* Suggested Prompts Above Chat Input for "Everything Else" tab - Show based on 24-hour cooldown */}
             {activeConversation?.id === 'everything-else' && 
-             activeConversation.messages.length === 0 && 
              shouldShowSuggestedPrompts() && (
                 <div className="flex-shrink-0 bg-black/40 backdrop-blur-sm border-t border-[#424242]/20 px-4 py-3">
                     <SuggestedPrompts 
