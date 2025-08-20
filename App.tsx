@@ -1792,17 +1792,6 @@ const AppComponent: React.FC = () => {
                 />
             ) : (
                  <main className="flex-1 flex flex-col px-4 sm:px-6 pt-4 sm:pt-6 pb-4 overflow-y-auto">
-                    {/* Always show suggested prompts for "Everything Else" tab */}
-                    {activeConversation?.id === 'everything-else' && (
-                        <div className="mb-6">
-                            <SuggestedPrompts 
-                                onPromptClick={(prompt) => handleSendMessage(prompt)} 
-                                isInputDisabled={isInputDisabled}
-                                isFirstTime={isFirstTime}
-                            />
-                        </div>
-                    )}
-                    
                     {messages.length === 0 && loadingMessages.length === 0 ? (
                         <div className="flex-1 flex flex-col justify-end">
                             {/* Show suggested prompts for other tabs when no messages */}
@@ -1845,6 +1834,17 @@ const AppComponent: React.FC = () => {
                 />
             )}
 
+            {/* Suggested Prompts Above Chat Input for "Everything Else" tab */}
+            {activeConversation?.id === 'everything-else' && (
+                <div className="flex-shrink-0 bg-black/40 backdrop-blur-sm border-t border-[#424242]/20 px-4 py-3">
+                    <SuggestedPrompts 
+                        onPromptClick={(prompt) => handleSendMessage(prompt)} 
+                        isInputDisabled={isInputDisabled}
+                        isFirstTime={isFirstTime}
+                    />
+                </div>
+            )}
+            
             <div className="flex-shrink-0 bg-black/60 backdrop-blur-xl z-10 border-t border-[#424242]/20 shadow-2xl">
                 {/* Progress Tracking Bar for Pro Users */}
                 {showProgressBar && activeConversation && activeConversation.id !== 'everything-else' && (

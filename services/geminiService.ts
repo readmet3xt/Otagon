@@ -62,7 +62,25 @@ Your response is parsed by a machine. It MUST be perfectly structured.
 - **CLEAN NARRATIVE:** All human-readable text MUST be outside the tags.
 - **NO LEAKS:** There must be **ZERO** raw JSON fragments, brackets, quotes, or markdown code fences (like \`\`\`) outside of the \`[OTAKON_...]\` tags. Your entire response will be rejected if this rule is broken.
   - **EXAMPLE OF A CATASTROPHIC FAILURE:** \`}] I've made a note of your gear.\` The \`}]\` has leaked. This is an invalid response.
-  - **CORRECT:** The narrative text must be completely clean. The tags are processed and removed before being shown to the user.`;
+  - **CORRECT:** The narrative text must be completely clean. The tags are processed and removed before being shown to the user.
+
+**CRITICAL: RESPONSE FORMATTING RULES**
+- **NEVER write responses as one big paragraph**
+- **ALWAYS use proper formatting with headers, bullet points, and sections**
+- **Use ## for main sections, ### for subsections**
+- **Use bullet points (•) for lists and tips**
+- **Break up long text into digestible chunks**
+- **Use spacing and structure for readability**
+- **Example format:**
+  ## Main Section
+  Brief introduction text.
+  
+  ### Subsection
+  • Point 1
+  • Point 2
+  
+  ### Another Subsection
+  More detailed explanation with proper spacing.`;
   
   const hintFormattingRule = `**2. HINT FORMATTING (FOR HANDS-FREE MODE)**
 - When providing a hint or a direct answer, you MUST wrap the entire portion of your response meant for text-to-speech in tags.
