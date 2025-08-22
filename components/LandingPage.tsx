@@ -85,7 +85,7 @@ const FeatureIcon = ({ icon }: { icon: 'eye' | 'bookmark' | 'network' | 'mic' | 
 
     return (
         <div className="relative flex h-48 w-full items-center justify-center rounded-2xl p-6 group hover:scale-105 transition-all duration-500">
-            <div className="absolute inset-0 bg-gradient-to-r from-[#E53A3A]/20 to-[#D98C1F]/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse-glow"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-[#E53A3A]/20 to-[#D98C1F]/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="80"
@@ -123,13 +123,7 @@ const Feature = React.memo(({ title, description, icon, reverse = false }: { tit
 ));
 
 const AppMockup = React.memo(() => (
-    <div className="relative mx-auto my-16 w-full max-w-2xl h-auto rounded-3xl bg-gradient-to-r from-[#1C1C1C]/60 to-[#0A0A0A]/60 backdrop-blur-xl p-2 shadow-2xl animate-fade-slide-up border-2 border-[#424242]/40 group hover:border-[#E53A3A]/60 transition-all duration-500 hover:shadow-2xl hover:shadow-[#E53A3A]/25">
-         <div 
-              className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-[#E53A3A]/20 to-[#D98C1F]/20 opacity-0 transition-opacity duration-500 group-hover:opacity-100 animate-pulse-glow"
-              style={{
-                maskImage: 'radial-gradient(ellipse 80% 50% at 50% -20%, black 70%, transparent 100%)'
-              }}
-            ></div>
+    <div className="relative mx-auto my-16 w-full max-w-2xl h-auto rounded-3xl bg-black/60 backdrop-blur-xl p-2 shadow-2xl animate-fade-slide-up border-2 border-[#424242]/40 group hover:border-[#E53A3A]/60 transition-all duration-500 hover:shadow-2xl hover:shadow-[#E53A3A]/25">
         <div className="bg-transparent rounded-2xl p-6 space-y-6">
             {/* User Prompt */}
             <div className="flex justify-end">
@@ -622,7 +616,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                             </h1>
                         </div>
 
-                        <h2 className="text-6xl md:text-7xl font-bold tracking-tight mb-8 bg-clip-text text-transparent bg-gradient-to-br from-white via-[#FFAB40] to-neutral-300 animate-fade-slide-up leading-tight">
+                        <h2 className="text-6xl md:text-7xl font-bold tracking-tight mb-8 text-white animate-fade-slide-up leading-tight">
                             Stuck In-Game?
                             <br/>
                             Get Instant, Spoiler-Free Hints
@@ -647,7 +641,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                             <button
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white font-bold py-4 px-10 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-xl hover:shadow-[#E53A3A]/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 text-lg animate-pulse-glow"
+                                className="bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white font-bold py-4 px-10 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-xl hover:shadow-[#E53A3A]/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 text-lg"
                             >
                                 {isSubmitting ? (
                                     <div className="flex items-center justify-center">
@@ -655,7 +649,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                                         Joining...
                                     </div>
                                 ) : (
-                                    'Get Early Access'
+                                    'Join Waitlist'
                                 )}
                             </button>
                         </form>
