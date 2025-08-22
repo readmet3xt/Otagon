@@ -588,3 +588,106 @@
     @apply gap-6;
   }
 }
+
+/* Mobile-specific optimizations */
+@media (max-width: 640px) {
+  /* Ensure proper viewport handling on mobile */
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+    position: relative;
+  }
+  
+  /* Mobile header adjustments */
+  .mobile-header {
+    padding: 0.75rem;
+  }
+  
+  /* Mobile content adjustments */
+  .mobile-content {
+    padding: 0.75rem;
+  }
+  
+  /* Mobile footer adjustments */
+  .mobile-footer {
+    padding: 0.75rem;
+  }
+  
+  /* Ensure chat messages fit on mobile */
+  .chat-message-mobile {
+    max-width: 100%;
+    margin: 0 0.5rem;
+  }
+  
+  /* Mobile input adjustments */
+  .mobile-input {
+    padding: 0.75rem;
+  }
+  
+  /* Pro Features Splash Screen mobile optimizations */
+  .pro-features-mobile {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+  
+  .pro-features-mobile h1 {
+    font-size: 1.5rem !important;
+    line-height: 1.2 !important;
+  }
+  
+    .pro-features-mobile .feature-card {
+    padding: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+  
+  /* Credit Indicator Button with Transparent Content and Gradient Border */
+  .credit-indicator-button {
+    position: relative !important;
+    z-index: 50 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 0 15px rgba(229, 58, 58, 0.3) !important;
+    animation: gradient-glow 4s ease infinite !important;
+  }
+  
+
+  
+
+  
+  @keyframes gradient-glow {
+    0% { box-shadow: 0 0 15px rgba(229, 58, 58, 0.3); }
+    50% { box-shadow: 0 0 20px rgba(217, 140, 31, 0.4); }
+    100% { box-shadow: 0 0 15px rgba(229, 58, 58, 0.3); }
+  }
+  
+         .credit-indicator-button:hover {
+         box-shadow: 0 0 25px rgba(229, 58, 58, 0.6), 0 0 35px rgba(217, 140, 31, 0.4) !important;
+         transform: scale(1.05);
+       }
+  
+  .credit-indicator-button:active {
+    transform: scale(0.98);
+  }
+}
+
+/* HowToUseSplashScreen specific scrollbar styles */
+.how-to-use-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.how-to-use-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.how-to-use-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #525252, #404040);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.how-to-use-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #6b6b6b, #525252);
+}
+
+.how-to-use-scrollbar::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(135deg, #7a7a7a, #6b6b6b);
+}

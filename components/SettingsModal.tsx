@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Usage, UserTier } from '../services/types';
 import UserCircleIcon from './UserCircleIcon';
 import CreditCardIcon from './CreditCardIcon';
@@ -8,7 +8,11 @@ import GeneralSettingsTab from './GeneralSettingsTab';
 import SubscriptionSettingsTab from './SubscriptionSettingsTab';
 import HelpGuideTab from './HelpGuideTab';
 import UserPreferencesTab from './UserPreferencesTab';
-import { AdminCostDashboard } from './AdminCostDashboard';
+
+
+import { apiCostService } from '../services/apiCostService';
+import { APICostSummary } from '../services/apiCostService';
+
 
 
 interface SettingsModalProps {
@@ -25,9 +29,166 @@ interface SettingsModalProps {
 
 type ActiveTab = 'general' | 'preferences' | 'subscription' | 'help' | 'admin';
 
+// Admin Tab Content Component
+const AdminTabContent: React.FC = () => {
+    const [costSummary, setCostSummary] = useState<APICostSummary | null>(null);
+    const [recommendations, setRecommendations] = useState<string[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        loadCostData();
+    }, []);
+
+    const loadCostData = async () => {
+        setIsLoading(true);
+        try {
+            const [summary, recs] = await Promise.all([
+                apiCostService.getCostSummary(),
+                apiCostService.getCostOptimizationRecommendations()
+            ]);
+            setCostSummary(summary);
+            setRecommendations(recs);
+        } catch (error) {
+            console.error('Error loading cost data:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleExportData = async () => {
+        try {
+            const csvData = await apiCostService.exportCostData();
+            
+            // Create download link
+            const blob = new Blob([csvData], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `api-cost-data-${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error exporting data:', error);
+        }
+    };
+
+    const handleCleanup = async () => {
+        if (window.confirm('This will delete API cost records older than 90 days. Continue?')) {
+            try {
+                await apiCostService.cleanupOldRecords(90);
+                await loadCostData(); // Reload data
+                alert('Cleanup completed successfully');
+            } catch (error) {
+                console.error('Error during cleanup:', error);
+                alert('Cleanup failed');
+            }
+        }
+    };
+
+    const handleReset = async () => {
+        if (window.confirm('This will delete ALL API cost records. This action cannot be undone. Continue?')) {
+            try {
+                await apiCostService.resetCostTracking();
+                await loadCostData(); // Reload data
+                alert('Cost tracking reset successfully');
+            } catch (error) {
+                console.error('Error during reset:', error);
+                alert('Reset failed');
+            }
+        }
+    };
+
+    return (
+        <div className="space-y-6">
+            {isLoading ? (
+                <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+                    <p className="text-gray-400 mt-4">Loading cost data...</p>
+                </div>
+            ) : costSummary ? (
+                <>
+                    {/* Cost Summary Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                            <h3 className="text-gray-400 text-sm font-medium">Total Calls (30d)</h3>
+                            <p className="text-2xl font-bold text-white">{costSummary.totalCalls}</p>
+                        </div>
+                        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                            <h3 className="text-gray-400 text-sm font-medium">Total Cost (30d)</h3>
+                            <p className="text-2xl font-bold text-green-400">${costSummary.totalCost.toFixed(6)}</p>
+                        </div>
+                        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                            <h3 className="text-gray-400 text-sm font-medium">Flash Model</h3>
+                            <p className="text-2xl font-bold text-blue-400">{costSummary.callsByModel.flash}</p>
+                        </div>
+                        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                            <h3 className="text-gray-400 text-sm font-medium">Pro Model</h3>
+                            <p className="text-2xl font-bold text-purple-400">{costSummary.callsByModel.pro}</p>
+                        </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap gap-4">
+                        <button
+                            onClick={handleExportData}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                        >
+                            📊 Export Data
+                        </button>
+                        <button
+                            onClick={loadCostData}
+                            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
+                        >
+                            🔄 Refresh
+                        </button>
+                        <button
+                            onClick={handleCleanup}
+                            className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg transition-colors"
+                        >
+                            🧹 Cleanup Old (90d+)
+                        </button>
+                        <button
+                            onClick={handleReset}
+                            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+                        >
+                            ⚠️ Reset All Data
+                        </button>
+                    </div>
+
+                    {/* Recommendations */}
+                    {recommendations.length > 0 && (
+                        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                            <h3 className="text-lg font-semibold text-white mb-4">💡 Optimization Recommendations</h3>
+                            <ul className="space-y-2">
+                                {recommendations.map((rec, index) => (
+                                    <li key={index} className="text-gray-300 flex items-start">
+                                        <span className="text-yellow-400 mr-2">•</span>
+                                        {rec}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                </>
+            ) : (
+                <div className="text-center py-8">
+                    <p className="text-gray-400">No cost data available</p>
+                    <button
+                        onClick={loadCostData}
+                        className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                    >
+                        Load Data
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+};
+
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, usage, onShowUpgrade, onShowVanguardUpgrade, onLogout, onResetApp, onShowHowToUse, userEmail }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('general');
-  const [showAdminDashboard, setShowAdminDashboard] = useState(false);
 
   if (!isOpen) {
     return null;
@@ -68,21 +229,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, usage, o
                     <ul className="flex flex-row md:flex-col gap-2 w-full">
                         <li className="flex-1 md:flex-none"><TabButton id="general" label="General" icon={<UserCircleIcon className="w-6 h-6" />} /></li>
                         <li className="flex-1 md:flex-none"><TabButton id="preferences" label="AI Preferences" icon={<StarIcon className="w-6 h-6" />} /></li>
-                        {usage.tier !== 'free' && (
-                            <li className="flex-1 md:flex-none"><TabButton id="subscription" label="Subscription" icon={<CreditCardIcon className="w-6 h-6" />} /></li>
-                        )}
+                        <li className="flex-1 md:flex-none"><TabButton id="subscription" label="Subscription" icon={<CreditCardIcon className="w-6 h-6" />} /></li>
                         <li className="flex-1 md:flex-none"><TabButton id="help" label="Help Guide" icon={<QuestionMarkCircleIcon className="w-6 h-6" />} /></li>
                         {/* Admin tab - only show for admin users */}
                         <li className="flex-1 md:flex-none">
-                            <button
-                                onClick={() => setShowAdminDashboard(true)}
-                                className="w-full flex items-center justify-center md:justify-start gap-4 px-4 py-3 text-base font-medium rounded-xl transition-all duration-300 text-neutral-400 hover:bg-gradient-to-r hover:from-neutral-700/50 hover:to-neutral-600/50 hover:text-white hover:scale-105"
-                            >
+                            <TabButton id="admin" label="Admin" icon={
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                                 </svg>
-                                <span className="hidden md:inline">Admin</span>
-                            </button>
+                            } />
                         </li>
                     </ul>
                 </div>
@@ -101,17 +256,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, usage, o
                     />
                 )}
                 {activeTab === 'preferences' && <UserPreferencesTab />}
-                {activeTab === 'subscription' && <SubscriptionSettingsTab />}
+                {activeTab === 'subscription' && <SubscriptionSettingsTab usage={usage} />}
                 {activeTab === 'help' && <HelpGuideTab />}
+                {activeTab === 'admin' && (
+                    <div>
+                        <h2 className="text-xl font-bold text-white mb-4">💰 API Cost Dashboard</h2>
+                        <AdminTabContent />
+                    </div>
+                )}
             </main>
         </div>
       </div>
-      
-      {/* Admin Cost Dashboard */}
-      <AdminCostDashboard
-        isOpen={showAdminDashboard}
-        onClose={() => setShowAdminDashboard(false)}
-      />
     </div>
   );
 };

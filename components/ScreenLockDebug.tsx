@@ -20,9 +20,7 @@ const ScreenLockDebug: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleTestNotification = () => {
-    smartNotificationService.showTestNotification();
-  };
+  
 
   const formatTime = (ms: number) => {
     const seconds = Math.floor(ms / 1000);
@@ -50,12 +48,7 @@ const ScreenLockDebug: React.FC = () => {
         <div>Last Activity: {formatTime(screenStatus.timeSinceLastActivity)}</div>
         <div>Timestamp: {new Date(screenStatus.lastActivity).toLocaleTimeString()}</div>
       </div>
-      <button
-        onClick={handleTestNotification}
-        className="mt-2 w-full px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs transition-colors"
-      >
-        Test Notification
-      </button>
+
     </div>
   );
 };

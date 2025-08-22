@@ -98,9 +98,7 @@ const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({ className = "" }) =
     }
   };
 
-  const handleTestNotification = () => {
-    smartNotificationService.showTestNotification();
-  };
+  
 
   if (isInstalled) {
     return null;

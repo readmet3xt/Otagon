@@ -21,9 +21,9 @@ const CreditBar: React.FC<{
   return (
     <div className="flex items-center gap-1 w-20">
       {children}
-      <div className="w-full h-2 bg-neutral-700/50 rounded-sm overflow-hidden">
+      <div className="w-full h-2 bg-neutral-800/60 rounded-sm overflow-hidden border border-neutral-600/40">
         <div 
-          className={`h-full ${colorClass} transition-all duration-500`}
+          className={`h-full ${colorClass} transition-all duration-500 rounded-sm`}
           style={{ width: `${percent}%` }}
         ></div>
       </div>
@@ -48,16 +48,24 @@ const CreditIndicator: React.FC<CreditIndicatorProps> = ({ usage, onClick }) => 
 
     const strokeWidth = 3.5;
 
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex items-center justify-center sm:justify-start w-10 sm:w-auto h-10 p-px rounded-lg bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] hover:brightness-110 transition-all"
-      aria-label="View query credits"
-    >
-      <div className="w-full h-full bg-black rounded-[7px] flex items-center justify-center sm:px-3">
+      return (
+        <button
+          type="button"
+          onClick={onClick}
+          className="credit-indicator-button flex items-center justify-center sm:justify-start w-12 sm:w-auto h-12 rounded-xl transition-all duration-300 hover:scale-105"
+          style={{
+            background: 'linear-gradient(135deg, #E53A3A, #D98C1F, #E53A3A)',
+            padding: '2px',
+            borderRadius: '12px'
+          }}
+          aria-label="View query credits"
+        >
+          <div className="w-full h-full flex items-center justify-center sm:px-3" style={{
+            background: '#111111',
+            borderRadius: '10px'
+          }}>
         {/* Mobile View: Circular Bars */}
-        <div className="sm:hidden w-8 h-8 flex items-center justify-center">
+        <div className="sm:hidden w-8 h-8 flex items-center justify-center bg-neutral-900/50 rounded-full p-1 border border-neutral-700/30">
            <svg className="w-full h-full" viewBox="0 0 32 32" fill="none">
               <defs>
                 <linearGradient id="sky-gradient" x1="0" y1="0" x2="1" y2="1">

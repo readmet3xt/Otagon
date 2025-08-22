@@ -411,7 +411,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ value, onChange, onSendMessage, i
                         ))}
                     </div>
                 )}
-                <div className="p-[2px] bg-gradient-to-r from-[#FF4D4D] to-[#FFAB40] rounded-2xl focus-within:shadow-[0_0_30px_rgba(255,77,77,0.3)] transition-all duration-300">
+                <div className="p-0 bg-transparent rounded-2xl border-2 border-[#424242]/60 focus-within:p-[2px] focus-within:bg-gradient-to-r focus-within:from-[#E53A3A] focus-within:to-[#D98C1F] focus-within:border-transparent focus-within:shadow-[0_0_30px_rgba(229,58,58,0.5)] transition-all duration-300">
                     <div className="flex items-center bg-gradient-to-r from-[#1C1C1C] to-[#0A0A0A] rounded-2xl w-full px-3 sm:px-4 gap-2 sm:gap-3 py-2">
                         <input 
                             type="file" 

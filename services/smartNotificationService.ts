@@ -230,10 +230,7 @@ class SmartNotificationServiceImpl implements SmartNotificationService {
     console.log('AI response notification shown:', truncatedMessage);
   }
 
-  // Manual method to show notifications (for testing)
-  showTestNotification(): void {
-    this.showAINotification('This is a test AI response notification');
-  }
+  
 
   // Get current screen lock status
   getScreenStatus(): { locked: boolean; lastActivity: number; timeSinceLastActivity: number } {

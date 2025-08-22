@@ -35,7 +35,7 @@ import FeedbackModal from './components/FeedbackModal';
 import SettingsIcon from './components/SettingsIcon';
 import SettingsModal from './components/SettingsModal';
 import AdBanner from './components/AdBanner';
-import DevTierSwitcher from './components/DevTierSwitcher';
+
 import PolicyModal from './components/PolicyModal';
 import AboutPage from './components/AboutPage';
 import PrivacyPolicyPage from './components/PrivacyPolicyPage';
@@ -56,7 +56,7 @@ import { pwaAnalyticsService } from './services/pwaAnalyticsService';
 import { offlineStorageService } from './services/offlineStorageService';
 import { pushNotificationService } from './services/pushNotificationService';
 import { appShortcutsService } from './services/appShortcutsService';
-import ScreenLockDebug from './components/ScreenLockDebug';
+
 import AutoConnectionNotification from './components/AutoConnectionNotification';
 import DailyCheckinBanner from './components/DailyCheckinBanner';
 import SessionContinuationModal from './components/SessionContinuationModal';
@@ -230,13 +230,7 @@ const AppComponent: React.FC = () => {
 
 
 
-    // Reset suggested prompts (useful for testing or manual reset)
-    const resetSuggestedPromptsCooldown = useCallback(() => {
-        setLastSuggestedPromptsShown(0);
-        localStorage.removeItem('lastSuggestedPromptsShown');
-        localStorage.removeItem('otakon_has_interacted_with_chat');
-        console.log('🔄 Reset suggested prompts - will show prompts again');
-    }, []);
+
 
     // PWA Post-install handler
     useEffect(() => {
@@ -1282,12 +1276,18 @@ const AppComponent: React.FC = () => {
         setShowProfileSetup(false);
         setIsFirstTime(false);
         
-        // Add welcome message after profile setup completion
+        // Mark profile setup as completed
+        localStorage.setItem('otakon_profile_setup_completed', 'true');
+        
+        // Add welcome message immediately for first-time users
+        const timeGreeting = getTimeGreeting();
         addSystemMessage(
-            "Welcome to Otakon! I'm here to be your spoiler-free guide through any game. To get started, you can upload a screenshot from a game you're currently playing, or just tell me about a game that's on your mind. What have you been playing lately?",
+            `${timeGreeting}Welcome to Otakon! I'm here to be your spoiler-free guide through any game. To get started, you can upload a screenshot from a game you're currently playing, or just tell me about a game that's on your mind. What have you been playing lately?`,
             'everything-else',
             false
         );
+        localStorage.setItem('otakon_welcome_message_shown', 'true');
+        localStorage.setItem('otakon_last_session_date', new Date().toDateString());
     }, [addSystemMessage]);
 
     const handleProfileSetupSkip = useCallback(() => {
@@ -1297,15 +1297,29 @@ const AppComponent: React.FC = () => {
         setShowProfileSetup(false);
         setIsFirstTime(false);
         
-        // Add welcome message after profile setup completion (even when skipped)
-        addSystemMessage(
-            "Welcome to Otakon! I'm here to be your spoiler-free guide through any game. To get started, you can upload a screenshot from a game you're currently playing, or just tell me about a game that's on your mind. What have you been playing lately?",
-            'everything-else',
-            false
-        );
+        // Mark profile setup as completed (even when skipped)
+        localStorage.setItem('otakon_profile_setup_completed', 'true');
     }, [addSystemMessage]);
 
     const handleCloseUpgradeScreen = useCallback(() => setShowUpgradeScreen(false), []);
+    
+    // Function to reset welcome message tracking (useful for testing or user preference)
+    const resetWelcomeMessageTracking = useCallback(() => {
+        localStorage.removeItem('otakon_welcome_message_shown');
+        localStorage.removeItem('otakon_last_session_date');
+    }, []);
+    
+    // Helper function to get time-based greeting
+    const getTimeGreeting = useCallback(() => {
+        const currentHour = new Date().getHours();
+        if (currentHour < 12) {
+            return 'Good morning! ';
+        } else if (currentHour < 17) {
+            return 'Good afternoon! ';
+        } else {
+            return 'Good evening! ';
+        }
+    }, []);
     const handleOpenConnectionModal = useCallback(() => setIsConnectionModalOpen(true), []);
     const handleCloseConnectionModal = useCallback(() => setIsConnectionModalOpen(false), []);
     const handleCloseHandsFreeModal = useCallback(() => setIsHandsFreeModalOpen(false), []);
@@ -1477,22 +1491,65 @@ const AppComponent: React.FC = () => {
         setFeedbackModalState(null);
     };
 
-    // Add welcome message for returning users who have completed profile setup
+    // Centralized welcome message system that prevents duplicates and adapts to user queries
     useEffect(() => {
-        if (view === 'app' && onboardingStatus === 'complete' && !isFirstTime) {
-            // User has completed profile setup, add welcome message if this is their first time opening the chat
+        if (view === 'app' && onboardingStatus === 'complete') {
             const hasSeenWelcome = localStorage.getItem('otakon_welcome_message_shown');
-            if (!hasSeenWelcome) {
-                // Add welcome message to the "Everything Else" conversation
-                addSystemMessage(
-                    "Welcome to Otakon! I'm here to be your spoiler-free guide through any game. To get started, you can upload a screenshot from a game you're currently playing, or just tell me about a game that's on your mind. What have you been playing lately?",
-                    'everything-else',
-                    false
+            const hasCompletedProfileSetup = localStorage.getItem('otakon_profile_setup_completed');
+            const lastSessionDate = localStorage.getItem('otakon_last_session_date');
+            const currentDate = new Date().toDateString();
+            
+            // Show welcome message if:
+            // 1. User has completed profile setup
+            // 2. User hasn't seen welcome message OR it's a new day
+            // 3. User is in the main app view
+            if (hasCompletedProfileSetup && (!hasSeenWelcome || lastSessionDate !== currentDate)) {
+                // Get current time for time-based greetings
+                const currentHour = new Date().getHours();
+                let timeGreeting = '';
+                
+                if (currentHour < 12) {
+                    timeGreeting = 'Good morning! ';
+                } else if (currentHour < 17) {
+                    timeGreeting = 'Good afternoon! ';
+                } else {
+                    timeGreeting = 'Good evening! ';
+                }
+                // Check if user has previous conversations to determine message type
+                const hasPreviousConversations = Object.values(conversations).some(conv => 
+                    conv.id !== 'everything-else' && conv.messages && conv.messages.length > 1
                 );
+                
+                let welcomeMessage: string;
+                
+                if (!hasSeenWelcome) {
+                    // First time user - show full welcome
+                    welcomeMessage = `${timeGreeting}Welcome to Otakon! I'm here to be your spoiler-free guide through any game. To get started, you can upload a screenshot from a game you're currently playing, or just tell me about a game that's on your mind. What have you been playing lately?`;
+                } else if (hasPreviousConversations) {
+                    // Returning user with game history - show contextual welcome
+                    const recentGames = Object.values(conversations)
+                        .filter(conv => conv.id !== 'everything-else' && conv.title && conv.title !== 'New Game')
+                        .slice(0, 2)
+                        .map(conv => conv.title);
+                    
+                    if (recentGames.length > 0) {
+                        welcomeMessage = `${timeGreeting}Welcome back! I see you've been playing ${recentGames.join(' and ')}. What's your next gaming challenge today?`;
+                    } else {
+                        welcomeMessage = `${timeGreeting}Welcome back! I'm ready to help with your next gaming challenge. What game are you tackling today, or would you like to continue where you left off?`;
+                    }
+                } else {
+                    // Returning user without game history - show gentle reminder
+                    welcomeMessage = `${timeGreeting}Welcome back! Ready to dive into some gaming? Upload a screenshot or tell me what you're playing, and I'll help you get unstuck without spoilers.`;
+                }
+                
+                addSystemMessage(welcomeMessage, 'everything-else', false);
+                
+                // Update tracking
                 localStorage.setItem('otakon_welcome_message_shown', 'true');
+                localStorage.setItem('otakon_last_session_date', currentDate);
             }
         }
-    }, [view, onboardingStatus, isFirstTime, addSystemMessage]);
+    }, [view, onboardingStatus, isFirstTime, addSystemMessage, conversations]);
 
     if (view === 'landing') {
         return (
@@ -1570,7 +1627,7 @@ const AppComponent: React.FC = () => {
             <div className="absolute top-0 left-0 w-full h-full bg-gradient-radial-at-top from-[#1C1C1C]/40 to-transparent -z-0 pointer-events-none"></div>
             <div className="absolute bottom-0 left-0 w-full h-full bg-gradient-radial-at-bottom from-[#0A0A0A]/30 to-transparent -z-0 pointer-events-none"></div>
             
-            <header className={`relative flex-shrink-0 flex items-center justify-between p-4 sm:p-6 bg-black/80 backdrop-blur-xl z-20 border-b border-[#424242]/20 shadow-2xl`}>
+            <header className={`relative flex-shrink-0 flex items-center justify-between p-3 sm:p-4 md:p-6 bg-black/80 backdrop-blur-xl z-20 border-b border-[#424242]/20 shadow-2xl`}>
                 <button
                     type="button"
                     onClick={() => setView('landing')}
@@ -1592,14 +1649,14 @@ const AppComponent: React.FC = () => {
                             <button
                                 onClick={syncToDatabase}
                                 disabled={databaseSyncStatus === 'syncing'}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                                className={`flex items-center gap-2 px-3 h-12 rounded-xl text-sm font-medium transition-all duration-200 ${
                                     databaseSyncStatus === 'syncing' 
                                         ? 'bg-blue-600/20 text-blue-400 cursor-not-allowed' 
                                         : databaseSyncStatus === 'success'
                                         ? 'bg-green-600/20 text-green-400 hover:bg-green-600/30'
                                         : databaseSyncStatus === 'error'
                                         ? 'bg-red-600/20 text-red-400 hover:bg-red-600/30'
-                                        : 'bg-gray-600/20 text-gray-400 hover:bg-gray-600/30'
+                                        : 'bg-gradient-to-r from-[#2E2E2E] to-[#1C1C1C] border-2 border-[#424242]/60 text-[#CFCFCF] hover:from-[#424242] hover:to-[#2E2E2E] hover:border-[#5A5A5A] hover:scale-105'
                                 }`}
                                 title={`Database sync: ${databaseSyncStatus === 'syncing' ? 'Syncing...' : databaseSyncStatus === 'success' ? 'Last sync: ' + new Date(lastDatabaseSync).toLocaleTimeString() : 'Click to sync'}`}
                             >
@@ -1625,10 +1682,10 @@ const AppComponent: React.FC = () => {
                     {authState.user && (
                         <button
                             onClick={() => setShowProactiveInsights(!showProactiveInsights)}
-                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                            className={`flex items-center gap-2 px-3 h-12 rounded-xl text-sm font-medium transition-all duration-200 ${
                                 showProactiveInsights 
-                                    ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30' 
-                                    : 'bg-gray-600/20 text-gray-400 hover:bg-gray-600/30'
+                                    ? 'bg-purple-600/20 text-purple-400 border-2 border-purple-500/30' 
+                                    : 'bg-gradient-to-r from-[#2E2E2E] to-[#1C1C1C] border-2 border-[#424242]/60 text-[#CFCFCF] hover:from-[#424242] hover:to-[#2E2E2E] hover:border-[#5A5A5A] hover:scale-105'
                             }`}
                             title="Toggle proactive insights panel"
                         >
@@ -1638,26 +1695,9 @@ const AppComponent: React.FC = () => {
                             <span className="hidden sm:inline">Insights</span>
                         </button>
                     )}
-
-                    {/* Debug: Reset Suggested Prompts */}
-                    {process.env.NODE_ENV === 'development' && (
-                        <button
-                            onClick={resetSuggestedPromptsCooldown}
-                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 bg-orange-600/20 text-orange-400 hover:bg-orange-600/30"
-                            title="Reset suggested prompts (dev only)"
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span className="hidden sm:inline">Reset Prompts</span>
-                        </button>
-                    )}
-                    
-
                 </div>
                 <div className="flex items-center gap-3">
                      <CreditIndicator usage={usage} onClick={handleOpenCreditModal} />
-                     <DevTierSwitcher currentTier={usage.tier} onSwitch={refreshUsage} />
                      <HandsFreeToggle
                         isHandsFree={isHandsFreeMode}
                         onToggle={handleHandsFreeClick}
@@ -1701,7 +1741,7 @@ const AppComponent: React.FC = () => {
                         <button
                             type="button"
                             onClick={forceReconnect}
-                            className="flex items-center justify-center gap-2 px-3 h-12 rounded-xl text-xs font-semibold bg-gradient-to-r from-[#2E2E2E] to-[#1C1C1C] border-2 border-[#424242]/60 text-[#CFCFCF] hover:from-[#424242] hover:to-[#2E2E2E] hover:border-[#5A5A5A] hover:scale-105 transition-all duration-300 shadow-lg"
+                            className="flex items-center justify-center gap-2 px-3 h-12 rounded-xl text-sm font-semibold bg-gradient-to-r from-[#2E2E2E] to-[#1C1C1C] border-2 border-[#424242]/60 text-[#CFCFCF] hover:from-[#424242] hover:to-[#2E2E2E] hover:border-[#5A5A5A] hover:scale-105 transition-all duration-300 shadow-lg"
                             title="Force reconnect with saved code"
                         >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1889,7 +1929,7 @@ const AppComponent: React.FC = () => {
             {/* Suggested Prompts Above Chat Input for "Everything Else" tab - Show based on user interaction */}
             {activeConversation?.id === 'everything-else' && 
              shouldShowSuggestedPromptsEnhanced() && (
-                <div className="flex-shrink-0 bg-black/40 backdrop-blur-sm border-t border-[#424242]/20 px-4 py-3">
+                <div className="flex-shrink-0 bg-black/40 backdrop-blur-sm border-t border-[#424242]/20 px-3 sm:px-4 py-2 sm:py-3">
                     <SuggestedPrompts 
                         onPromptClick={(prompt) => handleSendMessage(prompt)} 
                         isInputDisabled={isInputDisabled}
@@ -2067,7 +2107,6 @@ const AppComponent: React.FC = () => {
 
             {/* PWA Install Banner */}
             <PWAInstallBanner />
-            <ScreenLockDebug />
             <AutoConnectionNotification
                 isAutoConnecting={isAutoConnecting}
                 autoConnectAttempts={autoConnectAttempts}

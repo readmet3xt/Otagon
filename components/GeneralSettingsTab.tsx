@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Usage, UserTier } from '../services/types';
 import StarIcon from './StarIcon';
 import { TierUpgradeModal } from './TierUpgradeModal';
+import GuestTierSwitcher from './GuestTierSwitcher';
 
 interface GeneralSettingsTabProps {
   usage: Usage;
@@ -100,6 +101,17 @@ const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({ usage, onShowUp
                             <p className="text-xs text-yellow-200 mt-1">
                                 You're in testing mode. Tier switching is enabled for development purposes.
                             </p>
+                            
+                            {/* Guest Mode Tier Switcher */}
+                            <div className="mt-3 pt-3 border-t border-yellow-500/30">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm text-yellow-200 font-medium">Quick Tier Switch</p>
+                                        <p className="text-xs text-yellow-300">Click to cycle through tiers for testing</p>
+                                    </div>
+                                    <GuestTierSwitcher currentTier={usage.tier} onSwitch={() => window.location.reload()} />
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>

@@ -22,13 +22,13 @@ const ProBadge = () => (
 
 const FeatureItem: React.FC<{ icon: React.ReactNode; title: React.ReactNode; children: React.ReactNode; }> = ({ icon, title, children }) => {
     return (
-        <div className="flex items-start gap-6 p-6 transition-all duration-500 hover:scale-105">
+        <div className="flex items-start gap-6 p-8 transition-all duration-500 hover:scale-105 bg-gradient-to-r from-[#1C1C1C]/40 to-[#0A0A0A]/40 border border-neutral-800/60 rounded-2xl backdrop-blur-sm">
             <div className="flex-shrink-0 flex items-center justify-center h-16 w-16 mt-1 rounded-2xl bg-gradient-to-br from-[#FF4D4D]/20 to-[#FFAB40]/20 border-2 border-neutral-700/60 backdrop-blur-sm">
                 {icon}
             </div>
             <div className="flex-grow">
-                <h3 className="text-xl font-bold text-white mb-3 flex items-center">{title}</h3>
-                <div className="text-neutral-300 text-base leading-relaxed">{children}</div>
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center">{title}</h3>
+                <div className="text-neutral-300 text-base leading-relaxed space-y-3">{children}</div>
             </div>
         </div>
     );
@@ -39,13 +39,15 @@ const HowToUseSplashScreen: React.FC<HowToUseSplashScreenProps> = ({ onComplete 
         <div className="h-screen bg-gradient-to-br from-[#111111] to-[#0A0A0A] text-[#F5F5F5] flex flex-col font-inter animate-fade-in">
             {/* Fixed Header */}
             <header className="flex-shrink-0 px-8 pt-16 pb-8 text-center z-10 bg-gradient-to-br from-[#111111] to-[#0A0A0A]">
-                <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4 leading-tight">You're Connected!</h1>
-                <p className="text-xl text-neutral-300 leading-relaxed">Master Otakon in four easy steps.</p>
+                <div className="max-w-4xl mx-auto">
+                    <h1 className="text-4xl sm:text-5xl font-bold text-white mb-6 leading-tight">You're Connected!</h1>
+                    <p className="text-xl text-neutral-300 leading-relaxed">Master Otakon in four easy steps.</p>
+                </div>
             </header>
 
             {/* Scrollable Main Content */}
-            <main className="flex-1 overflow-y-auto px-6 sm:px-8 pb-8">
-                <div className="max-w-3xl mx-auto space-y-6">
+            <main className="flex-1 overflow-y-auto px-6 sm:px-8 pb-8 how-to-use-scrollbar">
+                <div className="max-w-4xl mx-auto space-y-8 py-4">
                     {/* Item 1: Capture */}
                     <FeatureItem
                         icon={<KeyboardIcon className="w-8 h-8 text-[#FFAB40]" />}
@@ -120,10 +122,10 @@ const HowToUseSplashScreen: React.FC<HowToUseSplashScreenProps> = ({ onComplete 
 
             {/* Fixed Footer */}
             <footer className="flex-shrink-0 px-8 pt-6 pb-16 z-10 bg-gradient-to-br from-[#111111] to-[#0A0A0A]">
-                <div className="w-full max-w-lg mx-auto">
+                <div className="w-full max-w-4xl mx-auto text-center">
                     <button
                         onClick={onComplete}
-                        className="w-full bg-gradient-to-r from-neutral-700 to-neutral-600 hover:from-neutral-600 hover:to-neutral-500 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg text-lg flex items-center justify-center"
+                        className="bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] hover:from-[#E53A3A] hover:to-[#D98C1F] text-white font-bold py-4 px-12 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg text-lg flex items-center justify-center mx-auto"
                     >
                         Let's Begin
                     </button>

@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no" />
     
     <!-- Primary Meta Tags -->
     <title>Otakon AI - Your Gaming Companion | Get Spoiler-Free Gaming Hints & Help</title>
@@ -301,6 +301,18 @@
     </style>
     
     <link rel="stylesheet" href="/index.css">
+    
+    <!-- Crypto polyfill for older browsers -->
+    <script>
+      if (!crypto.randomUUID) {
+        crypto.randomUUID = function() {
+          return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+          });
+        };
+      }
+    </script>
   </head>
   <body class="bg-black">
     <div id="root"></div>

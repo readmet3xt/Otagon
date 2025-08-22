@@ -36,11 +36,11 @@ const HandsFreeToggle: React.FC<HandsFreeToggleProps> = ({ isHandsFree, onToggle
     <button
       type="button"
       onClick={handleToggle}
-      className={`flex items-center gap-2 px-3 h-10 rounded-lg text-sm font-medium transition-all duration-200 group
+      className={`flex items-center gap-2 px-3 h-12 rounded-xl text-sm font-medium transition-all duration-200 group
       ${
         isHandsFree
-          ? 'border border-[#E53A3A]/50 text-[#FF7070] hover:bg-[#E53A3A]/10 shadow-[0_0_12px_rgba(229,58,58,0.3)]'
-          : 'bg-[#2E2E2E] border border-[#424242] text-[#CFCFCF] hover:bg-[#424242] hover:border-[#5A5A5A]'
+          ? 'border-2 border-[#E53A3A]/50 text-[#FF7070] hover:bg-[#E53A3A]/10 shadow-[0_0_12px_rgba(229,58,58,0.3)]'
+          : 'bg-gradient-to-r from-[#2E2E2E] to-[#1C1C1C] border-2 border-[#424242]/60 text-[#CFCFCF] hover:from-[#424242] hover:to-[#2E2E2E] hover:border-[#5A5A5A] hover:scale-105'
       }
       `}
       aria-pressed={isHandsFree}

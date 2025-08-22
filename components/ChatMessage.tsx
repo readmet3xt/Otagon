@@ -185,6 +185,78 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
         );
     }
 
+    if (role === 'system') {
+        return (
+            <div key={id} className="flex items-start gap-3">
+                <Logo className="w-8 h-8 flex-shrink-0" />
+                <div className="bg-gradient-to-r from-[#1C1C1C]/80 to-[#0A0A0A]/80 border border-[#424242]/60 rounded-2xl rounded-tl-none py-4 px-6 relative overflow-hidden backdrop-blur-sm">
+                    <div className="ai-response max-w-none text-[#CFCFCF]">
+                        <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                                a: ({ node, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" />,
+                                p: ({ children, ...props }) => (
+                                    <p {...props} className="mb-4 last:mb-0 leading-relaxed text-lg">
+                                        {children}
+                                    </p>
+                                ),
+                                h1: ({ children, ...props }) => (
+                                    <h1 {...props} className="text-2xl font-bold mb-4 mt-6 first:mt-0 text-[#F5F5F5]">
+                                        {children}
+                                    </h1>
+                                ),
+                                h2: ({ children, ...props }) => (
+                                    <h2 {...props} className="text-xl font-bold mb-3 mt-5 first:mt-0 text-[#F5F5F5]">
+                                        {children}
+                                    </h2>
+                                ),
+                                h3: ({ children, ...props }) => (
+                                    <h3 {...props} className="text-lg font-semibold mb-2 mt-4 first:mt-0 text-[#F5F5F5]">
+                                        {children}
+                                    </h3>
+                                ),
+                                ul: ({ children, ...props }) => (
+                                    <ul {...props} className="list-disc list-inside mb-4 space-y-1">
+                                        {children}
+                                    </ul>
+                                ),
+                                ol: ({ children, ...props }) => (
+                                    <ol {...props} className="list-decimal list-inside mb-4 space-y-1">
+                                        {children}
+                                    </ol>
+                                ),
+                                li: ({ children, ...props }) => (
+                                    <li {...props} className="text-[#CFCFCF]">
+                                        {children}
+                                    </li>
+                                ),
+                                blockquote: ({ children, ...props }) => (
+                                    <blockquote {...props} className="border-l-4 border-[#FF4D4D] bg-[#FF4D4D]/10 pl-4 py-2 my-4 rounded-r-md italic">
+                                        {children}
+                                    </blockquote>
+                                ),
+                                code: ({ children, ...props }) => (
+                                    <code {...props} className="bg-[#FFAB40]/20 text-[#FFAB40] px-1.5 py-0.5 rounded text-sm font-mono">
+                                        {children}
+                                    </code>
+                                ),
+                                pre: ({ children, ...props }) => (
+                                    <pre {...props} className="bg-[#1C1C1C]/80 p-4 rounded-lg overflow-x-auto my-4">
+                                        <code className="text-[#CFCFCF]">
+                                            {children}
+                                        </code>
+                                    </pre>
+                                )
+                            }}
+                        >
+                            {text}
+                        </ReactMarkdown>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     if (role === 'model') {
         const CANCELLATION_TEXT = '*Request cancelled by user.*';
         const isCancelledMessage = text === CANCELLATION_TEXT;

@@ -95,13 +95,13 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
     return views.map(viewId => {
       if (viewId === 'chat') {
         return (
-          <div key="chat-view" className="flex-shrink-0 w-full h-full overflow-y-auto px-6 pt-6 pb-4">
+          <div key="chat-view" className="flex-shrink-0 w-full h-full overflow-y-auto px-3 sm:px-4 md:px-6 pt-4 sm:pt-6 pb-4">
             {messages.length === 0 && loadingMessages.length === 0 ? (
               <div className="flex-1 flex flex-col justify-end h-full">
                 <SuggestedPrompts onPromptClick={onSendMessage} isInputDisabled={isInputDisabled} isFirstTime={isFirstTime} />
               </div>
             ) : (
-              <div className="flex flex-col gap-8 w-full max-w-5xl mx-auto my-6">
+              <div className="flex flex-col gap-4 sm:gap-6 md:gap-8 w-full max-w-5xl mx-auto my-3 sm:my-4 md:my-6">
                 {messages.map(msg => (
                   <ChatMessage
                     key={msg.id}
@@ -124,7 +124,7 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
       const insight = activeConversation.insights?.[viewId];
       if (insight) {
         return (
-          <div key={insight.id} className="flex-shrink-0 w-full h-full overflow-y-auto p-8">
+          <div key={insight.id} className="flex-shrink-0 w-full h-full overflow-y-auto p-4 sm:p-6 md:p-8">
             <div className="prose prose-invert prose-base sm:prose-lg max-w-none prose-p:text-[#CFCFCF] prose-headings:text-[#F5F5F5] prose-strong:text-white prose-a:text-[#FFAB40] prose-a:no-underline hover:prose-a:underline prose-code:text-[#FFAB40] prose-code:bg-[#1C1C1C] prose-code:p-1 prose-code:rounded-md prose-li:marker:text-[#FFAB40] prose-h2:text-2xl prose-h3:text-xl prose-h4:text-lg">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {insight.content}

@@ -19,27 +19,17 @@ const SuggestedPrompts: React.FC<SuggestedPromptsProps> = ({ onPromptClick, isIn
             return {
                 title: "Welcome to Otakon! 🎮",
                 subtitle: "I'm here to be your spoiler-free guide through any game. To get started, you can upload a screenshot from a game you're currently playing, or just tell me about a game that's on your mind. What have you been playing lately?",
-                showPrompts: true
+                showPrompts: true,
+                showWelcome: true
             };
         }
         
-        // Personalized message based on user's profile
-        const focusEmoji = {
-            'Story-Driven': '📖',
-            'Completionist': '🏆',
-            'Strategist': '⚔️'
-        }[profile.playerFocus] || '🎮';
-        
-        const styleText = {
-            'Cryptic': 'mysterious hints',
-            'Balanced': 'balanced guidance',
-            'Direct': 'direct advice'
-        }[profile.hintStyle] || 'helpful guidance';
-        
+        // For returning users, don't show the welcome message - just show prompts
         return {
-            title: `Welcome back, ${focusEmoji} ${profile.playerFocus} gamer!`,
-            subtitle: `I'm ready to provide ${styleText} tailored to your ${profile.playerFocus.toLowerCase()} playstyle. What would you like help with today?`,
-            showPrompts: true
+            title: "",
+            subtitle: "",
+            showPrompts: true,
+            showWelcome: false
         };
     };
 
@@ -47,25 +37,28 @@ const SuggestedPrompts: React.FC<SuggestedPromptsProps> = ({ onPromptClick, isIn
 
     return (
         <div className="w-full max-w-5xl mx-auto animate-fade-in">
-            <div className="mb-8 text-center">
-                <h2 className="text-2xl font-bold text-[#F5F5F5] mb-3">{welcomeMessage.title}</h2>
-                <p className="text-[#A3A3A3] text-lg leading-relaxed max-w-4xl mx-auto">
-                    {welcomeMessage.subtitle}
-                </p>
-                
-                {/* First-time user tips */}
-                {isFirstTime && (
-                    <div className="mt-6 p-4 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-xl max-w-2xl mx-auto">
-                        <h3 className="text-lg font-semibold text-blue-200 mb-2">💡 Getting Started Tips:</h3>
-                        <ul className="text-blue-100 text-sm space-y-1 text-left">
-                            <li>• <strong>Upload a screenshot</strong> from your game for instant help</li>
-                            <li>• <strong>Ask about specific games</strong> you're playing or want to play</li>
-                            <li>• <strong>Get spoiler-free guidance</strong> tailored to your progress</li>
-                            <li>• <strong>Discover secrets and strategies</strong> without ruining surprises</li>
-                        </ul>
-                    </div>
-                )}
-            </div>
+            {/* Only show welcome message for first-time users */}
+            {welcomeMessage.showWelcome && (
+                <div className="mb-8 text-center">
+                    <h2 className="text-2xl font-bold text-[#F5F5F5] mb-3">{welcomeMessage.title}</h2>
+                    <p className="text-[#A3A3A3] text-lg leading-relaxed max-w-4xl mx-auto">
+                        {welcomeMessage.subtitle}
+                    </p>
+                    
+                    {/* First-time user tips */}
+                    {isFirstTime && (
+                        <div className="mt-6 p-4 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-xl max-w-2xl mx-auto">
+                            <h3 className="text-lg font-semibold text-blue-200 mb-2">💡 Getting Started Tips:</h3>
+                            <ul className="text-blue-100 text-sm space-y-1 text-left">
+                                <li>• <strong>Upload a screenshot</strong> from your game for instant help</li>
+                                <li>• <strong>Ask about specific games</strong> you're playing or want to play</li>
+                                <li>• <strong>Get spoiler-free guidance</strong> tailored to your progress</li>
+                                <li>• <strong>Discover secrets and strategies</strong> without ruining surprises</li>
+                            </ul>
+                        </div>
+                    )}
+                </div>
+            )}
             
             {/* ALWAYS show the 4 core gaming news prompts for ALL users */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
