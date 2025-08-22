@@ -32,6 +32,18 @@ const ProBadge = () => (
     </span>
 );
 
+const AvailableBadge = () => (
+    <span className="text-sm font-bold bg-gradient-to-r from-[#5CBB7B] to-[#4CAF50] text-white px-2.5 py-1 rounded-full uppercase tracking-wider ml-3">
+        AVAILABLE
+    </span>
+);
+
+const FounderBadge = () => (
+    <span className="text-sm font-bold bg-gradient-to-r from-[#FF4D4D] to-[#FFAB40] text-white px-2.5 py-1 rounded-full uppercase tracking-wider ml-3">
+        FOUNDER
+    </span>
+);
+
 const FeatureIcon = ({ icon }: { icon: 'eye' | 'bookmark' | 'network' | 'mic' | 'insights' | 'cpu' }) => {
     const icons = {
         eye: (
@@ -421,6 +433,13 @@ const EarnByPlayingSection = ({ onApplyClick }: { onApplyClick: () => void }) =>
 );
 
 
+const VanguardFeatureListItem = ({ children, comingSoon = false }: { children: React.ReactNode, comingSoon?: boolean }) => (
+    <li className="flex items-start gap-3">
+        <CheckIcon className="w-6 h-6 text-green-400 flex-shrink-0 mt-1" />
+        <span className={comingSoon ? 'text-neutral-400' : 'text-neutral-300'}>{children}</span>
+    </li>
+);
+
 const FounderSection = () => (
     <section id="founder" className="py-20 md:py-28 bg-transparent">
         <div className="container mx-auto px-8 md:px-10 max-w-5xl">
@@ -602,19 +621,21 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
             ></div>
             <div className="absolute bottom-0 left-0 w-full h-1/2 -z-10 pointer-events-none hero-glow-texture-bottom"></div>
             
+            {/* Background Pattern */}
+            <div 
+              className="absolute inset-0 -z-10 opacity-10"
+              style={{
+                background: 'linear-gradient(90deg, #FF4D4D10 1px, transparent 1px), linear-gradient(0deg, #FF4D4D10 1px, transparent 1px)',
+                backgroundSize: '30px 30px',
+              }}
+            ></div>
+            
 
 
             {/* Main Content */}
             <main className="pt-24">
                 {/* Hero Section */}
                 <section className="relative pt-20 pb-12 md:pb-16 text-center">
-                    <div 
-                      className="absolute inset-0 -z-10 opacity-10"
-                      style={{
-                        background: 'linear-gradient(90deg, #FF4D4D10 1px, transparent 1px), linear-gradient(0deg, #FF4D4D10 1px, transparent 1px)',
-                        backgroundSize: '30px 30px',
-                      }}
-                    ></div>
                     
 
                     

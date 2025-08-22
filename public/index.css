@@ -640,8 +640,73 @@
     margin-bottom: 0.75rem !important;
   }
   
-  /* Credit Indicator Button with Transparent Content and Gradient Border */
-  .credit-indicator-button {
+  /* Background Patterns */
+html, body {
+  background-color: #111111 !important;
+  opacity: 1;
+  background-image:
+    radial-gradient(rgba(255, 77, 77, 0.25) 2px, transparent 2px),
+    radial-gradient(rgba(255, 77, 77, 0.25) 2px, #111111 2px);
+  background-size: 80px 80px;
+  background-position: 0 0, 40px 40px;
+  min-height: 100vh;
+}
+
+/* Hero Glow Textures */
+.hero-glow-texture-top {
+  background: radial-gradient(ellipse 800px 400px at 50% 0%, rgba(255, 77, 77, 0.15) 0%, transparent 70%);
+}
+
+.hero-glow-texture-bottom {
+  background: radial-gradient(ellipse 800px 400px at 50% 100%, rgba(255, 171, 64, 0.1) 0%, transparent 70%);
+}
+
+/* Animations */
+@keyframes fade-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-slide-up {
+  animation: fade-slide-up 0.8s ease-out forwards;
+}
+
+.animate-fade-slide-down {
+  animation: fade-slide-down 0.8s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.8s ease-out forwards;
+}
+
+/* Credit Indicator Button with Transparent Content and Gradient Border */
+.credit-indicator-button {
     position: relative !important;
     z-index: 50 !important;
     border-radius: 12px !important;
