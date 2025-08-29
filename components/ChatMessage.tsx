@@ -229,19 +229,19 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
         };
 
         return (
-            <div key={id} className="flex items-start gap-3 justify-end">
-                <div className={`${containerClasses} max-w-2xl`}>
+            <div key={id} className="flex items-start gap-2 sm:gap-3 justify-end">
+                <div className={`${containerClasses} max-w-[85%] sm:max-w-2xl`}>
                     {images && images.length > 0 && (
-                        <div className={`grid gap-3 ${getGridClasses(images.length)} ${text ? 'mb-3' : ''}`}>
+                        <div className={`grid gap-2 sm:gap-3 ${getGridClasses(images.length)} ${text ? 'mb-3' : ''}`}>
                             {images.map((imgSrc, index) => (
-                                <div key={index} className="relative group overflow-hidden rounded-xl bg-[#1C1C1C]/30 border border-[#424242]/30">
+                                <div key={index} className="relative group overflow-hidden rounded-lg sm:rounded-xl bg-[#1C1C1C]/30 border border-[#424242]/30">
                                     <img 
                                         src={imgSrc} 
                                         alt={`Screenshot ${index + 1}`} 
                                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
                                         style={{ aspectRatio: '16/9' }}
                                     />
-                                    <div className="absolute top-2 right-2 bg-black/80 backdrop-blur-sm text-white text-xs font-semibold px-2 py-1 rounded-full border border-white/20">
+                                    <div className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-black/80 backdrop-blur-sm text-white text-xs font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full border border-white/20">
                                         {index + 1}
                                     </div>
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -264,28 +264,30 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
                             {images.length === 1 ? (
                                 <button
                                     onClick={() => downloadImage(images[0], 0)}
-                                    className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-[#FF4D4D] to-[#FFAB40] text-white text-sm font-medium rounded-lg hover:from-[#E53A3A] hover:to-[#D98C1F] transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                                    className="flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-gradient-to-r from-[#FF4D4D] to-[#FFAB40] text-white text-xs sm:text-sm font-medium rounded-lg hover:from-[#E53A3A] hover:to-[#D98C1F] transition-all duration-300 hover:scale-105 hover:shadow-lg"
                                     title="Download this screenshot"
                                 >
-                                    <DownloadIcon className="w-4 h-4" />
-                                    Download
+                                    <DownloadIcon className="w-3 h-3 sm:w-4 sm:h-4" />
+                                    <span className="hidden sm:inline">Download</span>
+                                    <span className="sm:hidden">DL</span>
                                 </button>
                             ) : (
                                 <>
                                     <button
                                         onClick={downloadAllImages}
-                                        className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-[#5CBB7B] to-[#4CAF50] text-white text-sm font-medium rounded-lg hover:from-[#4CAF50] hover:to-[#45A049] transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                                        className="flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-gradient-to-r from-[#5CBB7B] to-[#4CAF50] text-white text-xs sm:text-sm font-medium rounded-lg hover:from-[#4CAF50] hover:to-[#45A049] transition-all duration-300 hover:scale-105 hover:shadow-lg"
                                         title="Download all screenshots"
                                     >
-                                        <DownloadIcon className="w-4 h-4" />
-                                        Download All ({images.length})
+                                        <DownloadIcon className="w-3 h-3 sm:w-4 sm:h-4" />
+                                        <span className="hidden sm:inline">Download All ({images.length})</span>
+                                        <span className="sm:hidden">All ({images.length})</span>
                                     </button>
                                     <div className="flex gap-1">
                                         {images.map((imgSrc, index) => (
                                             <button
                                                 key={index}
                                                 onClick={() => downloadImage(imgSrc, index)}
-                                                className="px-2 py-2 bg-[#2E2E2E] text-[#A3A3A3] text-xs font-medium rounded-lg hover:bg-[#424242] hover:text-[#F5F5F5] transition-all duration-300 hover:scale-105"
+                                                className="px-1.5 sm:px-2 py-1.5 sm:py-2 bg-[#2E2E2E] text-[#A3A3A3] text-xs font-medium rounded-lg hover:bg-[#424242] hover:text-[#F5F5F5] transition-all duration-300 hover:scale-105"
                                                 title={`Download screenshot ${index + 1}`}
                                             >
                                                 {index + 1}
@@ -297,23 +299,23 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
                         </div>
                     )}
                 </div>
-                <UserAvatar className="w-8 h-8 flex-shrink-0 text-[#D98C1F]" />
+                <UserAvatar className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0 text-[#D98C1F]" />
             </div>
         );
     }
 
     if (role === 'system') {
         return (
-            <div key={id} className="flex items-start gap-3">
-                <Logo className="w-8 h-8 flex-shrink-0" />
-                <div className="bg-gradient-to-r from-[#1C1C1C]/80 to-[#0A0A0A]/80 border border-[#424242]/60 rounded-2xl rounded-tl-none py-4 px-6 relative overflow-hidden backdrop-blur-sm">
-                    <div className="ai-response max-w-none text-[#CFCFCF]">
+            <div key={id} className="flex items-start gap-2 sm:gap-3">
+                <Logo className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0" />
+                <div className="bg-gradient-to-r from-[#1C1C1C]/80 to-[#0A0A0A]/80 border border-[#424242]/60 rounded-xl sm:rounded-2xl rounded-tl-none py-3 sm:py-4 px-4 sm:px-6 relative overflow-hidden backdrop-blur-sm">
+                    <div className="ai-response max-w-none text-[#CFCFCF] text-sm sm:text-base">
                         <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
                             components={{
                                 a: ({ node, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" />,
                                 p: ({ children, ...props }) => (
-                                    <p {...props} className="mb-4 last:mb-0 leading-relaxed text-lg">
+                                    <p {...props} className="mb-3 sm:mb-4 last:mb-0 leading-relaxed text-base sm:text-lg">
                                         {children}
                                     </p>
                                 ),
@@ -388,10 +390,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
 
         if (isCancelledMessage) {
             return (
-                <div key={id} className="flex items-start gap-3">
-                    <Logo className="w-8 h-8 flex-shrink-0" />
-                    <div className="flex items-center w-full max-w-2xl py-3 px-4">
-                        <p className="text-sm italic text-[#CFCFCF]">Request cancelled by user.</p>
+                <div key={id} className="flex items-start gap-2 sm:gap-3">
+                    <Logo className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0" />
+                    <div className="flex items-center w-full max-w-[95%] sm:max-w-2xl py-2 sm:py-3 px-3 sm:px-4">
+                        <p className="text-xs sm:text-sm italic text-[#CFCFCF]">Request cancelled by user.</p>
                     </div>
                 </div>
             );
@@ -400,44 +402,44 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
         const bubbleClasses = `bg-[#2E2E2E]/60 border border-[#424242]/60 rounded-2xl rounded-tl-none py-3 px-4 relative overflow-hidden ${triumph ? 'triumph-glow' : ''} backdrop-blur-sm`;
 
         return (
-                            <div key={id} className="flex items-start gap-3">
-                    <Logo className="w-8 h-8 flex-shrink-0" />
-                    <div className="flex flex-col gap-3 w-full max-w-2xl">
+                            <div key={id} className="flex items-start gap-2 sm:gap-3">
+                    <Logo className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0" />
+                    <div className="flex flex-col gap-2 sm:gap-3 w-full max-w-[95%] sm:max-w-2xl">
                         {showConfetti && <Confetti />}
                         {text.trim() && (
                             <div className={bubbleClasses}>
-                                <div className="ai-response max-w-none text-[#CFCFCF]">
+                                <div className="ai-response max-w-none text-[#CFCFCF] text-sm sm:text-base">
                                     <ReactMarkdown
                                         remarkPlugins={[remarkGfm]}
                                         components={{
                                             a: ({ node, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" />,
                                             p: ({ children, ...props }) => (
-                                                <p {...props} className="mb-4 last:mb-0 leading-relaxed">
+                                                <p {...props} className="mb-3 sm:mb-4 last:mb-0 leading-relaxed">
                                                     {children}
                                                 </p>
                                             ),
                                             h1: ({ children, ...props }) => (
-                                                <h1 {...props} className="text-2xl font-bold mb-4 mt-6 first:mt-0 text-[#F5F5F5]">
+                                                <h1 {...props} className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 mt-4 sm:mt-6 first:mt-0 text-[#F5F5F5]">
                                                     {children}
                                                 </h1>
                                             ),
                                             h2: ({ children, ...props }) => (
-                                                <h2 {...props} className="text-xl font-bold mb-3 mt-5 first:mt-0 text-[#F5F5F5]">
+                                                <h2 {...props} className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 mt-3 sm:mt-5 first:mt-0 text-[#F5F5F5]">
                                                     {children}
                                                 </h2>
                                             ),
                                             h3: ({ children, ...props }) => (
-                                                <h3 {...props} className="text-lg font-semibold mb-2 mt-4 first:mt-0 text-[#F5F5F5]">
+                                                <h3 {...props} className="text-base sm:text-lg font-semibold mb-2 mt-3 sm:mt-4 first:mt-0 text-[#F5F5F5]">
                                                     {children}
                                                 </h3>
                                             ),
                                             ul: ({ children, ...props }) => (
-                                                <ul {...props} className="list-disc list-inside mb-4 space-y-1">
+                                                <ul {...props} className="list-disc list-inside mb-3 sm:mb-4 space-y-1">
                                                     {children}
                                                 </ul>
                                             ),
                                             ol: ({ children, ...props }) => (
-                                                <ol {...props} className="list-decimal list-inside mb-4 space-y-1">
+                                                <ol {...props} className="list-decimal list-inside mb-3 sm:mb-4 space-y-1">
                                                     {children}
                                                 </ol>
                                             ),
@@ -447,7 +449,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
                                                 </li>
                                             ),
                                             blockquote: ({ children, ...props }) => (
-                                                <blockquote {...props} className="border-l-4 border-[#FF4D4D] bg-[#FF4D4D]/10 pl-4 py-2 my-4 rounded-r-md italic">
+                                                <blockquote {...props} className="border-l-4 border-[#FF4D4D] bg-[#FF4D4D]/10 pl-3 sm:pl-4 py-2 my-3 sm:my-4 rounded-r-md italic">
                                                     {children}
                                                 </blockquote>
                                             ),
@@ -457,8 +459,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
                                                 </code>
                                             ),
                                             pre: ({ children, ...props }) => (
-                                                <pre {...props} className="bg-[#1C1C1C]/80 p-4 rounded-lg overflow-x-auto my-4">
-                                                    <code className="text-[#CFCFCF]">
+                                                <pre {...props} className="bg-[#1C1C1C]/80 p-3 sm:p-4 rounded-lg overflow-x-auto my-3 sm:my-4">
+                                                    <code className="text-[#CFCFCF] text-xs sm:text-sm">
                                                         {children}
                                                     </code>
                                                 </pre>
@@ -472,11 +474,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
                         )}
 
                     {isLoading && (
-                         <div className="flex items-center gap-4 py-3 px-4 bg-[#2E2E2E]/30 rounded-xl border border-[#424242]/40 backdrop-blur-sm">
+                         <div className="flex items-center gap-3 sm:gap-4 py-2 sm:py-3 px-3 sm:px-4 bg-[#2E2E2E]/30 rounded-lg sm:rounded-xl border border-[#424242]/40 backdrop-blur-sm">
                             <TypingIndicator />
                             <button
                                 onClick={onStop}
-                                className="text-xs font-semibold px-3 py-1.5 rounded-full border transition-all duration-200 bg-[#424242]/60 border-[#5A5A5A] hover:bg-[#424242] hover:border-[#6E6E6E] text-[#CFCFCF] hover:text-[#F5F5F5] hover:scale-105"
+                                className="text-xs font-semibold px-2 sm:px-3 py-1 sm:py-1.5 rounded-full border transition-all duration-200 bg-[#424242]/60 border-[#5A5A5A] hover:bg-[#424242] hover:border-[#6E6E6E] text-[#CFCFCF] hover:text-[#F5F5F5] hover:scale-105"
                                 aria-label="Stop generating response"
                             >
                                 Stop
@@ -501,18 +503,19 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
                             
                             {/* Show Wishlist button for Everything Else conversation when about unreleased games */}
                             {isEverythingElse && isAboutUnreleasedGame() && (
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2 sm:gap-3">
                                     <button
                                         onClick={handleAddToWishlist}
                                         disabled={isInWishlist}
-                                        className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200 ${
+                                        className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-semibold text-xs sm:text-sm transition-all duration-200 ${
                                             isInWishlist
                                                 ? 'bg-[#5CBB7B] text-white cursor-not-allowed'
                                                 : 'bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white hover:from-[#D98C1F] hover:to-[#E53A3A] hover:scale-105'
                                         }`}
                                     >
-                                        <span className="text-lg">🎮</span>
-                                        {isInWishlist ? 'Added to Wishlist' : 'Add to Wishlist'}
+                                        <span className="text-base sm:text-lg">🎮</span>
+                                        <span className="hidden sm:inline">{isInWishlist ? 'Added to Wishlist' : 'Add to Wishlist'}</span>
+                                        <span className="sm:hidden">{isInWishlist ? 'Added' : 'Add'}</span>
                                     </button>
                                 </div>
                             )}
@@ -521,40 +524,42 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
 
                     {/* Retry button for failed responses */}
                     {!isLoading && isFailedResponse && onRetry && (
-                        <div className="pt-3 animate-fade-in">
+                        <div className="pt-2 sm:pt-3 animate-fade-in">
                             <button
                                 onClick={onRetry}
-                                className="flex items-center justify-center gap-2 w-auto text-sm bg-gradient-to-r from-[#5CBB7B] to-[#4CAF50] text-white font-bold py-2.5 px-5 rounded-xl transition-all duration-200 transform hover:scale-105 hover:shadow-lg hover:shadow-[#5CBB7B]/25"
+                                className="flex items-center justify-center gap-2 w-auto text-xs sm:text-sm bg-gradient-to-r from-[#5CBB7B] to-[#4CAF50] text-white font-bold py-2 sm:py-2.5 px-4 sm:px-5 rounded-lg sm:rounded-xl transition-all duration-200 transform hover:scale-105 hover:shadow-lg hover:shadow-[#5CBB7B]/25"
                             >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                 </svg>
-                                Try Again
+                                <span className="hidden sm:inline">Try Again</span>
+                                <span className="sm:hidden">Retry</span>
                             </button>
                         </div>
                     )}
 
                     {showUpgradeButton && !isLoading && (
-                        <div className="pt-3 animate-fade-in">
+                        <div className="pt-2 sm:pt-3 animate-fade-in">
                             <button
                                 onClick={onUpgradeClick}
-                                className="flex items-center justify-center gap-2 w-auto text-sm bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white font-bold py-2.5 px-5 rounded-xl transition-all duration-200 transform hover:scale-105 hover:shadow-lg hover:shadow-[#E53A3A]/25"
+                                className="flex items-center justify-center gap-2 w-auto text-xs sm:text-sm bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white font-bold py-2 sm:py-2.5 px-4 sm:px-5 rounded-lg sm:rounded-xl transition-all duration-200 transform hover:scale-105 hover:shadow-lg hover:shadow-[#E53A3A]/25"
                             >
-                                <StarIcon className="w-4 h-4" />
-                                Upgrade to Pro
+                                <StarIcon className="w-3 h-3 sm:w-4 sm:h-4" />
+                                <span className="hidden sm:inline">Upgrade to Pro</span>
+                                <span className="sm:hidden">Upgrade</span>
                             </button>
                         </div>
                     )}
 
                     {suggestions && !isLoading && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 animate-fade-in">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 pt-3 animate-fade-in">
                             {suggestions.map((prompt) => (
                                 <button
                                     key={prompt}
                                     onClick={() => onPromptClick(prompt)}
-                                    className="text-left p-4 bg-[#1C1C1C]/60 border border-[#424242]/40 rounded-xl transition-all duration-200 hover:bg-[#E53A3A]/20 hover:border-[#E53A3A]/60 hover:scale-[1.02] backdrop-blur-sm"
+                                    className="text-left p-3 sm:p-4 bg-[#1C1C1C]/60 border border-[#424242]/40 rounded-lg sm:rounded-xl transition-all duration-200 hover:bg-[#E53A3A]/20 hover:border-[#E53A3A]/60 hover:scale-[1.02] backdrop-blur-sm"
                                 >
-                                    <p className="text-[#CFCFCF] font-medium text-sm leading-relaxed">{prompt}</p>
+                                    <p className="text-[#CFCFCF] font-medium text-xs sm:text-sm leading-relaxed">{prompt}</p>
                                 </button>
                             ))}
                         </div>

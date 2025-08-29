@@ -139,7 +139,12 @@ const AppComponent: React.FC = () => {
     
     // Player Profile Setup State
     const [showProfileSetup, setShowProfileSetup] = useState(false);
-    const [isFirstTime, setIsFirstTime] = useState(false);
+    const [isFirstTime, setIsFirstTime] = useState(() => {
+        // Check if user has had conversations before
+        const hasConversations = localStorage.getItem('otakon_has_conversations') === 'true';
+        const hasCompletedOnboarding = localStorage.getItem('otakonOnboardingComplete') === 'true';
+        return !hasConversations && !hasCompletedOnboarding;
+    });
     const [isOtakuDiaryModalOpen, setIsOtakuDiaryModalOpen] = useState(false);
     const [otakuDiaryGameInfo, setOtakuDiaryGameInfo] = useState<{ id: string; title: string } | null>(null);
     
@@ -288,6 +293,8 @@ const AppComponent: React.FC = () => {
                 checkLocalStorageState();
             }, 1000);
         }
+        
+
     }, [checkLocalStorageState]);
     
     // Handle app visibility changes to track when user returns after 12+ hours
@@ -499,18 +506,33 @@ const AppComponent: React.FC = () => {
                 // Mark that we've checked this session to prevent repeated checks
                 sessionStorage.setItem('otakon_profile_checked_this_session', 'true');
                 
+                console.log('🔍 Starting profile setup check:', { hasCompletedProfileSetup, hasCheckedThisSession });
+                
                 // Check if user needs profile setup
                 const checkProfileSetup = async () => {
-                    const needsProfile = await playerProfileService.needsProfileSetup();
-                    if (needsProfile) {
+                    try {
+                        const needsProfile = await playerProfileService.needsProfileSetup();
+                        console.log('🔍 Profile setup check result:', { needsProfile, isFirstTime });
+                        
+                        if (needsProfile) {
+                            console.log('✅ User needs profile setup - showing modal');
+                            setIsFirstTime(true);
+                            setShowProfileSetup(true);
+                        } else {
+                            console.log('✅ User doesn\'t need profile setup - marking as completed');
+                            // User doesn't need profile setup, mark as completed
+                            localStorage.setItem('otakon_profile_setup_completed', 'true');
+                        }
+                    } catch (error) {
+                        console.error('❌ Error checking profile setup:', error);
+                        // Fallback: show profile setup if there's an error
                         setIsFirstTime(true);
                         setShowProfileSetup(true);
-                    } else {
-                        // User doesn't need profile setup, mark as completed
-                        localStorage.setItem('otakon_profile_setup_completed', 'true');
                     }
                 };
                 checkProfileSetup();
+            } else {
+                console.log('🔍 Profile setup check skipped:', { hasCompletedProfileSetup, hasCheckedThisSession });
             }
         }
     }, [view, onboardingStatus]);
@@ -546,6 +568,42 @@ const AppComponent: React.FC = () => {
         updateConversation, // 🔥 ADDED: For enhanced insights integration
 
     } = useChat(isHandsFreeMode);
+    
+    // Helper function to get time-based greeting
+    const getTimeGreeting = useCallback(() => {
+        const currentHour = new Date().getHours();
+        if (currentHour < 12) {
+            return 'Good morning! ';
+        } else if (currentHour < 17) {
+            return 'Good afternoon! ';
+        } else {
+            return 'Good evening! ';
+        }
+    }, []);
+    
+    // Track first-time experience and show welcome message
+    useEffect(() => {
+        // Check if user has had conversations before
+        const hasConversations = Object.keys(conversations).length > 1 || // More than just 'everything-else'
+            Object.values(conversations).some(conv => conv.messages && conv.messages.length > 0);
+        
+        if (hasConversations && isFirstTime) {
+            // User has had conversations, mark as no longer first-time
+            setIsFirstTime(false);
+            localStorage.setItem('otakon_has_conversations', 'true');
+            console.log('🎯 User has had conversations - no longer first-time');
+        }
+        
+        // Show welcome message for first-time users if they haven't seen it yet
+        if (isFirstTime && !localStorage.getItem('otakon_first_welcome_shown')) {
+            const timeGreeting = getTimeGreeting();
+            const welcomeMessage = `${timeGreeting}Welcome to Otakon! 🎮\n\n✨ **Your Personal Gaming Companion**\n\n🎯 **What I can help you with:**\n• Upload screenshots from games you're playing\n• Get spoiler-free guidance and hints\n• Discover secrets and strategies\n• Track your gaming progress\n• Answer questions about any game\n\n🚀 **Let's get started!** Upload a screenshot from a game you're currently playing, or just tell me what you'd like help with.`;
+            
+            console.log('🎉 Adding first-time welcome message:', welcomeMessage);
+            addSystemMessage(welcomeMessage, 'everything-else', false);
+            localStorage.setItem('otakon_first_welcome_shown', 'true');
+        }
+    }, [conversations, isFirstTime, addSystemMessage, getTimeGreeting]);
     
     // Enhanced Insights Hook
     const enhancedInsights = useEnhancedInsights(
@@ -1726,18 +1784,6 @@ const AppComponent: React.FC = () => {
 
     const handleCloseUpgradeScreen = useCallback(() => setShowUpgradeScreen(false), []);
     
-    // Helper function to get time-based greeting
-    const getTimeGreeting = useCallback(() => {
-        const currentHour = new Date().getHours();
-        if (currentHour < 12) {
-            return 'Good morning! ';
-        } else if (currentHour < 17) {
-            return 'Good afternoon! ';
-        } else {
-            return 'Good evening! ';
-        }
-    }, []);
-    
     // Function to reset welcome message tracking (useful for testing or user preference)
     const resetWelcomeMessageTracking = useCallback(async () => {
         // Reset in localStorage
@@ -2166,9 +2212,9 @@ const AppComponent: React.FC = () => {
     }
 
     const headerContent = (
-        <div className="flex items-center gap-3">
-            <Logo className="h-8 w-8" />
-            <h1 className="text-3xl sm:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#FF4D4D] to-[#FFAB40]">Otakon</h1>
+        <div className="flex items-center gap-2 sm:gap-3">
+            <Logo className="h-6 w-6 sm:h-8 sm:w-8" />
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#FF4D4D] to-[#FFAB40]">Otakon</h1>
         </div>
     );
 
@@ -2183,7 +2229,7 @@ const AppComponent: React.FC = () => {
             <div className="absolute top-0 left-0 w-full h-full bg-gradient-radial-at-top from-[#1C1C1C]/40 to-transparent -z-0 pointer-events-none"></div>
             <div className="absolute bottom-0 left-0 w-full h-full bg-gradient-radial-at-bottom from-[#0A0A0A]/30 to-transparent -z-0 pointer-events-none"></div>
             
-            <header className={`relative flex-shrink-0 flex items-center justify-between p-3 sm:p-4 md:p-6 bg-black/80 backdrop-blur-xl z-20 border-b border-[#424242]/20 shadow-2xl`}>
+            <header className={`relative flex-shrink-0 flex items-center justify-between p-2 sm:p-3 md:p-4 lg:p-6 bg-black/80 backdrop-blur-xl z-20 border-b border-[#424242]/20 shadow-2xl`}>
                 <button
                     type="button"
                     className="transition-all duration-200 hover:opacity-80 hover:scale-105 group"
@@ -2197,14 +2243,14 @@ const AppComponent: React.FC = () => {
                 </button>
                 
                 {/* Enhanced Features Status Bar */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                     {/* Database Sync Status */}
                     {authState.user && (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 sm:gap-2">
                             <button
                                 onClick={syncToDatabase}
                                 disabled={databaseSyncStatus === 'syncing'}
-                                className={`flex items-center gap-2 px-3 h-12 rounded-xl text-sm font-medium transition-all duration-200 ${
+                                className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 h-10 sm:h-12 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 ${
                                     databaseSyncStatus === 'syncing' 
                                         ? 'bg-blue-600/20 text-blue-400 cursor-not-allowed' 
                                         : databaseSyncStatus === 'success'
@@ -2237,7 +2283,7 @@ const AppComponent: React.FC = () => {
                     {authState.user && (
                         <button
                             onClick={() => setShowProactiveInsights(!showProactiveInsights)}
-                            className={`flex items-center gap-2 px-3 h-12 rounded-xl text-sm font-medium transition-all duration-200 ${
+                            className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 h-10 sm:h-12 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 ${
                                 showProactiveInsights 
                                     ? 'bg-purple-600/20 text-purple-400 border-2 border-purple-500/30' 
                                     : 'bg-gradient-to-r from-[#2E2E2E] to-[#1C1C1C] border-2 border-[#424242]/60 text-[#CFCFCF] hover:from-[#424242] hover:to-[#2E2E2E] hover:border-[#5A5A5A] hover:scale-105'
@@ -2251,7 +2297,7 @@ const AppComponent: React.FC = () => {
                         </button>
                     )}
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                      <CreditIndicator usage={usage} onClick={handleOpenCreditModal} />
                      <HandsFreeToggle
                         isHandsFree={isHandsFreeMode}
@@ -2260,7 +2306,7 @@ const AppComponent: React.FC = () => {
                     <button
                         type="button"
                         onClick={handleOpenConnectionModal}
-                        className={`flex items-center gap-2 px-3 h-12 rounded-xl text-sm font-semibold transition-all duration-300 disabled:opacity-50
+                        className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 h-10 sm:h-12 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 disabled:opacity-50
                         ${
                             connectionStatus === ConnectionStatus.CONNECTED
                             ? 'border-2 border-[#5CBB7B]/60 text-[#5CBB7B] hover:bg-[#5CBB7B]/10 hover:border-[#5CBB7B] shadow-[0_0_20px_rgba(92,187,123,0.4)] hover:shadow-[0_0_30px_rgba(92,187,123,0.6)]'
@@ -2292,7 +2338,7 @@ const AppComponent: React.FC = () => {
                         <button
                             type="button"
                             onClick={forceReconnect}
-                            className="flex items-center gap-2 px-3 h-12 rounded-xl text-sm font-semibold bg-gradient-to-r from-[#2E2E2E] to-[#1C1C1C] border-2 border-[#424242]/60 text-[#CFCFCF] hover:from-[#424242] hover:to-[#2E2E2E] hover:border-[#5A5A5A] hover:scale-105 transition-all duration-300 shadow-lg"
+                            className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 h-10 sm:h-12 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold bg-gradient-to-r from-[#2E2E2E] to-[#1C1C1C] border-2 border-[#424242]/60 text-[#CFCFCF] hover:from-[#424242] hover:to-[#2E2E2E] hover:border-[#5A5A5A] hover:scale-105 transition-all duration-300 shadow-lg"
                             title="Force reconnect with saved code"
                         >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2308,7 +2354,7 @@ const AppComponent: React.FC = () => {
                         type="button"
                         onClick={handleSettingsClick}
                         onContextMenu={handleSettingsClick}
-                        className="flex items-center gap-2 px-3 h-12 rounded-xl text-sm font-semibold bg-gradient-to-r from-[#2E2E2E] to-[#1C1C1C] border-2 border-[#424242]/60 text-white/90 transition-all duration-300 hover:from-[#424242] hover:to-[#2E2E2E] hover:scale-105 hover:shadow-lg"
+                        className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 h-10 sm:h-12 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold bg-gradient-to-r from-[#2E2E2E] to-[#1C1C1C] border-2 border-[#424242]/60 text-white/90 transition-all duration-300 hover:from-[#424242] hover:to-[#2E2E2E] hover:scale-105 hover:shadow-lg"
                         aria-label="Open settings"
                     >
                         <SettingsIcon className="w-5 h-5" />
@@ -2421,7 +2467,7 @@ const AppComponent: React.FC = () => {
                     onOpenWishlistModal={() => setIsWishlistModalOpen(true)}
                 />
             ) : (
-                 <main className="flex-1 flex flex-col px-4 sm:px-6 pt-4 sm:pt-6 pb-4 overflow-y-auto" ref={chatContainerRef}>
+                 <main className="flex-1 flex flex-col px-3 sm:px-4 md:px-6 pt-3 sm:pt-4 md:pt-6 pb-3 sm:pb-4 overflow-y-auto" ref={chatContainerRef}>
                     {messages.length === 0 && loadingMessages.length === 0 ? (
                         <div className="flex-1 flex flex-col justify-end">
                             {/* Show suggested prompts for other tabs when no messages */}
@@ -2434,7 +2480,7 @@ const AppComponent: React.FC = () => {
                             )}
                         </div>
                     ) : (
-                        <div className="flex flex-col gap-6 sm:gap-8 w-full max-w-4xl sm:max-w-5xl mx-auto my-4 sm:my-6">
+                        <div className="flex flex-col gap-4 sm:gap-6 md:gap-8 w-full max-w-[95%] sm:max-w-4xl md:max-w-5xl mx-auto my-3 sm:my-4 md:my-6">
                             {(() => { const loadingSet = new Set(loadingMessages); return messages.map(msg => (
                                  <ChatMessageComponent
                                      key={msg.id}
@@ -2455,10 +2501,10 @@ const AppComponent: React.FC = () => {
                     {showScrollToBottom && (
                         <button
                             onClick={scrollToBottom}
-                            className="fixed bottom-24 right-6 z-50 bg-[#E53A3A] hover:bg-[#D98C1F] text-white p-3 rounded-full shadow-lg transition-all duration-200 hover:scale-110"
+                            className="fixed bottom-20 sm:bottom-24 right-3 sm:right-6 z-50 bg-[#E53A3A] hover:bg-[#D98C1F] text-white p-2.5 sm:p-3 rounded-full shadow-lg transition-all duration-200 hover:scale-110 active:scale-95"
                             title="Scroll to bottom"
                         >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
                             </svg>
                         </button>
@@ -2469,18 +2515,16 @@ const AppComponent: React.FC = () => {
             {/* Suggested Prompts Above Chat Input for "Everything Else" tab - Show based on user interaction */}
             {activeConversation?.id === 'everything-else' && 
              shouldShowSuggestedPromptsEnhanced() && (
-                <div className="flex-shrink-0 bg-black/40 backdrop-blur-sm border-t border-[#424242]/20 px-3 sm:px-4 py-2 sm:py-3">
-                    <SuggestedPrompts 
-                        onPromptClick={(prompt) => handleSendMessage(prompt)} 
-                        isInputDisabled={isInputDisabled}
-                        isFirstTime={isFirstTime}
-                    />
-                </div>
+                <SuggestedPrompts 
+                    onPromptClick={(prompt) => handleSendMessage(prompt)} 
+                    isInputDisabled={isInputDisabled}
+                    isFirstTime={isFirstTime}
+                />
             )}
 
                     {/* SubTabs - below prompts, visible when has insights (all users can see Otaku Diary) */}
                     {(activeConversation?.insights && activeConversation.id !== 'everything-else') || activeConversation?.id === 'everything-else' ? (
-                <div className="w-full max-w-5xl mx-auto px-4 pt-4 flex items-center gap-3">
+                <div className="w-full max-w-[95%] sm:max-w-4xl md:max-w-5xl mx-auto px-3 sm:px-4 pt-3 sm:pt-4 flex items-center gap-2 sm:gap-3">
                     <div className="flex-1 min-w-0">
                         <SubTabs
                             activeConversation={activeConversation}

@@ -36,7 +36,7 @@ const HandsFreeToggle: React.FC<HandsFreeToggleProps> = ({ isHandsFree, onToggle
     <button
       type="button"
       onClick={handleToggle}
-      className={`flex items-center gap-2 px-3 h-12 rounded-xl text-sm font-medium transition-all duration-200 group
+      className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 h-10 sm:h-12 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 group
       ${
         isHandsFree
           ? 'border-2 border-[#E53A3A]/50 text-[#FF7070] hover:bg-[#E53A3A]/10 shadow-[0_0_12px_rgba(229,58,58,0.3)]'
@@ -47,7 +47,7 @@ const HandsFreeToggle: React.FC<HandsFreeToggleProps> = ({ isHandsFree, onToggle
       aria-label="Hands-Free Settings"
       title={isHandsFree ? 'Hands-Free Settings' : 'Hands-Free Settings (Pro feature)'}
     >
-      <HandsFreeIcon className="w-5 h-5" isActive={isHandsFree} />
+      <HandsFreeIcon className="w-4 h-4 sm:w-5 sm:h-5" isActive={isHandsFree} />
       <span className="hidden sm:inline">
         Hands-Free
       </span>

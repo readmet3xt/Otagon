@@ -181,7 +181,7 @@ const ChatInput: React.FC<ChatInputProps> = React.memo(({ value, onChange, onSen
     useLayoutEffect(() => {
         const textarea = textareaRef.current;
         if (textarea) {
-            const MAX_HEIGHT = 144; // Approx 6 lines of text
+            const MAX_HEIGHT = 120; // Reduced for mobile (approx 5 lines)
             const MIN_HEIGHT = 44;
 
             if (value.trim() === '' && selectedImages.length === 0) {
@@ -377,42 +377,42 @@ const ChatInput: React.FC<ChatInputProps> = React.memo(({ value, onChange, onSen
             return "AI is thinking...";
         }
         if (usage.tier !== 'free' && hasInsights) {
-            return "Ask, or use @ to manage tabs...";
+            return "Ask or use @ for tabs...";
         }
         return "Ask a question";
     };
     const placeholderText = getPlaceholderText();
     const maxImages = usage.tier !== 'free' ? 5 : 1;
 
-    return (
-        <div className="pt-3 sm:pt-4 px-4 sm:px-6 pb-[calc(env(safe-area-inset-bottom)+16px)] sm:pb-[calc(env(safe-area-inset-bottom)+24px)]">
-            <form onSubmit={handleSubmit} className="w-full max-w-4xl sm:max-w-5xl mx-auto flex flex-col gap-3 sm:gap-4">
+            return (
+            <div className="pt-2 sm:pt-3 md:pt-4 px-3 sm:px-4 md:px-6 pb-[calc(env(safe-area-inset-bottom)+12px)] sm:pb-[calc(env(safe-area-inset-bottom)+16px)] md:pb-[calc(env(safe-area-inset-bottom)+24px)]">
+            <form onSubmit={handleSubmit} className="w-full max-w-[95%] sm:max-w-4xl md:max-w-5xl mx-auto flex flex-col gap-2 sm:gap-3 md:gap-4">
                 {selectedImages.length > 0 && (
-                     <div className="flex overflow-x-auto space-x-2 sm:space-x-3 p-2 sm:p-3 scroll-smooth bg-[#1C1C1C]/40 rounded-2xl border border-[#424242]/30">
+                     <div className="flex overflow-x-auto space-x-2 sm:space-x-3 p-2 sm:p-3 scroll-smooth bg-[#1C1C1C]/40 rounded-xl sm:rounded-2xl border border-[#424242]/30">
                         {selectedImages.map((image, index) => (
                             <div key={index} className="relative flex-shrink-0 animate-fade-in group">
                                 <img 
                                     src={image.dataUrl} 
                                     alt={`Selected preview ${index + 1}`} 
-                                    className="h-20 sm:h-24 w-auto rounded-xl object-cover border-2 border-[#424242]/40 group-hover:border-[#E53A3A]/60 transition-all duration-300 group-hover:scale-105"
+                                    className="h-16 sm:h-20 md:h-24 w-auto rounded-lg sm:rounded-xl object-cover border-2 border-[#424242]/40 group-hover:border-[#E53A3A]/60 transition-all duration-300 group-hover:scale-105"
                                 />
                                 <button 
                                     type="button"
                                     onClick={() => handleRemoveImage(index)}
-                                    className="absolute -top-2 -right-2 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white rounded-full w-7 h-7 flex items-center justify-center text-sm font-bold hover:scale-110 transition-all duration-200 shadow-lg hover:shadow-[#E53A3A]/50"
+                                    className="absolute -top-1 sm:-top-2 -right-1 sm:-right-2 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white rounded-full w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center text-xs sm:text-sm font-bold hover:scale-110 transition-all duration-200 shadow-lg hover:shadow-[#E53A3A]/50"
                                     aria-label={`Remove image ${index + 1}`}
                                 >
                                     &times;
                                 </button>
-                                <div className="absolute bottom-1 left-1 bg-black/80 backdrop-blur-sm text-white text-xs font-semibold px-2 py-1 rounded-full border border-white/20">
+                                <div className="absolute bottom-1 left-1 bg-black/80 backdrop-blur-sm text-white text-xs font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full border border-white/20">
                                     {index + 1}
                                 </div>
                             </div>
                         ))}
                     </div>
                 )}
-                <div className="p-0 bg-transparent rounded-2xl border-2 border-[#424242]/60 focus-within:p-[2px] focus-within:bg-gradient-to-r focus-within:from-[#E53A3A] focus-within:to-[#D98C1F] focus-within:border-transparent focus-within:shadow-[0_0_30px_rgba(229,58,58,0.5)] transition-all duration-300">
-                    <div className="flex items-center bg-gradient-to-r from-[#1C1C1C] to-[#0A0A0A] rounded-2xl w-full px-3 sm:px-4 gap-2 sm:gap-3 py-2">
+                <div className="p-0 bg-transparent rounded-xl sm:rounded-2xl border-2 border-[#424242]/60 focus-within:p-[2px] focus-within:bg-gradient-to-r focus-within:from-[#E53A3A] focus-within:to-[#D98C1F] focus-within:border-transparent focus-within:shadow-[0_0_20px_rgba(229,58,58,0.4)] sm:focus-within:shadow-[0_0_30px_rgba(229,58,58,0.5)] transition-all duration-300">
+                    <div className="flex items-center bg-gradient-to-r from-[#1C1C1C] to-[#0A0A0A] rounded-xl sm:rounded-2xl w-full px-2 sm:px-3 md:px-4 gap-2 sm:gap-3 py-1.5 sm:py-2">
                         <input 
                             type="file" 
                             ref={fileInputRef} 
@@ -426,9 +426,9 @@ const ChatInput: React.FC<ChatInputProps> = React.memo(({ value, onChange, onSen
                             onClick={() => fileInputRef.current?.click()}
                             aria-label="Upload screenshot"
                             disabled={isProcessing || selectedImages.length >= maxImages}
-                            className="flex-shrink-0 flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl text-[#FF4D4D] hover:bg-[#2E2E2E]/60 hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:scale-100 border border-[#424242]/40 hover:border-[#FF4D4D]/40"
+                            className="flex-shrink-0 flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-lg sm:rounded-xl text-[#FF4D4D] hover:bg-[#2E2E2E]/60 hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:scale-100 border border-[#424242]/40 hover:border-[#FF4D4D]/40"
                         >
-                            <CameraIcon className="w-4 h-4 sm:w-5 sm:h-5"/>
+                            <CameraIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5"/>
                         </button>
                         <div className="relative flex-grow">
                              {showSuggestions && (
@@ -447,7 +447,7 @@ const ChatInput: React.FC<ChatInputProps> = React.memo(({ value, onChange, onSen
                                 onChange={handleValueChange}
                                 onKeyDown={handleKeyDown}
                                 placeholder={placeholderText}
-                                className="flex-grow w-full bg-transparent py-2.5 sm:py-3 px-2 sm:px-3 text-[#F5F5F5] placeholder-[#A3A3A3] focus:outline-none resize-none overflow-y-auto disabled:opacity-60 text-sm sm:text-base leading-relaxed"
+                                className="flex-grow w-full bg-transparent py-2 sm:py-2.5 md:py-3 px-2 sm:px-3 text-[#F5F5F5] placeholder-[#A3A3A3] focus:outline-none resize-none overflow-y-auto disabled:opacity-60 text-xs sm:text-sm md:text-base leading-relaxed"
                                 aria-label="Chat input"
                                 disabled={isProcessing}
                             />
@@ -465,13 +465,13 @@ const ChatInput: React.FC<ChatInputProps> = React.memo(({ value, onChange, onSen
                                 type="submit"
                                 disabled={!canSubmit}
                                 aria-label="Send message"
-                                className={`flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl transition-all duration-300 disabled:cursor-not-allowed ${
+                                className={`flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-lg sm:rounded-xl transition-all duration-300 disabled:cursor-not-allowed ${
                                     canSubmit 
                                     ? 'bg-gradient-to-r from-[#FFAB40] to-[#FF8C00] text-[#181818] scale-100 hover:scale-105 hover:shadow-lg hover:shadow-[#FFAB40]/25 active:scale-95 font-semibold' 
                                     : 'bg-[#2E2E2E]/60 text-[#A3A3A3] scale-100 border border-[#424242]/40'
                                 }`}
                             >
-                                <SendIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                                <SendIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5" />
                             </button>
                         </div>
                     </div>

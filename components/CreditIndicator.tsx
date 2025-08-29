@@ -19,7 +19,7 @@ const CreditBar: React.FC<{
   const percent = limit > 0 ? Math.max(0, 100 - (current / limit) * 100) : 0;
   
   return (
-    <div className="flex items-center gap-1 w-20">
+    <div className="flex items-center gap-1.5 w-20">
       {children}
       <div className="w-full h-2 bg-neutral-800/60 rounded-sm overflow-hidden border border-neutral-600/40">
         <div 
@@ -52,11 +52,11 @@ const CreditIndicator: React.FC<CreditIndicatorProps> = ({ usage, onClick }) => 
         <button
           type="button"
           onClick={onClick}
-          className="credit-indicator-button flex items-center justify-center sm:justify-start w-12 sm:w-auto h-12 rounded-xl transition-all duration-300 hover:scale-105"
+          className="credit-indicator-button flex items-center justify-center sm:justify-start w-10 sm:w-12 md:w-auto h-10 sm:h-12 rounded-lg sm:rounded-xl transition-all duration-300 hover:scale-105 active:scale-95"
           style={{
             background: 'linear-gradient(135deg, #E53A3A, #D98C1F, #E53A3A)',
             padding: '2px',
-            borderRadius: '12px'
+            borderRadius: '8px'
           }}
           aria-label="View query credits"
         >
@@ -65,7 +65,7 @@ const CreditIndicator: React.FC<CreditIndicatorProps> = ({ usage, onClick }) => 
             borderRadius: '10px'
           }}>
         {/* Mobile View: Circular Bars */}
-        <div className="sm:hidden w-8 h-8 flex items-center justify-center bg-neutral-900/50 rounded-full p-0.5">
+        <div className="sm:hidden w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center bg-neutral-900/50 rounded-full p-0.5">
            <svg className="w-full h-full" viewBox="0 0 32 32" fill="none">
               <defs>
                 <linearGradient id="sky-gradient" x1="0" y1="0" x2="1" y2="1">
@@ -103,7 +103,7 @@ const CreditIndicator: React.FC<CreditIndicatorProps> = ({ usage, onClick }) => 
         </div>
 
         {/* Desktop View: Horizontal Bars */}
-        <div className="hidden sm:flex flex-col gap-0.5">
+        <div className="hidden sm:flex flex-col gap-1">
             <CreditBar current={usage.textCount} limit={usage.textLimit} colorClass="bg-gradient-to-r from-sky-400 to-sky-500">
             <TextIcon className="w-3 h-3 text-sky-400 flex-shrink-0" />
             </CreditBar>

@@ -181,7 +181,7 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
       return (
         <div
           key="chat-view"
-          className="flex-shrink-0 w-full h-full overflow-y-auto px-3 sm:px-4 md:px-6 pt-4 sm:pt-6 pb-4"
+          className="flex-shrink-0 w-full h-full overflow-y-auto px-2 sm:px-3 md:px-4 lg:px-6 pt-3 sm:pt-4 md:pt-6 pb-3 sm:pb-4"
           ref={chatContainerRef}
           aria-live="polite"
           aria-atomic="false"
@@ -192,7 +192,7 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
               <SuggestedPrompts onPromptClick={onSendMessage} isInputDisabled={isInputDisabled} isFirstTime={isFirstTime} />
             </div>
           ) : (
-            <div className="flex flex-col gap-4 sm:gap-6 md:gap-8 w-full max-w-5xl mx-auto my-3 sm:my-4 md:my-6">
+            <div className="flex flex-col gap-3 sm:gap-4 md:gap-6 lg:gap-8 w-full max-w-[95%] sm:max-w-4xl md:max-w-5xl mx-auto my-2 sm:my-3 md:my-4 lg:my-6">
               {messages.map(msg => (
                 <ChatMessage
                   key={msg.id}
@@ -210,8 +210,8 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
               <div ref={chatEndRef} />
               
               {/* Show suggested prompts below messages for easy access */}
-              <div className="mt-6 pt-6 border-t border-[#424242]/20">
-                <SuggestedPrompts onPromptClick={onSendMessage} isInputDisabled={isInputDisabled} isFirstTime={false} />
+              <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-[#424242]/20">
+                <SuggestedPrompts onPromptClick={onSendMessage} isInputDisabled={isInputDisabled} isFirstTime={isFirstTime} />
               </div>
             </div>
           )}
@@ -223,10 +223,10 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
                 console.log('🔍 Scroll to bottom button clicked');
                 scrollToBottom();
               }}
-              className="fixed bottom-24 right-6 z-50 bg-[#E53A3A] hover:bg-[#D98C1F] text-white p-3 rounded-full shadow-lg transition-all duration-200 hover:scale-110"
+              className="fixed bottom-20 sm:bottom-24 right-3 sm:right-6 z-50 bg-[#E53A3A] hover:bg-[#D98C1F] text-white p-2.5 sm:p-3 rounded-full shadow-lg transition-all duration-200 hover:scale-110 active:scale-95"
               title="Scroll to bottom"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
               </svg>
             </button>
@@ -275,8 +275,8 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
 
       // Regular insight tabs
       return (
-        <div key={insight.id} className="flex-shrink-0 w-full h-full overflow-y-auto p-4 sm:p-6 md:p-8">
-          <div className="prose prose-invert prose-base sm:prose-lg max-w-none prose-p:text-[#CFCFCF] prose-headings:text-[#F5F5F5] prose-strong:text-white prose-a:text-[#FFAB40] prose-a:no-underline hover:prose-a:underline prose-code:text-[#FFAB40] prose-code:bg-[#1C1C1C] prose-code:p-1 prose-code:rounded-md prose-li:marker:text-[#FFAB40] prose-h2:text-2xl prose-h3:text-xl prose-h4:text-lg">
+        <div key={insight.id} className="flex-shrink-0 w-full h-full overflow-y-auto p-3 sm:p-4 md:p-6 lg:p-8">
+          <div className="prose prose-invert prose-sm sm:prose-base md:prose-lg max-w-none prose-p:text-[#CFCFCF] prose-headings:text-[#F5F5F5] prose-strong:text-white prose-a:text-[#FFAB40] prose-a:no-underline hover:prose-a:underline prose-code:text-[#FFAB40] prose-code:bg-[#1C1C1C] prose-code:p-1 prose-code:rounded-md prose-li:marker:text-[#FFAB40] prose-h2:text-xl sm:text-2xl prose-h3:text-lg sm:text-xl prose-h4:text-base sm:text-lg">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {insight.content}
             </ReactMarkdown>
@@ -284,7 +284,7 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
           
           {/* Action Buttons for Insights */}
           {insight.status === 'loaded' && insight.content && (
-            <div className="mt-8 pt-6 border-t border-[#424242]/30">
+            <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-[#424242]/30">
               <ActionButtons
                 content={insight.content}
                 insightId={insight.id}

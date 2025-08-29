@@ -16,7 +16,7 @@ const SuggestedPrompts: React.FC<SuggestedPromptsProps> = ({ onPromptClick, isIn
     const [accordionOpen, setAccordionOpen] = React.useState(true);
 
     React.useEffect(() => {
-        const mq = window.matchMedia('(max-width: 360px)');
+        const mq = window.matchMedia('(max-width: 480px)'); // Increased breakpoint for better mobile experience
         const apply = () => {
             setIsTinyScreen(mq.matches);
             setAccordionOpen(!mq.matches); // collapse by default on tiny screens
@@ -49,20 +49,20 @@ const SuggestedPrompts: React.FC<SuggestedPromptsProps> = ({ onPromptClick, isIn
     const welcomeMessage = getWelcomeMessage();
 
     return (
-        <div className="w-full max-w-5xl mx-auto animate-fade-in">
+        <div className="w-full max-w-[95%] sm:max-w-4xl md:max-w-5xl mx-auto animate-fade-in">
             {/* Only show welcome message for first-time users */}
             {welcomeMessage.showWelcome && (
-                <div className="mb-6 sm:mb-8 text-center">
-                    <h2 className="text-xl sm:text-2xl font-bold text-[#F5F5F5] mb-2 sm:mb-3">{welcomeMessage.title}</h2>
-                    <p className="text-[#A3A3A3] text-base sm:text-lg leading-relaxed max-w-4xl mx-auto">
+                <div className="mb-4 sm:mb-6 md:mb-8 text-center">
+                    <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#F5F5F5] mb-2 sm:mb-3">{welcomeMessage.title}</h2>
+                    <p className="text-[#A3A3A3] text-sm sm:text-base md:text-lg leading-relaxed max-w-4xl mx-auto">
                         {welcomeMessage.subtitle}
                     </p>
                     
                     {/* First-time user tips */}
                     {isFirstTime && (
-                        <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-xl max-w-2xl mx-auto text-left">
-                            <h3 className="text-base sm:text-lg font-semibold text-blue-200 mb-2">💡 Getting Started Tips:</h3>
-                            <ul className="text-blue-100 text-xs sm:text-sm space-y-1">
+                        <div className="mt-3 sm:mt-4 md:mt-6 p-2.5 sm:p-3 md:p-4 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-lg sm:rounded-xl max-w-2xl mx-auto text-left">
+                            <h3 className="text-sm sm:text-base md:text-lg font-semibold text-blue-200 mb-1.5 sm:mb-2">💡 Getting Started Tips:</h3>
+                            <ul className="text-blue-100 text-xs sm:text-sm space-y-0.5 sm:space-y-1">
                                 <li>• <strong>Upload a screenshot</strong> from your game for instant help</li>
                                 <li>• <strong>Ask about specific games</strong> you're playing or want to play</li>
                                 <li>• <strong>Get spoiler-free guidance</strong> tailored to your progress</li>
@@ -81,23 +81,23 @@ const SuggestedPrompts: React.FC<SuggestedPromptsProps> = ({ onPromptClick, isIn
                         aria-expanded={accordionOpen}
                         aria-controls="suggested-prompts-panel"
                         onClick={() => setAccordionOpen(v => !v)}
-                        className="w-full flex items-center justify-between px-4 py-2 rounded-xl border border-[#424242]/40 bg-gradient-to-r from-[#1C1C1C]/60 to-[#0A0A0A]/60 text-[#E5E5E5] text-sm"
+                        className="w-full flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl border border-[#424242]/40 bg-gradient-to-r from-[#1C1C1C]/60 to-[#0A0A0A]/60 text-[#E5E5E5] text-sm font-medium"
                     >
                         <span>Suggestions</span>
-                        <svg className={`w-4 h-4 transition-transform ${accordionOpen ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.25 8.29a.75.75 0 01-.02-1.08z" clipRule="evenodd"/></svg>
+                        <svg className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform ${accordionOpen ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.25 8.29a.75.75 0 01-.02-1.08z" clipRule="evenodd"/></svg>
                     </button>
                 )}
                 {(!isTinyScreen || accordionOpen) && (
-                    <div id="suggested-prompts-panel" className="grid grid-cols-2 gap-2 sm:grid-cols-2 lg:grid-cols-3 sm:gap-4 mt-2">
+                    <div id="suggested-prompts-panel" className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4 mt-2">
                         {newsPrompts.map((prompt) => (
                             <button
                                 key={prompt}
                                 onClick={() => onPromptClick(prompt)}
                                 disabled={isInputDisabled}
-                                className={`group text-left px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#1C1C1C]/60 to-[#0A0A0A]/60 border border-[#424242]/40 text-sm text-[#E5E5E5]
-                                            hover:bg-gradient-to-r hover:from-[#E53A3A]/20 hover:to-[#D98C1F]/20 hover:border-[#E53A3A]/60 hover:scale-[1.03] hover:shadow-lg hover:shadow-[#E53A3A]/20
+                                className={`group text-left px-2.5 sm:px-3 md:px-4 lg:px-6 py-3 sm:py-3.5 md:py-4 lg:py-6 rounded-lg sm:rounded-xl md:rounded-2xl bg-gradient-to-r from-[#1C1C1C]/60 to-[#0A0A0A]/60 border border-[#424242]/40 text-xs sm:text-sm md:text-base text-[#E5E5E5]
+                                            hover:bg-gradient-to-r hover:from-[#E53A3A]/20 hover:to-[#D98C1F]/20 hover:border-[#E53A3A]/60 hover:scale-[1.02] sm:hover:scale-[1.03] md:hover:scale-105 hover:shadow-lg hover:shadow-[#E53A3A]/20
                                             transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFAB40]/50
-                                            sm:rounded-2xl sm:border-2 sm:p-6 sm:text-base sm:hover:scale-105 sm:hover:shadow-xl sm:hover:shadow-[#E53A3A]/25`}
+                                            sm:border-2 md:border-2 sm:hover:shadow-xl sm:hover:shadow-[#E53A3A]/25 min-h-[60px] sm:min-h-[70px] md:min-h-[80px]`}
                             >
                                 <span className="block leading-snug sm:leading-relaxed transition-colors group-hover:text-[#F5F5F5]">{prompt}</span>
                             </button>

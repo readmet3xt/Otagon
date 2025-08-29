@@ -92,6 +92,8 @@ const SubTabs: React.FC<SubTabsProps> = ({
 
     // Memoize computed values to prevent unnecessary recalculations
 
+    // Memoize computed values to prevent unnecessary recalculations
+
     // Memoize ordered insights to prevent recalculation on every render
     const orderedInsights = useMemo(() => {
         if (!shouldShowSubtabs || !activeConversation?.insights) return [];

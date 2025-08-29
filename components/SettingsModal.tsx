@@ -191,6 +191,8 @@ const AdminTabContent: React.FC = () => {
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, usage, onShowUpgrade, onShowVanguardUpgrade, onLogout, onResetApp, onShowHowToUse, userEmail }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('general');
   const modalRef = useRef<HTMLDivElement>(null);
+  
+
 
   // Reset active tab when modal opens
   useEffect(() => {
@@ -251,17 +253,23 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, usage, o
   }, [isOpen]);
 
   // Memoized tab change handler to prevent unnecessary re-renders
-  const handleTabChange = (tabId: ActiveTab) => {
+  const handleTabChange = useCallback((tabId: ActiveTab) => {
     setActiveTab(tabId);
-  };
+  }, []);
 
   // Memoized TabButton component to prevent recreation on every render
-  const TabButton = React.useCallback(({ id, label, icon }: { id: ActiveTab; label: string; icon: React.ReactNode }) => {
+  const TabButton = useCallback(({ id, label, icon }: { id: ActiveTab; label: string; icon: React.ReactNode }) => {
     const isActive = activeTab === id;
+    
+    const handleClick = (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      handleTabChange(id);
+    };
     
     return (
       <button
-        onClick={() => handleTabChange(id)}
+        onClick={handleClick}
         className={`w-full flex items-center justify-center md:justify-start gap-4 px-4 py-3 text-base font-medium rounded-xl transition-all duration-300 ${
           isActive
             ? 'bg-gradient-to-r from-[#E53A3A]/20 to-[#D98C1F]/20 text-white border-2 border-[#E53A3A]/40 shadow-lg shadow-[#E53A3A]/10'
@@ -325,7 +333,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, usage, o
             </nav>
 
             <main className="flex-1 overflow-y-auto p-8 sm:p-10">
-                
+
                 {activeTab === 'general' && (
                     <GeneralSettingsTab
                         usage={usage}
