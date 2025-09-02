@@ -2196,6 +2196,12 @@ const AppComponent: React.FC = () => {
         console.log('🔍 Welcome message useEffect triggered:', { view, onboardingStatus });
         
         if (view === 'app' && onboardingStatus === 'complete') {
+            // In development mode, skip welcome message checks if not authenticated
+            if (import.meta.env.DEV && !authState.user) {
+                console.log('⚠️ Development mode: Skipping welcome message checks (no authenticated user)');
+                return;
+            }
+            
             // Use Supabase with localStorage fallback
             const checkWelcomeMessage = async () => {
                 try {
@@ -2445,7 +2451,7 @@ const AppComponent: React.FC = () => {
                     <button
                         type="button"
                         onClick={handleOpenConnectionModal}
-                        className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 h-10 sm:h-12 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 disabled:opacity-50
+                        className={`flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 px-2 sm:px-3 h-10 sm:h-12 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 disabled:opacity-50
                         ${
                             connectionStatus === ConnectionStatus.CONNECTED
                             ? 'border-2 border-[#5CBB7B]/60 text-[#5CBB7B] hover:bg-[#5CBB7B]/10 hover:border-[#5CBB7B] shadow-[0_0_20px_rgba(92,187,123,0.4)] hover:shadow-[0_0_30px_rgba(92,187,123,0.6)]'
@@ -2461,7 +2467,7 @@ const AppComponent: React.FC = () => {
                                 : 'Connect to PC'
                         }
                     >
-                        <DesktopIcon className="w-5 h-5" />
+                        <DesktopIcon className="w-5 h-5 flex-shrink-0" />
                         <span className="hidden sm:inline font-medium">
                         {
                             connectionStatus === ConnectionStatus.CONNECTED ? 'Connected' :
@@ -2493,10 +2499,10 @@ const AppComponent: React.FC = () => {
                         type="button"
                         onClick={handleSettingsClick}
                         onContextMenu={handleSettingsClick}
-                        className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 h-10 sm:h-12 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold bg-gradient-to-r from-[#2E2E2E] to-[#1C1C1C] border-2 border-[#424242]/60 text-white/90 transition-all duration-300 hover:from-[#424242] hover:to-[#2E2E2E] hover:scale-105 hover:shadow-lg"
+                        className="flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 px-2 sm:px-3 h-10 sm:h-12 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold bg-gradient-to-r from-[#2E2E2E] to-[#1C1C1C] border-2 border-[#424242]/60 text-white/90 transition-all duration-300 hover:from-[#424242] hover:to-[#2E2E2E] hover:scale-105 hover:shadow-lg"
                         aria-label="Open settings"
                     >
-                        <SettingsIcon className="w-5 h-5" />
+                        <SettingsIcon className="w-5 h-5 flex-shrink-0" />
                         <span className="hidden sm:inline font-medium">Settings</span>
                     </button>
 
@@ -2511,13 +2517,13 @@ const AppComponent: React.FC = () => {
             )}
 
             {/* Daily Engagement Components */}
-            {showDailyCheckin && (
+            {/* {showDailyCheckin && (
               <DailyCheckinBanner
                 onClose={() => setShowDailyCheckin(false)}
                 autoDismiss={false}
                 dismissDelay={0}
               />
-            )}
+            )} */}
 
 
 
@@ -2639,14 +2645,14 @@ const AppComponent: React.FC = () => {
                     )}
                     
                     {/* Scroll to Bottom Button */}
-                    {showScrollToBottom && (
+                    {showScrollToBottom && messages.length > 0 && (
                         <button
                             onClick={scrollToBottom}
-                            className="fixed bottom-20 sm:bottom-24 right-3 sm:right-6 z-50 bg-[#E53A3A] hover:bg-[#D98C1F] text-white p-2.5 sm:p-3 rounded-full shadow-lg transition-all duration-200 hover:scale-110 active:scale-95"
+                            className="fixed bottom-20 sm:bottom-24 right-3 sm:right-6 z-50 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] hover:from-[#D42A2A] hover:to-[#C87A1A] text-white p-3 sm:p-3.5 rounded-full shadow-2xl hover:shadow-[#E53A3A]/30 transition-all duration-300 hover:scale-110 active:scale-95 border border-white/10 backdrop-blur-sm"
                             title="Scroll to bottom"
                         >
                             <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
                             </svg>
                         </button>
                     )}
@@ -2734,6 +2740,7 @@ const AppComponent: React.FC = () => {
                     onShowHowToUse={() => setOnboardingStatus('how-to-use')}
                     userEmail={authState.user?.email || ''}
                     onClearFirstRunCache={clearFirstRunCache}
+                    refreshUsage={refreshUsage}
                 />
                 </React.Suspense>
             )}

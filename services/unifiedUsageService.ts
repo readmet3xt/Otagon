@@ -137,19 +137,27 @@ const getDaysUntilReset = (): number => {
 
 const upgradeToPro = async () => {
     try {
+        console.log('🔄 Starting Pro tier upgrade...');
+        
         // Update in Supabase
+        console.log('🔄 Updating tier in Supabase...');
         await supabaseDataService.updateUserUsage('tier', 'pro');
+        console.log('🔄 Updating text count in Supabase...');
         await supabaseDataService.updateUserUsage('textCount', 0);
+        console.log('🔄 Updating image count in Supabase...');
         await supabaseDataService.updateUserUsage('imageCount', 0);
+        console.log('🔄 Updating last month in Supabase...');
         await supabaseDataService.updateUserUsage('lastMonth', getThisMonth());
         
         // Also update localStorage as backup
+        console.log('🔄 Updating localStorage backup...');
         localStorage.setItem(TIER_KEY, 'pro');
         localStorage.setItem(TEXT_COUNT_KEY, '0');
         localStorage.setItem(IMAGE_COUNT_KEY, '0');
         localStorage.setItem(DATE_KEY, getThisMonth());
         
         console.log('✅ User upgraded to Pro tier in Supabase. Resetting counts for new limits.');
+        console.log('📍 localStorage TIER_KEY now set to:', localStorage.getItem(TIER_KEY));
     } catch (error) {
         console.error('❌ Failed to upgrade to Pro tier:', error);
         throw error;
@@ -158,19 +166,27 @@ const upgradeToPro = async () => {
 
 const upgradeToVanguardPro = async () => {
     try {
+        console.log('🔄 Starting Vanguard Pro tier upgrade...');
+        
         // Update in Supabase
+        console.log('🔄 Updating tier in Supabase...');
         await supabaseDataService.updateUserUsage('tier', 'vanguard_pro');
+        console.log('🔄 Updating text count in Supabase...');
         await supabaseDataService.updateUserUsage('textCount', 0);
+        console.log('🔄 Updating image count in Supabase...');
         await supabaseDataService.updateUserUsage('imageCount', 0);
+        console.log('🔄 Updating last month in Supabase...');
         await supabaseDataService.updateUserUsage('lastMonth', getThisMonth());
         
         // Also update localStorage as backup
+        console.log('🔄 Updating localStorage backup...');
         localStorage.setItem(TIER_KEY, 'vanguard_pro');
         localStorage.setItem(TEXT_COUNT_KEY, '0');
         localStorage.setItem(IMAGE_COUNT_KEY, '0');
         localStorage.setItem(DATE_KEY, getThisMonth());
         
         console.log('✅ User upgraded to Vanguard Pro tier in Supabase. Resetting counts for new limits.');
+        console.log('📍 localStorage TIER_KEY now set to:', localStorage.getItem(TIER_KEY));
     } catch (error) {
         console.error('❌ Failed to upgrade to Vanguard Pro tier:', error);
         throw error;

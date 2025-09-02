@@ -217,17 +217,17 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
           )}
           
           {/* Scroll to Bottom Button */}
-          {showScrollToBottom && (
+          {showScrollToBottom && messages.length > 0 && (
             <button
               onClick={() => {
                 console.log('🔍 Scroll to bottom button clicked');
                 scrollToBottom();
               }}
-              className="fixed bottom-20 sm:bottom-24 right-3 sm:right-6 z-50 bg-[#E53A3A] hover:bg-[#D98C1F] text-white p-2.5 sm:p-3 rounded-full shadow-lg transition-all duration-200 hover:scale-110 active:scale-95"
+              className="fixed bottom-20 sm:bottom-24 right-3 sm:right-6 z-50 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] hover:from-[#D42A2A] hover:to-[#C87A1A] text-white p-3 sm:p-3.5 rounded-full shadow-2xl hover:shadow-[#E53A3A]/30 transition-all duration-300 hover:scale-110 active:scale-95 border border-white/10 backdrop-blur-sm"
               title="Scroll to bottom"
             >
               <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
               </svg>
             </button>
           )}

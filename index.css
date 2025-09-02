@@ -116,6 +116,16 @@
   @apply leading-relaxed;
 }
 
+/* Chat Input Textarea - Single Line Default */
+.chat-input-textarea {
+  min-height: 24px !important;
+  height: 24px !important;
+  line-height: 24px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+
 /* Enhanced Tab System - CRITICAL FOR CHAT TABS */
 .tab-enhanced {
   @apply px-4 py-2.5 rounded-xl;

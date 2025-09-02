@@ -52,6 +52,27 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
     const [showConfetti, setShowConfetti] = useState(false);
     const [isInWishlist, setIsInWishlist] = useState(false);
 
+    // Check if this message is a welcome message
+    const isWelcomeMessage = () => {
+        if (!text) return false;
+        return text.includes('Welcome to Otakon!') || text.includes('Welcome to Otakon');
+    };
+
+    // Check if this message is a suggested prompt response in Everything Else conversation
+    const isSuggestedPromptResponse = () => {
+        if (!text || !isEverythingElse) return false;
+        
+        // Check if this is one of the 4 specific suggested prompts from the app
+        const specificSuggestedPrompts = [
+            "What's the latest gaming news?",
+            "Which games are releasing soon?",
+            "What should I play next?",
+            "Tell me about gaming trends"
+        ];
+        
+        return specificSuggestedPrompts.some(prompt => text.includes(prompt));
+    };
+
     // Check if this message is about an unreleased game (simple heuristic)
     const isAboutUnreleasedGame = () => {
         if (!text || !isEverythingElse) return false;
@@ -215,8 +236,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
         if (!text && (!images || images.length === 0)) return null;
 
         const containerClasses = (images && images.length > 0)
-          ? "bg-[#2E2E2E] border border-[#424242] rounded-2xl rounded-tr-none p-4"
-          : "bg-[#E53A3A]/20 border border-[#E53A3A]/30 rounded-2xl rounded-tr-none py-3 px-4";
+          ? "p-4"
+          : "py-3 px-4";
 
         // Determine grid layout based on image count
         const getGridClasses = (imageCount: number) => {
@@ -234,7 +255,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
                     {images && images.length > 0 && (
                         <div className={`grid gap-2 sm:gap-3 ${getGridClasses(images.length)} ${text ? 'mb-3' : ''}`}>
                             {images.map((imgSrc, index) => (
-                                <div key={index} className="relative group overflow-hidden rounded-lg sm:rounded-xl bg-[#1C1C1C]/30 border border-[#424242]/30">
+                                <div key={index} className="relative group overflow-hidden rounded-lg sm:rounded-xl">
                                     <img 
                                         src={imgSrc} 
                                         alt={`Screenshot ${index + 1}`} 
@@ -269,7 +290,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
                                 >
                                     <DownloadIcon className="w-3 h-3 sm:w-4 sm:h-4" />
                                     <span className="hidden sm:inline">Download</span>
-                                    <span className="sm:hidden">DL</span>
                                 </button>
                             ) : (
                                 <>
@@ -280,7 +300,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
                                     >
                                         <DownloadIcon className="w-3 h-3 sm:w-4 sm:h-4" />
                                         <span className="hidden sm:inline">Download All ({images.length})</span>
-                                        <span className="sm:hidden">All ({images.length})</span>
                                     </button>
                                     <div className="flex gap-1">
                                         {images.map((imgSrc, index) => (
@@ -474,7 +493,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
                         )}
 
                     {isLoading && (
-                         <div className="flex items-center gap-3 sm:gap-4 py-2 sm:py-3 px-3 sm:px-4 bg-[#2E2E2E]/30 rounded-lg sm:rounded-xl border border-[#424242]/40 backdrop-blur-sm">
+                         <div className="flex items-center gap-3 sm:gap-4 py-2 sm:py-3 px-3 sm:px-4">
                             <TypingIndicator />
                             <button
                                 onClick={onStop}
@@ -488,8 +507,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
 
                     {!isLoading && text.trim() && !showUpgradeButton && !isFailedResponse && (
                          <div className="pl-2 pt-2">
-                            {/* Show ActionButtons only for game conversations, not Everything Else */}
-                            {!isEverythingElse && (
+                            {/* Show ActionButtons only for game conversations, not Everything Else, and not for welcome messages or suggested prompt responses */}
+                            {!isEverythingElse && !isWelcomeMessage() && !isSuggestedPromptResponse() && (
                                 <ActionButtons
                                     content={text}
                                     messageId={id}

@@ -149,7 +149,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **📚 Documentation**: [Complete Guides](docs/README.md)
 - **🐛 Issues**: [GitHub Issues](https://github.com/your-username/otakon/issues)
 - **💬 Discussions**: [GitHub Discussions](https://github.com/your-username/otakon/discussions)
-- **📧 Email**: support@otakon.ai
+- **📧 Email**: support@otakon.app
 
 ## 🌟 **Star History**
 

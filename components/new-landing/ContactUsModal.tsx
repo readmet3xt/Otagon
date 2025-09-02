@@ -71,7 +71,7 @@ const ContactUsModal: React.FC<ContactUsModalProps> = ({ isOpen, onClose }) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex items-center space-x-3 text-[#CFCFCF]">
               <EnvelopeIcon className="w-5 h-5 text-[#FF4D4D]" />
-              <span>support@otakon.ai</span>
+              <span>support@otakon.app</span>
             </div>
             <div className="flex items-center space-x-3 text-[#CFCFCF]">
               <PhoneIcon className="w-5 h-5 text-[#FFAB40]" />

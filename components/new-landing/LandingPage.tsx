@@ -484,7 +484,7 @@ const FounderSection = () => (
                     </a>
                     
                     <a
-                        href="mailto:founder@otakon.ai"
+                        href="mailto:support@otakon.app"
                         className="inline-flex items-center justify-center gap-3 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] hover:from-[#D42A2A] hover:to-[#C87A1A] text-white font-semibold py-4 px-8 rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl hover:shadow-[#E53A3A]/25"
                     >
                         <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -486,14 +486,14 @@ const FounderSection = () => (
                             </a>
                             
                             <a
-                                href="mailto:founder@otakon.ai"
+                                href="mailto:support@otakon.app"
                                 className="inline-flex items-center justify-center gap-3 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] hover:from-[#D42A2A] hover:to-[#C87A1A] text-white font-semibold py-4 px-8 rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl hover:shadow-[#E53A3A]/25 animate-pulse-glow"
                             >
                                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                                 </svg>
-                                <span className="hidden sm:inline">Email Amaan</span>
-                                <span className="sm:hidden">Email</span>
+                                <span className="hidden sm:inline">Contact Support</span>
+                                <span className="sm:hidden">Contact</span>
                             </a>
                         </div>
                     </div>

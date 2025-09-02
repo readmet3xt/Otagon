@@ -35,7 +35,7 @@ const PrivacyPolicyPage: React.FC = () => {
       <p>We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new policy on this page.</p>
       
       <h2 className="text-2xl font-bold text-white mt-8 mb-4">7. Contact Us</h2>
-      <p>If you have any questions about this Privacy Policy, please contact us at <a href="mailto:support@otakon.ai" className="text-[#FFAB40] hover:underline">support@otakon.ai</a></p>
+      <p>If you have any questions about this Privacy Policy, please contact us at <a href="mailto:support@otakon.app" className="text-[#FFAB40] hover:underline">support@otakon.app</a></p>
     </>
   );
 };

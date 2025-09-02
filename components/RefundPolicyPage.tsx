@@ -18,7 +18,7 @@ const RefundPolicyPage: React.FC = () => {
       <p>We believe in the value Otakon provides and encourage users to make the most of our Free tier to decide if a Pro subscription is right for them. This policy allows us, a small team based in Hyderabad, India, to manage our resources effectively and continue building the best possible spoiler-free gaming companion for our global community.</p>
 
       <h2 className="text-2xl font-bold text-white mt-8 mb-4">Contact Us</h2>
-      <p>If you have any questions about this policy, please contact us at <a href="mailto:support@otakon.ai" className="text-[#FFAB40] hover:underline">support@otakon.ai</a>.</p>
+      <p>If you have any questions about this policy, please contact us at <a href="mailto:support@otakon.app" className="text-[#FFAB40] hover:underline">support@otakon.app</a>.</p>
     </>
   );
 };

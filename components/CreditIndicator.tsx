@@ -52,7 +52,7 @@ const CreditIndicator: React.FC<CreditIndicatorProps> = ({ usage, onClick }) => 
         <button
           type="button"
           onClick={onClick}
-          className="credit-indicator-button flex items-center justify-center sm:justify-start w-10 sm:w-12 md:w-auto h-10 sm:h-12 rounded-lg sm:rounded-xl transition-all duration-300 hover:scale-105 active:scale-95"
+          className="credit-indicator-button flex items-center justify-center w-10 h-10 rounded-lg transition-all duration-300 hover:scale-105 active:scale-95"
           style={{
             background: 'linear-gradient(135deg, #E53A3A, #D98C1F, #E53A3A)',
             padding: '2px',
@@ -60,12 +60,12 @@ const CreditIndicator: React.FC<CreditIndicatorProps> = ({ usage, onClick }) => 
           }}
           aria-label="View query credits"
         >
-          <div className="w-full h-full flex items-center justify-center sm:px-3" style={{
+          <div className="w-full h-full flex items-center justify-center" style={{
             background: '#111111',
             borderRadius: '10px'
           }}>
-            {/* Mobile View: Circular Bars */}
-            <div className="md:hidden w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center bg-neutral-900/50 rounded-full p-0.5">
+            {/* Mobile & Tablet View: Circular Bars */}
+            <div className="lg:hidden w-8 h-8 flex items-center justify-center bg-neutral-900/50 rounded-full p-0.5">
               <svg className="w-full h-full" viewBox="0 0 32 32" fill="none">
                 <defs>
                   <linearGradient id="sky-gradient" x1="0" y1="0" x2="1" y2="1">
@@ -102,8 +102,8 @@ const CreditIndicator: React.FC<CreditIndicatorProps> = ({ usage, onClick }) => 
               </svg>
             </div>
 
-            {/* Tablet & Desktop View: Horizontal Bars */}
-            <div className="hidden md:flex flex-col gap-1">
+            {/* Desktop View: Horizontal Bars */}
+            <div className="hidden lg:flex flex-col gap-1">
               <CreditBar current={usage.textCount} limit={usage.textLimit} colorClass="bg-gradient-to-r from-sky-400 to-sky-500">
                 <TextIcon className="w-3 h-3 text-sky-400 flex-shrink-0" />
               </CreditBar>

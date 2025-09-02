@@ -2,20 +2,43 @@ import React from 'react';
 import { Usage } from '../services/types';
 import DevTierSwitcher from './DevTierSwitcher';
 import { unifiedUsageService } from '../services/unifiedUsageService';
+import { canAccessDeveloperFeatures } from '../config/developer';
 
 interface SubscriptionSettingsTabProps {
     usage: Usage;
+    refreshUsage?: () => void;
+    userEmail?: string;
 }
 
-const SubscriptionSettingsTab: React.FC<SubscriptionSettingsTabProps> = ({ usage }) => {
+const SubscriptionSettingsTab: React.FC<SubscriptionSettingsTabProps> = ({ usage, refreshUsage, userEmail }) => {
     const handleManageSubscription = () => {
         // In a real application, this would redirect to a Stripe customer portal URL
         alert("This will open the subscription management portal (e.g., Stripe) where you can cancel or update your plan.");
     };
 
-    const refreshUsage = () => {
-        // Refresh the page to update usage information
-        window.location.reload();
+    const handleRefreshUsage = () => {
+        if (refreshUsage) {
+            try {
+                // Add a small delay to allow the tier switching to complete
+                setTimeout(() => {
+                    try {
+                        refreshUsage();
+                    } catch (error) {
+                        console.warn('⚠️ Refresh usage failed, but tier switching was successful:', error);
+                        // Don't fail completely - the tier was already updated locally
+                    }
+                }, 100);
+            } catch (error) {
+                console.warn('⚠️ Refresh usage setup failed:', error);
+            }
+        } else {
+            // Fallback to page reload if no refresh function provided
+            try {
+                window.location.reload();
+            } catch (error) {
+                console.warn('⚠️ Page reload failed:', error);
+            }
+        }
     };
 
     const getTierDisplayName = (tier: string) => {
@@ -49,9 +72,17 @@ const SubscriptionSettingsTab: React.FC<SubscriptionSettingsTabProps> = ({ usage
                             You are currently on the <span className="text-white font-semibold">{getTierDisplayName(usage.tier)}</span> plan.
                         </p>
                         <p className="text-sm text-neutral-400 mt-1">{getTierDescription(usage.tier)}</p>
-                        <p className="text-xs text-yellow-400 mt-2">Switch between tiers for testing purposes</p>
+                        {canAccessDeveloperFeatures(userEmail) && (
+                            <p className="text-xs text-yellow-400 mt-2">Switch between tiers for testing purposes</p>
+                        )}
                     </div>
-                    <DevTierSwitcher currentTier={usage.tier} onSwitch={refreshUsage} />
+                    {canAccessDeveloperFeatures(userEmail) ? (
+                        <DevTierSwitcher currentTier={usage.tier} onSwitch={handleRefreshUsage} />
+                    ) : (
+                        <div className="text-xs text-gray-500 italic">
+                            Developer feature
+                        </div>
+                    )}
                 </div>
             </div>
 

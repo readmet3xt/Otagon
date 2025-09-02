@@ -317,6 +317,13 @@ class SupabaseDataService {
       return data || false;
     } catch (error) {
       console.warn('Supabase welcome message check failed:', error);
+      
+      // In development mode, return false to avoid showing welcome messages
+      if (import.meta.env.DEV) {
+        console.warn('⚠️ Using fallback welcome message state for development mode');
+        return false;
+      }
+      
       // Return false instead of localStorage fallback - we want Supabase only
       return false;
     }

@@ -26,7 +26,7 @@ const AboutPage: React.FC = () => {
       
       {/* Contact Information */}
       <div className="bg-[#1C1C1C]/40 border border-[#424242] rounded-xl p-6 text-center">
-        <h3 className="text-xl font-bold text-white mb-4">Connect With Our Founder</h3>
+        <h3 className="text-xl font-bold text-white mb-4">Contact Us</h3>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Button
             as="a"
@@ -45,7 +45,7 @@ const AboutPage: React.FC = () => {
           
           <Button
             as="a"
-            href="mailto:founder@otakon.ai" 
+            href="mailto:support@otakon.app" 
             variant="ghost"
             size="md"
             className="bg-[#E53A3A] hover:bg-[#D42A2A] text-white"
@@ -53,7 +53,7 @@ const AboutPage: React.FC = () => {
             <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
             </svg>
-            <span className="text-white">Email Founder</span>
+            <span className="text-white">Contact Support</span>
           </Button>
         </div>
       </div>

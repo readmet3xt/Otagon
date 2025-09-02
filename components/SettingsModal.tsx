@@ -27,6 +27,7 @@ interface SettingsModalProps {
   onShowHowToUse: () => void;
   userEmail?: string;
   onClearFirstRunCache?: () => void;
+  refreshUsage?: () => void;
 }
 
 type ActiveTab = 'general' | 'preferences' | 'subscription' | 'help' | 'admin' | 'migration' | 'performance';
@@ -202,7 +203,7 @@ const AdminTabContent: React.FC<{ onClearFirstRunCache?: () => void }> = ({ onCl
     );
 };
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, usage, onShowUpgrade, onShowVanguardUpgrade, onLogout, onResetApp, onShowHowToUse, userEmail, onClearFirstRunCache }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, usage, onShowUpgrade, onShowVanguardUpgrade, onLogout, onResetApp, onShowHowToUse, userEmail, onClearFirstRunCache, refreshUsage }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('general');
   const modalRef = useRef<HTMLDivElement>(null);
   
@@ -360,7 +361,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, usage, o
                     />
                 )}
                 {activeTab === 'preferences' && <UserPreferencesTab />}
-                {activeTab === 'subscription' && <SubscriptionSettingsTab usage={usage} />}
+                {activeTab === 'subscription' && <SubscriptionSettingsTab usage={usage} refreshUsage={refreshUsage} userEmail={userEmail} />}
                 {activeTab === 'help' && <HelpGuideTab />}
                 {activeTab === 'admin' && (
                     <div>

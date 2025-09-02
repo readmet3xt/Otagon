@@ -12,6 +12,8 @@ export const HandsFreeIcon: React.FC<{ isActive: boolean; className?: string }> 
         strokeWidth="2" 
         strokeLinecap="round" 
         strokeLinejoin="round"
+        width="24"
+        height="24"
     >
         <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" fill={isActive ? 'currentColor' : 'none'}/>
         <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
@@ -36,7 +38,7 @@ const HandsFreeToggle: React.FC<HandsFreeToggleProps> = ({ isHandsFree, onToggle
     <button
       type="button"
       onClick={handleToggle}
-      className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 h-10 sm:h-12 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 group
+      className={`flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 px-2 sm:px-3 h-10 sm:h-12 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 group
       ${
         isHandsFree
           ? 'border-2 border-[#E53A3A]/50 text-[#FF7070] hover:bg-[#E53A3A]/10 shadow-[0_0_12px_rgba(229,58,58,0.3)]'
@@ -47,7 +49,7 @@ const HandsFreeToggle: React.FC<HandsFreeToggleProps> = ({ isHandsFree, onToggle
       aria-label="Hands-Free Settings"
       title={isHandsFree ? 'Hands-Free Settings' : 'Hands-Free Settings (Pro feature)'}
     >
-      <HandsFreeIcon className="w-4 h-4 sm:w-5 sm:h-5" isActive={isHandsFree} />
+      <HandsFreeIcon className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" isActive={isHandsFree} />
       <span className="hidden sm:inline">
         Hands-Free
       </span>

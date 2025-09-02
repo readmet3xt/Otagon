@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://otakon.ai/sitemap.xml
+Sitemap: https://otakon.app/sitemap.xml
 
 # Crawl-delay for respectful crawling
 Crawl-delay: 1

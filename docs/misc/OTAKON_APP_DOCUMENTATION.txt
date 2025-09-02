@@ -1130,7 +1130,7 @@ const ContactUsModal: React.FC<ContactUsModalProps> = ({ onClose }) => {
                             <EnvelopeIcon className="w-6 h-6 text-[#FF4D4D]" />
                             <div>
                                 <p className="text-sm text-[#A3A3A3]">Email</p>
-                                <p className="text-[#F5F5F5] font-medium">support@otakon.ai</p>
+                                <p className="text-[#F5F5F5] font-medium">support@otakon.app</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
