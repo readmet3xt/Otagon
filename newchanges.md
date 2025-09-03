@@ -413,6 +413,57 @@ REQUIRED OUTPUT FORMAT:
 `;
 ```
 
+### **2.5 🔧 Insight Tab Updates Integration (ENHANCING EXISTING SYSTEM)**
+**Priority: HIGH** | **Effort: LOW** | **Impact: HIGH**
+
+#### **Your Current System (Already Perfect):**
+```typescript
+// ✅ ALREADY IMPLEMENTED - Insight tab updates with Gemini 2.5 Flash
+const insightUpdateSystem = `
+// User commands for insight management
+@<tab_name> <instruction> → [OTAKON_INSIGHT_UPDATE: {...}]
+@<tab_name> \\modify <instruction> → [OTAKON_INSIGHT_MODIFY_PENDING: {...}]
+@<tab_name> \\delete → [OTAKON_INSIGHT_DELETE_REQUEST: {...}]
+
+// Natural language commands
+"add tab [title]" → Creates new insight tab
+"modify tab [id] to [new title]" → Updates existing tab
+"delete tab [id] confirm" → Removes tab
+"move tab [id] to position [number]" → Reorders tabs
+`;
+```
+
+#### **Enhanced with IGDB Knowledge (What We're Adding):**
+```typescript
+// ENHANCE existing insight update system with IGDB data
+const enhancedInsightUpdatePrompt = `
+${existingOtakonMasterPrompt}
+
+ENHANCED INSIGHT MANAGEMENT:
+You now have access to IGDB gaming database for richer, more accurate updates.
+
+INSIGHT UPDATE RULES:
+1. **Use IGDB data** for game-specific information (searchIGDB function)
+2. **Maintain existing command structure** - all current commands work
+3. **Enhance content quality** with verified gaming knowledge
+4. **Keep linear timeline updates** - maintain chronological order
+5. **Respect user's progress** - no spoilers beyond current level
+
+ENHANCED COMMAND EXAMPLES:
+@Lore \\modify Add information about [character] from IGDB database
+@Combat \\modify Update with verified combat mechanics from game data
+@Exploration \\modify Include verified locations and secrets from IGDB
+
+RESPONSE FORMAT (Maintain existing structure):
+[OTAKON_INSIGHT_UPDATE: {
+  "id": "tab_id",
+  "content": "Enhanced content with IGDB verification",
+  "source": "IGDB + user context",
+  "last_updated": "timestamp"
+}]
+`;
+```
+
 #### **AI Tasks Integration with Existing Otaku Diary System:**
 ```typescript
 // services/otakuDiaryService.ts - ENHANCE existing service
@@ -617,6 +668,13 @@ async function searchGamingWikis(query: string, gameContext: any) {
 - **Maintain existing user experience**: No breaking changes ✅
 - **Leverage existing Otaku Diary system**: Add AI task generation ✅
 
+### **5. 🔧 Insight Tab Update System Integration**
+- **Preserve existing command structure**: @Tab commands work exactly the same ✅
+- **Enhance with IGDB knowledge**: Richer, verified content ✅
+- **Maintain linear timeline updates**: Chronological order preserved ✅
+- **Keep existing response tags**: All current tags work unchanged ✅
+- **Enhance natural language commands**: Same commands, better results ✅
+
 ---
 
 ## 🎯 **SUCCESS METRICS**
@@ -632,6 +690,36 @@ async function searchGamingWikis(query: string, gameContext: any) {
 - Context awareness: Personalized responses
 - Progress tracking: Seamless user experience
 - Knowledge depth: Rich, detailed responses
+
+---
+
+## 🔄 **COMPLETE INTEGRATION FLOW**
+
+### **Current System (What You Have):**
+```
+User Query → Gemini Flash → Immediate Help + Game ID → Background Pro Call → Insight Tabs
+User Commands → @Tab Commands → Gemini Flash → Insight Updates
+```
+
+### **Enhanced System (What We're Adding):**
+```
+User Query → Enhanced Flash → Immediate Help + Game ID + AI Tasks + IGDB Data → Background Pro Call → Rich Insight Tabs
+User Commands → @Tab Commands → Enhanced Flash → IGDB-Enhanced Insight Updates
+```
+
+### **Key Integration Points:**
+1. **Flash Calls Enhanced**: IGDB function calling + AI task generation
+2. **Pro Calls Enhanced**: Comprehensive gaming knowledge + wiki sources
+3. **Command System Enhanced**: Same commands, richer IGDB-powered content
+4. **Insight Updates Enhanced**: Verified gaming data + user context
+5. **Otaku Diary Enhanced**: AI-suggested tasks from every Flash response
+
+### **No Breaking Changes:**
+- ✅ All existing commands work exactly the same
+- ✅ All existing response tags work unchanged
+- ✅ All existing user workflows preserved
+- ✅ Performance maintained or improved
+- ✅ User experience enhanced, not disrupted
 
 ---
 
