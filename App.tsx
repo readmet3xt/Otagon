@@ -478,9 +478,21 @@ const AppComponent: React.FC = () => {
         const checkOAuthCallback = async () => {
             // Check if we're returning from an OAuth flow
             const urlParams = new URLSearchParams(window.location.search);
-            const hasAuthParams = urlParams.has('access_token') || urlParams.has('refresh_token') || urlParams.has('error');
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            
+            // Check for Supabase OAuth callback parameters (both query params and hash params)
+            const hasAuthParams = urlParams.has('access_token') || 
+                                urlParams.has('refresh_token') || 
+                                urlParams.has('error') ||
+                                urlParams.has('code') ||
+                                hashParams.has('access_token') ||
+                                hashParams.has('refresh_token') ||
+                                hashParams.has('error') ||
+                                hashParams.has('code') ||
+                                window.location.pathname.includes('auth/callback');
             
             if (hasAuthParams) {
+                console.log('OAuth callback detected, parameters:', Object.fromEntries([...urlParams, ...hashParams]));
                 setIsOAuthCallback(true);
             }
         };

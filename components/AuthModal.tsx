@@ -241,24 +241,46 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuccess })
             <div className="space-y-3">
               <button
                 type="button"
-                onClick={() => authService.signInWithGoogle()}
+                onClick={async () => {
+                  setLoading(true);
+                  try {
+                    await authService.signInWithGoogle();
+                  } catch (error) {
+                    console.error('Google sign-in error:', error);
+                  }
+                }}
                 disabled={loading}
                 className="w-full flex items-center justify-center gap-3 bg-white text-gray-900 font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                <GoogleIcon className="w-5 h-5" />
-                Continue with Google
+                {loading ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900"></div>
+                ) : (
+                  <GoogleIcon className="w-5 h-5" />
+                )}
+                {loading ? 'Signing in...' : 'Continue with Google'}
               </button>
 
               <button
                 type="button"
-                onClick={() => authService.signInWithDiscord()}
+                onClick={async () => {
+                  setLoading(true);
+                  try {
+                    await authService.signInWithDiscord();
+                  } catch (error) {
+                    console.error('Discord sign-in error:', error);
+                  }
+                }}
                 disabled={loading}
                 className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-[#5865F2] to-[#4752C4] text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-md"
               >
-                <div className="flex-shrink-0">
-                  <DiscordIcon className="w-5 h-5 text-white" />
-                </div>
-                <span className="font-medium">Continue with Discord</span>
+                {loading ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                ) : (
+                  <div className="flex-shrink-0">
+                    <DiscordIcon className="w-5 h-5 text-white" />
+                  </div>
+                )}
+                <span className="font-medium">{loading ? 'Signing in...' : 'Continue with Discord'}</span>
               </button>
             </div>
           </>

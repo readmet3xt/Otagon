@@ -1,11 +1,11 @@
 {
-  "timestamp": "2025-08-30T01:26:56.955Z",
+  "timestamp": "2025-09-02T23:41:39.466Z",
   "bundleInfo": {
-    "totalSize": 1904547,
+    "totalSize": 1909244,
     "fileCount": 16,
     "largestFiles": [
       {
-        "path": "assets/chunk-CgYf95-6.js",
+        "path": "assets/chunk-CIAoEiE4.js",
         "size": 718668,
         "sizeFormatted": "701.82 KB"
       },
@@ -15,52 +15,52 @@
         "sizeFormatted": "225.83 KB"
       },
       {
-        "path": "assets/chunk-BveJkPbd.js",
-        "size": 228918,
-        "sizeFormatted": "223.55 KB"
+        "path": "assets/chunk-p5xpG7yD.js",
+        "size": 230661,
+        "sizeFormatted": "225.25 KB"
       },
       {
-        "path": "assets/chunk-D4WZp8Rd.js",
+        "path": "assets/chunk-D1hkj-sN.js",
         "size": 163454,
         "sizeFormatted": "159.62 KB"
       },
       {
-        "path": "assets/chunk-D0Ru9Yn3.js",
-        "size": 139651,
-        "sizeFormatted": "136.38 KB"
+        "path": "assets/chunk-C5qSE5t9.js",
+        "size": 141450,
+        "sizeFormatted": "138.13 KB"
       },
       {
-        "path": "assets/chunk-D2ctUrAM.js",
+        "path": "assets/chunk-BhWoYTYO.js",
         "size": 123933,
         "sizeFormatted": "121.03 KB"
       },
       {
-        "path": "assets/index-BS-RD4jT.js",
-        "size": 84940,
-        "sizeFormatted": "82.95 KB"
+        "path": "assets/index-C7ksGZzv.js",
+        "size": 88190,
+        "sizeFormatted": "86.12 KB"
       },
       {
-        "path": "assets/chunk-RJ0sUU6v.js",
-        "size": 77360,
-        "sizeFormatted": "75.55 KB"
+        "path": "assets/chunk-C49-smI_.js",
+        "size": 76252,
+        "sizeFormatted": "74.46 KB"
       },
       {
-        "path": "assets/chunk-DKA6Lt-D.js",
-        "size": 47387,
-        "sizeFormatted": "46.28 KB"
+        "path": "assets/chunk-cu6USNKQ.js",
+        "size": 47398,
+        "sizeFormatted": "46.29 KB"
       },
       {
-        "path": "assets/chunk-C6wwwWFC.js",
+        "path": "assets/chunk-B7m-NHoy.js",
         "size": 27280,
         "sizeFormatted": "26.64 KB"
       }
     ],
     "fileTypes": {
       ".md": 6298,
-      ".js": 1866629,
+      ".js": 1872276,
       ".css": 15683,
-      ".html": 12912,
-      ".xml": 3025
+      ".html": 12265,
+      ".xml": 2722
     },
     "totalGzipped": 0,
     "totalSizeFormatted": "1.82 MB"

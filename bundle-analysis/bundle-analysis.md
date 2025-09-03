@@ -1,6 +1,6 @@
 # 🚀 Otakon Bundle Analysis Report
 
-Generated: 8/30/2025, 6:56:56 AM
+Generated: 9/3/2025, 5:11:39 AM
 
 ## 📊 Bundle Overview
 
@@ -11,16 +11,16 @@ Generated: 8/30/2025, 6:56:56 AM
 
 | File | Size |
 |------|------|
-| assets/chunk-CgYf95-6.js | 701.82 KB |
+| assets/chunk-CIAoEiE4.js | 701.82 KB |
 | assets/chunk-7J4LelS0.js | 225.83 KB |
-| assets/chunk-BveJkPbd.js | 223.55 KB |
-| assets/chunk-D4WZp8Rd.js | 159.62 KB |
-| assets/chunk-D0Ru9Yn3.js | 136.38 KB |
-| assets/chunk-D2ctUrAM.js | 121.03 KB |
-| assets/index-BS-RD4jT.js | 82.95 KB |
-| assets/chunk-RJ0sUU6v.js | 75.55 KB |
-| assets/chunk-DKA6Lt-D.js | 46.28 KB |
-| assets/chunk-C6wwwWFC.js | 26.64 KB |
+| assets/chunk-p5xpG7yD.js | 225.25 KB |
+| assets/chunk-D1hkj-sN.js | 159.62 KB |
+| assets/chunk-C5qSE5t9.js | 138.13 KB |
+| assets/chunk-BhWoYTYO.js | 121.03 KB |
+| assets/index-C7ksGZzv.js | 86.12 KB |
+| assets/chunk-C49-smI_.js | 74.46 KB |
+| assets/chunk-cu6USNKQ.js | 46.29 KB |
+| assets/chunk-B7m-NHoy.js | 26.64 KB |
 
 ## 💡 Optimization Suggestions
 

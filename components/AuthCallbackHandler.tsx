@@ -15,6 +15,11 @@ const AuthCallbackHandler: React.FC<AuthCallbackHandlerProps> = ({ onAuthSuccess
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
+        console.log('Handling OAuth callback...');
+        
+        // Wait a moment for Supabase to process the OAuth response
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         // Get the current session
         const { data: { session }, error } = await supabase.auth.getSession();
         
@@ -26,11 +31,11 @@ const AuthCallbackHandler: React.FC<AuthCallbackHandlerProps> = ({ onAuthSuccess
           return;
         }
 
-        if (session) {
+        if (session?.user) {
           console.log('Auth successful, session:', session);
           setStatus('success');
           
-          // Wait a moment to show success, then redirect to splash screen
+          // Wait a moment to show success, then redirect
           setTimeout(() => {
             if (onRedirectToSplash) {
               onRedirectToSplash();
@@ -58,9 +63,19 @@ const AuthCallbackHandler: React.FC<AuthCallbackHandlerProps> = ({ onAuthSuccess
               }
             }, 1500);
           } else {
-            setError('No authentication session found. Please try signing in again.');
+            // Try to get the OAuth error from URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            
+            const oauthError = urlParams.get('error') || hashParams.get('error');
+            if (oauthError) {
+              setError(`OAuth error: ${oauthError}`);
+              onAuthError(`OAuth error: ${oauthError}`);
+            } else {
+              setError('No authentication session found. Please try signing in again.');
+              onAuthError('No authentication session found. Please try signing in again.');
+            }
             setStatus('error');
-            onAuthError('No authentication session found. Please try signing in again.');
           }
         }
       } catch (err) {

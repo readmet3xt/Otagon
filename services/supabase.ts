@@ -152,7 +152,7 @@ export class AuthService {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: window.location.href
         }
       });
       
@@ -162,7 +162,7 @@ export class AuthService {
       }
 
       // For OAuth, we don't need to wait for the redirect
-      // The user will be redirected to the callback URL
+      // The user will be redirected back to the current page
       return { success: true, data };
     } catch (error) {
       const authError = error as AuthError;
@@ -177,7 +177,7 @@ export class AuthService {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'discord',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: window.location.href
         }
       });
       
