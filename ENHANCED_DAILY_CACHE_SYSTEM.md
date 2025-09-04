@@ -13,7 +13,7 @@
 
 1. **🆓 Free User Windows**: First free user of the day can trigger grounding search
 2. **💾 Supabase Persistence**: Cache stored in database for cross-session access
-3. **📚 Cache History Tracking**: Avoids repetitive news over 1-day period
+3. **📚 Cache History Tracking**: Prevents API repetition (1-day) + Content deduplication (15-day)
 4. **🆔 User Tracking**: Records which user tier triggered each cache entry
 5. **🔄 Smart Deduplication**: Content hash-based repetition prevention
 
@@ -171,7 +171,7 @@ private async storeInSupabase(promptKey: string, response: CachedNewsResponse, c
 }
 ```
 
-#### **Repetition Prevention:**
+#### **API Repetition Prevention (1-day):**
 ```typescript
 private async hasRecentSimilarContent(promptKey: string): Promise<boolean> {
   try {
@@ -181,11 +181,11 @@ private async hasRecentSimilarContent(promptKey: string): Promise<boolean> {
       const now = Date.now();
       const oneDayAgo = now - (1 * 24 * 60 * 60 * 1000); // 1 day
       
-      // Check for content from the last 1 day
+      // Check for content from the last 1 day to prevent API calls
       const recentContent = history.filter(entry => entry.timestamp > oneDayAgo);
       
       if (recentContent.length > 0) {
-        console.log(`📰 Found ${recentContent.length} recent cache entries for ${promptKey} - avoiding repetition (1-day period)`);
+        console.log(`📰 Found ${recentContent.length} recent cache entries for ${promptKey} - avoiding API repetition (1-day period)`);
         return true;
       }
     }
@@ -193,6 +193,44 @@ private async hasRecentSimilarContent(promptKey: string): Promise<boolean> {
     console.warn('Failed to check cache history from Supabase:', error);
   }
   return false;
+}
+```
+
+#### **Content Deduplication (15-day):**
+```typescript
+public async getRecentNewsContext(promptKey: string): Promise<string> {
+  try {
+    const historyData = await supabaseDataService.getAppCache(`cacheHistory_${promptKey}`);
+    if (historyData && historyData.cacheData && historyData.cacheData.history) {
+      const history: CacheHistoryEntry[] = historyData.cacheData.history;
+      const now = Date.now();
+      const fifteenDaysAgo = now - (15 * 24 * 60 * 60 * 1000); // 15 days
+      
+      // Get content from the last 15 days to avoid story repetition
+      const recentStories = history.filter(entry => entry.timestamp > fifteenDaysAgo);
+      
+      if (recentStories.length > 0) {
+        console.log(`📰 Found ${recentStories.length} recent stories for ${promptKey} - providing context to avoid repetition (15-day period)`);
+        
+        // Extract key story elements to help AI avoid repetition
+        const storyContext = recentStories.map(entry => {
+          const content = entry.content.toLowerCase();
+          const games = this.extractGameNames(content);
+          const events = this.extractEvents(content);
+          return {
+            date: entry.date,
+            games: games,
+            events: events
+          };
+        });
+        
+        return JSON.stringify(storyContext);
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to get recent news context from Supabase:', error);
+  }
+  return '';
 }
 ```
 
@@ -392,7 +430,7 @@ export const getGameNews = async (onUpdate, onError, signal) => {
 ✅ **Supabase Persistence**: Cross-session cache storage  
 ✅ **Cache History Tracking**: Prevents repetitive news generation  
 ✅ **User Tier Tracking**: Records who triggered each cache entry  
-✅ **Smart Deduplication**: 1-day repetition prevention  
+✅ **Smart Deduplication**: 1-day API prevention + 15-day content deduplication  
 ✅ **Cost Optimization**: Maximum 120 grounding calls/month  
 ✅ **News Database Building**: Persistent storage for future use  
 

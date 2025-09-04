@@ -158,6 +158,7 @@ class DailyNewsCacheService {
 
   /**
    * Check if content is similar to recent cached content to avoid repetition
+   * This prevents API calls from being made too frequently (1-day period)
    */
   private async hasRecentSimilarContent(promptKey: string): Promise<boolean> {
     try {
@@ -168,11 +169,11 @@ class DailyNewsCacheService {
         const now = Date.now();
         const oneDayAgo = now - (1 * 24 * 60 * 60 * 1000); // 1 day
         
-        // Check for content from the last 1 day
+        // Check for content from the last 1 day to prevent API calls
         const recentContent = history.filter(entry => entry.timestamp > oneDayAgo);
         
         if (recentContent.length > 0) {
-          console.log(`📰 Found ${recentContent.length} recent cache entries for ${promptKey} - avoiding repetition (1-day period)`);
+          console.log(`📰 Found ${recentContent.length} recent cache entries for ${promptKey} - avoiding API repetition (1-day period)`);
           return true;
         }
       }
@@ -180,6 +181,97 @@ class DailyNewsCacheService {
       console.warn('Failed to check cache history from Supabase:', error);
     }
     return false;
+  }
+
+  /**
+   * Get recent news content history to help AI avoid repeating stories
+   * This provides content context for AI to generate fresh news (15-day period)
+   */
+  public async getRecentNewsContext(promptKey: string): Promise<string> {
+    try {
+      const historyData = await supabaseDataService.getAppCache(`cacheHistory_${promptKey}`);
+      if (historyData && historyData.cacheData && historyData.cacheData.history) {
+        const history: CacheHistoryEntry[] = historyData.cacheData.history;
+        const now = Date.now();
+        const fifteenDaysAgo = now - (15 * 24 * 60 * 60 * 1000); // 15 days
+        
+        // Get content from the last 15 days to avoid story repetition
+        const recentStories = history.filter(entry => entry.timestamp > fifteenDaysAgo);
+        
+        if (recentStories.length > 0) {
+          console.log(`📰 Found ${recentStories.length} recent stories for ${promptKey} - providing context to avoid repetition (15-day period)`);
+          
+          // Extract key story elements to help AI avoid repetition
+          const storyContext = recentStories.map(entry => {
+            // Extract game names, events, and key details from previous content
+            const content = entry.content.toLowerCase();
+            const games = this.extractGameNames(content);
+            const events = this.extractEvents(content);
+            return {
+              date: entry.date,
+              games: games,
+              events: events
+            };
+          });
+          
+          return JSON.stringify(storyContext);
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to get recent news context from Supabase:', error);
+    }
+    return '';
+  }
+
+  /**
+   * Extract game names from content to help avoid repetition
+   */
+  private extractGameNames(content: string): string[] {
+    // Simple extraction - in production, consider using NLP or more sophisticated parsing
+    const gamePatterns = [
+      /(?:game|title|release):\s*([A-Za-z0-9\s]+?)(?:\s|\.|,|$)/gi,
+      /(?:announced|revealed|launched)\s+([A-Za-z0-9\s]+?)(?:\s|\.|,|$)/gi
+    ];
+    
+    const games: string[] = [];
+    gamePatterns.forEach(pattern => {
+      const matches = content.match(pattern);
+      if (matches) {
+        matches.forEach(match => {
+          const gameName = match.replace(/(?:game|title|release|announced|revealed|launched):?\s*/gi, '').trim();
+          if (gameName && gameName.length > 2) {
+            games.push(gameName);
+          }
+        });
+      }
+    });
+    
+    return [...new Set(games)]; // Remove duplicates
+  }
+
+  /**
+   * Extract events from content to help avoid repetition
+   */
+  private extractEvents(content: string): string[] {
+    // Simple extraction - in production, consider using NLP or more sophisticated parsing
+    const eventPatterns = [
+      /(?:announcement|reveal|launch|update|patch|dlc|expansion)/gi,
+      /(?:conference|showcase|event|presentation)/gi
+    ];
+    
+    const events: string[] = [];
+    eventPatterns.forEach(pattern => {
+      const matches = content.match(pattern);
+      if (matches) {
+        matches.forEach(match => {
+          if (match && match.length > 2) {
+            events.push(match.toLowerCase());
+          }
+        });
+      }
+    });
+    
+    return [...new Set(events)]; // Remove duplicates
   }
 
   /**

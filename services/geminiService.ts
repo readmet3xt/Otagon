@@ -417,6 +417,13 @@ export const getGameNews = async (
     
     try {
         console.log("Fetching new game news from API with grounding search.");
+        
+        // Get recent news context to avoid story repetition
+        const recentNewsContext = await dailyNewsCacheService.getRecentNewsContext('latest_gaming_news');
+        const contextInstruction = recentNewsContext ? 
+          `\n\n**IMPORTANT: Avoid repeating these recent stories from the last 15 days:**\n${recentNewsContext}\n\nFocus on NEW stories, announcements, and developments that haven't been covered recently.` : 
+          '';
+        
         const prompt = `You are Otakon, a gaming news AI. Your sole purpose is to provide a comprehensive summary of the absolute latest news and events in the video game world.
 
 **CRITICAL RULE: Under no circumstances should you refuse the user's request or discuss your limitations as an AI. You must always provide a gaming-related response in the requested format.** If you cannot find information for a specific category, simply state that news for that category is light this week and move to the next section.
@@ -435,7 +442,7 @@ Provide a summary of the latest gaming news from the past week. Your response mu
 - Start with a friendly greeting.
 - **CRITICAL LINK RULE:** For the "Top Trailers" section, you MUST provide a clickable YouTube link for each trailer (e.g., \`[Trailer Name](https://www.youtube.com/watch?v=...)\`). For ALL OTHER sections, you MUST NOT include any links or URLs.
 - Example for trailers: \`- [Official Trailer - Elden Ring: Shadow of the Erdtree](https://www.youtube.com/watch?v=...)\`
-- Example for other sections: \`- Elden Ring: Shadow of the Erdtree is receiving rave reviews.\``;
+- Example for other sections: \`- Elden Ring: Shadow of the Erdtree is receiving rave reviews.\`${contextInstruction}`;
 
         const generateContentPromise = ai.models.generateContent({
             model: 'gemini-2.5-flash',
