@@ -80,6 +80,7 @@ import OtakuDiaryModal from './components/OtakuDiaryModal';
 import WishlistModal from './components/WishlistModal';
 import CachePerformanceDashboard from './components/CachePerformanceDashboard';
 import DailyCacheStatus from './components/DailyCacheStatus';
+import { UniversalCacheStatus } from './components/UniversalCacheStatus';
 
 // A data URL for a 1-second silent WAV file. This prevents needing to host an asset
 // and is used to keep the app process alive in the background for TTS.
@@ -2918,6 +2919,9 @@ const AppComponent: React.FC = () => {
 
             {/* Daily Cache Status Component */}
             <DailyCacheStatus />
+            
+            {/* Universal Cache Status Component */}
+            <UniversalCacheStatus />
 
         </div>
     );

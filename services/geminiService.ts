@@ -10,6 +10,7 @@ import { feedbackLearningEngine } from "./feedbackLearningEngine";
 import { supabaseDataService } from './supabaseDataService';
 import { progressTrackingService } from './progressTrackingService';
 import { dailyNewsCacheService } from './dailyNewsCacheService';
+import { universalContentCacheService, type CacheQuery } from './universalContentCacheService';
 
 const API_KEY = process.env.API_KEY;
 
@@ -571,6 +572,81 @@ const makeFocusedApiCallWithCache = async (
     }
 };
 
+/**
+ * Check and cache content using universal cache service
+ */
+const checkAndCacheContent = async (
+  query: string,
+  contentType: CacheQuery['contentType'],
+  gameName?: string,
+  genre?: string
+): Promise<{ found: boolean; content?: string; reason?: string }> => {
+  try {
+    const userTier = await unifiedUsageService.getTier();
+    
+    const cacheQuery: CacheQuery = {
+      query,
+      contentType,
+      gameName,
+      genre,
+      userTier
+    };
+    
+    const cacheResult = await universalContentCacheService.getCachedContent(cacheQuery);
+    
+    if (cacheResult.found && cacheResult.content) {
+      console.log(`🎯 Found cached ${contentType} content: ${query.substring(0, 50)}...`);
+      return {
+        found: true,
+        content: cacheResult.content.content,
+        reason: cacheResult.reason
+      };
+    }
+    
+    return { found: false };
+  } catch (error) {
+    console.warn('Failed to check universal cache:', error);
+    return { found: false };
+  }
+};
+
+/**
+ * Cache content after AI generation
+ */
+const cacheGeneratedContent = async (
+  query: string,
+  content: string,
+  contentType: CacheQuery['contentType'],
+  gameName?: string,
+  genre?: string,
+  model: string = 'gemini-2.5-flash',
+  tokens: number = 0,
+  cost: number = 0
+): Promise<void> => {
+  try {
+    const userTier = await unifiedUsageService.getTier();
+    
+    const cacheQuery: CacheQuery = {
+      query,
+      contentType,
+      gameName,
+      genre,
+      userTier
+    };
+    
+    await universalContentCacheService.cacheContent(cacheQuery, content, {
+      model,
+      tokens,
+      cost,
+      tags: [gameName, genre].filter(Boolean) as string[]
+    });
+    
+    console.log(`💾 Cached ${contentType} content for future use`);
+  } catch (error) {
+    console.warn('Failed to cache generated content:', error);
+  }
+};
+
 export const getUpcomingReleases = async (
   onUpdate: (fullText: string) => void,
   onError: (error: string) => void,
@@ -854,6 +930,27 @@ export async function sendMessage(
 ): Promise<void> {
     if (await checkCooldown(onError)) return;
     
+    // Check universal cache for similar queries
+    try {
+        const gameName = conversation.title || undefined;
+        const genre = conversation.genre || undefined;
+        
+        const cacheResult = await checkAndCacheContent(
+            message,
+            'game_help',
+            gameName,
+            genre
+        );
+        
+        if (cacheResult.found && cacheResult.content) {
+            console.log(`🎯 Serving cached game help: ${cacheResult.reason}`);
+            onChunk(cacheResult.content);
+            return;
+        }
+    } catch (error) {
+        console.warn('Cache check failed, proceeding with AI generation:', error);
+    }
+    
     try {
         const model = getOptimalModel('chat');
         const chat = await getOrCreateChat(conversation, false, model, history);
@@ -896,6 +993,25 @@ export async function sendMessage(
                 }
             } catch (error) {
                 console.warn('Progress detection failed:', error);
+            }
+            
+            // Cache the generated content for future use
+            try {
+                const gameName = conversation.title || undefined;
+                const genre = conversation.genre || undefined;
+                
+                await cacheGeneratedContent(
+                    message,
+                    fullResponse,
+                    'game_help',
+                    gameName,
+                    genre,
+                    model,
+                    0, // tokens - would need to be calculated
+                    0  // cost - would need to be calculated
+                );
+            } catch (error) {
+                console.warn('Failed to cache generated content:', error);
             }
         }
         
@@ -970,6 +1086,25 @@ export async function sendMessageWithImages(
                 }
             } catch (error) {
                 console.warn('Progress detection failed:', error);
+            }
+            
+            // Cache the generated content for future use
+            try {
+                const gameName = conversation.title || undefined;
+                const genre = conversation.genre || undefined;
+                
+                await cacheGeneratedContent(
+                    prompt,
+                    fullResponse,
+                    'game_help',
+                    gameName,
+                    genre,
+                    model,
+                    0, // tokens - would need to be calculated
+                    0  // cost - would need to be calculated
+                );
+            } catch (error) {
+                console.warn('Failed to cache generated content:', error);
             }
         }
         
@@ -1310,6 +1445,29 @@ export const generateUnifiedInsights = async (
 ): Promise<{ insights: Record<string, { title: string; content: string }> } | null> => {
     if (await checkCooldown(onError)) return null;
 
+    // Check universal cache for similar insight queries
+    try {
+        const cacheQuery = `insights_${gameName}_${genre}_${progress}`;
+        const cacheResult = await checkAndCacheContent(
+            cacheQuery,
+            'insight',
+            gameName,
+            genre
+        );
+        
+        if (cacheResult.found && cacheResult.content) {
+            console.log(`🎯 Serving cached insights for ${gameName} (${progress}%)`);
+            try {
+                const parsedInsights = JSON.parse(cacheResult.content);
+                return { insights: parsedInsights };
+            } catch (error) {
+                console.warn('Failed to parse cached insights, proceeding with generation:', error);
+            }
+        }
+    } catch (error) {
+        console.warn('Cache check failed, proceeding with insight generation:', error);
+    }
+
     // Filter out tabs that require web search, as they cannot be used with JSON response mode.
     // They will be loaded individually on-demand by the user.
     const tabsToGenerate = (insightTabsConfig[genre] || insightTabsConfig.default).filter(tab => !tab.webSearch);
@@ -1385,6 +1543,23 @@ Do not use web search for this task. The output MUST be a valid JSON object matc
         if (!response.text) return null;
         const jsonText = response.text.trim();
         const parsedJson = JSON.parse(jsonText);
+
+        // Cache the generated insights for future use
+        try {
+            const cacheQuery = `insights_${gameName}_${genre}_${progress}`;
+            await cacheGeneratedContent(
+                cacheQuery,
+                jsonText,
+                'insight',
+                gameName,
+                genre,
+                'gemini-2.5-pro',
+                0, // tokens - would need to be calculated
+                0  // cost - would need to be calculated
+            );
+        } catch (error) {
+            console.warn('Failed to cache generated insights:', error);
+        }
 
         handleSuccess();
         return { insights: parsedJson };
