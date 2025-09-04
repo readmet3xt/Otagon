@@ -3,6 +3,7 @@ import { usageService } from './usageService';
 import { databaseService } from './databaseService';
 import { authService } from './supabase';
 import { supabaseDataService } from './supabaseDataService';
+import { unifiedDataService, STORAGE_KEYS } from './unifiedDataService';
 
 const TIER_KEY = 'otakonUserTier';
 const TEXT_COUNT_KEY = 'otakonTextQueryCount';
@@ -58,6 +59,22 @@ const getTier = async (): Promise<UserTier> => {
     } catch (error) {
         console.warn('Supabase tier fetch failed, using localStorage fallback:', error);
         return (localStorage.getItem(TIER_KEY) as UserTier) || 'free';
+    }
+};
+
+// New function to get current tier without calling checkAndResetUsage
+const getCurrentTier = async (): Promise<UserTier> => {
+    try {
+        // Use the unified data service for consistent pattern
+        const result = await unifiedDataService.getUserUsageData();
+        const tier = (result.data.tier as UserTier) || 'free';
+        console.log(`📊 Current tier from ${result.source}: ${tier}`);
+        return tier;
+    } catch (error) {
+        console.warn('Failed to get current tier, using fallback:', error);
+        const tier = (localStorage.getItem(STORAGE_KEYS.USER_TIER) as UserTier) || 'free';
+        console.log(`📊 Current tier from localStorage fallback: ${tier}`);
+        return tier;
     }
 };
 
@@ -139,25 +156,31 @@ const upgradeToPro = async () => {
     try {
         console.log('🔄 Starting Pro tier upgrade...');
         
-        // Update in Supabase
-        console.log('🔄 Updating tier in Supabase...');
-        await supabaseDataService.updateUserUsage('tier', 'pro');
-        console.log('🔄 Updating text count in Supabase...');
-        await supabaseDataService.updateUserUsage('textCount', 0);
-        console.log('🔄 Updating image count in Supabase...');
-        await supabaseDataService.updateUserUsage('imageCount', 0);
-        console.log('🔄 Updating last month in Supabase...');
-        await supabaseDataService.updateUserUsage('lastMonth', getThisMonth());
+        // Use unified data service for consistent pattern
+        const result = await unifiedDataService.setData(
+            'userUsageData',
+            undefined,
+            async () => {
+                await supabaseDataService.updateUserUsage('tier', 'pro');
+                await supabaseDataService.updateUserUsage('textCount', 0);
+                await supabaseDataService.updateUserUsage('imageCount', 0);
+                await supabaseDataService.updateUserUsage('lastMonth', getThisMonth());
+            },
+            STORAGE_KEYS.USER_TIER
+        );
         
-        // Also update localStorage as backup
-        console.log('🔄 Updating localStorage backup...');
-        localStorage.setItem(TIER_KEY, 'pro');
-        localStorage.setItem(TEXT_COUNT_KEY, '0');
-        localStorage.setItem(IMAGE_COUNT_KEY, '0');
-        localStorage.setItem(DATE_KEY, getThisMonth());
+        // Update localStorage directly for immediate effect
+        localStorage.setItem(STORAGE_KEYS.USER_TIER, 'pro');
+        localStorage.setItem(STORAGE_KEYS.TEXT_COUNT, '0');
+        localStorage.setItem(STORAGE_KEYS.IMAGE_COUNT, '0');
+        localStorage.setItem(STORAGE_KEYS.LAST_USAGE_DATE, getThisMonth());
         
-        console.log('✅ User upgraded to Pro tier in Supabase. Resetting counts for new limits.');
-        console.log('📍 localStorage TIER_KEY now set to:', localStorage.getItem(TIER_KEY));
+        console.log(`✅ User upgraded to Pro tier via ${result.source}`);
+        console.log('📍 localStorage verification after Pro upgrade:', {
+            TIER_KEY: localStorage.getItem(STORAGE_KEYS.USER_TIER),
+            TEXT_COUNT_KEY: localStorage.getItem(STORAGE_KEYS.TEXT_COUNT),
+            IMAGE_COUNT_KEY: localStorage.getItem(STORAGE_KEYS.IMAGE_COUNT)
+        });
     } catch (error) {
         console.error('❌ Failed to upgrade to Pro tier:', error);
         throw error;
@@ -168,25 +191,31 @@ const upgradeToVanguardPro = async () => {
     try {
         console.log('🔄 Starting Vanguard Pro tier upgrade...');
         
-        // Update in Supabase
-        console.log('🔄 Updating tier in Supabase...');
-        await supabaseDataService.updateUserUsage('tier', 'vanguard_pro');
-        console.log('🔄 Updating text count in Supabase...');
-        await supabaseDataService.updateUserUsage('textCount', 0);
-        console.log('🔄 Updating image count in Supabase...');
-        await supabaseDataService.updateUserUsage('imageCount', 0);
-        console.log('🔄 Updating last month in Supabase...');
-        await supabaseDataService.updateUserUsage('lastMonth', getThisMonth());
+        // Use unified data service for consistent pattern
+        const result = await unifiedDataService.setData(
+            'userUsageData',
+            undefined,
+            async () => {
+                await supabaseDataService.updateUserUsage('tier', 'vanguard_pro');
+                await supabaseDataService.updateUserUsage('textCount', 0);
+                await supabaseDataService.updateUserUsage('imageCount', 0);
+                await supabaseDataService.updateUserUsage('lastMonth', getThisMonth());
+            },
+            STORAGE_KEYS.USER_TIER
+        );
         
-        // Also update localStorage as backup
-        console.log('🔄 Updating localStorage backup...');
-        localStorage.setItem(TIER_KEY, 'vanguard_pro');
-        localStorage.setItem(TEXT_COUNT_KEY, '0');
-        localStorage.setItem(IMAGE_COUNT_KEY, '0');
-        localStorage.setItem(DATE_KEY, getThisMonth());
+        // Update localStorage directly for immediate effect
+        localStorage.setItem(STORAGE_KEYS.USER_TIER, 'vanguard_pro');
+        localStorage.setItem(STORAGE_KEYS.TEXT_COUNT, '0');
+        localStorage.setItem(STORAGE_KEYS.IMAGE_COUNT, '0');
+        localStorage.setItem(STORAGE_KEYS.LAST_USAGE_DATE, getThisMonth());
         
-        console.log('✅ User upgraded to Vanguard Pro tier in Supabase. Resetting counts for new limits.');
-        console.log('📍 localStorage TIER_KEY now set to:', localStorage.getItem(TIER_KEY));
+        console.log(`✅ User upgraded to Vanguard Pro tier via ${result.source}`);
+        console.log('📍 localStorage verification after Vanguard Pro upgrade:', {
+            TIER_KEY: localStorage.getItem(STORAGE_KEYS.USER_TIER),
+            TEXT_COUNT_KEY: localStorage.getItem(STORAGE_KEYS.TEXT_COUNT),
+            IMAGE_COUNT_KEY: localStorage.getItem(STORAGE_KEYS.IMAGE_COUNT)
+        });
     } catch (error) {
         console.error('❌ Failed to upgrade to Vanguard Pro tier:', error);
         throw error;
@@ -195,15 +224,31 @@ const upgradeToVanguardPro = async () => {
 
 const downgradeToFree = async () => {
     try {
-        // Update in Supabase
-        await supabaseDataService.updateUserUsage('tier', 'free');
-        await supabaseDataService.updateUserUsage('textCount', 0);
+        console.log('🔄 Starting Free tier downgrade...');
         
-        // Also update localStorage as backup
-        localStorage.setItem(TIER_KEY, 'free');
-        localStorage.setItem(TEXT_COUNT_KEY, '0');
+        // Use unified data service for consistent pattern
+        const result = await unifiedDataService.setData(
+            'userUsageData',
+            undefined,
+            async () => {
+                await supabaseDataService.updateUserUsage('tier', 'free');
+                await supabaseDataService.updateUserUsage('textCount', 0);
+                await supabaseDataService.updateUserUsage('imageCount', 0);
+            },
+            STORAGE_KEYS.USER_TIER
+        );
         
-        console.log('✅ User downgraded to Free tier in Supabase. Resetting counts for new limits.');
+        // Update localStorage directly for immediate effect
+        localStorage.setItem(STORAGE_KEYS.USER_TIER, 'free');
+        localStorage.setItem(STORAGE_KEYS.TEXT_COUNT, '0');
+        localStorage.setItem(STORAGE_KEYS.IMAGE_COUNT, '0');
+        
+        console.log(`✅ User downgraded to Free tier via ${result.source}`);
+        console.log('🔍 localStorage verification after Free downgrade:', {
+            TIER_KEY: localStorage.getItem(STORAGE_KEYS.USER_TIER),
+            TEXT_COUNT_KEY: localStorage.getItem(STORAGE_KEYS.TEXT_COUNT),
+            IMAGE_COUNT_KEY: localStorage.getItem(STORAGE_KEYS.IMAGE_COUNT)
+        });
     } catch (error) {
         console.error('❌ Failed to downgrade to Free tier:', error);
         throw error;
@@ -219,7 +264,8 @@ export {
     upgradeToPro,
     upgradeToVanguardPro,
     downgradeToFree,
-    getTier
+    getTier,
+    getCurrentTier
 };
 
 // Maintain backward compatibility with old interface
@@ -229,6 +275,14 @@ export const unifiedUsageService = {
       return await getTier();
     } catch (error) {
       console.warn('getTier failed, returning free tier:', error);
+      return 'free' as UserTier;
+    }
+  },
+  getCurrentTier: async () => {
+    try {
+      return await getCurrentTier();
+    } catch (error) {
+      console.warn('getCurrentTier failed, returning free tier:', error);
       return 'free' as UserTier;
     }
   },

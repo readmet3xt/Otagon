@@ -1,5 +1,6 @@
 import { authService, AuthState } from './supabase';
 import { supabaseDataService } from './supabaseDataService';
+import { unifiedDataService, STORAGE_KEYS } from './unifiedDataService';
 
 export interface PWANavigationState {
   isPWAInstalled: boolean;
@@ -97,36 +98,32 @@ class PWANavigationService {
   private async checkHandsFreePreference() {
     // Check if hands-free was enabled in the app
     try {
-      // Try to get from Supabase first
-      const preferences = await supabaseDataService.getUserPreferences();
-      const pwaPrefs = preferences.pwa || {};
-      const handsFreeEnabled = pwaPrefs.handsFreeEnabled === true;
+      // Use unified data service for consistent pattern
+      const result = await unifiedDataService.getUserPreferences();
+      const handsFreeEnabled = result.data.pwa?.handsFree === true;
       
-      // Fallback to localStorage
-      let finalHandsFreeEnabled = handsFreeEnabled;
-      if (handsFreeEnabled === undefined) {
-        const localHandsFreeEnabled = localStorage.getItem('otakonHandsFreeEnabled') === 'true';
-        finalHandsFreeEnabled = localHandsFreeEnabled;
-      }
-      
-      this.navigationState.isHandsFreeEnabled = finalHandsFreeEnabled;
-      
-      if (finalHandsFreeEnabled && this.navigationState.isRunningInPWA) {
-        console.log('PWA Navigation: Hands-free enabled in PWA mode');
-        this.enableHandsFreeInBackground();
-      }
+      this.navigationState.isHandsFreeEnabled = handsFreeEnabled;
+      console.log('PWA Navigation: Hands-free preference loaded from unified service:', handsFreeEnabled);
     } catch (error) {
-      console.warn('Failed to get hands-free preference from Supabase, using localStorage fallback:', error);
+      console.warn('Failed to get hands-free preference from unified service, using localStorage fallback:', error);
       
       // Fallback to localStorage
-      const localHandsFreeEnabled = localStorage.getItem('otakonHandsFreeEnabled') === 'true';
-      this.navigationState.isHandsFreeEnabled = localHandsFreeEnabled;
-      
-      if (localHandsFreeEnabled && this.navigationState.isRunningInPWA) {
-        console.log('PWA Navigation: Hands-free enabled in PWA mode');
-        this.enableHandsFreeInBackground();
+      const localHandsFree = localStorage.getItem(STORAGE_KEYS.PWA_SETTINGS);
+      if (localHandsFree) {
+        try {
+          const pwaSettings = JSON.parse(localHandsFree);
+          this.navigationState.isHandsFreeEnabled = pwaSettings.handsFree === true;
+          console.log('PWA Navigation: Hands-free preference loaded from localStorage:', this.navigationState.isHandsFreeEnabled);
+        } catch (parseError) {
+          console.warn('Failed to parse localStorage hands-free preference:', parseError);
+          this.navigationState.isHandsFreeEnabled = false;
+        }
+      } else {
+        this.navigationState.isHandsFreeEnabled = false;
       }
     }
+    
+    this.notifyListeners();
   }
 
   private enableHandsFreeInBackground() {

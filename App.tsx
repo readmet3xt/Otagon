@@ -79,8 +79,7 @@ import CharacterImmersionTest from './components/CharacterImmersionTest';
 import OtakuDiaryModal from './components/OtakuDiaryModal';
 import WishlistModal from './components/WishlistModal';
 import CachePerformanceDashboard from './components/CachePerformanceDashboard';
-import DailyCacheStatus from './components/DailyCacheStatus';
-import { UniversalCacheStatus } from './components/UniversalCacheStatus';
+
 
 // A data URL for a 1-second silent WAV file. This prevents needing to host an asset
 // and is used to keep the app process alive in the background for TTS.
@@ -295,8 +294,23 @@ const AppComponent: React.FC = () => {
 
     const refreshUsage = useCallback(async () => {
         try {
+            // Add a small delay to ensure any pending backend updates have propagated
+            await new Promise(resolve => setTimeout(resolve, 150));
+            
+            // Get the current tier directly without calling getUsage (which calls checkAndResetUsage)
+            const currentTier = await unifiedUsageService.getCurrentTier();
+            
+            // Get the current usage data
             const syncedUsage = await unifiedUsageService.getUsage();
-            setUsage(syncedUsage);
+            
+            // Ensure the tier is correct
+            const updatedUsage = {
+                ...syncedUsage,
+                tier: currentTier
+            };
+            
+            console.log('🔄 Refreshing usage with verified tier:', currentTier);
+            setUsage(updatedUsage);
         } catch (error) {
             console.warn('Failed to refresh usage:', error);
         }
@@ -2916,12 +2930,6 @@ const AppComponent: React.FC = () => {
                     onSkip={skipTutorial}
                 />
             )}
-
-            {/* Daily Cache Status Component */}
-            <DailyCacheStatus />
-            
-            {/* Universal Cache Status Component */}
-            <UniversalCacheStatus />
 
         </div>
     );

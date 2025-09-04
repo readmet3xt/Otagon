@@ -77,7 +77,10 @@ const SubscriptionSettingsTab: React.FC<SubscriptionSettingsTabProps> = ({ usage
                         )}
                     </div>
                     {canAccessDeveloperFeatures(userEmail) ? (
-                        <DevTierSwitcher currentTier={usage.tier} onSwitch={handleRefreshUsage} />
+                        <DevTierSwitcher 
+                            currentTier={usage.tier} 
+                            onSwitch={handleRefreshUsage}
+                        />
                     ) : (
                         <div className="text-xs text-gray-500 italic">
                             Developer feature

@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { authService } from './supabase';
 import { supabaseDataService } from './supabaseDataService';
+import { unifiedDataService, STORAGE_KEYS } from './unifiedDataService';
 
 export interface DiaryTask {
   id: string;
@@ -52,8 +53,9 @@ class OtakuDiaryService {
   // Load data from Supabase
   private async loadFromSupabase(): Promise<void> {
     try {
-      const appState = await supabaseDataService.getUserAppState();
-      const otakuDiary = appState.otakuDiary || {};
+      // Use unified data service for consistent pattern
+      const result = await unifiedDataService.getUserAppState();
+      const otakuDiary = result.data.otakuDiary || {};
       
       // Load tasks from Supabase
       Object.keys(otakuDiary).forEach(key => {
@@ -62,7 +64,7 @@ class OtakuDiaryService {
           const tasks = otakuDiary[key];
           if (Array.isArray(tasks) && tasks.length > 0) {
             this.tasksCache.set(gameId, tasks);
-            console.log(`🔧 Loaded ${tasks.length} tasks for game ${gameId} from Supabase`);
+            console.log(`🔧 Loaded ${tasks.length} tasks for game ${gameId} from ${result.source}`);
           }
         }
       });
@@ -74,7 +76,7 @@ class OtakuDiaryService {
           const favorites = otakuDiary[key];
           if (Array.isArray(favorites) && favorites.length > 0) {
             this.favoritesCache.set(gameId, favorites);
-            console.log(`🔧 Loaded ${favorites.length} favorites for game ${gameId} from Supabase`);
+            console.log(`🔧 Loaded ${favorites.length} favorites for game ${gameId} from ${result.source}`);
           }
         }
       });
@@ -92,9 +94,9 @@ class OtakuDiaryService {
       await this.loadFromSupabase();
       
       // Fallback to localStorage if Supabase data is incomplete
-      const taskKeys = Object.keys(localStorage).filter(key => key.startsWith('otakon_tasks_'));
+      const taskKeys = Object.keys(localStorage).filter(key => key.startsWith(STORAGE_KEYS.TASKS_PREFIX));
       taskKeys.forEach(key => {
-        const gameId = key.replace('otakon_tasks_', '');
+        const gameId = key.replace(STORAGE_KEYS.TASKS_PREFIX, '');
         const tasks = JSON.parse(localStorage.getItem(key) || '[]');
         if (tasks.length > 0) {
           this.tasksCache.set(gameId, tasks);
@@ -103,9 +105,9 @@ class OtakuDiaryService {
       });
       
       // Load favorites from localStorage
-      const favoriteKeys = Object.keys(localStorage).filter(key => key.startsWith('otakon_favorites_'));
+      const favoriteKeys = Object.keys(localStorage).filter(key => key.startsWith(STORAGE_KEYS.FAVORITES_PREFIX));
       favoriteKeys.forEach(key => {
-        const gameId = key.replace('otakon_favorites_', '');
+        const gameId = key.replace(STORAGE_KEYS.FAVORITES_PREFIX, '');
         const favorites = JSON.parse(localStorage.getItem(key) || '[]');
         if (favorites.length > 0) {
           this.favoritesCache.set(gameId, favorites);
@@ -796,6 +798,38 @@ class OtakuDiaryService {
       console.error('Failed to get game IDs:', error);
       // Fallback to local cache
       return Array.from(this.tasksCache.keys());
+    }
+  }
+
+  // Save tasks to both Supabase and localStorage
+  async saveTasks(gameId: string, tasks: DiaryTask[]): Promise<void> {
+    try {
+      // Use unified data service for consistent pattern
+      await unifiedDataService.setOtakuDiaryData(gameId, { tasks });
+      
+      // Update local cache
+      this.tasksCache.set(gameId, tasks);
+      
+      console.log(`✅ Saved ${tasks.length} tasks for game ${gameId}`);
+    } catch (error) {
+      console.error('Failed to save tasks:', error);
+      throw error;
+    }
+  }
+
+  // Save favorites to both Supabase and localStorage
+  async saveFavorites(gameId: string, favorites: DiaryFavorite[]): Promise<void> {
+    try {
+      // Use unified data service for consistent pattern
+      await unifiedDataService.setOtakuDiaryData(gameId, { favorites });
+      
+      // Update local cache
+      this.favoritesCache.set(gameId, favorites);
+      
+      console.log(`✅ Saved ${favorites.length} favorites for game ${gameId}`);
+    } catch (error) {
+      console.error('Failed to save favorites:', error);
+      throw error;
     }
   }
 }

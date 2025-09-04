@@ -1,4 +1,5 @@
 import { supabaseDataService } from './supabaseDataService';
+import { unifiedDataService, STORAGE_KEYS } from './unifiedDataService';
 
 export interface PWAInstallEvent {
   timestamp: number;
@@ -58,7 +59,7 @@ class PWAAnalyticsServiceImpl implements PWAAnalyticsService {
     };
 
     try {
-      // Try to update in Supabase first
+      // Use unified data service for consistent pattern
       const existingData = await this.getInstallStats();
       existingData.push(installEvent);
       
@@ -67,14 +68,15 @@ class PWAAnalyticsServiceImpl implements PWAAnalyticsService {
         existingData.splice(0, existingData.length - 100);
       }
 
-      await supabaseDataService.updateUserAppState('pwaAnalytics', { installs: existingData });
+      // Use unified data service to update app state
+      await unifiedDataService.updateUserAppState('pwaAnalytics', { installs: existingData });
       
       // Also update localStorage as backup
-      localStorage.setItem(this.STORAGE_KEY_INSTALLS, JSON.stringify(existingData));
+      localStorage.setItem(STORAGE_KEYS.PWA_INSTALLS, JSON.stringify(existingData));
       
-      console.log('✅ PWA Install tracked in Supabase:', installEvent);
+      console.log('✅ PWA Install tracked via unified service:', installEvent);
     } catch (error) {
-      console.warn('Supabase PWA install tracking failed, using localStorage fallback:', error);
+      console.warn('PWA install tracking failed, using localStorage fallback:', error);
       // Fallback to localStorage only
       const existingData = this.getLocalStorageInstalls();
       existingData.push(installEvent);
@@ -83,7 +85,7 @@ class PWAAnalyticsServiceImpl implements PWAAnalyticsService {
         existingData.splice(0, existingData.length - 100);
       }
       
-      localStorage.setItem(this.STORAGE_KEY_INSTALLS, JSON.stringify(existingData));
+      localStorage.setItem(STORAGE_KEYS.PWA_INSTALLS, JSON.stringify(existingData));
       console.log('PWA Install tracked (localStorage fallback):', installEvent);
     }
   }
@@ -96,70 +98,57 @@ class PWAAnalyticsServiceImpl implements PWAAnalyticsService {
     };
 
     try {
-      // Try to update in Supabase first
+      // Use unified data service for consistent pattern
       const existingData = await this.getEngagementStats();
       existingData.push(engagementEvent);
       
-      // Keep only last 500 engagement events
-      if (existingData.length > 500) {
-        existingData.splice(0, existingData.length - 500);
+      // Keep only last 100 engagement events
+      if (existingData.length > 100) {
+        existingData.splice(0, existingData.length - 100);
       }
 
-      await supabaseDataService.updateUserAppState('pwaAnalytics', { engagement: existingData });
+      // Use unified data service to update app state
+      await unifiedDataService.updateUserAppState('pwaAnalytics', { engagement: existingData });
       
       // Also update localStorage as backup
-      localStorage.setItem(this.STORAGE_KEY_ENGAGEMENT, JSON.stringify(existingData));
+      localStorage.setItem(STORAGE_KEYS.PWA_ENGAGEMENT, JSON.stringify(existingData));
       
-      console.log('✅ PWA Engagement tracked in Supabase:', engagementEvent);
+      console.log('✅ PWA Engagement tracked via unified service:', engagementEvent);
     } catch (error) {
-      console.warn('Supabase PWA engagement tracking failed, using localStorage fallback:', error);
+      console.warn('PWA engagement tracking failed, using localStorage fallback:', error);
       // Fallback to localStorage only
       const existingData = this.getLocalStorageEngagement();
       existingData.push(engagementEvent);
       
-      if (existingData.length > 500) {
-        existingData.splice(0, existingData.length - 500);
+      if (existingData.length > 100) {
+        existingData.splice(0, existingData.length - 100);
       }
       
-      localStorage.setItem(this.STORAGE_KEY_ENGAGEMENT, JSON.stringify(existingData));
+      localStorage.setItem(STORAGE_KEYS.PWA_ENGAGEMENT, JSON.stringify(existingData));
       console.log('PWA Engagement tracked (localStorage fallback):', engagementEvent);
     }
   }
 
   async getInstallStats(): Promise<PWAInstallEvent[]> {
     try {
-      // Try to get from Supabase first
-      const supabaseData = await supabaseDataService.getUserAppState();
-      const pwaAnalytics = supabaseData.pwaAnalytics;
-      const pwaInstalls = pwaAnalytics?.installs;
-      
-      if (pwaInstalls && Array.isArray(pwaInstalls)) {
-        return pwaInstalls as PWAInstallEvent[];
-      }
-      
-      // If no Supabase data, try localStorage
-      return this.getLocalStorageInstalls();
+      // Use unified data service for consistent pattern
+      const result = await unifiedDataService.getUserAppState();
+      const pwaAnalytics = result.data.pwaAnalytics || {};
+      return pwaAnalytics.installs || [];
     } catch (error) {
-      console.warn('Supabase PWA install stats fetch failed, using localStorage fallback:', error);
+      console.warn('Failed to get install stats from unified service, using localStorage fallback:', error);
       return this.getLocalStorageInstalls();
     }
   }
 
   async getEngagementStats(): Promise<PWAEngagementEvent[]> {
     try {
-      // Try to get from Supabase first
-      const supabaseData = await supabaseDataService.getUserAppState();
-      const pwaAnalytics = supabaseData.pwaAnalytics;
-      const pwaEngagement = pwaAnalytics?.engagement;
-      
-      if (pwaEngagement && Array.isArray(pwaEngagement)) {
-        return pwaEngagement as PWAEngagementEvent[];
-      }
-      
-      // If no Supabase data, try localStorage
-      return this.getLocalStorageEngagement();
+      // Use unified data service for consistent pattern
+      const result = await unifiedDataService.getUserAppState();
+      const pwaAnalytics = result.data.pwaAnalytics || {};
+      return pwaAnalytics.engagement || [];
     } catch (error) {
-      console.warn('Supabase PWA engagement stats fetch failed, using localStorage fallback:', error);
+      console.warn('Failed to get engagement stats from unified service, using localStorage fallback:', error);
       return this.getLocalStorageEngagement();
     }
   }

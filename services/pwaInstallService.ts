@@ -1,4 +1,5 @@
 import { supabaseDataService } from './supabaseDataService';
+import { unifiedDataService, STORAGE_KEYS } from './unifiedDataService';
 
 export interface InstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -45,20 +46,20 @@ class PWAInstallService implements PWAInstallServiceInterface {
       this.deferredPrompt = null;
       
       try {
-        // Mark as installed in Supabase
-        await supabaseDataService.updateUserAppState('pwaInstalled', true);
-        await supabaseDataService.updateUserAppState('pwaGlobalInstalled', true);
+        // Use unified data service for consistent pattern
+        await unifiedDataService.updateUserAppState('pwaInstalled', true);
+        await unifiedDataService.updateUserAppState('pwaGlobalInstalled', true);
         
         // Also update localStorage as backup
-        localStorage.setItem('otakonPWAInstalled', 'true');
-        localStorage.setItem('otakonGlobalPWAInstalled', 'true');
+        localStorage.setItem(STORAGE_KEYS.PWA_INSTALLED, 'true');
+        localStorage.setItem(STORAGE_KEYS.PWA_GLOBAL_INSTALLED, 'true');
         
-        console.log('✅ PWA install state updated in Supabase');
+        console.log('✅ PWA install state updated via unified service');
       } catch (error) {
-        console.warn('Failed to update PWA install state in Supabase, using localStorage only:', error);
+        console.warn('Failed to update PWA install state via unified service, using localStorage only:', error);
         // Fallback to localStorage only
-        localStorage.setItem('otakonPWAInstalled', 'true');
-        localStorage.setItem('otakonGlobalPWAInstalled', 'true');
+        localStorage.setItem(STORAGE_KEYS.PWA_INSTALLED, 'true');
+        localStorage.setItem(STORAGE_KEYS.PWA_GLOBAL_INSTALLED, 'true');
       }
       
       this.notifyListeners(null);
@@ -81,14 +82,14 @@ class PWAInstallService implements PWAInstallServiceInterface {
       // Check for iOS Safari standalone mode
       const isIOSStandalone = (window.navigator as any).standalone === true;
       
-      // Check for PWA install state from Supabase
-      const appState = await supabaseDataService.getUserAppState();
-      const hasInstalledPWA = appState.pwaInstalled === true;
-      const hasGlobalInstallFlag = appState.pwaGlobalInstalled === true;
+      // Check for PWA install state from unified service
+      const result = await unifiedDataService.getUserAppState();
+      const hasInstalledPWA = result.data.pwaInstalled === true;
+      const hasGlobalInstallFlag = result.data.pwaGlobalInstalled === true;
       
-      // Fallback to localStorage if Supabase data not available
-      const localHasInstalledPWA = localStorage.getItem('otakonPWAInstalled') === 'true';
-      const localHasGlobalInstallFlag = localStorage.getItem('otakonGlobalPWAInstalled') === 'true';
+      // Fallback to localStorage if unified service data not available
+      const localHasInstalledPWA = localStorage.getItem(STORAGE_KEYS.PWA_INSTALLED) === 'true';
+      const localHasGlobalInstallFlag = localStorage.getItem(STORAGE_KEYS.PWA_GLOBAL_INSTALLED) === 'true';
       
       const finalHasInstalledPWA = hasInstalledPWA || localHasInstalledPWA;
       const finalHasGlobalInstallFlag = hasGlobalInstallFlag || localHasGlobalInstallFlag;

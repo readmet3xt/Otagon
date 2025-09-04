@@ -55,19 +55,26 @@ const DevTierSwitcher: React.FC<DevTierSwitcherProps> = ({ currentTier, onSwitch
       console.log(`✅ Successfully switched to ${nextTier} tier`);
       console.log(`📱 localStorage after switch: ${localStorage.getItem('otakonUserTier') || 'undefined'}`);
       
-      // Try to call onSwitch, but don't fail if it errors
-      try {
-        console.log('🔄 Calling onSwitch callback...');
-        onSwitch();
-      } catch (error) {
-        console.warn('⚠️ onSwitch callback failed, but tier was updated locally:', error);
-        // The tier was already updated locally, so this is not a critical failure
+      // Verify the tier was actually updated
+      const updatedTier = localStorage.getItem('otakonUserTier') as UserTier;
+      if (updatedTier === nextTier) {
+        console.log('✅ Tier update verified in localStorage');
         
-        // Force a local state update to ensure the UI reflects the change
-        setTimeout(() => {
-          setLocalTier(nextTier);
-          console.log('🔄 Forced local state update to ensure UI consistency');
-        }, 50);
+
+        
+        // Add a delay to ensure backend update propagates
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // Now call onSwitch callback (but don't fail if it errors)
+        try {
+          console.log('🔄 Calling onSwitch callback...');
+          onSwitch();
+        } catch (error) {
+          console.warn('⚠️ onSwitch callback failed, but tier was updated successfully:', error);
+        }
+      } else {
+        console.error(`❌ Tier update verification failed. Expected: ${nextTier}, Got: ${updatedTier}`);
+        throw new Error('Tier update verification failed');
       }
       
     } catch (error) {

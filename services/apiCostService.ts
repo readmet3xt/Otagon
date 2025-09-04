@@ -9,6 +9,7 @@
 
 import { supabase } from './supabase';
 import { supabaseDataService } from './supabaseDataService';
+import { unifiedDataService, STORAGE_KEYS } from './unifiedDataService';
 
 export interface APICallRecord {
     timestamp: number;
@@ -481,22 +482,22 @@ class APICostService {
     // Get cost records from Supabase with localStorage fallback
     private async getCostRecords(): Promise<any[]> {
         try {
-            // Try to get from Supabase first
-            const appState = await supabaseDataService.getUserAppState();
-            const costRecords = appState.apiCostRecords;
+            // Use unified data service for consistent pattern
+            const result = await unifiedDataService.getUserAppState();
+            const costRecords = result.data.apiCostRecords;
             
             if (costRecords && Array.isArray(costRecords)) {
                 return costRecords;
             }
             
             // Fallback to localStorage
-            const localRecords = localStorage.getItem(this.COST_KEY);
+            const localRecords = localStorage.getItem(STORAGE_KEYS.API_COST_RECORDS);
             return localRecords ? JSON.parse(localRecords) : [];
         } catch (error) {
-            console.warn('Failed to get cost records from Supabase, using localStorage fallback:', error);
+            console.warn('Failed to get cost records from unified service, using localStorage fallback:', error);
             
             // Fallback to localStorage only
-            const localRecords = localStorage.getItem(this.COST_KEY);
+            const localRecords = localStorage.getItem(STORAGE_KEYS.API_COST_RECORDS);
             return localRecords ? JSON.parse(localRecords) : [];
         }
     }
@@ -504,16 +505,19 @@ class APICostService {
     // Set cost records in Supabase with localStorage fallback
     private async setCostRecords(records: any[]): Promise<void> {
         try {
-            // Update in Supabase
-            await supabaseDataService.updateUserAppState('apiCostRecords', records);
+            // Use unified data service for consistent pattern
+            await unifiedDataService.updateUserAppState('apiCostRecords', records);
             
             // Also update localStorage as backup
-            localStorage.setItem(this.COST_KEY, JSON.stringify(records));
+            localStorage.setItem(STORAGE_KEYS.API_COST_RECORDS, JSON.stringify(records));
+            
+            console.log('✅ Cost records updated via unified service');
         } catch (error) {
-            console.warn('Failed to update cost records in Supabase, using localStorage only:', error);
+            console.warn('Failed to update cost records via unified service, using localStorage fallback:', error);
             
             // Fallback to localStorage only
-            localStorage.setItem(this.COST_KEY, JSON.stringify(records));
+            localStorage.setItem(STORAGE_KEYS.API_COST_RECORDS, JSON.stringify(records));
+            console.log('Cost records updated (localStorage fallback)');
         }
     }
 }

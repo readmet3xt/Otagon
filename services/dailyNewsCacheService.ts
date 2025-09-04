@@ -115,7 +115,7 @@ class DailyNewsCacheService {
   /**
    * Check if we're in a free user window for a specific prompt
    */
-  private async isInFreeUserWindow(promptKey: string): Promise<boolean> {
+  public async isInFreeUserWindow(promptKey: string): Promise<boolean> {
     try {
       const cacheData = await supabaseDataService.getAppCache(`freeUserWindow_${promptKey}`);
       if (cacheData && cacheData.cacheData) {
@@ -517,8 +517,8 @@ class DailyNewsCacheService {
   /**
    * Get cache status for monitoring
    */
-  public getCacheStatus(): { [key: string]: { hasCache: boolean; age: string; source: string; triggeredBy: string } } {
-    const status: { [key: string]: { hasCache: boolean; age: string; source: string; triggeredBy: string } } = {};
+  public getCacheStatus(): { [key: string]: { hasCache: boolean; age: string; source: string; triggeredBy: string; freeUserWindowActive?: boolean; freeWindowStatus?: string } } {
+    const status: { [key: string]: { hasCache: boolean; age: string; source: string; triggeredBy: string; freeUserWindowActive?: boolean; freeWindowStatus?: string } } = {};
     
     Object.entries(this.PROMPT_KEYS).forEach(([key, promptKey]) => {
       const cached = this.cache[promptKey];
