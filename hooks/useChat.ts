@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { ChatMessage, Conversations, Conversation, newsPrompts, Insight, insightTabsConfig, InsightStatus, PendingInsightModification, ChatMessageFeedback } from '../services/types';
+import { authService } from '../services/supabase';
 import { 
     getGameNews, 
     sendMessageWithImages, 
@@ -97,36 +98,64 @@ export const useChat = (isHandsFreeMode: boolean) => {
     
     const saveConversationsToLocalStorage = useCallback(() => {
         try {
-            if (Object.keys(conversationsRef.current).length > 0) {
-                const serialized = JSON.stringify({
-                    conversations: conversationsRef.current,
-                    order: conversationsOrderRef.current,
-                    activeId: activeConversationId
-                });
-                 const size = new Blob([serialized]).size;
-                if (size > 4 * 1024 * 1024) { // Warn if > 4MB
-                     console.warn(`LocalStorage size is getting large: ${(size / 1024 / 1024).toFixed(2)} MB. Consider backend solution.`);
+            // Save conversations to localStorage for persistence in developer mode
+            const conversationsToSave = {
+                ...conversations,
+                // Ensure we have the everything-else conversation
+                [EVERYTHING_ELSE_ID]: conversations[EVERYTHING_ELSE_ID] || {
+                    id: EVERYTHING_ELSE_ID,
+                    title: 'Everything else',
+                    messages: [],
+                    createdAt: Date.now(),
                 }
-                localStorage.setItem(CONVERSATIONS_STORAGE_KEY, serialized);
-            }
+            };
+            
+            localStorage.setItem(CONVERSATIONS_STORAGE_KEY, JSON.stringify(conversationsToSave));
+            localStorage.setItem('otakon_conversations_order', JSON.stringify(conversationsOrder));
+            localStorage.setItem('otakon_active_conversation', activeConversationId);
+            console.log('💾 Conversations saved to localStorage');
         } catch (error) {
-            console.error("Failed to save state to localStorage", error);
+            console.warn('Failed to save conversations to localStorage:', error);
         }
-    }, [activeConversationId]);
+    }, [conversations, conversationsOrder, activeConversationId]);
 
     useEffect(() => {
-        let loadedState: { conversations: Conversations; order: string[]; activeId: string; } | null = null;
-        try {
-            const storedState = localStorage.getItem(CONVERSATIONS_STORAGE_KEY);
-            if (storedState) loadedState = JSON.parse(storedState);
-        } catch (error) {
-            console.error("Failed to load state from localStorage", error);
-        }
-
-        if (loadedState && loadedState.conversations && loadedState.order) {
-            setChatState(loadedState);
-        } else {
-             setChatState({
+        // Load conversations from localStorage on app startup
+        const loadConversationsFromStorage = () => {
+            try {
+                const savedConversations = localStorage.getItem(CONVERSATIONS_STORAGE_KEY);
+                const savedOrder = localStorage.getItem('otakon_conversations_order');
+                const savedActiveId = localStorage.getItem('otakon_active_conversation');
+                
+                if (savedConversations) {
+                    const parsedConversations = JSON.parse(savedConversations);
+                    const parsedOrder = savedOrder ? JSON.parse(savedOrder) : Object.keys(parsedConversations);
+                    const activeId = savedActiveId && parsedConversations[savedActiveId] ? savedActiveId : EVERYTHING_ELSE_ID;
+                    
+                    // Ensure we have the everything-else conversation
+                    if (!parsedConversations[EVERYTHING_ELSE_ID]) {
+                        parsedConversations[EVERYTHING_ELSE_ID] = {
+                            id: EVERYTHING_ELSE_ID,
+                            title: 'Everything else',
+                            messages: [],
+                            createdAt: Date.now(),
+                        };
+                    }
+                    
+                    setChatState({
+                        conversations: parsedConversations,
+                        order: parsedOrder,
+                        activeId: activeId
+                    });
+                    console.log('💾 Conversations loaded from localStorage');
+                    return;
+                }
+            } catch (error) {
+                console.warn('Failed to load conversations from localStorage:', error);
+            }
+            
+            // Fallback to default state
+            setChatState({
                 conversations: {
                     [EVERYTHING_ELSE_ID]: {
                         id: EVERYTHING_ELSE_ID,
@@ -138,8 +167,9 @@ export const useChat = (isHandsFreeMode: boolean) => {
                 order: [EVERYTHING_ELSE_ID],
                 activeId: EVERYTHING_ELSE_ID
             });
-        }
-
+        };
+        
+        loadConversationsFromStorage();
     }, []);
 
 
@@ -1069,7 +1099,10 @@ export const useChat = (isHandsFreeMode: boolean) => {
     const resetConversations = useCallback(() => {
         ttsService.cancel();
         resetGeminiChat();
+        // Clear all conversation-related localStorage
         localStorage.removeItem(CONVERSATIONS_STORAGE_KEY);
+        localStorage.removeItem('otakon_conversations_order');
+        localStorage.removeItem('otakon_active_conversation');
         setChatState({
             conversations: { [EVERYTHING_ELSE_ID]: { id: EVERYTHING_ELSE_ID, title: 'Everything else', messages: [], createdAt: Date.now() } },
             order: [EVERYTHING_ELSE_ID],
