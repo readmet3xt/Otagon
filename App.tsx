@@ -2049,14 +2049,48 @@ const AppComponent: React.FC = () => {
         }
     }, [send, disconnect, resetConversations]);
     
-    const handleLogout = useCallback(async () => {
+    // Function to logout only (keep data) - for settings modal
+    const handleLogoutOnly = useCallback(async () => {
         const isDeveloperMode = canAccessDeveloperFeatures(authState.user?.email);
         
         setConfirmationModal({
             title: isDeveloperMode ? 'Sign Out of Developer Mode?' : 'Sign Out?',
             message: isDeveloperMode 
-                ? 'Are you sure you want to sign out of developer mode? You can sign back in anytime.'
-                : 'Are you sure you want to sign out? You can sign back in anytime.',
+                ? 'Are you sure you want to sign out of developer mode? Your data will be preserved.'
+                : 'Are you sure you want to sign out? Your data will be preserved.',
+            onConfirm: async () => {
+                try {
+                    // Sign out from Supabase
+                    await authService.signOut();
+                    
+                    // Reset app state and return to login screen
+                    setOnboardingStatus('login');
+                    setIsHandsFreeMode(false);
+                    setIsConnectionModalOpen(false);
+                    setView('landing');
+                    
+                    // Reset session flags
+                    setWelcomeMessageShownThisSession(false);
+                    
+                    console.log('User logged out successfully (data preserved)');
+                } catch (error) {
+                    console.error('Logout error:', error);
+                    // Even if Supabase logout fails, clear local data
+                    await executeFullReset();
+                }
+            },
+        });
+    }, [executeFullReset]);
+
+    // Function to logout and reset (clear all data) - for context menu
+    const handleLogout = useCallback(async () => {
+        const isDeveloperMode = canAccessDeveloperFeatures(authState.user?.email);
+        
+        setConfirmationModal({
+            title: isDeveloperMode ? 'Sign Out & Reset Developer Mode?' : 'Sign Out & Reset?',
+            message: isDeveloperMode 
+                ? 'Are you sure you want to sign out and reset developer mode? This will permanently delete all data and show the first run experience on next login.'
+                : 'Are you sure you want to sign out and reset? This will permanently delete all data.',
             onConfirm: async () => {
                 try {
                     // First, clear local data and reset services while still authenticated
@@ -2126,9 +2160,9 @@ const AppComponent: React.FC = () => {
                         console.warn('Failed to reset welcome message tracking:', error);
                     }
                     
-                    console.log('User logged out successfully');
+                    console.log('User logged out and reset successfully');
                 } catch (error) {
-                    console.error('Logout error:', error);
+                    console.error('Logout and reset error:', error);
                     // Even if Supabase logout fails, clear local data
                     await executeFullReset();
                 }
@@ -2645,7 +2679,7 @@ const AppComponent: React.FC = () => {
                 label: canAccessDeveloperFeatures(authState.user?.email) ? 'Logout & Reset' : 'Logout',
                 icon: LogoutIcon,
                 isDestructive: true,
-                action: canAccessDeveloperFeatures(authState.user?.email) ? handleResetApp : handleLogout,
+                action: canAccessDeveloperFeatures(authState.user?.email) ? handleLogout : handleLogoutOnly,
             }
         ];
         setContextMenu({ targetRect, items: menuItems });
@@ -3201,7 +3235,7 @@ const AppComponent: React.FC = () => {
                     usage={usage}
                     onShowUpgrade={() => setShowUpgradeScreen(true)}
                     onShowVanguardUpgrade={handleUpgradeToVanguard}
-                    onLogout={handleLogout}
+                    onLogout={handleLogoutOnly}
                     onResetApp={handleResetApp}
                     onShowHowToUse={() => setOnboardingStatus('how-to-use')}
                     userEmail={authState.user?.email || ''}
