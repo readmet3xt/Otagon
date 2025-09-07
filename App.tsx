@@ -1198,14 +1198,21 @@ const AppComponent: React.FC = () => {
         // 2. No messages in conversation (first time or cleared)
         // 3. User hasn't interacted with chat yet (no text queries or images)
         // 4. Game pill hasn't been created yet (keep available in "Everything Else" tab)
+        // 5. No loading messages (hide when user is actively interacting)
         
         const hasInteractedWithChat = localStorage.getItem('otakon_has_interacted_with_chat') === 'true';
         const hasGamePill = Object.keys(conversations).some(id => id !== 'everything-else');
+        const hasLoadingMessages = loadingMessages.length > 0;
+        
+        // Don't show prompts if there are loading messages (user is actively interacting)
+        if (hasLoadingMessages) {
+            return false;
+        }
         
         return isFirstTime || 
                lastSuggestedPromptsShown === 0 || 
                (!hasInteractedWithChat && !hasGamePill);
-    }, [lastSuggestedPromptsShown, isFirstTime, conversations]);
+    }, [lastSuggestedPromptsShown, isFirstTime, conversations, loadingMessages]);
     
     // Function to reset interaction state for testing purposes
     const resetInteractionState = useCallback(() => {
@@ -3064,8 +3071,8 @@ const AppComponent: React.FC = () => {
                                  />
                             ))})()}
                              
-                             {/* Show suggested prompts directly below messages as part of chat flow */}
-                             {shouldShowSuggestedPromptsEnhanced() && (
+                             {/* Show suggested prompts directly below messages as part of chat flow - only when not loading */}
+                             {shouldShowSuggestedPromptsEnhanced() && loadingMessages.length === 0 && (
                                  <SuggestedPrompts 
                                      onPromptClick={(prompt) => handleSendMessage(prompt)} 
                                      isInputDisabled={isInputDisabled}

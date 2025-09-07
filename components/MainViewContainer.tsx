@@ -185,7 +185,9 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
         >
           {messages.length === 0 ? (
             <div className="flex-1 flex flex-col justify-center items-center h-full">
-              <SuggestedPrompts onPromptClick={onSendMessage} isInputDisabled={isInputDisabled} isFirstTime={isFirstTime} />
+              {loadingMessages.length === 0 && (
+                <SuggestedPrompts onPromptClick={onSendMessage} isInputDisabled={isInputDisabled} isFirstTime={isFirstTime} />
+              )}
             </div>
           ) : (
             <div className="flex flex-col gap-4 sm:gap-6 md:gap-8 lg:gap-10 w-full max-w-[95%] sm:max-w-4xl md:max-w-5xl mx-auto my-4 sm:my-6 md:my-8 lg:my-10">
@@ -204,8 +206,10 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
                 />
               ))}
               
-              {/* Show suggested prompts directly below messages as part of chat flow */}
-              <SuggestedPrompts onPromptClick={onSendMessage} isInputDisabled={isInputDisabled} isFirstTime={isFirstTime} />
+              {/* Show suggested prompts directly below messages as part of chat flow - only when not loading */}
+              {loadingMessages.length === 0 && (
+                <SuggestedPrompts onPromptClick={onSendMessage} isInputDisabled={isInputDisabled} isFirstTime={isFirstTime} />
+              )}
               
               <div ref={chatEndRef} />
             </div>
