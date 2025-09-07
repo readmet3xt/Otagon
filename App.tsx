@@ -159,8 +159,26 @@ const AppComponent: React.FC = () => {
     const [onboardingStatus, setOnboardingStatus] = useState<'login' | 'initial' | 'features' | 'pro-features' | 'how-to-use' | 'tier-splash' | 'complete'>(() => {
         // Check if localStorage is available before accessing it
         if (typeof window !== 'undefined' && window.localStorage) {
-            // For now, always start with 'login' to let the auth service handle the flow
-            // This prevents localStorage access during initialization
+            // Check for developer mode first
+            const isDeveloperMode = localStorage.getItem('otakon_developer_mode') === 'true';
+            const authMethod = localStorage.getItem('otakonAuthMethod');
+            const isDeveloperAuth = authMethod === 'skip';
+            
+            if (isDeveloperMode || isDeveloperAuth) {
+                console.log('🔧 Developer mode detected on app startup, skipping login');
+                return 'complete';
+            }
+            
+            // For authenticated users, check if they've completed onboarding
+            const hasCompletedOnboarding = localStorage.getItem('otakonOnboardingComplete');
+            const hasCompletedProfileSetup = localStorage.getItem('otakon_profile_setup_completed');
+            
+            if (hasCompletedOnboarding && hasCompletedProfileSetup) {
+                console.log('🔧 Returning user detected on app startup, skipping login');
+                return 'complete';
+            }
+            
+            // Default to login for new users
             return 'login';
         }
         return 'login';
@@ -355,11 +373,22 @@ const AppComponent: React.FC = () => {
             hasUser: !!authState.user, 
             loading: authState.loading, 
             onboardingStatus,
-            authMethod: localStorage.getItem('otakonAuthMethod')
+            authMethod: localStorage.getItem('otakonAuthMethod'),
+            isDeveloperMode: localStorage.getItem('otakon_developer_mode') === 'true'
         });
         
+        // Check for developer mode first
+        const isDeveloperMode = localStorage.getItem('otakon_developer_mode') === 'true';
+        const authMethod = localStorage.getItem('otakonAuthMethod');
+        const isDeveloperAuth = authMethod === 'skip';
+        
+        if ((isDeveloperMode || isDeveloperAuth) && onboardingStatus === 'login') {
+            console.log('🔧 Developer mode detected on login screen, transitioning to app');
+            setOnboardingStatus('complete');
+            setView('app');
+        }
         // Only transition if user just became authenticated and we're on login screen
-        if (authState.user && !authState.loading && onboardingStatus === 'login') {
+        else if (authState.user && !authState.loading && onboardingStatus === 'login') {
             console.log('User authenticated on login screen, checking for recent auth...');
             
             // Check if this is a fresh authentication (not a page reload with existing session)
@@ -741,7 +770,16 @@ const AppComponent: React.FC = () => {
 
     // Direct app access - no migration needed
     useEffect(() => {
-        if (authState.user && !authState.loading) {
+        // Check for developer mode first
+        const isDeveloperMode = localStorage.getItem('otakon_developer_mode') === 'true';
+        const authMethod = localStorage.getItem('otakonAuthMethod');
+        const isDeveloperAuth = authMethod === 'skip';
+        
+        if (isDeveloperMode || isDeveloperAuth) {
+            console.log('🔧 Developer mode detected, going directly to main app');
+            setOnboardingStatus('complete');
+            setView('app');
+        } else if (authState.user && !authState.loading) {
             console.log('✅ User authenticated, going directly to main app (no migration needed)');
             setOnboardingStatus('complete');
             setView('app');
