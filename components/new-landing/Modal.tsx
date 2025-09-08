@@ -41,10 +41,11 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, maxWidt
           </div>
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-3 text-[#A3A3A3] hover:text-white transition-colors rounded-lg hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#E53A3A]/50"
+            className="absolute top-4 right-4 p-2 text-[#A3A3A3] hover:text-white transition-colors rounded-lg hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#E53A3A]/50 z-20 cursor-pointer"
             aria-label="Close modal"
+            type="button"
           >
-            <XMarkIcon className="w-6 h-6" />
+            <XMarkIcon className="w-6 h-6 pointer-events-none" />
           </button>
         </div>
 

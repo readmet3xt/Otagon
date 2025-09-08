@@ -33,8 +33,8 @@ const FounderImage: React.FC<FounderImageProps> = ({
       {/* Founder Portrait */}
       <div className={`relative overflow-hidden rounded-full ${sizeClasses[size]} ${borderClasses} ${shadowClasses}`}>
         <img
-          src="/founder-image.jpg"
-          alt="Otakon Founder - AI Gaming Visionary"
+          src="/images/founder-image.jpg"
+          alt="Otagon Founder - AI Gaming Visionary"
           className="w-full h-full object-cover object-center"
           style={{
             objectPosition: 'center 30%' // Position to show face clearly

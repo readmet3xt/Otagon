@@ -20,6 +20,7 @@ import { longTermMemoryService } from './services/longTermMemoryService';
 import { contextManagementService } from './services/contextManagementService';
 import ConversationTabs from './components/ConversationTabs';
 import ContactUsModal from './components/ContactUsModal';
+import LandingContactUsModal from './components/new-landing/ContactUsModal';
 import HandsFreeToggle from './components/HandsFreeToggle';
 import { ttsService } from './services/ttsService';
 import { unifiedUsageService } from './services/unifiedUsageService';
@@ -46,6 +47,10 @@ import PolicyModal from './components/PolicyModal';
 import AboutPage from './components/AboutPage';
 import PrivacyPolicyPage from './components/PrivacyPolicyPage';
 import RefundPolicyPage from './components/RefundPolicyPage';
+import LandingPage from './components/new-landing/LandingPage';
+import AboutModal from './components/new-landing/AboutModal';
+import PrivacyPolicyModal from './components/new-landing/PrivacyPolicyModal';
+import RefundPolicyModal from './components/new-landing/RefundPolicyModal';
 import EditIcon from './components/EditIcon';
 import LogoutIcon from './components/LogoutIcon';
 import UserIcon from './components/UserIcon';
@@ -155,7 +160,7 @@ type ActiveModal = 'about' | 'privacy' | 'refund' | 'contact' | null;
 
 
 const AppComponent: React.FC = () => {
-    const [view, setView] = useState<'landing' | 'app'>('app');
+    const [view, setView] = useState<'landing' | 'app'>('landing');
     const [onboardingStatus, setOnboardingStatus] = useState<'login' | 'initial' | 'features' | 'pro-features' | 'how-to-use' | 'tier-splash' | 'complete'>(() => {
         // Check if localStorage is available before accessing it
         if (typeof window !== 'undefined' && window.localStorage) {
@@ -202,6 +207,12 @@ const AppComponent: React.FC = () => {
     const [activeSubView, setActiveSubView] = useState('chat');
     const [imagesForReview, setImagesForReview] = useState<ImageFile[]>([]);
     const [activeModal, setActiveModal] = useState<ActiveModal>(null);
+    
+    // Landing page modal states
+    const [isLandingAboutModalOpen, setIsLandingAboutModalOpen] = useState(false);
+    const [isLandingPrivacyModalOpen, setIsLandingPrivacyModalOpen] = useState(false);
+    const [isLandingRefundModalOpen, setIsLandingRefundModalOpen] = useState(false);
+    const [isLandingContactModalOpen, setIsLandingContactModalOpen] = useState(false);
     
     // Authentication State
     const [authState, setAuthState] = useState<AuthState>(() => authService.getAuthState());
@@ -505,7 +516,7 @@ const AppComponent: React.FC = () => {
             const recommendedPath = pwaNavigationService.getRecommendedNavigationPath();
             
             if (recommendedPath === 'login' && onboardingStatus !== 'login') {
-                // PWA installed, user not logged in - show login
+                // PWA installed, user not logged in - always show login
                 setOnboardingStatus('login');
                 setView('app');
             } else if (recommendedPath === 'chat' && onboardingStatus !== 'complete') {
@@ -779,12 +790,12 @@ const AppComponent: React.FC = () => {
             console.log('🔧 Developer mode detected, going directly to main app');
             setOnboardingStatus('complete');
             setView('app');
-        } else if (authState.user && !authState.loading) {
+        } else if (authState.user && !authState.loading && view !== 'landing' && !pwaNavigationState.isRunningInPWA) {
             console.log('✅ User authenticated, going directly to main app (no migration needed)');
             setOnboardingStatus('complete');
             setView('app');
         }
-    }, [authState.user, authState.loading]);
+    }, [authState.user, authState.loading, view, pwaNavigationState.isRunningInPWA]);
 
     // Sync usage with Supabase when authenticated
     useEffect(() => {
@@ -2592,6 +2603,64 @@ const AppComponent: React.FC = () => {
         setTimeout(() => chatInputRef.current?.focus(), 0);
     };
 
+    // Landing page handlers
+    const handleLandingGetStarted = () => {
+        setView('app');
+        setOnboardingStatus('login');
+    };
+
+    const handleLandingOpenAbout = () => {
+        setIsLandingAboutModalOpen(true);
+    };
+
+    const handleLandingOpenPrivacy = () => {
+        setIsLandingPrivacyModalOpen(true);
+    };
+
+    const handleLandingOpenRefund = () => {
+        setIsLandingRefundModalOpen(true);
+    };
+
+    const handleLandingOpenContact = () => {
+        setIsLandingContactModalOpen(true);
+    };
+
+    const handleLandingDirectNavigation = (path: string) => {
+        switch (path) {
+            case '/about':
+                setIsLandingAboutModalOpen(true);
+                break;
+            case '/privacy':
+                setIsLandingPrivacyModalOpen(true);
+                break;
+            case '/refund':
+                setIsLandingRefundModalOpen(true);
+                break;
+            case '/contact':
+                setIsLandingContactModalOpen(true);
+                break;
+            default:
+                break;
+        }
+    };
+
+    const handleLandingModalClose = (modalType: 'about' | 'privacy' | 'refund' | 'contact') => {
+        switch (modalType) {
+            case 'about':
+                setIsLandingAboutModalOpen(false);
+                break;
+            case 'privacy':
+                setIsLandingPrivacyModalOpen(false);
+                break;
+            case 'refund':
+                setIsLandingRefundModalOpen(false);
+                break;
+            case 'contact':
+                setIsLandingContactModalOpen(false);
+                break;
+        }
+    };
+
     const handleInsightContextMenu = (e: React.MouseEvent | React.TouchEvent, insightId: string, insightTitle: string) => {
         e.preventDefault();
         e.stopPropagation();
@@ -2886,10 +2955,36 @@ const AppComponent: React.FC = () => {
 
 
     if (view === 'landing') {
-        // Redirect to login instead of showing landing page
-        setOnboardingStatus('login');
-        setView('app');
-        return null;
+        return (
+            <>
+                <LandingPage
+                    onGetStarted={handleLandingGetStarted}
+                    onOpenAbout={handleLandingOpenAbout}
+                    onOpenPrivacy={handleLandingOpenPrivacy}
+                    onOpenRefund={handleLandingOpenRefund}
+                    onOpenContact={handleLandingOpenContact}
+                    onDirectNavigation={handleLandingDirectNavigation}
+                />
+                
+                {/* Landing Page Modals */}
+                <AboutModal 
+                    isOpen={isLandingAboutModalOpen} 
+                    onClose={() => handleLandingModalClose('about')} 
+                />
+                <PrivacyPolicyModal 
+                    isOpen={isLandingPrivacyModalOpen} 
+                    onClose={() => handleLandingModalClose('privacy')} 
+                />
+                <RefundPolicyModal 
+                    isOpen={isLandingRefundModalOpen} 
+                    onClose={() => handleLandingModalClose('refund')} 
+                />
+                <LandingContactUsModal 
+                    isOpen={isLandingContactModalOpen} 
+                    onClose={() => handleLandingModalClose('contact')} 
+                />
+            </>
+        );
     }
 
 
@@ -2898,6 +2993,7 @@ const AppComponent: React.FC = () => {
             onComplete={handleLoginComplete} 
             onOpenPrivacy={() => setActiveModal('privacy')}
             onOpenTerms={() => setActiveModal('about')}
+            onBackToLanding={() => setView('landing')}
         />;
     }
 

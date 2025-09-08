@@ -5,7 +5,7 @@ const PrivacyPolicyPage: React.FC = () => {
     <>
       <p className="text-neutral-400 mb-4 text-base">Last Updated: August 15, 2025</p>
 
-      <p>Welcome to Otakon! This Privacy Policy explains how we collect, use, and protect your information when you use our services. We are based in Hyderabad, India, and serve users across the globe.</p>
+      <p>Welcome to Otagon! This Privacy Policy explains how we collect, use, and protect your information when you use our services. We are based in Hyderabad, India, and serve users across the globe.</p>
 
       <h2 className="text-2xl font-bold text-white mt-8 mb-4">1. Information We Collect</h2>
       <p>We collect information to provide and improve our services:</p>
@@ -18,7 +18,7 @@ const PrivacyPolicyPage: React.FC = () => {
       <h2 className="text-2xl font-bold text-white mt-8 mb-4">2. How We Use Your Information</h2>
       <p>Your data is used for two primary purposes:</p>
       <ul className="list-disc list-inside space-y-2 mt-4 text-base">
-          <li><strong>To Provide the Service:</strong> We use your screenshots and text queries to generate AI-powered hints and insights, which is the core function of Otakon.</li>
+          <li><strong>To Provide the Service:</strong> We use your screenshots and text queries to generate AI-powered hints and insights, which is the core function of Otagon.</li>
           <li><strong>To Improve Our AI Models:</strong> Your screenshots and text queries are essential for refining our product. We use this data to train our AI models to better understand different games, contexts, and user needs. This allows us to provide more accurate, relevant, and spoiler-free hints for the entire community. All data used for training is anonymized and stripped of personal identifiers.</li>
       </ul>
 

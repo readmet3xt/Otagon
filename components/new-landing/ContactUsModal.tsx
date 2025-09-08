@@ -71,15 +71,15 @@ const ContactUsModal: React.FC<ContactUsModalProps> = ({ isOpen, onClose }) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex items-center space-x-3 text-[#CFCFCF]">
               <EnvelopeIcon className="w-5 h-5 text-[#FF4D4D]" />
-              <span>support@otakon.app</span>
+              <span>support@otagon.app</span>
             </div>
             <div className="flex items-center space-x-3 text-[#CFCFCF]">
               <PhoneIcon className="w-5 h-5 text-[#FFAB40]" />
-              <span>+1 (555) 123-4567</span>
+              <span>+91 8121602314</span>
             </div>
             <div className="flex items-center space-x-3 text-[#CFCFCF]">
               <MapPinIcon className="w-5 h-5 text-[#5CBB7B]" />
-              <span>San Francisco, CA</span>
+              <span>Hyderabad, India</span>
             </div>
           </div>
         </div>

@@ -208,26 +208,27 @@ const PricingSection = ({ onCtaClick }: { onCtaClick: () => void }) => {
         <section id="pricing" className="py-20 md:py-28 bg-transparent">
             <div className="container mx-auto px-8">
                 <div className="text-center mb-16 md:mb-20 animate-fade-slide-up">
-                    <h2 className="text-5xl md:text-6xl font-bold tracking-tight text-white mb-6">Simple, Fair Pricing</h2>
-                    <p className="text-xl text-neutral-300 mt-6 leading-relaxed">Start for free, upgrade when you're ready.</p>
+                    <h2 className="text-5xl md:text-6xl font-bold tracking-tight text-white mb-6">Choose Your Plan</h2>
+                    <p className="text-xl text-neutral-300 mt-6 leading-relaxed">Start for free. Upgrade when you're ready.</p>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-stretch">
                     
                     {/* Free Plan */}
-                    <div className="bg-gradient-to-r from-[#1C1C1C]/60 to-[#0A0A0A]/60 backdrop-blur-xl border-2 border-neutral-800/60 rounded-3xl p-10 flex flex-col animate-fade-slide-up hover:border-neutral-700/80 hover:scale-105 transition-all duration-500">
+                    <div className="bg-gradient-to-r from-[#1C1C1C]/60 to-[#0A0A0A]/60 backdrop-blur-xl border-2 border-neutral-800/60 rounded-3xl p-10 flex flex-col animate-fade-slide-up hover:border-neutral-700/80 hover:scale-105 hover:shadow-[0_0_30px_rgba(229,58,58,0.3)] hover:shadow-[#E53A3A]/20 transition-all duration-500">
                         <h3 className="text-3xl font-bold text-white mb-3">Free</h3>
-                        <p className="text-neutral-300 mt-3 mb-8 text-lg">For casual players getting started.</p>
+                        <p className="text-neutral-300 mt-3 mb-8 text-lg">For the Casual Player</p>
                         <div className="mb-8">
                             <span className="text-6xl font-bold text-white">$0</span>
-                            <span className="text-xl text-neutral-300">/mo</span>
+                            <span className="text-xl text-neutral-300">/month</span>
                         </div>
                         <ul className="space-y-4 mb-10">
-                            <FeatureListItem>55 Text Queries/month</FeatureListItem>
                             <FeatureListItem>25 Image Queries/month</FeatureListItem>
-                            <FeatureListItem>Standard AI Model</FeatureListItem>
-                            <FeatureListItem>Single Screenshot Upload</FeatureListItem>
+                            <FeatureListItem>55 Text Queries/month</FeatureListItem>
+                            <FeatureListItem>Standard AI Model (Gemini 2.5 Flash)</FeatureListItem>
+                            <FeatureListItem>PC-to-Mobile Sync (Single Screenshot)</FeatureListItem>
                             <FeatureListItem>Automatic Progress Tracking</FeatureListItem>
+                            <FeatureListItem>Otaku Diary & Wishlist</FeatureListItem>
                         </ul>
                         <div className="mt-auto">
                             <button
@@ -236,7 +237,7 @@ const PricingSection = ({ onCtaClick }: { onCtaClick: () => void }) => {
                                 disabled
                                 title="Coming Soon - Join the waitlist to be notified when pricing goes live!"
                             >
-                                Coming Soon
+                                Start for Free
                             </button>
                         </div>
                     </div>
@@ -247,17 +248,21 @@ const PricingSection = ({ onCtaClick }: { onCtaClick: () => void }) => {
                             Limited Offer
                         </div>
                         <h3 className="text-4xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-[#FF4D4D] to-[#FFAB40] mb-3">Pro Vanguard</h3>
-                        <p className="text-neutral-300 mt-3 mb-8 text-lg">Become a founding member with exclusive, permanent perks.</p>
+                        <p className="text-neutral-300 mt-3 mb-8 text-lg">Become a Founding Member</p>
                         <div className="mb-8">
                             <span className="text-6xl font-bold text-white">$20</span>
                             <span className="text-xl text-neutral-300">/year</span>
                             <p className="text-green-400 font-medium text-lg mt-2">Lifetime Price Guarantee!</p>
                         </div>
                         <ul className="space-y-4 mb-6">
-                            <FeatureListItem>All Pro features, plus:</FeatureListItem>
+                            <FeatureListItem>Everything in Pro, plus:</FeatureListItem>
                         </ul>
                         <ul className="space-y-4 mb-10 border-l-2 border-[#FFAB40]/40 pl-6 ml-2">
-                            {vanguardFeatures.map(feature => <VanguardFeatureListItem key={feature.text} comingSoon={feature.comingSoon}>{feature.text}</VanguardFeatureListItem>)}
+                            <VanguardFeatureListItem>Permanent Price Lock-in</VanguardFeatureListItem>
+                            <VanguardFeatureListItem>Exclusive 'Vanguard' In-App Badge</VanguardFeatureListItem>
+                            <VanguardFeatureListItem>Access to Founder's Council on Discord</VanguardFeatureListItem>
+                            <VanguardFeatureListItem>Beta Access to All Future Features</VanguardFeatureListItem>
+                            <VanguardFeatureListItem comingSoon={true}>Revenue Sharing Opportunities</VanguardFeatureListItem>
                         </ul>
                         <div className="mt-auto">
                             <button 
@@ -266,21 +271,29 @@ const PricingSection = ({ onCtaClick }: { onCtaClick: () => void }) => {
                                 disabled
                                 title="Coming Soon - Join the waitlist to be notified when pricing goes live!"
                             >
-                                Coming Soon
+                                Become a Vanguard
                             </button>
                         </div>
                     </div>
 
                     {/* Pro (Monthly) Plan */}
-                    <div className="bg-gradient-to-r from-[#1C1C1C]/60 to-[#0A0A0A]/60 backdrop-blur-xl border-2 border-neutral-800/60 rounded-3xl p-10 flex flex-col animate-fade-slide-up hover:border-neutral-700/80 hover:scale-105 transition-all duration-500">
+                    <div className="bg-gradient-to-r from-[#1C1C1C]/60 to-[#0A0A0A]/60 backdrop-blur-xl border-2 border-neutral-800/60 rounded-3xl p-10 flex flex-col animate-fade-slide-up hover:border-neutral-700/80 hover:scale-105 hover:shadow-[0_0_30px_rgba(229,58,58,0.3)] hover:shadow-[#E53A3A]/20 transition-all duration-500">
                         <h3 className="text-3xl font-bold text-white mb-3">Pro</h3>
-                        <p className="text-neutral-300 mt-3 mb-8 text-lg">For serious gamers who want the best.</p>
+                        <p className="text-neutral-300 mt-3 mb-8 text-lg">For the Serious Gamer</p>
                         <div className="mb-8">
                             <span className="text-6xl font-bold text-white">$3.99</span>
-                            <span className="text-xl text-neutral-300">/mo</span>
+                            <span className="text-xl text-neutral-300">/month</span>
                         </div>
                         <ul className="space-y-4 mb-10">
-                            {proFeatures.map(feature => <FeatureListItem key={feature}>{feature}</FeatureListItem>)}
+                            <FeatureListItem>Everything in Free, plus:</FeatureListItem>
+                            <FeatureListItem>328 Image Queries/month</FeatureListItem>
+                            <FeatureListItem>1,583 Text Queries/month</FeatureListItem>
+                            <FeatureListItem>Advanced AI Model (Gemini 2.5 Pro)</FeatureListItem>
+                            <FeatureListItem>In-Depth Insight Tabs (Auto-Wiki)</FeatureListItem>
+                            <FeatureListItem>Hands-Free Voice Response</FeatureListItem>
+                            <FeatureListItem>Batch Screenshot Capture</FeatureListItem>
+                            <FeatureListItem>Enhanced Response Quality</FeatureListItem>
+                            <FeatureListItem>Priority Support & No Ads</FeatureListItem>
                         </ul>
                         <div className="mt-auto">
                             <button 
@@ -289,7 +302,7 @@ const PricingSection = ({ onCtaClick }: { onCtaClick: () => void }) => {
                                 disabled
                                 title="Coming Soon - Join the waitlist to be notified when pricing goes live!"
                             >
-                                Coming Soon
+                                Go Pro
                             </button>
                         </div>
                     </div>
@@ -300,7 +313,7 @@ const PricingSection = ({ onCtaClick }: { onCtaClick: () => void }) => {
 };
 
 const CommunityChallengeSection = ({ onShareClick }: { onShareClick: () => void }) => {
-    const proUserGoal = 3000;
+    const proUserGoal = 5000;
     const currentProUsers = 137; // This is a static value for now.
     const progressPercentage = (currentProUsers / proUserGoal) * 100;
 
@@ -308,8 +321,8 @@ const CommunityChallengeSection = ({ onShareClick }: { onShareClick: () => void 
         <section id="community-challenge" className="py-16 md:py-20 bg-transparent">
             <div className="container mx-auto px-6 max-w-4xl">
                 <div className="text-center mb-12 md:mb-16 animate-fade-slide-up">
-                    <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white">Community Challenge</h2>
-                    <p className="text-2xl mt-2 text-transparent bg-clip-text bg-gradient-to-r from-[#5CBB7B] to-[#4CAF50]">Remove Ads for Free Users!</p>
+                    <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white">Help Us Go Ad-Free for Everyone!</h2>
+                    
                 </div>
 
                 <div className="bg-[#1C1C1C]/40 backdrop-blur-sm border border-neutral-800 rounded-2xl p-8 md:p-12 animate-fade-slide-up">
@@ -332,7 +345,7 @@ const CommunityChallengeSection = ({ onShareClick }: { onShareClick: () => void 
 
                     {/* Explanation */}
                     <p className="text-lg text-center text-neutral-300 mb-10 leading-relaxed">
-                        When we hit our goal of 3,000 Pro subscribers, we will <span className="font-bold text-white">permanently remove all ads for Free users.</span> Let's build a better platform, together.
+                        When we hit our goal of 5,000 Pro subscribers, we will <span className="font-bold text-white">permanently remove all ads for Free users.</span> Let's build a better platform, together.
                     </p>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 mb-10 text-center md:text-left">
@@ -343,7 +356,7 @@ const CommunityChallengeSection = ({ onShareClick }: { onShareClick: () => void 
                             </div>
                             <h3 className="text-xl font-bold text-white mb-2">Free Users: Spread the Word!</h3>
                             <p className="text-neutral-400">
-                                You have the power to make Otakon ad-free. Share the app with friends, post about it, and help us reach our goal faster!
+                                You have the power to make Otagon ad-free. Share the app with friends, post about it, and help us reach our goal faster!
                             </p>
                         </div>
 
@@ -390,9 +403,10 @@ const EarnByPlayingSection = ({ onApplyClick }: { onApplyClick: () => void }) =>
                         <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-2">
                             Earn by Playing
                         </h2>
-                        <div className="mb-8">
+                        <div className="mb-4">
                             <span className="text-base font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30 px-3 py-1 rounded-full uppercase tracking-wider">Coming Soon</span>
                         </div>
+                        <p className="text-lg text-[#FFAB40] font-semibold mb-8">Exclusive to Vanguard Users</p>
                     </div>
 
                     <div className="flex-grow">
@@ -460,7 +474,7 @@ const FounderSection = () => (
                     <div className="bg-gradient-to-r from-[#0F0F0F]/60 to-[#1A1A1A]/60 border-2 border-neutral-700/60 rounded-2xl p-8 md:p-10 backdrop-blur-sm">
                         <p className="text-[#CFCFCF] leading-relaxed text-lg md:text-xl italic">
                             "Like you, I've spent my life passionate about games. From getting lost in the deep lore of modern RPGs 
-                            to the frustration of needing a small hint and getting a massive spoiler in return. That's why I built Otakon 
+                            to the frustration of needing a small hint and getting a massive spoiler in return. That's why I built Otagon 
                             - to preserve the magic of discovery while giving you just the nudge you need."
                         </p>
                     </div>
@@ -522,6 +536,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
         }
     }, [onDirectNavigation]);
 
+
+
     const handleWaitlistSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!email) return;
@@ -550,8 +566,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: 'Otakon - Your Spoiler-Free Gaming Companion',
-                    text: 'Stuck in-game? Get instant, spoiler-free hints with Otakon! Help us go ad-free for everyone.',
+                    title: 'Otagon - Your Spoiler-Free Gaming Companion',
+                    text: 'Stuck in-game? Get instant, spoiler-free hints with Otagon! Help us go ad-free for everyone.',
                     url: window.location.href,
                 });
             } catch (error) {
@@ -573,7 +589,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
     };
 
     return (
-        <div className="text-white font-inter animate-fade-in overflow-x-hidden relative">
+        <div 
+            className="text-white font-inter animate-fade-in overflow-x-hidden relative min-h-screen"
+            style={{
+                backgroundImage: `
+                    radial-gradient(rgba(255, 77, 77, 0.25) 2px, transparent 2px),
+                    radial-gradient(rgba(255, 77, 77, 0.25) 2px, #111111 2px)
+                `,
+                backgroundSize: '80px 80px',
+                backgroundPosition: '0 0, 40px 40px',
+                backgroundColor: '#111111'
+            }}
+        >
+
+            
+
+            
             {/* Background Glows */}
             <div
               className="absolute top-0 left-0 w-full h-full -z-10 pointer-events-none hero-glow-texture-top"
@@ -599,22 +630,21 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                     <div className="container mx-auto px-6 relative z-10">
                         <div className="flex flex-col items-center justify-center gap-4 mb-10 animate-fade-slide-down">
                             <Logo className="h-32 w-32" />
-                            <h1 className="text-6xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#FF4D4D] to-[#FFAB40]">
-                                Otakon
+                            <h1 className="text-6xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#FF4D4D] to-[#FFAB40] py-2">
+                                Otagon
                             </h1>
                         </div>
 
                         <h2 className="text-6xl md:text-7xl font-bold tracking-tight mb-8 text-white animate-fade-slide-up leading-tight">
-                            Stuck In-Game?
-                            <br/>
-                            Get Instant, Spoiler-Free Hints
+                            Stuck In-Game? Get Hints, Not Spoilers.
                         </h2>
 
                         <AppMockup />
                         
                         <p className="text-xl md:text-2xl text-neutral-300 max-w-4xl mx-auto mb-16 leading-relaxed animate-fade-slide-up">
-                            Stop ruining the surprise with confusing wikis and spoiler-filled videos. Otakon sees your screen and gives you the exact nudge you need—without giving away what's next.
+                            Otagon sees your screen and gives you the perfect nudge to keep you playing—without ruining the surprise. Stop searching, start playing.
                         </p>
+                        
                         <form id="waitlist-form" onSubmit={handleWaitlistSubmit} className="flex flex-col sm:flex-row gap-4 max-w-xl mx-auto animate-fade-slide-up">
                             <input
                                 type="email"
@@ -637,7 +667,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                                         Joining...
                                     </div>
                                 ) : (
-                                    'Join Waitlist'
+                                    'Join the Waitlist'
                                 )}
                             </button>
                         </form>
@@ -647,6 +677,55 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                                 {submitMessage}
                             </div>
                         )}
+                        
+                        <p className="text-sm text-neutral-400 mt-4 animate-fade-slide-up">
+                            Join thousands of gamers on the waitlist!
+                        </p>
+                    </div>
+                </section>
+
+                {/* How It Works Section */}
+                <section className="py-20 md:py-28 bg-transparent relative">
+                    <div className="container mx-auto px-8 max-w-6xl relative z-10">
+                        <div className="text-center mb-16 md:mb-20 animate-fade-slide-up">
+                            <h2 className="text-5xl md:text-6xl font-bold tracking-tight text-white mb-6">From Stuck to Unstoppable in 3 Steps</h2>
+                            <p className="text-xl text-neutral-300 mt-6 leading-relaxed">Get unstuck, get smart, get back to gaming—all without leaving your game.</p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                            {/* Step 1 */}
+                            <div className="text-center animate-fade-slide-up">
+                                <div className="flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-r from-[#E53A3A]/20 to-[#D98C1F]/20 border-2 border-[#E53A3A]/40 mx-auto mb-6">
+                                    <span className="text-3xl font-bold text-white">1</span>
+                                </div>
+                                <h3 className="text-2xl font-bold text-white mb-4">Press a Hotkey</h3>
+                                <p className="text-lg text-neutral-300 leading-relaxed">
+                                    Press a hotkey to instantly send your PC screenshot to your phone. No alt-tabbing, no interruptions.
+                                </p>
+                            </div>
+                            
+                            {/* Step 2 */}
+                            <div className="text-center animate-fade-slide-up">
+                                <div className="flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-r from-[#E53A3A]/20 to-[#D98C1F]/20 border-2 border-[#E53A3A]/40 mx-auto mb-6">
+                                    <span className="text-3xl font-bold text-white">2</span>
+                                </div>
+                                <h3 className="text-2xl font-bold text-white mb-4">Get an Instant Hint</h3>
+                                <p className="text-lg text-neutral-300 leading-relaxed">
+                                    Our AI analyzes your situation and delivers a perfect, spoiler-free hint in seconds.
+                                </p>
+                            </div>
+                            
+                            {/* Step 3 */}
+                            <div className="text-center animate-fade-slide-up">
+                                <div className="flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-r from-[#E53A3A]/20 to-[#D98C1F]/20 border-2 border-[#E53A3A]/40 mx-auto mb-6">
+                                    <span className="text-3xl font-bold text-white">3</span>
+                                </div>
+                                <h3 className="text-2xl font-bold text-white mb-4">Keep Playing</h3>
+                                <p className="text-lg text-neutral-300 leading-relaxed">
+                                    Get the nudge you need and dive right back into the action. No spoilers, just the perfect hint.
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
@@ -655,37 +734,124 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
 
                     <div className="container mx-auto px-8 max-w-6xl relative z-10">
                         <div className="text-center mb-16 md:mb-20 animate-fade-slide-up">
-                            <h2 className="text-5xl md:text-6xl font-bold tracking-tight text-white mb-6">Ditch the Walkthroughs, Play Smarter</h2>
+                            <h2 className="text-5xl md:text-6xl font-bold tracking-tight text-white mb-6">Your All-in-One Gaming Assistant</h2>
                             <p className="text-xl text-neutral-300 mt-6 leading-relaxed">Features built to enhance your gameplay, not spoil it</p>
                         </div>
                         <div className="space-y-20 md:space-y-28">
                            <Feature
-                                title="Context-Aware AI Vision"
-                                description="Otakon's vision AI identifies your game, location, quests, and gear from a single screenshot. It understands your exact situation to give you the perfect, spoiler-free hint."
+                                title="Instant Contextual Hints"
+                                description="Our context-aware AI vision doesn't just see a game; it understands your moment. Get guidance on puzzles, lore, and boss strategies, all without spoilers."
                                 icon="eye"
                             />
                             <Feature
                                 title="Seamless PC-to-Mobile Sync"
-                                description="Instantly send screenshots from your PC to your phone with a simple hotkey. Get guidance without ever minimizing your game or breaking your immersion."
+                                description="Link your desktop and phone for the ultimate uninterrupted experience. A single hotkey is all it takes to get help without ever minimizing your game."
                                 icon="network"
                                 reverse={true}
                             />
                            <Feature
-                                title={<>In-Depth Insight Tabs<ProBadge /></>}
-                                description="Go beyond simple hints. Otakon automatically builds a game wiki for you with tabs on lore, characters, build guides, and secrets you might have missed."
-                                icon="insights"
+                                title="Your Personal Gaming Hub"
+                                description="Track your entire gaming life. The Otaku Diary is your private journal, the Wishlist manages your backlog, and Automatic Progress Tracking organizes your game chats and story progress."
+                                icon="bookmark"
                             />
+
                             <Feature
-                                title={<>Go Completely Hands-Free<ProBadge /></>}
-                                description="When connected to your PC, Otakon can read hints aloud. Get help without touching a single button, keeping you fully immersed in the action."
-                                icon="mic"
+                                title={<>Go Pro for the Ultimate Edge<ProBadge /></>}
+                                description="Unlock In-Depth Insight Tabs to auto-generate a wiki for your game, use Hands-Free Voice Responses for ultimate immersion, and capture more detail with Batch Screenshot Capture."
+                                icon="insights"
                                 reverse={true}
                             />
-                            <Feature
-                                title="Powered by Google's Best AI"
-                                description="We leverage Google's latest Gemini models, the same state-of-the-art AI behind their flagship products. This means you get the fastest, most accurate, and most contextually-aware gaming assistant on the planet."
-                                icon="cpu"
-                            />
+                        </div>
+                    </div>
+                </section>
+
+                {/* For Every Gamer, For Every Genre Section */}
+                <section className="py-20 md:py-28 bg-transparent relative">
+                    <div className="container mx-auto px-8 max-w-6xl relative z-10">
+                        <div className="text-center mb-16 md:mb-20 animate-fade-slide-up">
+                            <h2 className="text-5xl md:text-6xl font-bold tracking-tight text-white mb-6">For Every Challenge, In Every World</h2>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {/* Souls-likes & Action RPGs */}
+                            <div className="text-center animate-fade-slide-up">
+                                <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-[#E53A3A]/20 to-[#D98C1F]/20 border-2 border-[#E53A3A]/40 mx-auto mb-4">
+                                    <svg className="w-8 h-8 text-[#E53A3A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                    </svg>
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-3">Souls-likes & Action RPGs</h3>
+                                <p className="text-neutral-300 leading-relaxed">
+                                    Master tough bosses and find hidden paths without rage-quitting. We'll give you a hint, not the easy way out.
+                                </p>
+                            </div>
+                            
+                            {/* RPGs */}
+                            <div className="text-center animate-fade-slide-up">
+                                <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-[#E53A3A]/20 to-[#D98C1F]/20 border-2 border-[#E53A3A]/40 mx-auto mb-4">
+                                    <svg className="w-8 h-8 text-[#E53A3A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 5.477 9.246 5 7.5 5s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 19 16.5 19c-1.746 0-3.332-.523-4.5-1.253"/>
+                                    </svg>
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-3">RPGs</h3>
+                                <p className="text-neutral-300 leading-relaxed">
+                                    Uncover deep lore and track complex quests without accidentally reading a major story spoiler.
+                                </p>
+                            </div>
+                            
+                            {/* Puzzle Games */}
+                            <div className="text-center animate-fade-slide-up">
+                                <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-[#E53A3A]/20 to-[#D98C1F]/20 border-2 border-[#E53A3A]/40 mx-auto mb-4">
+                                    <svg className="w-8 h-8 text-[#E53A3A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                                    </svg>
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-3">Puzzle Games</h3>
+                                <p className="text-neutral-300 leading-relaxed">
+                                    Get a clue for that brain-bending puzzle, not the entire solution. Preserve your "aha!" moment.
+                                </p>
+                            </div>
+                            
+                            {/* Open-World Adventures */}
+                            <div className="text-center animate-fade-slide-up">
+                                <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-[#E53A3A]/20 to-[#D98C1F]/20 border-2 border-[#E53A3A]/40 mx-auto mb-4">
+                                    <svg className="w-8 h-8 text-[#E53A3A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-3">Open-World Adventures</h3>
+                                <p className="text-neutral-300 leading-relaxed">
+                                    Hunt down every last collectible and conquer secret challenges with a gentle nudge in the right direction.
+                                </p>
+                            </div>
+                            
+                            {/* Strategy Games */}
+                            <div className="text-center animate-fade-slide-up">
+                                <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-[#E53A3A]/20 to-[#D98C1F]/20 border-2 border-[#E53A3A]/40 mx-auto mb-4">
+                                    <svg className="w-8 h-8 text-[#E53A3A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                    </svg>
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-3">Metroidvanias</h3>
+                                <p className="text-neutral-300 leading-relaxed">
+                                    Lost after finding a new power? Discover which hidden path just opened up without checking a full map.
+                                </p>
+                            </div>
+                            
+                            {/* Survival & Crafting */}
+                            <div className="text-center animate-fade-slide-up">
+                                <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-[#E53A3A]/20 to-[#D98C1F]/20 border-2 border-[#E53A3A]/40 mx-auto mb-4">
+                                    <svg className="w-8 h-8 text-[#E53A3A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                                    </svg>
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-3">Survival & Crafting</h3>
+                                <p className="text-neutral-300 leading-relaxed">
+                                    Need a specific resource? Learn where to find it or what recipe you're missing to build your ultimate base.
+                                </p>
+                            </div>
+                            
+
                         </div>
                     </div>
                 </section>
@@ -705,11 +871,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                     <div className="container mx-auto px-8 max-w-6xl relative z-10">
                         <div className="text-center mb-16 md:mb-20 animate-fade-slide-up">
                             <h2 className="text-5xl md:text-6xl font-bold tracking-tight text-white mb-6">Don't Just Take Our Word For It</h2>
-                            <p className="text-xl text-neutral-300 mt-6 leading-relaxed">See what early adopters are saying about Otakon.</p>
+                            <p className="text-xl text-neutral-300 mt-6 leading-relaxed">See what early adopters are saying about Otagon.</p>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <Testimonial
-                                quote="Finally, a way to get hints without wading through spoiler-filled wikis! Otakon is a game-changer for finishing my backlog."
+                                quote="Finally, a way to get hints without wading through spoiler-filled wikis! Otagon is a game-changer for finishing my backlog."
                                 author="Safi"
                                 title="RPG Enthusiast"
                             />
@@ -727,12 +893,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                 {/* CTA Section */}
                 <section className="py-16 md:py-20 bg-transparent relative">
                      <div className="container mx-auto px-6 text-center relative">
-                          <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-10">Your Next Adventure Awaits, Unspoiled</h2>
+                          <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-6">Stop Searching. Start Playing.</h2>
+                          <p className="text-xl text-neutral-300 mb-10 max-w-3xl mx-auto leading-relaxed">
+                            Join the waitlist and be the first to experience the future of gaming assistance. Your next adventure awaits, unspoiled.
+                          </p>
                           <button
                             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                             className="bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white font-bold py-4 px-10 rounded-lg transition-transform transform hover:scale-105 text-lg"
                             >
-                            Join Waitlist
+                            Get Early Access
                           </button>
                      </div>
                 </section>
@@ -741,20 +910,28 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
             {/* Footer */}
             <footer className="bg-transparent border-t border-neutral-800/50">
                 <div className="container mx-auto px-6 py-8">
-                    <div className="flex flex-col md:flex-row justify-between items-center text-center md:text-left gap-6">
-                        <div>
-                            <div className="flex items-center gap-3 mx-auto md:mx-0">
-                                <Logo className="h-8 w-8" />
-                                <span className="text-xl font-bold">Otakon</span>
-                            </div>
-                             <p className="text-neutral-400 mt-2 text-sm">&copy; {new Date().getFullYear()} Otakon. All rights reserved.</p>
-                        </div>
-                        <div className="flex items-center gap-6 text-sm font-medium text-neutral-400">
+                    <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+                        {/* Footer Links - Above logo on mobile, right side on desktop */}
+                        <div className="flex items-center gap-6 text-sm font-medium text-neutral-400 order-1 md:order-2">
                            <a href="#pricing" onClick={handleScrollTo('pricing')} className="hover:text-white transition-colors">Pricing</a>
                            <a href="/about" onClick={(e) => { e.preventDefault(); onDirectNavigation('/about'); }} className="hover:text-white transition-colors">About</a>
                            <a href="/privacy" onClick={(e) => { e.preventDefault(); onDirectNavigation('/privacy'); }} className="hover:text-white transition-colors">Privacy</a>
                            <a href="/refund" onClick={(e) => { e.preventDefault(); onDirectNavigation('/refund'); }} className="hover:text-white transition-colors">Refund Policy</a>
                            <a href="/contact" onClick={(e) => { e.preventDefault(); onDirectNavigation('/contact'); }} className="hover:text-white transition-colors">Contact Us</a>
+                        </div>
+                        
+                        {/* Logo and Branding - Centered on mobile, left side on desktop */}
+                        <div className="flex flex-col items-center md:items-start text-center md:text-left order-2 md:order-1">
+                            <div className="flex items-center gap-3">
+                                <button 
+                                    onClick={onGetStarted}
+                                    className="cursor-pointer hover:scale-105 transition-transform duration-300"
+                                >
+                                    <Logo className="h-8 w-8" />
+                                </button>
+                                <span className="text-xl font-bold">Otagon</span>
+                            </div>
+                             <p className="text-neutral-400 mt-2 text-sm">&copy; {new Date().getFullYear()} Otagon. All rights reserved.</p>
                         </div>
                     </div>
                 </div>

@@ -12,11 +12,12 @@ interface LoginSplashScreenProps {
     onComplete: () => void;
     onOpenPrivacy?: () => void;
     onOpenTerms?: () => void;
+    onBackToLanding?: () => void;
 }
 
 type EmailMode = 'options' | 'signin' | 'signup' | 'forgot-password';
 
-const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, onOpenPrivacy, onOpenTerms }) => {
+const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, onOpenPrivacy, onOpenTerms, onBackToLanding }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -72,9 +73,9 @@ const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, onOpe
             if (method === 'google') {
                 const result = await authService.signInWithGoogle();
                 if (result.success) {
-                    console.log('Google OAuth successful, proceeding to next screen...');
+                    console.log('Google OAuth initiated successfully, waiting for authentication to complete...');
                     completeOnboardingStep('login', 1, { method: 'google', success: true });
-                    onComplete();
+                    // Don't call onComplete() here - let the authentication success handler in App.tsx handle the next screen
                 } else {
                     console.error('Google OAuth failed:', result.error);
                     trackOnboardingDropOff('login', 1, 'google_oauth_failed', { error: result.error });
@@ -83,9 +84,9 @@ const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, onOpe
             } else if (method === 'discord') {
                 const result = await authService.signInWithDiscord();
                 if (result.success) {
-                    console.log('Discord OAuth successful, proceeding to next screen...');
+                    console.log('Discord OAuth initiated successfully, waiting for authentication to complete...');
                     completeOnboardingStep('login', 1, { method: 'discord', success: true });
-                    onComplete();
+                    // Don't call onComplete() here - let the authentication success handler in App.tsx handle the next screen
                 } else {
                     console.error('Discord OAuth failed:', result.error);
                     trackOnboardingDropOff('login', 1, 'discord_oauth_failed', { error: result.error });
@@ -197,6 +198,9 @@ const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, onOpe
 
     const handleSkip = () => {
         if (developerPassword === 'zircon123') {
+            // Set developer mode flag in localStorage
+            localStorage.setItem('otakon_developer_mode', 'true');
+            console.log('🔧 Developer mode activated successfully!');
             onComplete();
         } else {
             setErrorMessage('Incorrect developer password.');
@@ -304,7 +308,7 @@ const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, onOpe
                     <form onSubmit={handleEmailSignUp} className="w-full space-y-6">
                         <div className="text-left mb-8">
                             <h2 className="text-3xl font-bold text-white mb-3 bg-clip-text text-transparent bg-gradient-to-r from-[#FF4D4D] to-[#FFAB40]">Create Account</h2>
-                            <p className="text-[#A3A3A3] text-lg">Join Otakon AI and start your gaming journey</p>
+                            <p className="text-[#A3A3A3] text-lg">Join Otagon AI and start your gaming journey</p>
                         </div>
                         
                         {errorMessage && (
@@ -469,113 +473,75 @@ const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, onOpe
     };
 
     return (
-        <div className="h-screen bg-gradient-to-br from-[#111111] to-[#0A0A0A] text-[#F5F5F5] flex flex-col items-center justify-center font-inter px-4 sm:px-6 md:px-8 pt-12 sm:pt-16 pb-16 sm:pb-20 text-center overflow-hidden animate-fade-in">
+        <div className="h-screen bg-gradient-to-br from-[#111111] to-[#0A0A0A] text-[#F5F5F5] flex flex-col items-center justify-center font-inter px-4 sm:px-6 md:px-8 text-center overflow-hidden animate-fade-in">
             <div className="absolute top-0 left-0 w-full h-full bg-gradient-radial-at-top from-[#1C1C1C]/30 to-transparent pointer-events-none"></div>
             
             {/* Main Content - Centered */}
-            <div className="flex-1 flex flex-col items-center justify-center">
-                <div className="animate-fade-slide-up">
-                    <Logo className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24" />
+            <div className="flex flex-col items-center justify-center w-full max-w-2xl pb-16">
+                <div className="animate-fade-slide-up flex-shrink-0 mb-1">
+                    <Logo className="w-24 h-24 sm:w-26 sm:h-26 md:w-28 md:h-28" />
                 </div>
 
-                            <h1 
-                className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#FF4D4D] to-[#FFAB40] mt-6 sm:mt-8 mb-4 sm:mb-6 animate-fade-slide-up leading-tight"
-               
-            >
-                Welcome to Otakon
-            </h1>
+                <h1 
+                    className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#FF4D4D] to-[#FFAB40] animate-fade-slide-up leading-normal"
+                >
+                    Welcome to Otagon
+                </h1>
 
-            <p 
-                className="text-lg sm:text-xl md:text-2xl text-[#CFCFCF] mb-12 sm:mb-16 leading-relaxed animate-fade-slide-up"
-               
-            >
-                Your Spoiler-Free Gaming Companion
-            </p>
+                <p 
+                    className="text-base text-[#CFCFCF] leading-relaxed animate-fade-slide-up mt-1"
+                >
+                    {emailMode === 'signin' ? 'Sign in to continue your gaming journey' : 'Join Otagon AI and start your gaming journey'}
+                </p>
 
                 {emailMode === 'options' ? (
                     <div 
-                        className="flex flex-col items-center justify-center gap-4 sm:gap-6 w-full max-w-lg px-4 sm:px-0 animate-fade-slide-up"
+                        className="flex flex-col items-center justify-center gap-4 w-full max-w-lg px-4 sm:px-0 animate-fade-slide-up mt-12"
                        
                     >
                     <button
                         onClick={() => handleAuth('google')}
                         disabled={isLoading}
-                        className={`w-full flex items-center justify-center bg-gradient-to-r from-white to-gray-100 hover:from-gray-100 hover:to-gray-200 text-gray-800 font-bold py-4 sm:py-5 px-6 sm:px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 text-base sm:text-lg ${buttonAnimations.google ? 'animate-pulse-glow' : ''}`}
+                        className={`w-full flex items-center justify-center bg-gradient-to-r from-white to-gray-100 hover:from-gray-100 hover:to-gray-200 text-gray-800 font-bold py-3 px-6 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 text-base ${buttonAnimations.google ? 'animate-pulse-glow' : ''}`}
                     >
-                        <div className="flex items-center gap-4 w-full max-w-sm">
+                        <span className="inline-flex items-center gap-3">
                             <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
                                 <GoogleIcon className="w-6 h-6" />
                             </div>
-                            <span className="text-left flex-1">Continue with Google</span>
-                        </div>
+                            <span>Continue with Google</span>
+                        </span>
                     </button>
                     
                     <button
                         onClick={() => handleAuth('discord')}
                         disabled={isLoading}
-                        className={`w-full flex items-center justify-center bg-gradient-to-r from-[#5865F2] to-[#4752C4] hover:from-[#4752C4] hover:to-[#3C45A5] text-white font-bold py-4 sm:py-5 px-6 sm:px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#5865F2]/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 text-base sm:text-lg ${buttonAnimations.discord ? 'animate-pulse-glow' : ''}`}
+                        className={`w-full flex items-center justify-center bg-gradient-to-r from-[#5865F2] to-[#4752C4] hover:from-[#4752C4] hover:to-[#3C45A5] text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#5865F2]/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 text-base ${buttonAnimations.discord ? 'animate-pulse-glow' : ''}`}
                     >
-                        <div className="flex items-center gap-4 w-full max-w-sm">
+                        <span className="inline-flex items-center gap-3">
                             <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
                                 <DiscordIcon className="w-6 h-6" />
                             </div>
-                            <span className="text-left flex-1">Continue with Discord</span>
-                        </div>
+                            <span>Continue with Discord</span>
+                        </span>
                     </button>
                     
                     <button
                         onClick={() => handleAuth('email')}
                         disabled={isLoading}
-                        className={`w-full flex items-center justify-center bg-gradient-to-r from-neutral-700 to-neutral-600 hover:from-neutral-600 hover:to-neutral-500 text-white font-bold py-4 sm:py-5 px-6 sm:px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 text-base sm:text-lg ${buttonAnimations.email ? 'animate-pulse-glow' : ''}`}
+                        className={`w-full flex items-center justify-center bg-gradient-to-r from-neutral-700 to-neutral-600 hover:from-neutral-600 hover:to-neutral-500 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 text-base ${buttonAnimations.email ? 'animate-pulse-glow' : ''}`}
                     >
-                        <div className="flex items-center gap-4 w-full max-w-sm">
+                        <span className="inline-flex items-center gap-3">
                             <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
                                 <EmailIcon className="w-6 h-6" />
                             </div>
-                            <span className="text-left flex-1">Continue with Email</span>
-                        </div>
+                            <span>Continue with Email</span>
+                        </span>
                     </button>
 
-                        {!showDeveloperPassword ? (
-                            <button
-                                onClick={() => setShowDeveloperPassword(true)}
-                                className="w-full flex items-center justify-center gap-3 bg-transparent border-2 border-[#424242] hover:border-[#FFAB40] text-white font-bold py-4 sm:py-5 px-6 sm:px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg text-base sm:text-lg hover:bg-[#424242]/20"
-                            >
-                                <div className="flex items-center gap-4 w-full max-w-sm">
-                                    <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
-                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                                        </svg>
-                                    </div>
-                                    <span className="text-left flex-1">Developer Mode</span>
-                                </div>
-                            </button>
-                        ) : (
-                            <div className="w-full bg-gradient-to-r from-neutral-700 to-neutral-600 border border-[#424242]/60 rounded-xl p-2 sm:p-3 flex items-center gap-3 animate-fade-slide-up">
-                                <input
-                                    type="password"
-                                    placeholder="Enter developer password"
-                                    value={developerPassword}
-                                    onChange={(e) => setDeveloperPassword(e.target.value)}
-                                    className="flex-1 px-4 py-3 bg-[#2E2E2E] border border-[#424242] rounded-lg text-white placeholder-[#6E6E6E] focus:outline-none focus:border-[#FFAB40] transition-colors"
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            handleSkip();
-                                        }
-                                    }}
-                                />
-                                <button
-                                    onClick={handleSkip}
-                                    className="px-4 py-3 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] hover:from-[#D98C1F] hover:to-[#E53A3A] text-white font-bold rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg text-sm"
-                                >
-                                    Enter
-                                </button>
-                            </div>
-                        )}
                     </div>
                 ) : (
                     <div 
-                        className="w-full max-w-md px-4 sm:px-0 animate-fade-slide-up"
+                        className="w-full max-w-md px-4 sm:px-0 animate-fade-slide-up mt-12"
                        
                     >
                         {renderEmailForm()}
@@ -584,7 +550,7 @@ const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, onOpe
             </div>
             
             {/* Footer - Moved to bottom */}
-            <div className="flex-shrink-0 px-4 sm:px-6 pb-4 sm:pb-6 text-center">
+            <div className="flex-shrink-0 px-4 sm:px-6 pt-4 sm:pt-6 pb-4 sm:pb-6 text-center">
                 <p className="text-xs text-[#A3A3A3]">
                     By continuing, you agree to our{' '}
                     {onOpenTerms ? (
@@ -611,6 +577,59 @@ const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, onOpe
                     .
                 </p>
             </div>
+            
+            {/* Developer Mode - In normal document flow */}
+            {emailMode === 'options' && (
+                <div className="flex-shrink-0 px-4 sm:px-6 pt-4 pb-4 sm:pb-6 text-center">
+                {!showDeveloperPassword ? (
+                    <button
+                        onClick={() => setShowDeveloperPassword(true)}
+                        className="text-xs text-[#6E6E6E] hover:text-[#FFAB40] transition-colors duration-200 underline"
+                    >
+                        Developer Mode
+                    </button>
+                ) : (
+                    <div className="flex items-center gap-2 justify-center">
+                        <input
+                            type="password"
+                            placeholder="Dev password"
+                            value={developerPassword}
+                            onChange={(e) => setDeveloperPassword(e.target.value)}
+                            className="px-2 py-1 bg-[#2E2E2E] border border-[#424242] rounded text-white placeholder-[#6E6E6E] focus:outline-none focus:border-[#FFAB40] transition-colors text-xs w-24"
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    handleSkip();
+                                }
+                            }}
+                        />
+                        <button
+                            onClick={handleSkip}
+                            className="px-2 py-1 h-6 bg-transparent text-[#FFAB40] font-bold rounded text-xs hover:bg-[#FFAB40]/10 transition-all duration-200 flex items-center justify-center"
+                        >
+                            Enter
+                        </button>
+                        <button
+                            onClick={() => setShowDeveloperPassword(false)}
+                            className="text-xs text-[#6E6E6E] hover:text-[#FFAB40] transition-colors duration-200"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                )}
+                
+                {/* Back to Landing Page Button */}
+                {onBackToLanding && (
+                    <div className="mt-4">
+                        <button
+                            onClick={onBackToLanding}
+                            className="text-sm text-[#6E6E6E] hover:text-[#FF4D4D] transition-colors duration-200 underline"
+                        >
+                            Back
+                        </button>
+                    </div>
+                )}
+                </div>
+            )}
             
             {/* PWA Install Banner */}
             <PWAInstallBanner />

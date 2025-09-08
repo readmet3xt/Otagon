@@ -9,7 +9,7 @@ interface AboutModalProps {
 
 const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="About Otakon">
+    <Modal isOpen={isOpen} onClose={onClose} title="About Otagon">
       <div className="text-[#CFCFCF] leading-relaxed">
         <AboutPage />
       </div>
