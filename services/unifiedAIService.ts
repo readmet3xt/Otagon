@@ -119,7 +119,7 @@ export interface AIConfig {
 // ===== UNIFIED AI SERVICE =====
 
 export class UnifiedAIService extends BaseService {
-  private ai: GoogleGenAI;
+  private ai?: GoogleGenAI;
   private chatSessions: Record<string, { chat: Chat, model: GeminiModel }> = {};
   private config: AIConfig;
   private usedPrompts: Set<string> = new Set();
@@ -129,12 +129,13 @@ export class UnifiedAIService extends BaseService {
   constructor() {
     super();
     
-    const API_KEY = process.env.API_KEY;
-    if (!API_KEY) {
-      console.warn("Gemini API Key not found. Please set the API_KEY environment variable.");
+    // Lazy init; defer until first use to avoid early errors
+    const API_KEY = process.env.API_KEY || import.meta.env?.VITE_GEMINI_API_KEY;
+    if (API_KEY) {
+      this.ai = new GoogleGenAI({ apiKey: API_KEY as string });
+    } else {
+      console.warn("Gemini API Key not found. Set API_KEY or VITE_GEMINI_API_KEY.");
     }
-    
-    this.ai = new GoogleGenAI({ apiKey: API_KEY! });
     this.config = {
       useProactiveInsights: true,
       useProfileAwareInsights: true,
@@ -767,6 +768,19 @@ Generate comprehensive, detailed wiki-style content for each insight tab that pr
     const { model, contents, config, signal } = params;
     
     try {
+      // Route via server proxy if no browser key present
+      const key = process.env.API_KEY || (import.meta as any)?.env?.VITE_GEMINI_API_KEY;
+      if (!key) {
+        const res = await fetch(`${process.env.API_BASE_URL || ''}/functions/v1/gemini-proxy`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model, contents, config })
+        });
+        if (!res.ok) throw new Error(`Proxy error ${res.status}`);
+        const data = await res.json();
+        return data.text || '';
+      }
+      if (!this.ai) this.ai = new GoogleGenAI({ apiKey: key as string });
       const response = await this.ai.models.generateContent({
         model,
         contents,
@@ -793,6 +807,19 @@ Generate comprehensive, detailed wiki-style content for each insight tab that pr
     const { model, contents, config, onChunk, signal } = params;
     
     try {
+      const key2 = process.env.API_KEY || (import.meta as any)?.env?.VITE_GEMINI_API_KEY;
+      if (!key2) {
+        // Fallback to non-streaming via proxy
+        const res = await fetch(`${process.env.API_BASE_URL || ''}/functions/v1/gemini-proxy`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model, contents, config })
+        });
+        if (!res.ok) throw new Error(`Proxy error ${res.status}`);
+        const data = await res.json();
+        return data.text || '';
+      }
+      if (!this.ai) this.ai = new GoogleGenAI({ apiKey: key2 as string });
       const stream = await this.ai.models.generateContentStream({
         model,
         contents,
