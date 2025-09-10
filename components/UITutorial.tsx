@@ -188,29 +188,31 @@ const UITutorial: React.FC<UITutorialProps> = ({ isOpen, onComplete, onSkip }) =
       {/* Blurred background overlay */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md pointer-events-none" />
       
-      {/* Highlight overlay with rounded box - no blur here */}
-      <div 
-        className="absolute pointer-events-none"
-        style={{
-          top: highlightPosition.top - 8,
-          left: highlightPosition.left - 8,
-          width: highlightPosition.width + 16,
-          height: highlightPosition.height + 16
-        }}
-      >
-        {/* Rounded highlight box */}
-        <div className="w-full h-full border-2 border-[#FF4D4D] rounded-xl bg-[#FF4D4D]/10 shadow-[0_0_20px_rgba(255,77,77,0.3)]" />
-        
-        {/* Arrow pointing to center tooltip */}
+      {/* Highlight overlay with rounded box - only show when target is found */}
+      {highlightPosition.width > 0 && highlightPosition.height > 0 && (
         <div 
-          className={`absolute w-4 h-4 border-2 border-[#FF4D4D] bg-[#1C1C1C] transform rotate-45 ${
-            currentStepData.position === 'top' ? 'bottom-[-8px] left-1/2 -translate-x-1/2' :
-            currentStepData.position === 'bottom' ? 'top-[-8px] left-1/2 -translate-x-1/2' :
-            currentStepData.position === 'left' ? 'right-[-8px] top-1/2 -translate-y-1/2' :
-            'left-[-8px] top-1/2 -translate-y-1/2'
-          }`}
-        />
-      </div>
+          className="absolute pointer-events-none"
+          style={{
+            top: highlightPosition.top - 8,
+            left: highlightPosition.left - 8,
+            width: highlightPosition.width + 16,
+            height: highlightPosition.height + 16
+          }}
+        >
+          {/* Rounded highlight box */}
+          <div className="w-full h-full border-2 border-[#FF4D4D] rounded-xl bg-[#FF4D4D]/10 shadow-[0_0_20px_rgba(255,77,77,0.3)]" />
+          
+          {/* Arrow pointing to center tooltip */}
+          <div 
+            className={`absolute w-4 h-4 border-2 border-[#FF4D4D] bg-[#1C1C1C] transform rotate-45 ${
+              currentStepData.position === 'top' ? 'bottom-[-8px] left-1/2 -translate-x-1/2' :
+              currentStepData.position === 'bottom' ? 'top-[-8px] left-1/2 -translate-x-1/2' :
+              currentStepData.position === 'left' ? 'right-[-8px] top-1/2 -translate-y-1/2' :
+              'left-[-8px] top-1/2 -translate-y-1/2'
+            }`}
+          />
+        </div>
+      )}
       
       {/* Centered tooltip */}
       <div 

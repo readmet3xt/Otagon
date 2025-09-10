@@ -1,168 +1,107 @@
-# 🎮 Otakon AI - Your Gaming Companion
+# Otakon - AI-Powered Gaming Companion
 
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+A comprehensive gaming companion app with AI-powered insights, progress tracking, and personalized recommendations.
 
-## 🚀 **What is Otakon?**
+## 🚀 Quick Start
 
-**Otakon AI** is your spoiler-free gaming companion that provides intelligent hints, progress tracking, and AI-powered assistance without ruining your gaming experience.
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-### **✨ Key Features**
-- **🎯 Spoiler-Free Hints** - Get help without spoilers
-- **📸 Screenshot Analysis** - Upload game screenshots for AI insights
-- **🎮 Progress Tracking** - Monitor your achievements and objectives
-- **💻 PC Integration** - Connect with desktop client for seamless gameplay
-- **🌐 Global Content Cache** - 90%+ reduction in API calls
-- **📊 Smart Analytics** - Comprehensive user behavior tracking
+2. **Set up the database:**
+   - Run `MASTER_SCHEMA.sql` in your Supabase SQL Editor
+   - This creates the consolidated 8-table schema with full compatibility
 
-## 🏃‍♂️ **Quick Start**
+3. **Start development:**
+   ```bash
+   npm run dev
+   ```
 
-### **Prerequisites**
-- Node.js 18+
-- Supabase account
-- Gemini API key
+## 🏗️ Architecture
 
-### **Installation**
-```bash
-# Clone the repository
-git clone https://github.com/your-username/otakon.git
-cd otakon
+### Database Schema
+- **8 consolidated tables** (reduced from 52) with parent-child structure
+- **44 compatibility views** maintain seamless app integration
+- **RLS security policies** for data protection
+- **Performance indexes** for optimal queries
 
-# Install dependencies
-npm install
+### Key Features
+- **AI-powered insights** and recommendations
+- **Progress tracking** across multiple games
+- **Developer mode** with tier switching and analytics
+- **Unified data service** with localStorage/Supabase separation
+- **Real-time chat** with gaming context
 
-# Set up environment variables
-cp docs/extras/env-example.txt .env.local
-# Edit .env.local with your API keys
+## 📁 Project Structure
 
-# Start development server
-npm run dev
+```
+├── components/          # React components
+├── services/           # Business logic and API services
+├── hooks/              # Custom React hooks
+├── config/             # Configuration files
+├── documentation/      # All documentation and analysis
+├── MASTER_SCHEMA.sql   # Single source of truth for database
+└── README.md          # This file
 ```
 
-## 📚 **Documentation**
+## 🔧 Development
 
-**📖 [Complete Documentation Hub](docs/README.md)**
+### Database Schema
+The `MASTER_SCHEMA.sql` file contains the complete consolidated database schema. It includes:
+- 8 parent-child tables consolidating all data
+- Compatibility views for backward compatibility
+- Security policies and performance indexes
+- Essential RPC functions
 
-Our comprehensive documentation is organized into logical sections:
+### Key Services
+- `UnifiedDataService` - Handles data storage (localStorage for dev mode, Supabase for authenticated users)
+- `DatabaseService` - Manages Supabase operations
+- `PlayerProfileService` - Handles player profile management
 
-- **🗄️ [Database Schemas](docs/schemas/)** - All database schemas and migrations
-- **📊 [Analytics System](docs/analytics/)** - User behavior and performance tracking
-- **⚙️ [Implementation Guides](docs/implementation/)** - Step-by-step feature implementation
-- **🚀 [Performance & Optimization](docs/performance/)** - Performance tuning strategies
-- **🔧 [Setup & Configuration](docs/setup/)** - Complete setup guides
-- **📋 [Additional Resources](docs/extras/)** - Configuration templates
+## 📚 Documentation
 
-### **🚀 Quick Setup Guide**
-1. **[Supabase Setup](docs/setup/01-supabase-setup.md)** - Database configuration
-2. **[Base Schema](docs/schemas/01-base-schema.sql)** - Core database tables
-3. **[Core Analytics](docs/analytics/01-core-analytics.md)** - User tracking system
-4. **[Performance Guide](docs/performance/01-optimization-guide.md)** - Optimization strategies
+All documentation is organized in the `documentation/` folder:
+- Schema analysis and consolidation guides
+- Implementation documentation
+- System diagnostics and reports
+- Authentication and security guides
 
-## 🏗️ **Architecture**
+## 🎯 Features
 
-### **Frontend**
-- **React 19** with TypeScript
-- **Tailwind CSS** for styling
-- **Vite** for fast development and builds
-- **PWA** support with service worker
+### For Users
+- **Game Progress Tracking** - Track progress across multiple games
+- **AI Insights** - Personalized recommendations and insights
+- **Chat Interface** - Context-aware gaming conversations
+- **Task Management** - Organize gaming objectives and tasks
 
-### **Backend**
-- **Supabase** for database and authentication
-- **PostgreSQL** with Row Level Security
-- **Real-time subscriptions** for live updates
-- **Edge Functions** for serverless operations
+### For Developers
+- **Developer Mode** - Local storage with tier switching
+- **Analytics Dashboard** - Performance and usage analytics
+- **Debug Tools** - Comprehensive debugging capabilities
 
-### **AI Integration**
-- **Google Gemini** for intelligent responses
-- **Global Content Cache** for reduced API calls
-- **Game Knowledge Database** for accurate answers
-- **Smart Content Rotation** for variety
+## 🔒 Security
 
-## 📊 **Performance Features**
+- **Row Level Security (RLS)** on all tables
+- **Strict data separation** between developer mode and authenticated users
+- **Secure authentication** with Google Sign-in
+- **API rate limiting** and cost tracking
 
-### **API Call Optimization**
-- **Global Content Cache**: 90%+ reduction in API calls
-- **Game Knowledge System**: Additional 20-40% reduction
-- **Smart Content Rotation**: Prevents repetitive content
-- **Intelligent Caching**: 24-hour cache with automatic refresh
+## 🚀 Deployment
 
-### **User Experience**
-- **Instant Loading**: Cached content loads immediately
-- **Offline Support**: Service worker for offline functionality
-- **Responsive Design**: Optimized for all devices
-- **Fast Navigation**: Optimized routing and state management
+The app is configured for deployment with:
+- Vite build system
+- Service worker for offline functionality
+- Optimized bundle analysis
+- Comprehensive testing setup
 
-## 🧪 **Testing**
+## 📊 Performance
 
-```bash
-# Run tests in watch mode
-npm run test
-
-# Run tests with UI
-npm run test:ui
-
-# Run tests once
-npm run test:run
-
-# Run tests with coverage
-npm run test:coverage
-```
-
-## 🚀 **Deployment**
-
-### **Build for Production**
-```bash
-npm run build
-npm run preview
-```
-
-### **Environment Variables**
-```bash
-# Required
-GEMINI_API_KEY=your_gemini_api_key
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-
-# Optional
-NODE_ENV=production
-VITE_APP_ENV=production
-```
-
-## 🤝 **Contributing**
-
-We welcome contributions! Please see our [Contributing Guidelines](docs/CONTRIBUTING.md) for details.
-
-### **Development Workflow**
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests and documentation
-5. Submit a pull request
-
-## 📄 **License**
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 📞 **Support**
-
-- **📚 Documentation**: [Complete Guides](docs/README.md)
-- **🐛 Issues**: [GitHub Issues](https://github.com/your-username/otakon/issues)
-- **💬 Discussions**: [GitHub Discussions](https://github.com/your-username/otakon/discussions)
-- **📧 Email**: support@otakon.app
-
-## 🌟 **Star History**
-
-[![Star History Chart](https://api.star-history.com/svg?repos=your-username/otakon&type=Date)](https://star-history.com/#your-username/otakon&Date)
+- **Consolidated schema** reduces database complexity by 85%
+- **Strategic indexing** for optimal query performance
+- **Caching strategies** for improved response times
+- **Bundle optimization** for faster loading
 
 ---
 
-<div align="center">
-
-**Built with ❤️ by the Otakon Team**
-
-[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/your-username/otakon)
-[![Discord](https://img.shields.io/badge/Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/otakon)
-[![Twitter](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://twitter.com/otakon_ai)
-
-</div>
+For detailed documentation, see the `documentation/` folder.

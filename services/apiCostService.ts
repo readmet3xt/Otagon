@@ -141,7 +141,7 @@ class APICostService {
             }
 
             const { error } = await supabase
-                .from('analytics_new')
+                .from('analytics')
                 .insert({
                     user_id: user.id,
                     category: 'api_costs',
@@ -196,7 +196,7 @@ class APICostService {
 
             // Check if user is admin
             const { data: profile } = await supabase
-                .from('users_new')
+                .from('users')
                 .select('profile_data')
                 .eq('auth_user_id', user.id)
                 .single();
@@ -210,7 +210,7 @@ class APICostService {
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
             const { data: records, error } = await supabase
-                .from('analytics_new')
+                .from('analytics')
                 .select('*')
                 .eq('category', 'api_costs')
                 .gte('created_at', thirtyDaysAgo.toISOString())

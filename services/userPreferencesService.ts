@@ -75,7 +75,7 @@ class UserPreferencesService {
       // Try to get preferences from new consolidated users table
       try {
         const { data, error } = await supabase
-          .from('users_new')
+          .from('users')
           .select('preferences')
           .eq('auth_user_id', user.id)
           .single();
@@ -148,7 +148,7 @@ class UserPreferencesService {
         };
 
         const { error } = await supabase
-          .from('users_new')
+          .from('users')
           .upsert({
             auth_user_id: user.id,
             email: user.email || '',
@@ -192,7 +192,7 @@ class UserPreferencesService {
       if (!user) throw new Error('User not authenticated');
 
       const { data, error } = await supabase
-        .from('users_new')
+        .from('users')
         .insert({
           auth_user_id: user.id,
           email: user.email || '',

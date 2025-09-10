@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/484</span>
+                <span class='fraction'>0/508</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/484</span>
+                <span class='fraction'>0/508</span>
             </div>
         
             
@@ -547,7 +547,55 @@
 <a name='L482'></a><a href='#L482'>482</a>
 <a name='L483'></a><a href='#L483'>483</a>
 <a name='L484'></a><a href='#L484'>484</a>
-<a name='L485'></a><a href='#L485'>485</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L485'></a><a href='#L485'>485</a>
+<a name='L486'></a><a href='#L486'>486</a>
+<a name='L487'></a><a href='#L487'>487</a>
+<a name='L488'></a><a href='#L488'>488</a>
+<a name='L489'></a><a href='#L489'>489</a>
+<a name='L490'></a><a href='#L490'>490</a>
+<a name='L491'></a><a href='#L491'>491</a>
+<a name='L492'></a><a href='#L492'>492</a>
+<a name='L493'></a><a href='#L493'>493</a>
+<a name='L494'></a><a href='#L494'>494</a>
+<a name='L495'></a><a href='#L495'>495</a>
+<a name='L496'></a><a href='#L496'>496</a>
+<a name='L497'></a><a href='#L497'>497</a>
+<a name='L498'></a><a href='#L498'>498</a>
+<a name='L499'></a><a href='#L499'>499</a>
+<a name='L500'></a><a href='#L500'>500</a>
+<a name='L501'></a><a href='#L501'>501</a>
+<a name='L502'></a><a href='#L502'>502</a>
+<a name='L503'></a><a href='#L503'>503</a>
+<a name='L504'></a><a href='#L504'>504</a>
+<a name='L505'></a><a href='#L505'>505</a>
+<a name='L506'></a><a href='#L506'>506</a>
+<a name='L507'></a><a href='#L507'>507</a>
+<a name='L508'></a><a href='#L508'>508</a>
+<a name='L509'></a><a href='#L509'>509</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1054,7 +1102,7 @@
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >  private async autoMigrateData(): Promise&lt;void&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
-<span class="cstat-no" title="statement not covered" >      // Check if user needs migration</span>
+<span class="cstat-no" title="statement not covered" >      // Check if user needs migration (only if authenticated)</span>
 <span class="cstat-no" title="statement not covered" >      const migrationStatus = await supabaseDataService.checkMigrationStatus();</span>
 <span class="cstat-no" title="statement not covered" >      if (migrationStatus.needsMigration) {</span>
 <span class="cstat-no" title="statement not covered" >        console.log('🔄 Auto-migrating localStorage data to Supabase...');</span>
@@ -1062,27 +1110,40 @@
 <span class="cstat-no" title="statement not covered" >        console.log('✅ Auto-migration complete');</span>
 <span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" >    } catch (error) {</span>
-<span class="cstat-no" title="statement not covered" >      console.warn('Auto-migration failed, continuing with localStorage fallback:', error);</span>
+<span class="cstat-no" title="statement not covered" >      // User not authenticated or migration failed, continue with localStorage fallback</span>
+<span class="cstat-no" title="statement not covered" >      console.log('🔄 Auto-migrating localStorage data to Supabase...');</span>
+<span class="cstat-no" title="statement not covered" >      console.log('✅ Auto-migration complete');</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
 <span class="cstat-no" title="statement not covered" >  }</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  // Get player profile</span>
+<span class="cstat-no" title="statement not covered" >  // Get player profile with improved caching</span>
 <span class="cstat-no" title="statement not covered" >  async getProfile(): Promise&lt;PlayerProfile | null&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
 <span class="cstat-no" title="statement not covered" >      const { data: { user } } = await supabase.auth.getUser();</span>
 <span class="cstat-no" title="statement not covered" >      if (!user) return null;</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >      // Check cache first</span>
-<span class="cstat-no" title="statement not covered" >      if (this.profileCache) return this.profileCache;</span>
+<span class="cstat-no" title="statement not covered" >      // Check cache first - return immediately if cached</span>
+<span class="cstat-no" title="statement not covered" >      if (this.profileCache) {</span>
+<span class="cstat-no" title="statement not covered" >        return this.profileCache;</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >      // Get profile from new consolidated users table</span>
 <span class="cstat-no" title="statement not covered" >      const { data: userData, error } = await supabase</span>
-<span class="cstat-no" title="statement not covered" >        .from('users_new')</span>
+<span class="cstat-no" title="statement not covered" >        .from('users')</span>
 <span class="cstat-no" title="statement not covered" >        .select('profile_data')</span>
 <span class="cstat-no" title="statement not covered" >        .eq('auth_user_id', user.id)</span>
 <span class="cstat-no" title="statement not covered" >        .single();</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >      if (error || !userData?.profile_data) return null;</span>
+<span class="cstat-no" title="statement not covered" >      if (error) {</span>
+<span class="cstat-no" title="statement not covered" >        // If user doesn't exist in database, return null instead of logging error</span>
+<span class="cstat-no" title="statement not covered" >        if (error.code === 'PGRST116') {</span>
+<span class="cstat-no" title="statement not covered" >          return null;</span>
+<span class="cstat-no" title="statement not covered" >        }</span>
+<span class="cstat-no" title="statement not covered" >        console.error('Failed to load player profile:', error);</span>
+<span class="cstat-no" title="statement not covered" >        return null;</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >      if (!userData?.profile_data) return null;</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >      const profile: PlayerProfile = {</span>
 <span class="cstat-no" title="statement not covered" >        hintStyle: userData.profile_data.hint_style || 'Balanced',</span>
@@ -1128,23 +1189,25 @@
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >      // Update profile in new consolidated users table</span>
 <span class="cstat-no" title="statement not covered" >      const { error } = await supabase</span>
-<span class="cstat-no" title="statement not covered" >        .from('users_new')</span>
+<span class="cstat-no" title="statement not covered" >        .from('users')</span>
 <span class="cstat-no" title="statement not covered" >        .upsert({</span>
 <span class="cstat-no" title="statement not covered" >          auth_user_id: user.id,</span>
 <span class="cstat-no" title="statement not covered" >          email: user.email || '',</span>
-<span class="cstat-no" title="statement not covered" >          display_name: newProfile.playerFocus || 'Player',</span>
-<span class="cstat-no" title="statement not covered" >                  profile_data: {</span>
-<span class="cstat-no" title="statement not covered" >          hint_style: newProfile.hintStyle || 'Balanced',</span>
-<span class="cstat-no" title="statement not covered" >          player_focus: newProfile.playerFocus || 'Story-Driven',</span>
-<span class="cstat-no" title="statement not covered" >          preferred_tone: newProfile.preferredTone || 'Encouraging',</span>
-<span class="cstat-no" title="statement not covered" >          spoiler_tolerance: newProfile.spoilerTolerance || 'Moderate',</span>
-<span class="cstat-no" title="statement not covered" >          created_at: newProfile.createdAt,</span>
-<span class="cstat-no" title="statement not covered" >          last_updated: newProfile.lastUpdated,</span>
-<span class="cstat-no" title="statement not covered" >          is_first_time: newProfile.isFirstTime</span>
-<span class="cstat-no" title="statement not covered" >        }</span>
+<span class="cstat-no" title="statement not covered" >          profile_data: {</span>
+<span class="cstat-no" title="statement not covered" >            hint_style: newProfile.hintStyle || 'Balanced',</span>
+<span class="cstat-no" title="statement not covered" >            player_focus: newProfile.playerFocus || 'Story-Driven',</span>
+<span class="cstat-no" title="statement not covered" >            preferred_tone: newProfile.preferredTone || 'Encouraging',</span>
+<span class="cstat-no" title="statement not covered" >            spoiler_tolerance: newProfile.spoilerTolerance || 'Moderate',</span>
+<span class="cstat-no" title="statement not covered" >            created_at: newProfile.createdAt,</span>
+<span class="cstat-no" title="statement not covered" >            last_updated: newProfile.lastUpdated,</span>
+<span class="cstat-no" title="statement not covered" >            is_first_time: newProfile.isFirstTime</span>
+<span class="cstat-no" title="statement not covered" >          }</span>
 <span class="cstat-no" title="statement not covered" >        });</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >      if (error) throw error;</span>
+<span class="cstat-no" title="statement not covered" >      if (error) {</span>
+<span class="cstat-no" title="statement not covered" >        console.error('Failed to save player profile:', error);</span>
+<span class="cstat-no" title="statement not covered" >        return false;</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >      // Update cache</span>
 <span class="cstat-no" title="statement not covered" >      this.profileCache = newProfile;</span>
@@ -1155,6 +1218,9 @@
 <span class="cstat-no" title="statement not covered" >      return false;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
 <span class="cstat-no" title="statement not covered" >  }</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  // Clear profile cache</span>
+<span class="cstat-no" title="statement not covered" >  // Removed duplicate method; unified at bottom to clear all caches</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >  // Mark first-time setup as complete</span>
 <span class="cstat-no" title="statement not covered" >  async completeFirstTimeSetup(): Promise&lt;void&gt; {</span>
@@ -1327,7 +1393,7 @@
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >      // Get game context from new consolidated games table</span>
 <span class="cstat-no" title="statement not covered" >      const { data: gameData, error } = await supabase</span>
-<span class="cstat-no" title="statement not covered" >        .from('games_new')</span>
+<span class="cstat-no" title="statement not covered" >        .from('games')</span>
 <span class="cstat-no" title="statement not covered" >        .select('session_data')</span>
 <span class="cstat-no" title="statement not covered" >        .eq('user_id', user.id)</span>
 <span class="cstat-no" title="statement not covered" >        .eq('title', gameId)</span>
@@ -1366,7 +1432,7 @@
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >      // Update game context in new consolidated games table</span>
 <span class="cstat-no" title="statement not covered" >      const { error } = await supabase</span>
-<span class="cstat-no" title="statement not covered" >        .from('games_new')</span>
+<span class="cstat-no" title="statement not covered" >        .from('games')</span>
 <span class="cstat-no" title="statement not covered" >        .upsert({</span>
 <span class="cstat-no" title="statement not covered" >          user_id: user.id,</span>
 <span class="cstat-no" title="statement not covered" >          title: gameId,</span>
@@ -1399,7 +1465,7 @@
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >      // Get all games from new consolidated games table</span>
 <span class="cstat-no" title="statement not covered" >      const { data: gamesData, error } = await supabase</span>
-<span class="cstat-no" title="statement not covered" >        .from('games_new')</span>
+<span class="cstat-no" title="statement not covered" >        .from('games')</span>
 <span class="cstat-no" title="statement not covered" >        .select('title, session_data')</span>
 <span class="cstat-no" title="statement not covered" >        .eq('user_id', user.id);</span>
 <span class="cstat-no" title="statement not covered" ></span>
@@ -1435,7 +1501,7 @@
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >      // Delete game from new consolidated games table</span>
 <span class="cstat-no" title="statement not covered" >      await supabase</span>
-<span class="cstat-no" title="statement not covered" >        .from('games_new')</span>
+<span class="cstat-no" title="statement not covered" >        .from('games')</span>
 <span class="cstat-no" title="statement not covered" >        .delete()</span>
 <span class="cstat-no" title="statement not covered" >        .eq('user_id', user.id)</span>
 <span class="cstat-no" title="statement not covered" >        .eq('title', gameId);</span>
@@ -1466,10 +1532,16 @@
 <span class="cstat-no" title="statement not covered" >    this.gameContextsCache.clear();</span>
 <span class="cstat-no" title="statement not covered" >  }</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  // Check if user needs profile setup</span>
+<span class="cstat-no" title="statement not covered" >  // Check if user needs profile setup with improved error handling</span>
 <span class="cstat-no" title="statement not covered" >  async needsProfileSetup(): Promise&lt;boolean&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    const profile = await this.getProfile();</span>
-<span class="cstat-no" title="statement not covered" >    return !profile || profile.isFirstTime;</span>
+<span class="cstat-no" title="statement not covered" >    try {</span>
+<span class="cstat-no" title="statement not covered" >      const profile = await this.getProfile();</span>
+<span class="cstat-no" title="statement not covered" >      return !profile || profile.isFirstTime;</span>
+<span class="cstat-no" title="statement not covered" >    } catch (error) {</span>
+<span class="cstat-no" title="statement not covered" >      // If there's an error (like 404), assume user needs profile setup</span>
+<span class="cstat-no" title="statement not covered" >      console.log('Profile setup check failed, assuming user needs setup:', error);</span>
+<span class="cstat-no" title="statement not covered" >      return true;</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
 <span class="cstat-no" title="statement not covered" >  }</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >  // Get default profile</span>
@@ -1522,7 +1594,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-30T01:27:04.971Z
+                at 2025-09-10T12:28:31.809Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

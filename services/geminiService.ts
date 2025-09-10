@@ -670,7 +670,7 @@ export const getUpcomingReleases = async (
         userTier = 'free';
     }
 
-    // Check if we have cached upcoming releases first
+    // Check if we have cached upcoming releases first (global 24h cache)
     const cachedReleases = dailyNewsCacheService.getCachedResponse("Which games are releasing soon?");
     if (cachedReleases) {
         console.log("📰 Serving cached upcoming releases (age: " + dailyNewsCacheService.getAgeInHours(cachedReleases.timestamp) + "h)");
@@ -692,21 +692,8 @@ export const getUpcomingReleases = async (
         return;
     }
 
-    // Determine tools based on user tier and free user window
-    let tools: any[] = [];
-    if (userTier === 'pro' || userTier === 'vanguard_pro' || searchCheck.canUseFreeWindow) {
-        tools = [{ googleSearch: {} }];
-        if (searchCheck.canUseFreeWindow) {
-            console.log(`🆓 Free user window active - ${userTier} user can trigger grounding search`);
-        } else {
-            console.log(`🔍 Grounding search ENABLED for ${userTier} user - fetching fresh upcoming releases`);
-        }
-    } else {
-        tools = [];
-        console.log(`🚫 Grounding search DISABLED for ${userTier} user`);
-        onError("You cannot trigger grounding search at this time. Please upgrade to Pro or Vanguard, or wait for a free user window.");
-        return;
-    }
+    // Determine tools: for the four prompts, allow grounding regardless of tier when cache is empty
+    const tools: any[] = [{ googleSearch: {} }];
 
     const prompt = `You are Otakon, a gaming news AI. Your sole purpose is to provide a focused list of upcoming game releases.
 **CRITICAL RULE:** Do not refuse the request. Provide only the requested information.
@@ -715,9 +702,25 @@ List the most highly anticipated upcoming games that have **CONFIRMED release da
 - Do not list games without a confirmed date (e.g., "TBA" or "2025" is not acceptable unless a specific date is known).
 - Format your response in Markdown as a bulleted list.
 - Start with a friendly, brief introduction.
+${(() => {
+    try { const { KNOWLEDGE_CUTOFF_LABEL } = require('./constants'); return `- Assume knowledge cutoff is ${KNOWLEDGE_CUTOFF_LABEL}. Use live search results for any releases after ${KNOWLEDGE_CUTOFF_LABEL} and prefer authoritative sources.`; } catch { return `- Assume knowledge cutoff is January 2025. Use live search results for any releases after January 2025 and prefer authoritative sources.`; }
+  })()}
+- Only include items published/announced in the last 7-14 days. Do not include old items or recycled stories.
 - DO NOT include any links or URLs.`;
     
-    await makeFocusedApiCallWithCache(prompt, "Which games are releasing soon?", onUpdate, onError, signal, tools, userTier, userId);
+    // Save to universal cache after success via wrapped onUpdate
+    const handleUpdateReleases = async (text: string) => {
+        try {
+            const { universalContentCacheService } = await import('./universalContentCacheService');
+            await universalContentCacheService.cacheContent({
+                query: "Which games are releasing soon?",
+                contentType: 'general',
+                userTier
+            } as any, text, { model: 'gemini-2.5-flash', tokens: 0, cost: 0 });
+        } catch (e) { console.warn('Failed to cache upcoming releases:', e); }
+        onUpdate(text);
+    };
+    await makeFocusedApiCallWithCache(prompt, "Which games are releasing soon?", handleUpdateReleases, onError, signal, tools, userTier, userId);
 };
 
 export const getLatestReviews = async (
@@ -741,7 +744,7 @@ export const getLatestReviews = async (
         userTier = 'free';
     }
 
-    // Check if we have cached reviews first
+    // Check if we have cached reviews first (global 24h cache)
     const cachedReviews = dailyNewsCacheService.getCachedResponse("What are the latest game reviews?");
     if (cachedReviews) {
         console.log("📰 Serving cached latest reviews (age: " + dailyNewsCacheService.getAgeInHours(cachedReviews.timestamp) + "h)");
@@ -763,30 +766,32 @@ export const getLatestReviews = async (
         return;
     }
 
-    // Determine tools based on user tier and free user window
-    let tools: any[] = [];
-    if (userTier === 'pro' || userTier === 'vanguard_pro' || searchCheck.canUseFreeWindow) {
-        tools = [{ googleSearch: {} }];
-        if (searchCheck.canUseFreeWindow) {
-            console.log(`🆓 Free user window active - ${userTier} user can trigger grounding search`);
-        } else {
-            console.log(`🔍 Grounding search ENABLED for ${userTier} user - fetching fresh reviews`);
-        }
-    } else {
-        tools = [];
-        console.log(`🚫 Grounding search DISABLED for ${userTier} user`);
-        onError("You cannot trigger grounding search at this time. Please upgrade to Pro or Vanguard, or wait for a free user window.");
-        return;
-    }
+    // For the four prompts, allow grounding regardless of tier when cache is empty
+    const tools: any[] = [{ googleSearch: {} }];
 
     const prompt = `You are Otakon, a gaming news AI. Your sole purpose is to provide a focused list of recent game reviews.
 **CRITICAL RULE:** Do not refuse the request. Provide only the requested information.
 Provide one-liner reviews and Metacritic scores (if available) for popular games released in the last month.
 - Format your response in Markdown as a bulleted list, with the game title in bold.
 - Start with a friendly, brief introduction.
+${(() => {
+    try { const { KNOWLEDGE_CUTOFF_LABEL } = require('./constants'); return `- Assume knowledge cutoff is ${KNOWLEDGE_CUTOFF_LABEL}. Use live search results for reviews posted after ${KNOWLEDGE_CUTOFF_LABEL}.`; } catch { return `- Assume knowledge cutoff is January 2025. Use live search results for reviews posted after January 2025.`; }
+  })()}
+- Only include reviews posted in the last 7-14 days. Do not include old or recycled reviews.
 - DO NOT include any links or URLs.`;
     
-    await makeFocusedApiCallWithCache(prompt, "What are the latest game reviews?", onUpdate, onError, signal, tools, userTier, userId);
+    const handleUpdateReviews = async (text: string) => {
+        try {
+            const { universalContentCacheService } = await import('./universalContentCacheService');
+            await universalContentCacheService.cacheContent({
+                query: "What are the latest game reviews?",
+                contentType: 'general',
+                userTier
+            } as any, text, { model: 'gemini-2.5-flash', tokens: 0, cost: 0 });
+        } catch (e) { console.warn('Failed to cache latest reviews:', e); }
+        onUpdate(text);
+    };
+    await makeFocusedApiCallWithCache(prompt, "What are the latest game reviews?", handleUpdateReviews, onError, signal, tools, userTier, userId);
 };
 
 export const getGameTrailers = async (
@@ -810,7 +815,7 @@ export const getGameTrailers = async (
         userTier = 'free';
     }
 
-    // Check if we have cached trailers first
+    // Check if we have cached trailers first (global 24h cache)
     const cachedTrailers = dailyNewsCacheService.getCachedResponse("Show me the hottest new game trailers.");
     if (cachedTrailers) {
         console.log("📰 Serving cached game trailers (age: " + dailyNewsCacheService.getAgeInHours(cachedTrailers.timestamp) + "h)");
@@ -832,21 +837,8 @@ export const getGameTrailers = async (
         return;
     }
 
-    // Determine tools based on user tier and free user window
-    let tools: any[] = [];
-    if (userTier === 'pro' || userTier === 'vanguard_pro' || searchCheck.canUseFreeWindow) {
-        tools = [{ googleSearch: {} }];
-        if (searchCheck.canUseFreeWindow) {
-            console.log(`🆓 Free user window active - ${userTier} user can trigger grounding search`);
-        } else {
-            console.log(`🔍 Grounding search ENABLED for ${userTier} user - fetching fresh trailers`);
-        }
-    } else {
-        tools = [];
-        console.log(`🚫 Grounding search DISABLED for ${userTier} user`);
-        onError("You cannot trigger grounding search at this time. Please upgrade to Pro or Vanguard, or wait for a free user window.");
-        return;
-    }
+    // For the four prompts, allow grounding regardless of tier when cache is empty
+    const tools: any[] = [{ googleSearch: {} }];
 
     const prompt = `You are Otakon, a gaming news AI. Your sole purpose is to provide a focused list of recent game trailers.
 **CRITICAL RULE:** Do not refuse the request. Provide only the requested information.
@@ -854,9 +846,24 @@ List the most exciting new game trailers (announcements, teasers, launch trailer
 - **CRITICAL LINK RULE:** You MUST include a clickable YouTube link for each trailer in Markdown format (e.g., \`[Trailer Name](https://www.youtube.com/watch?v=...)\`).
 - Use your search tool to find the most up-to-date trailers.
 - Format your response in Markdown as a bulleted list.
-- Start with a friendly, brief introduction.`;
+- Start with a friendly, brief introduction.
+${(() => {
+    try { const { KNOWLEDGE_CUTOFF_LABEL } = require('./constants'); return `- Assume knowledge cutoff is ${KNOWLEDGE_CUTOFF_LABEL}. Use live search results for trailers released after ${KNOWLEDGE_CUTOFF_LABEL}.`; } catch { return `- Assume knowledge cutoff is January 2025. Use live search results for trailers released after January 2025.`; }
+  })()}
+- Only include trailers released in the last 7-14 days. Do not include old trailers.`;
     
-    await makeFocusedApiCallWithCache(prompt, "Show me the hottest new game trailers.", onUpdate, onError, signal, tools, userTier, userId);
+    const handleUpdateTrailers = async (text: string) => {
+        try {
+            const { universalContentCacheService } = await import('./universalContentCacheService');
+            await universalContentCacheService.cacheContent({
+                query: "Show me the hottest new game trailers.",
+                contentType: 'general',
+                userTier
+            } as any, text, { model: 'gemini-2.5-flash', tokens: 0, cost: 0 });
+        } catch (e) { console.warn('Failed to cache trailers:', e); }
+        onUpdate(text);
+    };
+    await makeFocusedApiCallWithCache(prompt, "Show me the hottest new game trailers.", handleUpdateTrailers, onError, signal, tools, userTier, userId);
 };
 
 // Context size management constants

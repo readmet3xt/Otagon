@@ -662,6 +662,39 @@ export const useChat = (isHandsFreeMode: boolean) => {
             }
             // --- End Context Injection ---
 
+            // Paid latest-info queries: universal cache lookup and cutoff guidance
+            const userTierNow = await unifiedUsageService.getTier();
+            const isProUser = userTierNow !== 'free';
+            const latestInfoQuery = isProUser && isLatestInfoQuery(text);
+            if (latestInfoQuery) {
+                try {
+                    const { universalContentCacheService } = await import('../services/universalContentCacheService');
+                    const cacheType = sourceConversation.id === EVERYTHING_ELSE_ID ? 'general' : 'game_info';
+                    const cached = await universalContentCacheService.getCachedContent({
+                        query: text.trim(),
+                        contentType: cacheType as any,
+                        gameName: sourceConversation.id === EVERYTHING_ELSE_ID ? undefined : sourceConversation.id,
+                        genre: sourceConversation.genre,
+                        userTier: 'paid'
+                    } as any);
+                    if (cached?.found && cached.content?.content) {
+                        const cachedText = cached.content.content;
+                        updateMessageInConversation(activeConversationId, modelMessageId, msg => ({ ...msg, text: cachedText }));
+                        setLoadingMessages(prev => prev.filter(id => id !== modelMessageId));
+                        return { success: true, reason: 'cache_hit' };
+                    }
+                } catch (e) {
+                    console.warn('Universal cache lookup failed:', e);
+                }
+                // Append cutoff guidance for paid, latest-info queries
+                try {
+                    const { KNOWLEDGE_CUTOFF_LABEL } = await import('../services/constants');
+                    metaNotes += `[KNOWLEDGE_CUTOFF: ${KNOWLEDGE_CUTOFF_LABEL}] For information after this date, prefer current, verified sources.\n`;
+                } catch {
+                    metaNotes += `[KNOWLEDGE_CUTOFF: January 2025] For information after this date, prefer current, verified sources.\n`;
+                }
+            }
+
             const promptText = metaNotes + (text.trim() || "A player needs help. First, identify the game from this screenshot. Then, provide a spoiler-free hint and some interesting lore about what's happening in the image.");
             
             let rawTextResponse = "";
@@ -736,7 +769,9 @@ export const useChat = (isHandsFreeMode: boolean) => {
             if (genreMatch) gameGenre = genreMatch[1].trim();
 
             const confidenceMatch = rawTextResponse.match(/\[OTAKON_CONFIDENCE:\s*(high|low)\]/);
-            if (confidenceMatch?.[1] === 'high' || (identifiedGameName && !images)) {
+            const hasImages = !!(images && images.length > 0);
+            const isConfidenceHigh = confidenceMatch?.[1] === 'high';
+            if (isConfidenceHigh || (identifiedGameName && !hasImages)) {
                 const progressMatch = rawTextResponse.match(/\[OTAKON_GAME_PROGRESS:\s*(\d+)\]/);
                 if (progressMatch) gameProgress = parseInt(progressMatch[1], 10);
             }
@@ -792,7 +827,9 @@ export const useChat = (isHandsFreeMode: boolean) => {
             let finalTargetConvoId = sourceConvoId;
             const identifiedGameId = identifiedGameName ? generateGameId(identifiedGameName) : null;
             
-            if (identifiedGameId && (sourceConvoId === EVERYTHING_ELSE_ID || identifiedGameId !== sourceConvoId)) {
+            // Guardrails for promoting to a dedicated game tab (pill)
+            const canPromotePill = !!identifiedGameId && (hasImages || (!hasImages && isConfidenceHigh));
+            if (canPromotePill && (sourceConvoId === EVERYTHING_ELSE_ID || identifiedGameId !== sourceConvoId)) {
                 console.log(`New game detected: "${identifiedGameName}". Creating/switching to new conversation tab.`);
                 finalTargetConvoId = identifiedGameId;
                 
@@ -810,6 +847,14 @@ export const useChat = (isHandsFreeMode: boolean) => {
                     } catch (error) {
                         console.warn('Failed to track game switch in timeline:', error);
                     }
+                }
+            } else if (!!identifiedGameId && !hasImages && !isConfidenceHigh) {
+                // Low confidence text-only: keep in Everything Else and ask for confirmation
+                try {
+                    const confirmMsg = `I think you're asking about ${identifiedGameName}. Upload a screenshot or say \"Create tab for ${identifiedGameName}\" to set up a dedicated tab.`;
+                    addSystemMessage(confirmMsg, sourceConvoId, false);
+                } catch (e) {
+                    console.log('Could not add low-confidence confirmation message:', e);
                 }
             }
 
@@ -998,6 +1043,23 @@ export const useChat = (isHandsFreeMode: boolean) => {
                 updateInsightsOnUserQuery(finalCleanedText, finalTargetConvoId, identifiedGameName, gameGenre, gameProgress, text.trim());
             }
 
+            // Cache paid latest-info responses for reuse across the app
+            if (latestInfoQuery && finalCleanedText) {
+                try {
+                    const { universalContentCacheService } = await import('../services/universalContentCacheService');
+                    const cacheType = sourceConvoId === EVERYTHING_ELSE_ID ? 'general' : 'game_info';
+                    await universalContentCacheService.cacheContent({
+                        query: text.trim(),
+                        contentType: cacheType as any,
+                        gameName: sourceConvoId === EVERYTHING_ELSE_ID ? undefined : sourceConvoId,
+                        genre: gameGenre || sourceConversation.genre,
+                        userTier: 'paid'
+                    } as any, finalCleanedText, { model: 'gemini-2.5-flash', tokens: 0, cost: 0 });
+                } catch (e) {
+                    console.warn('Universal cache save failed:', e);
+                }
+            }
+
             // Note: Insights are now generated in one unified API call for better performance
             // All insight tabs are populated simultaneously when the user makes a query
 
@@ -1146,6 +1208,21 @@ export const useChat = (isHandsFreeMode: boolean) => {
     
         try {
             if (insightTabConfig.webSearch) {
+                // Gate webSearch insights for Free tier
+                try {
+                    const tier = await unifiedUsageService.getTier();
+                    if (tier === 'free') {
+                        addSystemMessage('This insight requires the latest data. Upgrade to Pro/Vanguard to enable live updates.', conversationId, true);
+                        updateConversation(conversationId, convo => ({
+                            ...convo,
+                            insights: { ...convo.insights!, [insightId]: { ...convo.insights![insightId], status: 'error', content: 'Upgrade to enable live data for this tab.' } }
+                        }));
+                        return;
+                    }
+                } catch (e) {
+                    console.warn('Failed to check tier for webSearch gating:', e);
+                }
+
                 // Use the non-streaming function for web search
                 const prompt = `Generate content for the "${insightTabConfig.title}" insight for the game ${conversation.title} (${conversation.genre}).
                 
@@ -1155,11 +1232,44 @@ Game: ${conversation.title}
 Genre: ${conversation.genre}
 Progress: ${conversation.progress}%`;
 
-                const fullContent = await generateInsightWithSearch(
-                    prompt,
-                    'flash', // Always use Flash for cost optimization
-                    controller.signal
-                );
+                // Try cache first (global, device-agnostic)
+                let fullContent = '';
+                try {
+                    const { universalContentCacheService } = await import('../services/universalContentCacheService');
+                    const cached = await universalContentCacheService.getCachedContent({
+                        query: `${conversation.title}:${insightId}:${insightTabConfig.title}`,
+                        contentType: 'insight_tab',
+                        gameName: conversation.title,
+                        genre: conversation.genre,
+                        userTier: 'paid'
+                    } as any);
+                    if (cached?.found && cached.content?.content) {
+                        fullContent = cached.content.content;
+                    }
+                } catch (e) {
+                    console.warn('Insight cache lookup failed:', e);
+                }
+
+                if (!fullContent) {
+                    fullContent = await generateInsightWithSearch(
+                        prompt,
+                        'flash', // Use Flash for cost optimization
+                        controller.signal
+                    );
+                    // Save to cache
+                    try {
+                        const { universalContentCacheService } = await import('../services/universalContentCacheService');
+                        await universalContentCacheService.cacheContent({
+                            query: `${conversation.title}:${insightId}:${insightTabConfig.title}`,
+                            contentType: 'insight_tab',
+                            gameName: conversation.title,
+                            genre: conversation.genre,
+                            userTier: 'paid'
+                        } as any, fullContent, { model: 'gemini-2.5-flash', tokens: 0, cost: 0 });
+                    } catch (e) {
+                        console.warn('Insight cache save failed:', e);
+                    }
+                }
                 if (controller.signal.aborted) return;
                 updateConversation(conversationId, convo => ({
                     ...convo,
@@ -1640,6 +1750,22 @@ Progress: ${conversation.progress}%`;
         
         // Last resort: return the first 200 characters of the response
         return response.substring(0, 200).trim() + (response.length > 200 ? '...' : '');
+    };
+
+    // Detect if a query is "latest info" and should use cutoff + caching when paid
+    const isLatestInfoQuery = (query: string): boolean => {
+        const q = (query || '').toLowerCase();
+        return (
+            q.includes('latest') ||
+            q.includes('new') ||
+            q.includes('meta') ||
+            q.includes('strategy') ||
+            q.includes('build') ||
+            q.includes('patch') ||
+            q.includes('update') ||
+            q.includes('trailer') ||
+            q.includes('release date')
+        );
     };
 
     // Tab management command handler

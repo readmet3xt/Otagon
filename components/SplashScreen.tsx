@@ -126,33 +126,33 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
     >
-      <div className="flex-shrink-0 px-8 pt-12 flex justify-end">
+      <div className="flex-shrink-0 px-4 sm:px-6 md:px-8 pt-4 sm:pt-6 md:pt-8 flex justify-end">
         <button onClick={handleSkip} className="text-[#A3A3A3] hover:text-[#F5F5F5] transition-all duration-300 text-base font-medium hover:scale-105">Skip Intro</button>
       </div>
 
-      <main className="flex-1 flex flex-col items-center justify-center overflow-y-auto p-8">
-        <div className="text-center max-w-lg w-full my-auto">
-          <div className="mb-10 flex justify-center items-center h-28">
+      <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8">
+        <div className="text-center max-w-lg w-full">
+          <div className="mb-2 sm:mb-4 flex justify-center">
             {currentSlide.icon}
           </div>
-          <h1 className="text-4xl font-bold text-[#F5F5F5] mb-6 leading-tight">{currentSlide.title}</h1>
-          <p className="text-[#CFCFCF] text-xl mb-10 leading-relaxed">{currentSlide.description}</p>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#F5F5F5] mb-2 sm:mb-4 leading-normal">{currentSlide.title}</h1>
+          <p className="text-[#CFCFCF] text-base sm:text-lg md:text-xl mb-4 leading-relaxed">{currentSlide.description}</p>
           
           {isLastStep && (
-              <div className="space-y-6 text-left">
-                  <div className="text-center pb-4">
+              <div className="space-y-3 sm:space-y-4 text-left">
+                  <div className="text-center pb-2">
                       <button
                         onClick={() => {
                           const downloadUrl = 'https://github.com/readmet3xt/readmet3xt.github.io/releases/tag/Otakon-connector';
                           window.open(downloadUrl, '_blank');
                         }}
-                        className="text-base font-medium text-[#FF4D4D] hover:text-[#FF4D4D] hover:underline transition-all duration-300 hover:scale-105"
+                        className="text-sm sm:text-base font-medium text-[#FF4D4D] hover:text-[#FF4D4D] hover:underline transition-all duration-300 hover:scale-105"
                       >
                         Download PC Client (v1.0.0)
                       </button>
                   </div>
                   <div>
-                      <label htmlFor="connection-code" className="block text-base font-medium text-[#CFCFCF] mb-3 text-center">
+                      <label htmlFor="connection-code" className="block text-sm sm:text-base font-medium text-[#CFCFCF] mb-2 text-center">
                         6-Digit Connection Code
                       </label>
                       <input
@@ -166,7 +166,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
                       title="Enter exactly 6 digits"
                       disabled={isConnecting || isConnected}
                       required
-                      className="w-full bg-gradient-to-r from-[#2E2E2E] to-[#1A1A1A] border-2 border-[#424242]/60 rounded-xl py-3 px-4 text-[#F5F5F5] placeholder-[#6E6E6E] focus:outline-none focus:ring-2 focus:ring-[#FFAB40] focus:border-[#FFAB40]/60 disabled:opacity-50 text-center text-xl font-mono tracking-widest backdrop-blur-sm"
+                      className="w-full bg-gradient-to-r from-[#2E2E2E] to-[#1A1A1A] border-2 border-[#424242]/60 rounded-xl py-2 sm:py-3 px-4 text-[#F5F5F5] placeholder-[#6E6E6E] focus:outline-none focus:ring-2 focus:ring-[#FFAB40] focus:border-[#FFAB40]/60 disabled:opacity-50 text-center text-lg sm:text-xl font-mono tracking-widest backdrop-blur-sm"
                       style={{ textAlign: 'center' }}
                       />
                   </div>
@@ -180,21 +180,21 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
         </div>
       </main>
       
-      <footer className="flex-shrink-0 px-8 pt-6 pb-16">
+      <footer className="flex-shrink-0 px-4 sm:px-6 md:px-8 pt-3 sm:pt-4 pb-6 sm:pb-8">
         <div className="w-full max-w-lg mx-auto">
-            <div className="flex justify-center items-center mb-8 gap-3">
+            <div className="flex justify-center items-center mb-4 sm:mb-6 gap-2 sm:gap-3">
                 {slides.map((_, index) => (
                     <div key={index} className={`w-3 h-3 rounded-full transition-all duration-300 ${step === index ? 'bg-[#FF4D4D] scale-125 shadow-lg shadow-[#FF4D4D]/50' : 'bg-[#424242]/60'}`}></div>
                 ))}
             </div>
             
             {isLastStep ? (
-                <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:justify-center gap-4">
                     {!isConnected && (
                         <button
                             onClick={handleConnectClick}
                             disabled={isConnecting || !isCodeValid}
-                            className={`w-full font-bold py-4 px-8 rounded-xl transition-all duration-300 flex items-center justify-center ${
+                            className={`w-full font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl transition-all duration-300 flex items-center justify-center text-sm sm:text-base ${
                                 isCodeValid && !isConnecting 
                                     ? 'bg-gradient-to-r from-neutral-700 to-neutral-600 hover:from-neutral-600 hover:to-neutral-500 text-white hover:scale-105 hover:shadow-lg' 
                                     : 'bg-gradient-to-r from-neutral-600 to-neutral-500 text-neutral-300 cursor-not-allowed'
@@ -205,7 +205,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
                     )}
                     <button
                         onClick={isConnected ? onComplete : onSkipConnection}
-                        className="w-full bg-gradient-to-r from-neutral-700 to-neutral-600 hover:from-neutral-600 hover:to-neutral-500 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg flex items-center justify-center"
+                        className="w-full bg-gradient-to-r from-neutral-700 to-neutral-600 hover:from-neutral-600 hover:to-neutral-500 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg flex items-center justify-center text-sm sm:text-base"
                     >
                         {isConnected ? "Continue to App" : "Skip for Now"}
                     </button>

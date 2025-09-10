@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/244</span>
+                <span class='fraction'>0/240</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/244</span>
+                <span class='fraction'>0/240</span>
             </div>
         
             
@@ -302,15 +302,7 @@
 <a name='L237'></a><a href='#L237'>237</a>
 <a name='L238'></a><a href='#L238'>238</a>
 <a name='L239'></a><a href='#L239'>239</a>
-<a name='L240'></a><a href='#L240'>240</a>
-<a name='L241'></a><a href='#L241'>241</a>
-<a name='L242'></a><a href='#L242'>242</a>
-<a name='L243'></a><a href='#L243'>243</a>
-<a name='L244'></a><a href='#L244'>244</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<a name='L240'></a><a href='#L240'>240</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -680,21 +672,17 @@
 <span class="cstat-no" title="statement not covered" >        if (shouldShowSubtabs) {</span>
 <span class="cstat-no" title="statement not covered" >            return [</span>
 <span class="cstat-no" title="statement not covered" >                { id: 'chat', title: 'Chat', isNew: false, status: 'loaded' },</span>
-<span class="cstat-no" title="statement not covered" >                ...orderedInsights</span>
-<span class="cstat-no" title="statement not covered" >                    .filter(insight =&gt; insight.id !== 'chat') // Filter out chat if it somehow got into insights</span>
-<span class="cstat-no" title="statement not covered" >                    .filter(insight =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >                        // Free users can only see Otaku Diary tab</span>
-<span class="cstat-no" title="statement not covered" >                        if (userTier === 'free') {</span>
-<span class="cstat-no" title="statement not covered" >                            return insight.id === 'otaku-diary';</span>
-<span class="cstat-no" title="statement not covered" >                        }</span>
-<span class="cstat-no" title="statement not covered" >                        // Pro/Vanguard users can see all insights</span>
-<span class="cstat-no" title="statement not covered" >                        return true;</span>
-<span class="cstat-no" title="statement not covered" >                    })</span>
+<span class="cstat-no" title="statement not covered" >                { id: 'otaku-diary', title: 'Otaku Diary', isNew: false, status: 'loaded' },</span>
+<span class="cstat-no" title="statement not covered" >                ...(userTier !== 'free' ? [</span>
+<span class="cstat-no" title="statement not covered" >                    { id: 'story-so-far', title: 'Story So Far', isNew: false, status: 'loaded' },</span>
+<span class="cstat-no" title="statement not covered" >                    { id: 'lore', title: 'Lore', isNew: false, status: 'loaded' },</span>
+<span class="cstat-no" title="statement not covered" >                    { id: 'build', title: 'Build', isNew: false, status: 'loaded' }</span>
+<span class="cstat-no" title="statement not covered" >                ] : [])</span>
 <span class="cstat-no" title="statement not covered" >            ];</span>
 <span class="cstat-no" title="statement not covered" >        } else if (shouldShowWishlistTab) {</span>
 <span class="cstat-no" title="statement not covered" >            return [</span>
 <span class="cstat-no" title="statement not covered" >                { id: 'chat', title: 'Chat', isNew: false, status: 'loaded' },</span>
-<span class="cstat-no" title="statement not covered" >                { id: 'wishlist', title: '🎮 Wishlist', isNew: false, status: 'loaded', hasNotifications: wishlistNotifications &gt; 0 }</span>
+<span class="cstat-no" title="statement not covered" >                { id: 'wishlist', title: 'Wishlist', isNew: false, status: 'loaded', hasNotifications: wishlistNotifications &gt; 0 }</span>
 <span class="cstat-no" title="statement not covered" >            ];</span>
 <span class="cstat-no" title="statement not covered" >        }</span>
 <span class="cstat-no" title="statement not covered" >        return [];</span>
@@ -799,7 +787,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-30T01:27:04.971Z
+                at 2025-09-10T12:28:31.809Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

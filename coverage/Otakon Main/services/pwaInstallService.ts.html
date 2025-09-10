@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/323</span>
+                <span class='fraction'>0/340</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/323</span>
+                <span class='fraction'>0/340</span>
             </div>
         
             
@@ -386,7 +386,41 @@
 <a name='L321'></a><a href='#L321'>321</a>
 <a name='L322'></a><a href='#L322'>322</a>
 <a name='L323'></a><a href='#L323'>323</a>
-<a name='L324'></a><a href='#L324'>324</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L324'></a><a href='#L324'>324</a>
+<a name='L325'></a><a href='#L325'>325</a>
+<a name='L326'></a><a href='#L326'>326</a>
+<a name='L327'></a><a href='#L327'>327</a>
+<a name='L328'></a><a href='#L328'>328</a>
+<a name='L329'></a><a href='#L329'>329</a>
+<a name='L330'></a><a href='#L330'>330</a>
+<a name='L331'></a><a href='#L331'>331</a>
+<a name='L332'></a><a href='#L332'>332</a>
+<a name='L333'></a><a href='#L333'>333</a>
+<a name='L334'></a><a href='#L334'>334</a>
+<a name='L335'></a><a href='#L335'>335</a>
+<a name='L336'></a><a href='#L336'>336</a>
+<a name='L337'></a><a href='#L337'>337</a>
+<a name='L338'></a><a href='#L338'>338</a>
+<a name='L339'></a><a href='#L339'>339</a>
+<a name='L340'></a><a href='#L340'>340</a>
+<a name='L341'></a><a href='#L341'>341</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -710,6 +744,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >import { supabaseDataService } from './supabaseDataService';</span></span></span>
+<span class="cstat-no" title="statement not covered" >import { unifiedDataService, STORAGE_KEYS } from './unifiedDataService';</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >export interface InstallPromptEvent extends Event {</span>
 <span class="cstat-no" title="statement not covered" >  prompt(): Promise&lt;void&gt;;</span>
@@ -756,20 +791,20 @@
 <span class="cstat-no" title="statement not covered" >      this.deferredPrompt = null;</span>
 <span class="cstat-no" title="statement not covered" >      </span>
 <span class="cstat-no" title="statement not covered" >      try {</span>
-<span class="cstat-no" title="statement not covered" >        // Mark as installed in Supabase</span>
-<span class="cstat-no" title="statement not covered" >        await supabaseDataService.updateUserAppState('pwaInstalled', true);</span>
-<span class="cstat-no" title="statement not covered" >        await supabaseDataService.updateUserAppState('pwaGlobalInstalled', true);</span>
+<span class="cstat-no" title="statement not covered" >        // Use unified data service for consistent pattern</span>
+<span class="cstat-no" title="statement not covered" >        await unifiedDataService.updateUserAppState('pwaInstalled', true);</span>
+<span class="cstat-no" title="statement not covered" >        await unifiedDataService.updateUserAppState('pwaGlobalInstalled', true);</span>
 <span class="cstat-no" title="statement not covered" >        </span>
 <span class="cstat-no" title="statement not covered" >        // Also update localStorage as backup</span>
-<span class="cstat-no" title="statement not covered" >        localStorage.setItem('otakonPWAInstalled', 'true');</span>
-<span class="cstat-no" title="statement not covered" >        localStorage.setItem('otakonGlobalPWAInstalled', 'true');</span>
+<span class="cstat-no" title="statement not covered" >        localStorage.setItem(STORAGE_KEYS.PWA_INSTALLED, 'true');</span>
+<span class="cstat-no" title="statement not covered" >        localStorage.setItem(STORAGE_KEYS.PWA_GLOBAL_INSTALLED, 'true');</span>
 <span class="cstat-no" title="statement not covered" >        </span>
-<span class="cstat-no" title="statement not covered" >        console.log('✅ PWA install state updated in Supabase');</span>
+<span class="cstat-no" title="statement not covered" >        console.log('✅ PWA install state updated via unified service');</span>
 <span class="cstat-no" title="statement not covered" >      } catch (error) {</span>
-<span class="cstat-no" title="statement not covered" >        console.warn('Failed to update PWA install state in Supabase, using localStorage only:', error);</span>
+<span class="cstat-no" title="statement not covered" >        console.warn('Failed to update PWA install state via unified service, using localStorage only:', error);</span>
 <span class="cstat-no" title="statement not covered" >        // Fallback to localStorage only</span>
-<span class="cstat-no" title="statement not covered" >        localStorage.setItem('otakonPWAInstalled', 'true');</span>
-<span class="cstat-no" title="statement not covered" >        localStorage.setItem('otakonGlobalPWAInstalled', 'true');</span>
+<span class="cstat-no" title="statement not covered" >        localStorage.setItem(STORAGE_KEYS.PWA_INSTALLED, 'true');</span>
+<span class="cstat-no" title="statement not covered" >        localStorage.setItem(STORAGE_KEYS.PWA_GLOBAL_INSTALLED, 'true');</span>
 <span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" >      </span>
 <span class="cstat-no" title="statement not covered" >      this.notifyListeners(null);</span>
@@ -792,14 +827,14 @@
 <span class="cstat-no" title="statement not covered" >      // Check for iOS Safari standalone mode</span>
 <span class="cstat-no" title="statement not covered" >      const isIOSStandalone = (window.navigator as any).standalone === true;</span>
 <span class="cstat-no" title="statement not covered" >      </span>
-<span class="cstat-no" title="statement not covered" >      // Check for PWA install state from Supabase</span>
-<span class="cstat-no" title="statement not covered" >      const appState = await supabaseDataService.getUserAppState();</span>
-<span class="cstat-no" title="statement not covered" >      const hasInstalledPWA = appState.pwaInstalled === true;</span>
-<span class="cstat-no" title="statement not covered" >      const hasGlobalInstallFlag = appState.pwaGlobalInstalled === true;</span>
+<span class="cstat-no" title="statement not covered" >      // Check for PWA install state from unified service</span>
+<span class="cstat-no" title="statement not covered" >      const result = await unifiedDataService.getUserAppState();</span>
+<span class="cstat-no" title="statement not covered" >      const hasInstalledPWA = result.data.pwaInstalled === true;</span>
+<span class="cstat-no" title="statement not covered" >      const hasGlobalInstallFlag = result.data.pwaGlobalInstalled === true;</span>
 <span class="cstat-no" title="statement not covered" >      </span>
-<span class="cstat-no" title="statement not covered" >      // Fallback to localStorage if Supabase data not available</span>
-<span class="cstat-no" title="statement not covered" >      const localHasInstalledPWA = localStorage.getItem('otakonPWAInstalled') === 'true';</span>
-<span class="cstat-no" title="statement not covered" >      const localHasGlobalInstallFlag = localStorage.getItem('otakonGlobalPWAInstalled') === 'true';</span>
+<span class="cstat-no" title="statement not covered" >      // Fallback to localStorage if unified service data not available</span>
+<span class="cstat-no" title="statement not covered" >      const localHasInstalledPWA = localStorage.getItem(STORAGE_KEYS.PWA_INSTALLED) === 'true';</span>
+<span class="cstat-no" title="statement not covered" >      const localHasGlobalInstallFlag = localStorage.getItem(STORAGE_KEYS.PWA_GLOBAL_INSTALLED) === 'true';</span>
 <span class="cstat-no" title="statement not covered" >      </span>
 <span class="cstat-no" title="statement not covered" >      const finalHasInstalledPWA = hasInstalledPWA || localHasInstalledPWA;</span>
 <span class="cstat-no" title="statement not covered" >      const finalHasGlobalInstallFlag = hasGlobalInstallFlag || localHasGlobalInstallFlag;</span>
@@ -849,10 +884,18 @@
 <span class="cstat-no" title="statement not covered" >      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;</span>
 <span class="cstat-no" title="statement not covered" >      const isIOSStandalone = (window.navigator as any).standalone === true;</span>
 <span class="cstat-no" title="statement not covered" >      </span>
-<span class="cstat-no" title="statement not covered" >      // Check Supabase first</span>
-<span class="cstat-no" title="statement not covered" >      const appState = await supabaseDataService.getUserAppState();</span>
-<span class="cstat-no" title="statement not covered" >      const hasInstalledPWA = appState.pwaInstalled === true;</span>
-<span class="cstat-no" title="statement not covered" >      const hasGlobalInstallFlag = appState.pwaGlobalInstalled === true;</span>
+<span class="cstat-no" title="statement not covered" >      // Check Supabase first (only if authenticated)</span>
+<span class="cstat-no" title="statement not covered" >      let hasInstalledPWA = false;</span>
+<span class="cstat-no" title="statement not covered" >      let hasGlobalInstallFlag = false;</span>
+<span class="cstat-no" title="statement not covered" >      </span>
+<span class="cstat-no" title="statement not covered" >      try {</span>
+<span class="cstat-no" title="statement not covered" >        const appState = await supabaseDataService.getUserAppState();</span>
+<span class="cstat-no" title="statement not covered" >        hasInstalledPWA = appState.pwaInstalled === true;</span>
+<span class="cstat-no" title="statement not covered" >        hasGlobalInstallFlag = appState.pwaGlobalInstalled === true;</span>
+<span class="cstat-no" title="statement not covered" >      } catch (error) {</span>
+<span class="cstat-no" title="statement not covered" >        // User not authenticated, will use localStorage fallback</span>
+<span class="cstat-no" title="statement not covered" >        console.log('PWA: User not authenticated, using localStorage fallback');</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" >      </span>
 <span class="cstat-no" title="statement not covered" >      // Fallback to localStorage</span>
 <span class="cstat-no" title="statement not covered" >      const localHasInstalledPWA = localStorage.getItem('otakonPWAInstalled') === 'true';</span>
@@ -987,9 +1030,13 @@
 <span class="cstat-no" title="statement not covered" >  // Manually mark PWA as installed (useful for testing)</span>
 <span class="cstat-no" title="statement not covered" >  async markAsInstalled() {</span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
-<span class="cstat-no" title="statement not covered" >      // Update in Supabase</span>
-<span class="cstat-no" title="statement not covered" >      await supabaseDataService.updateUserAppState('pwaInstalled', true);</span>
-<span class="cstat-no" title="statement not covered" >      await supabaseDataService.updateUserAppState('pwaGlobalInstalled', true);</span>
+<span class="cstat-no" title="statement not covered" >      // Update in Supabase (only if authenticated)</span>
+<span class="cstat-no" title="statement not covered" >      try {</span>
+<span class="cstat-no" title="statement not covered" >        await supabaseDataService.updateUserAppState('pwaInstalled', true);</span>
+<span class="cstat-no" title="statement not covered" >        await supabaseDataService.updateUserAppState('pwaGlobalInstalled', true);</span>
+<span class="cstat-no" title="statement not covered" >      } catch (error) {</span>
+<span class="cstat-no" title="statement not covered" >        console.log('PWA: User not authenticated, updating localStorage only');</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" >      </span>
 <span class="cstat-no" title="statement not covered" >      // Also update localStorage as backup</span>
 <span class="cstat-no" title="statement not covered" >      localStorage.setItem('otakonPWAInstalled', 'true');</span>
@@ -1009,9 +1056,13 @@
 <span class="cstat-no" title="statement not covered" >  // Reset installation status (useful for testing)</span>
 <span class="cstat-no" title="statement not covered" >  async resetInstallationStatus() {</span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
-<span class="cstat-no" title="statement not covered" >      // Clear from Supabase</span>
-<span class="cstat-no" title="statement not covered" >      await supabaseDataService.updateUserAppState('pwaInstalled', false);</span>
-<span class="cstat-no" title="statement not covered" >      await supabaseDataService.updateUserAppState('pwaGlobalInstalled', false);</span>
+<span class="cstat-no" title="statement not covered" >      // Clear from Supabase (only if authenticated)</span>
+<span class="cstat-no" title="statement not covered" >      try {</span>
+<span class="cstat-no" title="statement not covered" >        await supabaseDataService.updateUserAppState('pwaInstalled', false);</span>
+<span class="cstat-no" title="statement not covered" >        await supabaseDataService.updateUserAppState('pwaGlobalInstalled', false);</span>
+<span class="cstat-no" title="statement not covered" >      } catch (error) {</span>
+<span class="cstat-no" title="statement not covered" >        console.log('PWA: User not authenticated, clearing localStorage only');</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" >      </span>
 <span class="cstat-no" title="statement not covered" >      // Also clear localStorage</span>
 <span class="cstat-no" title="statement not covered" >      localStorage.removeItem('otakonPWAInstalled');</span>
@@ -1039,7 +1090,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-30T01:27:04.971Z
+                at 2025-09-10T12:28:31.809Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

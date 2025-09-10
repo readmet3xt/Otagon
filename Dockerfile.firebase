@@ -1,0 +1,14 @@
+FROM node:20-alpine
+
+# Install Firebase CLI
+RUN npm install -g firebase-tools
+
+# Set working directory
+WORKDIR /workspace
+
+# Copy Firebase configuration
+COPY firebase.json ./
+COPY .firebaserc ./
+
+# Default command
+ENTRYPOINT ["firebase"]

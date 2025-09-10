@@ -2203,7 +2203,7 @@
 <span class="cstat-no" title="statement not covered" >  async registerGame(gameData: Partial&lt;Game&gt;): Promise&lt;Game&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
 <span class="cstat-no" title="statement not covered" >      const { data, error } = await supabase</span>
-<span class="cstat-no" title="statement not covered" >        .from('games_new')</span>
+<span class="cstat-no" title="statement not covered" >        .from('games')</span>
 <span class="cstat-no" title="statement not covered" >        .insert([gameData])</span>
 <span class="cstat-no" title="statement not covered" >        .select()</span>
 <span class="cstat-no" title="statement not covered" >        .single();</span>
@@ -2222,7 +2222,7 @@
 <span class="cstat-no" title="statement not covered" >  async getGame(identifier: string): Promise&lt;Game | null&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
 <span class="cstat-no" title="statement not covered" >      const { data, error } = await supabase</span>
-<span class="cstat-no" title="statement not covered" >        .from('games_new')</span>
+<span class="cstat-no" title="statement not covered" >        .from('games')</span>
 <span class="cstat-no" title="statement not covered" >        .select('*')</span>
 <span class="cstat-no" title="statement not covered" >        .or(`id.eq.${identifier},title.ilike.%${identifier}%`)</span>
 <span class="cstat-no" title="statement not covered" >        .single();</span>
@@ -2241,7 +2241,7 @@
 <span class="cstat-no" title="statement not covered" >  async updateGame(gameId: string, updates: Partial&lt;Game&gt;): Promise&lt;Game&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
 <span class="cstat-no" title="statement not covered" >      const { data, error } = await supabase</span>
-<span class="cstat-no" title="statement not covered" >        .from('games_new')</span>
+<span class="cstat-no" title="statement not covered" >        .from('games')</span>
 <span class="cstat-no" title="statement not covered" >        .update(updates)</span>
 <span class="cstat-no" title="statement not covered" >        .eq('id', gameId)</span>
 <span class="cstat-no" title="statement not covered" >        .select()</span>
@@ -2265,7 +2265,7 @@
 <span class="cstat-no" title="statement not covered" >    minKnowledgeScore?: number;</span>
 <span class="cstat-no" title="statement not covered" >  }): Promise&lt;Game[]&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
-<span class="cstat-no" title="statement not covered" >      let query = supabase.from('games_new').select('*');</span>
+<span class="cstat-no" title="statement not covered" >      let query = supabase.from('games').select('*');</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >      if (filters?.genre) {</span>
 <span class="cstat-no" title="statement not covered" >        query = query.eq('genre', filters.genre);</span>
@@ -2315,7 +2315,7 @@
 <span class="cstat-no" title="statement not covered" >      objectives.push(newObjective);</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >      const { data, error } = await supabase</span>
-<span class="cstat-no" title="statement not covered" >        .from('games_new')</span>
+<span class="cstat-no" title="statement not covered" >        .from('games')</span>
 <span class="cstat-no" title="statement not covered" >        .update({</span>
 <span class="cstat-no" title="statement not covered" >          game_data: { ...game.game_data, objectives }</span>
 <span class="cstat-no" title="statement not covered" >        })</span>
@@ -2368,7 +2368,7 @@
 <span class="cstat-no" title="statement not covered" >          objectives[objectiveIndex] = { ...objectives[objectiveIndex], ...updates };</span>
 <span class="cstat-no" title="statement not covered" >          </span>
 <span class="cstat-no" title="statement not covered" >          const { data, error } = await supabase</span>
-<span class="cstat-no" title="statement not covered" >            .from('games_new')</span>
+<span class="cstat-no" title="statement not covered" >            .from('games')</span>
 <span class="cstat-no" title="statement not covered" >            .update({</span>
 <span class="cstat-no" title="statement not covered" >              game_data: { ...game.game_data, objectives }</span>
 <span class="cstat-no" title="statement not covered" >            })</span>
@@ -2412,7 +2412,7 @@
 <span class="cstat-no" title="statement not covered" >      };</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >      const { data, error } = await supabase</span>
-<span class="cstat-no" title="statement not covered" >        .from('games_new')</span>
+<span class="cstat-no" title="statement not covered" >        .from('games')</span>
 <span class="cstat-no" title="statement not covered" >        .update({</span>
 <span class="cstat-no" title="statement not covered" >          session_data: { ...game.session_data, progress: updatedProgress }</span>
 <span class="cstat-no" title="statement not covered" >        })</span>
@@ -2832,7 +2832,7 @@
 <span class="cstat-no" title="statement not covered" >  async getKnowledgeConfidenceScores(): Promise&lt;{ gameId: string; title: string; score: number }[]&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
 <span class="cstat-no" title="statement not covered" >      const { data, error } = await supabase</span>
-<span class="cstat-no" title="statement not covered" >        .from('games_new')</span>
+<span class="cstat-no" title="statement not covered" >        .from('games')</span>
 <span class="cstat-no" title="statement not covered" >        .select('id, title, knowledge_confidence_score')</span>
 <span class="cstat-no" title="statement not covered" >        .order('knowledge_confidence_score', { ascending: false });</span>
 <span class="cstat-no" title="statement not covered" ></span>
@@ -3010,7 +3010,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-30T01:27:04.971Z
+                at 2025-09-10T12:28:31.809Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

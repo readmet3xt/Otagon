@@ -591,7 +591,7 @@ class DatabaseService {
     async saveUsage(usage: any, userId: string): Promise<boolean> {
         try {
             const { error } = await supabase
-                .from('users_new')
+                .from('users')
                 .upsert({
                     auth_user_id: userId,
                     usage_data: usage
@@ -615,7 +615,7 @@ class DatabaseService {
     async loadUsage(userId: string): Promise<any> {
         try {
             const { data, error } = await supabase
-                .from('users_new')
+                .from('users')
                 .select('usage_data')
                 .eq('auth_user_id', userId)
                 .single();

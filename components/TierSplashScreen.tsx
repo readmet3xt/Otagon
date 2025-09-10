@@ -20,19 +20,19 @@ const TierSplashScreen: React.FC<TierSplashScreenProps> = ({
   const isProTier = userTier === 'pro';
 
   return (
-    <div className="h-screen bg-gradient-to-br from-[#111111] to-[#0A0A0A] text-[#F5F5F5] flex flex-col items-center justify-center font-inter px-8 text-center overflow-hidden animate-fade-in">
+    <div className="h-screen bg-gradient-to-br from-[#111111] to-[#0A0A0A] text-[#F5F5F5] flex flex-col items-center justify-center font-inter px-4 sm:px-6 md:px-8 text-center overflow-hidden animate-fade-in">
       <div className="absolute top-0 left-0 w-full h-full bg-gradient-radial-at-top from-[#1C1C1C]/30 to-transparent pointer-events-none"></div>
       
-      <main className="flex-1 flex flex-col items-center justify-center p-8 w-full max-w-lg">
-        <div className="flex-shrink-0 mb-10 animate-fade-slide-up">
-          <Logo />
+      <main className="flex flex-col items-center justify-center w-full max-w-lg">
+        <div className="flex-shrink-0 animate-fade-slide-up mb-1">
+          <Logo className="w-24 h-24 sm:w-26 sm:h-26 md:w-28 md:h-28" />
         </div>
 
-        <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 animate-fade-slide-up leading-tight">
-          {isFreeTier ? 'Supercharge with Otakon' : 'Unlock Your Full Potential'}
+        <h1 className="text-5xl font-bold text-white animate-fade-slide-up leading-normal">
+          {isFreeTier ? 'Supercharge with Otagon' : 'Unlock Your Full Potential'}
         </h1>
 
-        <p className="text-xl text-[#A3A3A3] mb-10 leading-relaxed animate-fade-slide-up">
+        <p className="text-base text-[#A3A3A3] mb-6 leading-relaxed animate-fade-slide-up">
           {isFreeTier 
             ? 'Ready to take your gaming experience to the next level?'
             : 'You\'re already a Pro! Ready to become a Vanguard?'
@@ -40,9 +40,9 @@ const TierSplashScreen: React.FC<TierSplashScreenProps> = ({
         </p>
 
         {/* Tier Options */}
-        <div className="w-full space-y-6 mb-10 animate-fade-slide-up">
+        <div className="w-full space-y-6 mb-8 animate-fade-slide-up">
           {/* Pro Plan */}
-          <div className={`relative p-8 rounded-3xl border-2 transition-all duration-500 hover:scale-105 ${
+          <div className={`relative p-6 rounded-3xl border-2 transition-all duration-500 hover:scale-105 ${
             isFreeTier 
               ? 'bg-gradient-to-r from-[#1C1C1C]/60 to-[#0A0A0A]/60 backdrop-blur-xl border-neutral-700/60 hover:border-[#E53A3A]/60 cursor-pointer hover:shadow-xl hover:shadow-[#E53A3A]/10' 
               : 'bg-gradient-to-r from-[#1C1C1C]/40 to-[#0A0A0A]/40 backdrop-blur-sm border-neutral-600/60 opacity-50 cursor-not-allowed'
@@ -80,8 +80,9 @@ const TierSplashScreen: React.FC<TierSplashScreenProps> = ({
           </div>
 
           {/* Vanguard Plan */}
-          <div className="relative p-8 rounded-3xl border-2 border-[#FFAB40] bg-gradient-to-r from-[#111] to-[#0A0A0A] shadow-2xl shadow-[#D98C1F]/30 hover:shadow-[#D98C1F]/50 transition-all duration-500 hover:scale-105">
-            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+          <div className="relative p-6 rounded-3xl border-2 border-[#FFAB40] bg-gradient-to-r from-[#111] to-[#0A0A0A] shadow-2xl shadow-[#D98C1F]/30 hover:shadow-[#D98C1F]/50 transition-all duration-500 hover:scale-105">
+            {/* Badge inside card content */}
+            <div className="text-center mb-4">
               <span className="text-sm font-bold bg-gradient-to-r from-[#FFAB40] to-[#FF8C00] text-black px-4 py-2 rounded-full uppercase tracking-wider shadow-lg">
                 {isProTier ? 'Recommended' : 'Most Popular'}
               </span>
@@ -119,7 +120,7 @@ const TierSplashScreen: React.FC<TierSplashScreenProps> = ({
         {/* Continue Button */}
         <button
           onClick={onContinue}
-          className="w-full bg-neutral-700 hover:bg-neutral-600 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center"
+          className="w-full bg-neutral-700 hover:bg-neutral-600 text-white font-bold py-3 px-6 rounded-xl transition-colors flex items-center justify-center"
         >
           Continue with Current Plan
         </button>

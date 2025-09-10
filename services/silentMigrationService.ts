@@ -80,25 +80,25 @@ export class SilentMigrationService {
       const { category, table } = this.categorizeKey(key);
       
       if (table === 'user_preferences') {
-        // Store in users_new table preferences JSONB column
+        // Store in users table preferences JSONB column
         await this.supabase
-          .from('users_new')
+          .from('users')
           .upsert({
             auth_user_id: userId,
             preferences: { [category]: { [key]: value } }
           });
       } else if (table === 'app_state') {
-        // Store in users_new table app_state JSONB column
+        // Store in users table app_state JSONB column
         await this.supabase
-          .from('users_new')
+          .from('users')
           .upsert({
             auth_user_id: userId,
             app_state: { [key]: value }
           });
       } else if (table === 'user_analytics') {
-        // Store in analytics_new table
+        // Store in analytics table
         await this.supabase
-          .from('analytics_new')
+          .from('analytics')
           .insert({
             user_id: userId,
             category,
@@ -198,7 +198,7 @@ export class SilentMigrationService {
 
       // Check if we already have data in Supabase
       const { data: userData } = await this.supabase
-        .from('users_new')
+        .from('users')
         .select('preferences, app_state')
         .eq('auth_user_id', userId)
         .limit(1);
@@ -233,7 +233,7 @@ export class SilentMigrationService {
 
       // Check if we already have data in Supabase
       const { data: userData } = await this.supabase
-        .from('users_new')
+        .from('users')
         .select('preferences, app_state')
         .eq('auth_user_id', userId)
         .limit(1);
@@ -275,7 +275,7 @@ export class LocalStorageReplacer {
       if (user) {
         // Check if we have data in Supabase
         const { data: userData } = await this.supabase
-          .from('users_new')
+          .from('users')
           .select('preferences, app_state')
           .eq('auth_user_id', user.id)
           .limit(1);
@@ -307,17 +307,17 @@ export class LocalStorageReplacer {
           const { category, table } = this.categorizeKey(key);
           
           if (table === 'user_preferences') {
-            // Update preferences in users_new table
+            // Update preferences in users table
             await this.supabase
-              .from('users_new')
+              .from('users')
               .upsert({
                 auth_user_id: userId,
                 preferences: { [category]: { [key]: value } }
               });
           } else if (table === 'app_state') {
-            // Update app_state in users_new table
+            // Update app_state in users table
             await this.supabase
-              .from('users_new')
+              .from('users')
               .upsert({
                 auth_user_id: userId,
                 app_state: { [key]: value }
@@ -342,7 +342,7 @@ export class LocalStorageReplacer {
           let result;
           if (table === 'user_preferences') {
             const { data } = await this.supabase
-              .from('users_new')
+              .from('users')
               .select('preferences')
               .eq('auth_user_id', userId)
               .single();
@@ -352,7 +352,7 @@ export class LocalStorageReplacer {
             }
           } else if (table === 'app_state') {
             const { data } = await this.supabase
-              .from('users_new')
+              .from('users')
               .select('app_state')
               .eq('auth_user_id', userId)
               .single();

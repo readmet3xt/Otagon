@@ -363,8 +363,8 @@
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >const FeatureItem: React.FC&lt;{ icon: React.ReactNode; title: React.ReactNode; children: React.ReactNode; }&gt; = ({ icon, title, children }) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    return (</span>
-<span class="cstat-no" title="statement not covered" >        &lt;div className="flex items-start gap-6 p-8 transition-all duration-500 hover:scale-105 bg-gradient-to-r from-[#1C1C1C]/40 to-[#0A0A0A]/40 border border-neutral-800/60 rounded-2xl backdrop-blur-sm"&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;div className="flex-shrink-0 flex items-center justify-center h-16 w-16 mt-1 rounded-2xl bg-gradient-to-br from-[#FF4D4D]/20 to-[#FFAB40]/20 border-2 border-neutral-700/60 backdrop-blur-sm"&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;div className="flex items-start gap-8 p-8 transition-all duration-500 hover:scale-105 bg-gradient-to-r from-[#1C1C1C]/40 to-[#0A0A0A]/40 border border-neutral-800/60 rounded-2xl backdrop-blur-sm"&gt;</span>
+<span class="cstat-no" title="statement not covered" >            &lt;div className="flex-shrink-0 flex items-center justify-center h-12 w-12 mt-1 rounded-xl bg-gradient-to-br from-[#FF4D4D]/20 to-[#FFAB40]/20 border-2 border-neutral-700/60 backdrop-blur-sm"&gt;</span>
 <span class="cstat-no" title="statement not covered" >                {icon}</span>
 <span class="cstat-no" title="statement not covered" >            &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >            &lt;div className="flex-grow"&gt;</span>
@@ -377,21 +377,21 @@
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >const HowToUseSplashScreen: React.FC&lt;HowToUseSplashScreenProps&gt; = ({ onComplete }) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    return (</span>
-<span class="cstat-no" title="statement not covered" >        &lt;div className="h-screen bg-gradient-to-br from-[#111111] to-[#0A0A0A] text-[#F5F5F5] flex flex-col font-inter animate-fade-in"&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;div className="h-screen bg-gradient-to-br from-[#111111] to-[#0A0A0A] text-[#F5F5F5] flex flex-col font-inter"&gt;</span>
 <span class="cstat-no" title="statement not covered" >            {/* Fixed Header */}</span>
-<span class="cstat-no" title="statement not covered" >            &lt;header className="flex-shrink-0 px-8 pt-16 pb-8 text-center z-10 bg-gradient-to-br from-[#111111] to-[#0A0A0A]"&gt;</span>
+<span class="cstat-no" title="statement not covered" >            &lt;header className="flex-shrink-0 px-4 sm:px-6 md:px-8 pt-3 sm:pt-4 md:pt-6 pb-2 sm:pb-3 text-center z-10 bg-gradient-to-br from-[#111111] to-[#0A0A0A]"&gt;</span>
 <span class="cstat-no" title="statement not covered" >                &lt;div className="max-w-4xl mx-auto"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    &lt;h1 className="text-4xl sm:text-5xl font-bold text-white mb-6 leading-tight"&gt;You're Connected!&lt;/h1&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    &lt;p className="text-xl text-neutral-300 leading-relaxed"&gt;Master Otakon in four easy steps.&lt;/p&gt;</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;h1 className="text-3xl font-bold text-white leading-normal"&gt;You're Connected!&lt;/h1&gt;</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;p className="text-base text-neutral-300 leading-relaxed mt-2"&gt;Master Otagon in four easy steps.&lt;/p&gt;</span>
 <span class="cstat-no" title="statement not covered" >                &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >            &lt;/header&gt;</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >            {/* Scrollable Main Content */}</span>
-<span class="cstat-no" title="statement not covered" >            &lt;main className="flex-1 overflow-y-auto px-6 sm:px-8 pb-8 how-to-use-scrollbar"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                &lt;div className="max-w-4xl mx-auto space-y-8 py-4"&gt;</span>
+<span class="cstat-no" title="statement not covered" >            &lt;main className="flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 pb-3 sm:pb-4 md:pb-6 how-to-use-scrollbar"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                &lt;div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 py-2 sm:py-3"&gt;</span>
 <span class="cstat-no" title="statement not covered" >                    {/* Item 1: Capture */}</span>
 <span class="cstat-no" title="statement not covered" >                    &lt;FeatureItem</span>
-<span class="cstat-no" title="statement not covered" >                        icon={&lt;KeyboardIcon className="w-8 h-8 text-[#FFAB40]" /&gt;}</span>
+<span class="cstat-no" title="statement not covered" >                        icon={&lt;KeyboardIcon className="w-6 h-6 text-[#FFAB40]" /&gt;}</span>
 <span class="cstat-no" title="statement not covered" >                        title="1. Instant Capture"</span>
 <span class="cstat-no" title="statement not covered" >                    &gt;</span>
 <span class="cstat-no" title="statement not covered" >                        &lt;p className="mb-4"&gt;Use hotkeys to instantly analyze your game screen. Toggle the </span>
@@ -413,7 +413,7 @@
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >                    {/* Item 2: Screenshot Quality */}</span>
 <span class="cstat-no" title="statement not covered" >                    &lt;FeatureItem</span>
-<span class="cstat-no" title="statement not covered" >                        icon={&lt;ScreenshotIcon className="w-8 h-8 text-[#FFAB40]" /&gt;}</span>
+<span class="cstat-no" title="statement not covered" >                        icon={&lt;ScreenshotIcon className="w-6 h-6 text-[#FFAB40]" /&gt;}</span>
 <span class="cstat-no" title="statement not covered" >                        title="2. The Perfect Screenshot"</span>
 <span class="cstat-no" title="statement not covered" >                    &gt;</span>
 <span class="cstat-no" title="statement not covered" >                        &lt;p&gt;For the best hints, capture clear, full-screen views of:&lt;/p&gt;</span>
@@ -426,7 +426,7 @@
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >                    {/* Item 3: Insights */}</span>
 <span class="cstat-no" title="statement not covered" >                    &lt;FeatureItem</span>
-<span class="cstat-no" title="statement not covered" >                        icon={&lt;InsightsIcon className="w-8 h-8 text-[#FFAB40]" /&gt;}</span>
+<span class="cstat-no" title="statement not covered" >                        icon={&lt;InsightsIcon className="w-6 h-6 text-[#FFAB40]" /&gt;}</span>
 <span class="cstat-no" title="statement not covered" >                        title={&lt;&gt;3. Manage Insights&lt;ProBadge /&gt;&lt;/&gt;}</span>
 <span class="cstat-no" title="statement not covered" >                    &gt;</span>
 <span class="cstat-no" title="statement not covered" >                        &lt;p className="mb-4"&gt;</span>
@@ -453,7 +453,7 @@
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >                    {/* Item 4: Hands-Free */}</span>
 <span class="cstat-no" title="statement not covered" >                    &lt;FeatureItem</span>
-<span class="cstat-no" title="statement not covered" >                        icon={&lt;HandsFreeIcon isActive={true} className="w-8 h-8 text-[#FFAB40]" /&gt;}</span>
+<span class="cstat-no" title="statement not covered" >                        icon={&lt;HandsFreeIcon isActive={true} className="w-6 h-6 text-[#FFAB40]" /&gt;}</span>
 <span class="cstat-no" title="statement not covered" >                        title={&lt;&gt;4. Go Hands-Free&lt;ProBadge /&gt;&lt;/&gt;}</span>
 <span class="cstat-no" title="statement not covered" >                    &gt;</span>
 <span class="cstat-no" title="statement not covered" >                        &lt;p&gt;Stay immersed in the action. Enable Hands-Free mode to have hints and lore read aloud to you, keeping you focused on your game.&lt;/p&gt;</span>
@@ -462,11 +462,11 @@
 <span class="cstat-no" title="statement not covered" >            &lt;/main&gt;</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >            {/* Fixed Footer */}</span>
-<span class="cstat-no" title="statement not covered" >            &lt;footer className="flex-shrink-0 px-8 pt-6 pb-16 z-10 bg-gradient-to-br from-[#111111] to-[#0A0A0A]"&gt;</span>
+<span class="cstat-no" title="statement not covered" >            &lt;footer className="flex-shrink-0 p-6 sm:p-8 z-10 bg-gradient-to-br from-[#111111] to-[#0A0A0A]"&gt;</span>
 <span class="cstat-no" title="statement not covered" >                &lt;div className="w-full max-w-4xl mx-auto text-center"&gt;</span>
 <span class="cstat-no" title="statement not covered" >                    &lt;button</span>
 <span class="cstat-no" title="statement not covered" >                        onClick={onComplete}</span>
-<span class="cstat-no" title="statement not covered" >                        className="bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] hover:from-[#E53A3A] hover:to-[#D98C1F] text-white font-bold py-4 px-12 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg text-lg flex items-center justify-center mx-auto"</span>
+<span class="cstat-no" title="statement not covered" >                        className="bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] hover:from-[#E53A3A] hover:to-[#D98C1F] text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg text-lg flex items-center justify-center mx-auto"</span>
 <span class="cstat-no" title="statement not covered" >                    &gt;</span>
 <span class="cstat-no" title="statement not covered" >                        Let's Begin</span>
 <span class="cstat-no" title="statement not covered" >                    &lt;/button&gt;</span>
@@ -484,7 +484,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-30T01:27:04.971Z
+                at 2025-09-10T12:28:31.809Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

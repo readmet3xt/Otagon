@@ -1,99 +1,84 @@
 # 🗄️ Otakon Database Schemas
 
-This folder contains all database schemas for the Otakon application, organized by purpose and version.
+This folder contains documentation for the Otakon database schemas.
+
+## 🎯 **Current Schema**
+
+**The single source of truth for the database schema is now:**
+- **`MASTER_SCHEMA.sql`** (in the root directory)
+  - 8 consolidated parent-child tables (reduced from 52)
+  - 44 compatibility views for seamless app integration
+  - Row Level Security (RLS) enabled
+  - Performance optimized indexes
+  - Essential RPC functions
+  - **This is the ONLY schema file you need**
 
 ## 📁 **Folder Structure**
 
 ### **🚀 Production** (`/production/`)
-**Current production-ready schemas for deployment.**
+**Production schema documentation.**
 
-- **OTAKON_V19_ULTIMATE_MASTER_SCHEMA.sql** - **USE THIS FOR PRODUCTION**
-  - 27 tables with full v19 features
-  - Row Level Security (RLS) enabled
-  - Performance optimized indexes
-  - Production ready, no migration issues
-  - **Recommended for new deployments**
+- **README_V19_ULTIMATE_MASTER.md** - Production schema documentation
 
-- **README_V19_ULTIMATE_MASTER.md** - Complete production schema documentation
+### **📚 Documentation**
+**Schema documentation and analysis.**
 
-### **🔄 Migrations** (`/migrations/`)
-**Safe migration scripts for existing databases.**
-
-- **OTAKON_V19_MIGRATION_SCRIPT_FIXED.sql** - **SAFE MIGRATION SCRIPT**
-  - Adds v19 tables to existing database
-  - Uses `IF NOT EXISTS` checks
-  - No data loss, safe for production
-  - **Use for upgrading existing databases**
-
-- **OTAKON_V19_MIGRATION_SCRIPT.sql** - Original migration script
-- **INDEX_RECREATION_PRODUCTION.sql** - Production index optimization
-
-### **📚 Legacy** (`/legacy/`)
-**Previous schema versions for reference only.**
-
-- **OTAKON_V19_ENHANCED_SCHEMA.sql** - Previous enhanced schema
-- **ULTIMATE-MASTER-CLEAN-SLATE.sql** - Legacy clean slate
-- **otakon-complete-schema.sql** - Legacy complete schema
+- **README_V19_DATABASE.md** - Database documentation
+- **README.md** - This file
 
 ## 🚀 **Quick Start**
 
-### **New Deployment (Recommended):**
+### **Database Setup:**
 ```bash
-# Use production schema
-psql -h YOUR_HOST -U YOUR_USER -d YOUR_DB -f docs/schemas/production/OTAKON_V19_ULTIMATE_MASTER_SCHEMA.sql
-```
-
-### **Existing Database Migration:**
-```bash
-# Safe migration
-psql -h YOUR_HOST -U YOUR_USER -d YOUR_DB -f docs/schemas/migrations/OTAKON_V19_MIGRATION_SCRIPT_FIXED.sql
-```
-
-### **Production Index Optimization:**
-```bash
-# Optimize indexes (run during maintenance window)
-psql -h YOUR_HOST -U YOUR_USER -d YOUR_DB -f docs/schemas/migrations/INDEX_RECREATION_PRODUCTION.sql
+# Run the master schema in your Supabase SQL Editor
+# File: MASTER_SCHEMA.sql (in root directory)
 ```
 
 ## 📊 **Schema Features**
 
-### **v19 Tables (27 total):**
-- **User Management**: `user_profiles`, `player_profiles`, `user_preferences`
-- **Game Context**: `game_contexts`, `build_snapshots`, `session_summaries`
-- **AI Features**: `enhanced_insights`, `proactive_insights`, `proactive_triggers`
-- **Conversation**: `conversation_contexts`
-- **Cost Tracking**: `api_cost_tracking`
-- **Core Tables**: `conversations`, `messages`, `insights`, `usage`, etc.
+### **8 Consolidated Tables:**
+- **`app_level`** - System & global data
+- **`users`** - All user-related data (consolidates 15+ tables)
+- **`games`** - All game-related data (consolidates 10+ tables)
+- **`conversations`** - All chat & AI data (consolidates 8+ tables)
+- **`tasks`** - All task & objective data (consolidates 4+ tables)
+- **`analytics`** - All analytics & tracking data (consolidates 6+ tables)
+- **`cache`** - All caching & performance data (consolidates 3+ tables)
+- **`admin`** - All admin & system data (consolidates 4+ tables)
+
+### **44 Compatibility Views:**
+- Maintains backward compatibility with existing app code
+- No code changes required
+- Seamless transition from 52 tables to 8
 
 ### **Security Features:**
 - **Row Level Security (RLS)** - User data isolation
 - **Admin Access Control** - Secure admin operations
-- **Encrypted Storage** - Sensitive data protection
+- **Strict Data Separation** - Developer mode vs authenticated users
 
 ### **Performance Features:**
 - **Strategic Indexing** - Optimized query performance
-- **Efficient Triggers** - Automated data management
-- **Clean Architecture** - No unused tables or indexes
+- **Parent-Child Structure** - Logical data organization
+- **85% Complexity Reduction** - From 52 tables to 8
 
 ## ⚠️ **Important Notes**
 
-1. **Production Schema**: Always use `/production/` for new deployments
-2. **Migration Script**: Use `/migrations/` for existing database upgrades
-3. **Backup First**: Always backup before schema changes
-4. **Test Environment**: Test migrations in development first
-5. **Maintenance Window**: Use production scripts during low-traffic periods
+1. **Single Source of Truth**: Only use `MASTER_SCHEMA.sql`
+2. **Backup First**: Always backup before schema changes
+3. **Test Environment**: Test in development first
+4. **Zero Downtime**: App works without code changes
 
 ## 🔍 **Verification**
 
 After deployment, verify:
-- **Table Count**: Should be exactly 27 tables
+- **Table Count**: Should be exactly 8 tables
+- **View Count**: Should be 44 compatibility views
 - **RLS Policies**: User isolation working correctly
-- **Indexes**: Performance queries running fast
-- **Triggers**: Automated functions working properly
+- **App Functionality**: All features working seamlessly
 
 ---
 
-**Use the right schema for your deployment scenario! 🎮**
+**The consolidated schema is now the single source of truth! 🎮**
 
 
 

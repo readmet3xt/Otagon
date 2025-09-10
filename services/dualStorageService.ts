@@ -54,17 +54,17 @@ export class DualStorageService {
         const userId = await this.getCurrentUserId();
         if (userId) {
           if (category) {
-            // Use users_new table preferences JSONB column
+            // Use users table preferences JSONB column
             await this.supabase
-              .from('users_new')
+              .from('users')
               .upsert({
                 auth_user_id: userId,
                 preferences: { [category]: { [key]: serializedValue } }
               });
           } else {
-            // Use users_new table app_state JSONB column
+            // Use users table app_state JSONB column
             await this.supabase
-              .from('users_new')
+              .from('users')
               .upsert({
                 auth_user_id: userId,
                 app_state: { [key]: serializedValue }
@@ -96,9 +96,9 @@ export class DualStorageService {
           let result;
           
           if (category) {
-            // Read from users_new table preferences JSONB column
+            // Read from users table preferences JSONB column
             const { data } = await this.supabase
-              .from('users_new')
+              .from('users')
               .select('preferences')
               .eq('auth_user_id', userId)
               .single();
@@ -107,9 +107,9 @@ export class DualStorageService {
               result = { value: data.preferences[category][key] };
             }
           } else {
-            // Read from users_new table app_state JSONB column
+            // Read from users table app_state JSONB column
             const { data } = await this.supabase
-              .from('users_new')
+              .from('users')
               .select('app_state')
               .eq('auth_user_id', userId)
               .single();

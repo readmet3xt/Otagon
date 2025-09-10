@@ -178,7 +178,7 @@ export class GameKnowledgeService {
   async registerGame(gameData: Partial<Game>): Promise<Game> {
     try {
       const { data, error } = await supabase
-        .from('games_new')
+        .from('games')
         .insert([gameData])
         .select()
         .single();
@@ -197,7 +197,7 @@ export class GameKnowledgeService {
   async getGame(identifier: string): Promise<Game | null> {
     try {
       const { data, error } = await supabase
-        .from('games_new')
+        .from('games')
         .select('*')
         .or(`id.eq.${identifier},title.ilike.%${identifier}%`)
         .single();
@@ -216,7 +216,7 @@ export class GameKnowledgeService {
   async updateGame(gameId: string, updates: Partial<Game>): Promise<Game> {
     try {
       const { data, error } = await supabase
-        .from('games_new')
+        .from('games')
         .update(updates)
         .eq('id', gameId)
         .select()
@@ -240,7 +240,7 @@ export class GameKnowledgeService {
     minKnowledgeScore?: number;
   }): Promise<Game[]> {
     try {
-      let query = supabase.from('games_new').select('*');
+      let query = supabase.from('games').select('*');
 
       if (filters?.genre) {
         query = query.eq('genre', filters.genre);
@@ -290,7 +290,7 @@ export class GameKnowledgeService {
       objectives.push(newObjective);
 
       const { data, error } = await supabase
-        .from('games_new')
+        .from('games')
         .update({
           game_data: { ...game.game_data, objectives }
         })
@@ -343,7 +343,7 @@ export class GameKnowledgeService {
           objectives[objectiveIndex] = { ...objectives[objectiveIndex], ...updates };
           
           const { data, error } = await supabase
-            .from('games_new')
+            .from('games')
             .update({
               game_data: { ...game.game_data, objectives }
             })
@@ -387,7 +387,7 @@ export class GameKnowledgeService {
       };
 
       const { data, error } = await supabase
-        .from('games_new')
+        .from('games')
         .update({
           session_data: { ...game.session_data, progress: updatedProgress }
         })
@@ -807,7 +807,7 @@ export class GameKnowledgeService {
   async getKnowledgeConfidenceScores(): Promise<{ gameId: string; title: string; score: number }[]> {
     try {
       const { data, error } = await supabase
-        .from('games_new')
+        .from('games')
         .select('id, title, knowledge_confidence_score')
         .order('knowledge_confidence_score', { ascending: false });
 

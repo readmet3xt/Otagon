@@ -138,7 +138,7 @@ export const useEnhancedInsights = (
                 gameName, 
                 genre, 
                 progress, 
-                'paid', // Fix userTier type
+                userTier,
                 Promise.resolve(resolvedProfile), // Add profile parameter
                 await gameContext, // Await gameContext
                 (error) => console.error('Insight generation error:', error)
@@ -188,13 +188,15 @@ export const useEnhancedInsights = (
     /**
      * Update existing insights when user makes explicit queries
      * Always uses Gemini 2.5 Flash for cost optimization
+     * Intelligently updates multiple relevant tabs based on AI response context
      */
     const updateInsightsForUserQuery = useCallback(async (
         gameName: string, 
         genre: string, 
         progress: number, 
         conversationId: string,
-        userTier: 'free' | 'paid'
+        userTier: 'free' | 'paid',
+        aiResponseContext?: string // Add AI response context for intelligent tab selection
     ) => {
         if (!gameName || !genre || !profile || !insightTabs.length) return;
         
@@ -212,9 +214,11 @@ export const useEnhancedInsights = (
                 progress, 
                 conversationId,
                 insightTabs,
-                'paid', // Fix userTier type
+                userTier,
                 Promise.resolve(resolvedProfile), // Add profile parameter
-                (error) => console.error('Insight update error:', error)
+                (error) => console.error('Insight update error:', error),
+                insights, // Pass existing insights for context from Pro calls
+                aiResponseContext // Pass AI response context for intelligent tab selection
             );
             
             // Update insights with new content
@@ -290,7 +294,7 @@ export const useEnhancedInsights = (
                 progress, 
                 conversationId,
                 [tabToRetry], // Only retry this specific tab
-                'paid', // Fix userTier type
+                userTier,
                 Promise.resolve(resolvedProfile), // Add profile parameter
                 (error) => console.error('Insight retry error:', error)
             );

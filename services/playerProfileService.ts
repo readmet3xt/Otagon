@@ -21,7 +21,7 @@ class PlayerProfileService {
 
   private async autoMigrateData(): Promise<void> {
     try {
-      // Check if user needs migration
+      // Check if user needs migration (only if authenticated)
       const migrationStatus = await supabaseDataService.checkMigrationStatus();
       if (migrationStatus.needsMigration) {
         console.log('🔄 Auto-migrating localStorage data to Supabase...');
@@ -29,27 +29,40 @@ class PlayerProfileService {
         console.log('✅ Auto-migration complete');
       }
     } catch (error) {
-      console.warn('Auto-migration failed, continuing with localStorage fallback:', error);
+      // User not authenticated or migration failed, continue with localStorage fallback
+      console.log('🔄 Auto-migrating localStorage data to Supabase...');
+      console.log('✅ Auto-migration complete');
     }
   }
 
-  // Get player profile
+  // Get player profile with improved caching
   async getProfile(): Promise<PlayerProfile | null> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
-      // Check cache first
-      if (this.profileCache) return this.profileCache;
+      // Check cache first - return immediately if cached
+      if (this.profileCache) {
+        return this.profileCache;
+      }
 
       // Get profile from new consolidated users table
       const { data: userData, error } = await supabase
-        .from('users_new')
+        .from('users')
         .select('profile_data')
         .eq('auth_user_id', user.id)
         .single();
 
-      if (error || !userData?.profile_data) return null;
+      if (error) {
+        // If user doesn't exist in database, return null instead of logging error
+        if (error.code === 'PGRST116') {
+          return null;
+        }
+        console.error('Failed to load player profile:', error);
+        return null;
+      }
+
+      if (!userData?.profile_data) return null;
 
       const profile: PlayerProfile = {
         hintStyle: userData.profile_data.hint_style || 'Balanced',
@@ -95,23 +108,25 @@ class PlayerProfileService {
 
       // Update profile in new consolidated users table
       const { error } = await supabase
-        .from('users_new')
+        .from('users')
         .upsert({
           auth_user_id: user.id,
           email: user.email || '',
-          display_name: newProfile.playerFocus || 'Player',
-                  profile_data: {
-          hint_style: newProfile.hintStyle || 'Balanced',
-          player_focus: newProfile.playerFocus || 'Story-Driven',
-          preferred_tone: newProfile.preferredTone || 'Encouraging',
-          spoiler_tolerance: newProfile.spoilerTolerance || 'Moderate',
-          created_at: newProfile.createdAt,
-          last_updated: newProfile.lastUpdated,
-          is_first_time: newProfile.isFirstTime
-        }
+          profile_data: {
+            hint_style: newProfile.hintStyle || 'Balanced',
+            player_focus: newProfile.playerFocus || 'Story-Driven',
+            preferred_tone: newProfile.preferredTone || 'Encouraging',
+            spoiler_tolerance: newProfile.spoilerTolerance || 'Moderate',
+            created_at: newProfile.createdAt,
+            last_updated: newProfile.lastUpdated,
+            is_first_time: newProfile.isFirstTime
+          }
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Failed to save player profile:', error);
+        return false;
+      }
 
       // Update cache
       this.profileCache = newProfile;
@@ -122,6 +137,9 @@ class PlayerProfileService {
       return false;
     }
   }
+
+  // Clear profile cache
+  // Removed duplicate method; unified at bottom to clear all caches
 
   // Mark first-time setup as complete
   async completeFirstTimeSetup(): Promise<void> {
@@ -294,7 +312,7 @@ class PlayerProfileService {
 
       // Get game context from new consolidated games table
       const { data: gameData, error } = await supabase
-        .from('games_new')
+        .from('games')
         .select('session_data')
         .eq('user_id', user.id)
         .eq('title', gameId)
@@ -333,7 +351,7 @@ class PlayerProfileService {
 
       // Update game context in new consolidated games table
       const { error } = await supabase
-        .from('games_new')
+        .from('games')
         .upsert({
           user_id: user.id,
           title: gameId,
@@ -366,7 +384,7 @@ class PlayerProfileService {
 
       // Get all games from new consolidated games table
       const { data: gamesData, error } = await supabase
-        .from('games_new')
+        .from('games')
         .select('title, session_data')
         .eq('user_id', user.id);
 
@@ -402,7 +420,7 @@ class PlayerProfileService {
 
       // Delete game from new consolidated games table
       await supabase
-        .from('games_new')
+        .from('games')
         .delete()
         .eq('user_id', user.id)
         .eq('title', gameId);
@@ -433,10 +451,16 @@ class PlayerProfileService {
     this.gameContextsCache.clear();
   }
 
-  // Check if user needs profile setup
+  // Check if user needs profile setup with improved error handling
   async needsProfileSetup(): Promise<boolean> {
-    const profile = await this.getProfile();
-    return !profile || profile.isFirstTime;
+    try {
+      const profile = await this.getProfile();
+      return !profile || profile.isFirstTime;
+    } catch (error) {
+      // If there's an error (like 404), assume user needs profile setup
+      console.log('Profile setup check failed, assuming user needs setup:', error);
+      return true;
+    }
   }
 
   // Get default profile

@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/496</span>
+                <span class='fraction'>0/502</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/496</span>
+                <span class='fraction'>0/502</span>
             </div>
         
             
@@ -559,7 +559,19 @@
 <a name='L494'></a><a href='#L494'>494</a>
 <a name='L495'></a><a href='#L495'>495</a>
 <a name='L496'></a><a href='#L496'>496</a>
-<a name='L497'></a><a href='#L497'>497</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L497'></a><a href='#L497'>497</a>
+<a name='L498'></a><a href='#L498'>498</a>
+<a name='L499'></a><a href='#L499'>499</a>
+<a name='L500'></a><a href='#L500'>500</a>
+<a name='L501'></a><a href='#L501'>501</a>
+<a name='L502'></a><a href='#L502'>502</a>
+<a name='L503'></a><a href='#L503'>503</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1056,7 +1068,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >import React, { useState, useEffect } from 'react';</span></span></span>
-<span class="cstat-no" title="statement not covered" >import { otakuDiaryService, DiaryTask } from '../services/otakuDiaryService';</span>
+<span class="cstat-no" title="statement not covered" >import type { DiaryTask } from '../services/otakuDiaryService';</span>
 <span class="cstat-no" title="statement not covered" >import { taskDetectionService } from '../services/taskDetectionService';</span>
 <span class="cstat-no" title="statement not covered" >import { unifiedUsageService } from '../services/unifiedUsageService';</span>
 <span class="cstat-no" title="statement not covered" ></span>
@@ -1101,6 +1113,7 @@
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
 <span class="cstat-no" title="statement not covered" >      console.log('🔍 Creating task...');</span>
+<span class="cstat-no" title="statement not covered" >      const { otakuDiaryService } = await import('../services/otakuDiaryService');</span>
 <span class="cstat-no" title="statement not covered" >      const result = await otakuDiaryService.createTask({</span>
 <span class="cstat-no" title="statement not covered" >        title: newTaskTitle.trim(),</span>
 <span class="cstat-no" title="statement not covered" >        description: newTaskDescription.trim() || `Custom task: ${newTaskTitle.trim()}`,</span>
@@ -1143,6 +1156,7 @@
 <span class="cstat-no" title="statement not covered" >    if (!editTitle.trim()) return;</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
+<span class="cstat-no" title="statement not covered" >      const { otakuDiaryService } = await import('../services/otakuDiaryService');</span>
 <span class="cstat-no" title="statement not covered" >      await otakuDiaryService.updateTask(gameId, taskId, {</span>
 <span class="cstat-no" title="statement not covered" >        title: editTitle.trim(),</span>
 <span class="cstat-no" title="statement not covered" >        description: editDescription.trim(),</span>
@@ -1162,6 +1176,7 @@
 <span class="cstat-no" title="statement not covered" >  const handleDeleteTask = async (taskId: string) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    if (window.confirm('Are you sure you want to delete this task?')) {</span>
 <span class="cstat-no" title="statement not covered" >      try {</span>
+<span class="cstat-no" title="statement not covered" >        const { otakuDiaryService } = await import('../services/otakuDiaryService');</span>
 <span class="cstat-no" title="statement not covered" >        await otakuDiaryService.deleteTask(gameId, taskId);</span>
 <span class="cstat-no" title="statement not covered" >        onTaskUpdate();</span>
 <span class="cstat-no" title="statement not covered" >      } catch (error) {</span>
@@ -1172,6 +1187,7 @@
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >  const handleMarkComplete = async (taskId: string) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
+<span class="cstat-no" title="statement not covered" >      const { otakuDiaryService } = await import('../services/otakuDiaryService');</span>
 <span class="cstat-no" title="statement not covered" >      await otakuDiaryService.markTaskComplete(gameId, taskId);</span>
 <span class="cstat-no" title="statement not covered" >      onTaskUpdate();</span>
 <span class="cstat-no" title="statement not covered" >    } catch (error) {</span>
@@ -1181,6 +1197,7 @@
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >  const handleMarkNeedHelp = async (taskId: string) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
+<span class="cstat-no" title="statement not covered" >      const { otakuDiaryService } = await import('../services/otakuDiaryService');</span>
 <span class="cstat-no" title="statement not covered" >      await otakuDiaryService.markTaskNeedHelp(gameId, taskId);</span>
 <span class="cstat-no" title="statement not covered" >      onTaskUpdate();</span>
 <span class="cstat-no" title="statement not covered" >    } catch (error) {</span>
@@ -1190,6 +1207,7 @@
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >  const handleMoveToUserCreated = async (taskId: string) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
+<span class="cstat-no" title="statement not covered" >      const { otakuDiaryService } = await import('../services/otakuDiaryService');</span>
 <span class="cstat-no" title="statement not covered" >      await otakuDiaryService.moveTaskToUserCreated(gameId, taskId);</span>
 <span class="cstat-no" title="statement not covered" >      onTaskUpdate();</span>
 <span class="cstat-no" title="statement not covered" >    } catch (error) {</span>
@@ -1558,7 +1576,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-30T01:27:04.971Z
+                at 2025-09-10T12:28:31.809Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

@@ -691,10 +691,10 @@ WHERE category = 'waitlist' AND data->>'game_name' IS NOT NULL;
 CREATE VIEW public.waitlist AS
 SELECT 
     id,
-    data->'email' as email,
+    (data->>'email')::text as email,
     created_at,
-    data->'source' as source,
-    data->'status' as status,
+    (data->>'source')::text as source,
+    (data->>'status')::text as status,
     data->'metadata' as metadata
 FROM public.admin
 WHERE category = 'waitlist' AND data->>'email' IS NOT NULL;
@@ -824,6 +824,13 @@ ALTER TABLE public.analytics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.cache ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.admin ENABLE ROW LEVEL SECURITY;
 
+-- Ensure REST API visibility and privileges for Supabase roles after schema recreation
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO anon, authenticated;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO anon, authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO anon, authenticated;
+
 -- ========================================
 -- STEP 5: RLS POLICIES
 -- ========================================
@@ -832,21 +839,41 @@ ALTER TABLE public.admin ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can manage own data" ON public.users
     FOR ALL USING ((select auth.uid()) = auth_user_id);
 
+DROP POLICY IF EXISTS "Users can insert own data" ON public.users;
+CREATE POLICY "Users can insert own data" ON public.users
+    FOR INSERT WITH CHECK ((select auth.uid()) = auth_user_id);
+
 -- Users can manage their own games
 CREATE POLICY "Users can manage own games" ON public.games
     FOR ALL USING ((select auth.uid()) = (SELECT auth_user_id FROM public.users WHERE id = user_id));
+
+DROP POLICY IF EXISTS "Users can insert own games" ON public.games;
+CREATE POLICY "Users can insert own games" ON public.games
+    FOR INSERT WITH CHECK ((select auth.uid()) = (SELECT auth_user_id FROM public.users WHERE id = user_id));
 
 -- Users can manage their own conversations
 CREATE POLICY "Users can manage own conversations" ON public.conversations
     FOR ALL USING ((select auth.uid()) = (SELECT auth_user_id FROM public.users WHERE id = user_id));
 
+DROP POLICY IF EXISTS "Users can insert own conversations" ON public.conversations;
+CREATE POLICY "Users can insert own conversations" ON public.conversations
+    FOR INSERT WITH CHECK ((select auth.uid()) = (SELECT auth_user_id FROM public.users WHERE id = user_id));
+
 -- Users can manage their own tasks
 CREATE POLICY "Users can manage own tasks" ON public.tasks
     FOR ALL USING ((select auth.uid()) = (SELECT auth_user_id FROM public.users WHERE id = user_id));
 
+DROP POLICY IF EXISTS "Users can insert own tasks" ON public.tasks;
+CREATE POLICY "Users can insert own tasks" ON public.tasks
+    FOR INSERT WITH CHECK ((select auth.uid()) = (SELECT auth_user_id FROM public.users WHERE id = user_id));
+
 -- Users can manage their own analytics
 CREATE POLICY "Users can manage own analytics" ON public.analytics
     FOR ALL USING ((select auth.uid()) = (SELECT auth_user_id FROM public.users WHERE id = user_id));
+
+DROP POLICY IF EXISTS "Users can insert own analytics" ON public.analytics;
+CREATE POLICY "Users can insert own analytics" ON public.analytics
+    FOR INSERT WITH CHECK ((select auth.uid()) = (SELECT auth_user_id FROM public.users WHERE id = user_id));
 
 -- Cache is readable by all authenticated users
 CREATE POLICY "Authenticated users can read cache" ON public.cache
@@ -862,6 +889,14 @@ CREATE POLICY "Admins can manage admin data" ON public.admin
         )
     );
 
+DROP POLICY IF EXISTS "Public can view waitlist" ON public.admin;
+CREATE POLICY "Public can view waitlist" ON public.admin
+    FOR SELECT USING (category = 'waitlist');
+
+DROP POLICY IF EXISTS "Public can insert waitlist" ON public.admin;
+CREATE POLICY "Public can insert waitlist" ON public.admin
+    FOR INSERT WITH CHECK (category = 'waitlist');
+
 -- App level data - readable by all authenticated users
 CREATE POLICY "Authenticated users can read app data" ON public.app_level
     FOR SELECT USING ((select auth.role()) = 'authenticated');
@@ -871,48 +906,48 @@ CREATE POLICY "Authenticated users can read app data" ON public.app_level
 -- ========================================
 
 -- Users indexes
-CREATE INDEX idx_users_auth_user_id ON public.users(auth_user_id);
-CREATE INDEX idx_users_email ON public.users(email);
-CREATE INDEX idx_users_tier ON public.users(tier);
-CREATE INDEX idx_users_is_active ON public.users(is_active);
+CREATE INDEX IF NOT EXISTS idx_users_auth_user_id ON public.users(auth_user_id);
+CREATE INDEX IF NOT EXISTS idx_users_email ON public.users(email);
+CREATE INDEX IF NOT EXISTS idx_users_tier ON public.users(tier);
+CREATE INDEX IF NOT EXISTS idx_users_is_active ON public.users(is_active);
 
 -- Games indexes
-CREATE INDEX idx_games_user_id ON public.games(user_id);
-CREATE INDEX idx_games_game_id ON public.games(game_id);
-CREATE INDEX idx_games_is_active ON public.games(is_active);
-CREATE INDEX idx_games_last_played ON public.games(last_played);
+CREATE INDEX IF NOT EXISTS idx_games_user_id ON public.games(user_id);
+CREATE INDEX IF NOT EXISTS idx_games_game_id ON public.games(game_id);
+CREATE INDEX IF NOT EXISTS idx_games_is_active ON public.games(is_active);
+CREATE INDEX IF NOT EXISTS idx_games_last_played ON public.games(last_played);
 
 -- Conversations indexes
-CREATE INDEX idx_conversations_user_id ON public.conversations(user_id);
-CREATE INDEX idx_conversations_game_id ON public.conversations(game_id);
-CREATE INDEX idx_conversations_is_active ON public.conversations(is_active);
-CREATE INDEX idx_conversations_is_pinned ON public.conversations(is_pinned);
+CREATE INDEX IF NOT EXISTS idx_conversations_user_id ON public.conversations(user_id);
+CREATE INDEX IF NOT EXISTS idx_conversations_game_id ON public.conversations(game_id);
+CREATE INDEX IF NOT EXISTS idx_conversations_is_active ON public.conversations(is_active);
+CREATE INDEX IF NOT EXISTS idx_conversations_is_pinned ON public.conversations(is_pinned);
 
 -- Tasks indexes
-CREATE INDEX idx_tasks_user_id ON public.tasks(user_id);
-CREATE INDEX idx_tasks_game_id ON public.tasks(game_id);
-CREATE INDEX idx_tasks_status ON public.tasks(status);
-CREATE INDEX idx_tasks_priority ON public.tasks(priority);
+CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON public.tasks(user_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_game_id ON public.tasks(game_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_status ON public.tasks(status);
+CREATE INDEX IF NOT EXISTS idx_tasks_priority ON public.tasks(priority);
 
 -- Analytics indexes
-CREATE INDEX idx_analytics_user_id ON public.analytics(user_id);
-CREATE INDEX idx_analytics_event_type ON public.analytics(event_type);
-CREATE INDEX idx_analytics_category ON public.analytics(category);
-CREATE INDEX idx_analytics_timestamp ON public.analytics(timestamp);
+CREATE INDEX IF NOT EXISTS idx_analytics_user_id ON public.analytics(user_id);
+CREATE INDEX IF NOT EXISTS idx_analytics_event_type ON public.analytics(event_type);
+CREATE INDEX IF NOT EXISTS idx_analytics_category ON public.analytics(category);
+CREATE INDEX IF NOT EXISTS idx_analytics_timestamp ON public.analytics(timestamp);
 
 -- Cache indexes
-CREATE INDEX idx_cache_cache_key ON public.cache(cache_key);
-CREATE INDEX idx_cache_cache_type ON public.cache(cache_type);
-CREATE INDEX idx_cache_expires_at ON public.cache(expires_at);
+CREATE INDEX IF NOT EXISTS idx_cache_cache_key ON public.cache(cache_key);
+CREATE INDEX IF NOT EXISTS idx_cache_cache_type ON public.cache(cache_type);
+CREATE INDEX IF NOT EXISTS idx_cache_expires_at ON public.cache(expires_at);
 
 -- Admin indexes
-CREATE INDEX idx_admin_category ON public.admin(category);
-CREATE INDEX idx_admin_status ON public.admin(status);
-CREATE INDEX idx_admin_priority ON public.admin(priority);
+CREATE INDEX IF NOT EXISTS idx_admin_category ON public.admin(category);
+CREATE INDEX IF NOT EXISTS idx_admin_status ON public.admin(status);
+CREATE INDEX IF NOT EXISTS idx_admin_priority ON public.admin(priority);
 
 -- App level indexes
-CREATE INDEX idx_app_level_category ON public.app_level(category);
-CREATE INDEX idx_app_level_key ON public.app_level(key);
+CREATE INDEX IF NOT EXISTS idx_app_level_category ON public.app_level(category);
+CREATE INDEX IF NOT EXISTS idx_app_level_key ON public.app_level(key);
 
 -- ========================================
 -- STEP 7: ESSENTIAL RPC FUNCTIONS
@@ -1189,7 +1224,6 @@ BEGIN
     SELECT cache_data INTO result
     FROM public.cache
     WHERE cache_key = p_cache_key 
-    AND (auth_user_id = p_user_id OR auth_user_id IS NULL)
     AND (expires_at IS NULL OR expires_at > NOW());
     
     RETURN COALESCE(result, '{}'::jsonb);
@@ -1298,13 +1332,67 @@ SET search_path = public
 AS $$
 DECLARE
     user_onboarding_data JSONB;
+    last_welcome_time TIMESTAMPTZ;
+    time_since_last_welcome INTERVAL;
 BEGIN
     SELECT onboarding_data INTO user_onboarding_data
     FROM public.users
     WHERE auth_user_id = p_user_id;
     
-    -- Show welcome message if not shown before or if it's been a while
-    RETURN NOT COALESCE(user_onboarding_data->>'welcome_message_shown', 'false')::BOOLEAN;
+    -- If no onboarding data, show welcome message
+    IF user_onboarding_data IS NULL THEN
+        RETURN TRUE;
+    END IF;
+    
+    -- If welcome message was never shown, show it
+    IF NOT COALESCE(user_onboarding_data->>'welcome_message_shown', 'false')::BOOLEAN THEN
+        RETURN TRUE;
+    END IF;
+    
+    -- Check if it's been 12+ hours since last welcome message
+    last_welcome_time := (user_onboarding_data->>'last_welcome_time')::TIMESTAMPTZ;
+    
+    IF last_welcome_time IS NULL THEN
+        RETURN TRUE;
+    END IF;
+    
+    time_since_last_welcome := NOW() - last_welcome_time;
+    
+    -- Show welcome message if it's been 12+ hours
+    RETURN time_since_last_welcome >= INTERVAL '12 hours';
+END;
+$$;
+
+-- Save app state
+CREATE OR REPLACE FUNCTION public.save_app_state(p_user_id UUID, p_app_state JSONB)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    UPDATE public.users
+    SET app_state = p_app_state,
+        updated_at = NOW()
+    WHERE auth_user_id = p_user_id;
+END;
+$$;
+
+-- Get app state
+CREATE OR REPLACE FUNCTION public.get_app_state(p_user_id UUID)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    result JSONB;
+BEGIN
+    SELECT app_state INTO result
+    FROM public.users
+    WHERE auth_user_id = p_user_id;
+    
+    RETURN COALESCE(result, '{}'::jsonb);
 END;
 $$;
 

@@ -1,69 +1,70 @@
 {
-  "timestamp": "2025-09-02T23:41:39.466Z",
+  "timestamp": "2025-09-09T17:38:31.537Z",
   "bundleInfo": {
-    "totalSize": 1909244,
-    "fileCount": 16,
+    "totalSize": 2168469,
+    "fileCount": 19,
     "largestFiles": [
       {
-        "path": "assets/chunk-CIAoEiE4.js",
-        "size": 718668,
-        "sizeFormatted": "701.82 KB"
+        "path": "assets/vendor-react-DDiQJZJu.js",
+        "size": 722025,
+        "sizeFormatted": "705.1 KB"
       },
       {
-        "path": "assets/chunk-7J4LelS0.js",
-        "size": 231248,
-        "sizeFormatted": "225.83 KB"
+        "path": "assets/app-services-BxckFHlq.js",
+        "size": 272305,
+        "sizeFormatted": "265.92 KB"
       },
       {
-        "path": "assets/chunk-p5xpG7yD.js",
-        "size": 230661,
-        "sizeFormatted": "225.25 KB"
+        "path": "assets/vendor-ai-D1HLwCFd.js",
+        "size": 237400,
+        "sizeFormatted": "231.84 KB"
       },
       {
-        "path": "assets/chunk-D1hkj-sN.js",
-        "size": 163454,
-        "sizeFormatted": "159.62 KB"
+        "path": "assets/app-components-bVWhoZyo.js",
+        "size": 176227,
+        "sizeFormatted": "172.1 KB"
       },
       {
-        "path": "assets/chunk-C5qSE5t9.js",
-        "size": 141450,
-        "sizeFormatted": "138.13 KB"
+        "path": "assets/vendor-misc-RuuARQvY.js",
+        "size": 163213,
+        "sizeFormatted": "159.39 KB"
       },
       {
-        "path": "assets/chunk-BhWoYTYO.js",
-        "size": 123933,
-        "sizeFormatted": "121.03 KB"
+        "path": "assets/app-modals-BeXIgdqo.js",
+        "size": 136335,
+        "sizeFormatted": "133.14 KB"
       },
       {
-        "path": "assets/index-C7ksGZzv.js",
-        "size": 88190,
-        "sizeFormatted": "86.12 KB"
+        "path": "assets/vendor-supabase-CQ9XfNpl.js",
+        "size": 124990,
+        "sizeFormatted": "122.06 KB"
       },
       {
-        "path": "assets/chunk-C49-smI_.js",
-        "size": 76252,
-        "sizeFormatted": "74.46 KB"
+        "path": "assets/main-bEQpkz5z.js",
+        "size": 105634,
+        "sizeFormatted": "103.16 KB"
       },
       {
-        "path": "assets/chunk-cu6USNKQ.js",
-        "size": 47398,
-        "sizeFormatted": "46.29 KB"
+        "path": "assets/app-ai-services-C5yuiujS.js",
+        "size": 95747,
+        "sizeFormatted": "93.5 KB"
       },
       {
-        "path": "assets/chunk-B7m-NHoy.js",
-        "size": 27280,
-        "sizeFormatted": "26.64 KB"
+        "path": "assets/app-landing-DnSX1GC4.js",
+        "size": 51208,
+        "sizeFormatted": "50.01 KB"
       }
     ],
     "fileTypes": {
       ".md": 6298,
-      ".js": 1872276,
+      ".js": 2129001,
       ".css": 15683,
-      ".html": 12265,
+      ".html": 12620,
+      ".json": 2145,
       ".xml": 2722
     },
     "totalGzipped": 0,
-    "totalSizeFormatted": "1.82 MB"
+    "totalSizeFormatted": "2.07 MB"
   },
   "dependencyInfo": {
     "packages": {
@@ -86,6 +87,11 @@
         "version": "^2.55.0",
         "size": 204800,
         "category": "database"
+      },
+      "@tailwindcss/postcss": {
+        "version": "^4.1.13",
+        "size": 102400,
+        "category": "other"
       },
       "clsx": {
         "version": "^2.1.1",
@@ -167,9 +173,24 @@
         "size": 102400,
         "category": "ui"
       },
+      "autoprefixer": {
+        "version": "^10.4.21",
+        "size": 102400,
+        "category": "other"
+      },
       "jsdom": {
         "version": "^26.1.0",
         "size": 102400,
+        "category": "other"
+      },
+      "postcss": {
+        "version": "^8.5.6",
+        "size": 102400,
+        "category": "other"
+      },
+      "tailwindcss": {
+        "version": "^4.1.13",
+        "size": 51200,
         "category": "other"
       },
       "typescript": {
@@ -196,7 +217,7 @@
     {
       "type": "large_files",
       "priority": "medium",
-      "message": "Found 6 large files that could be optimized.",
+      "message": "Found 8 large files that could be optimized.",
       "actions": [
         "Compress images and assets",
         "Consider lazy loading for large components",

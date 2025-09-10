@@ -1,17 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Usage, UserTier } from '../services/types';
 import StarIcon from './StarIcon';
 import { TierUpgradeModal } from './TierUpgradeModal';
 import GuestTierSwitcher from './GuestTierSwitcher';
+import { profileService } from '../services/profileService';
 
 interface GeneralSettingsTabProps {
-  usage: Usage;
-  onShowUpgrade: () => void;
-  onShowVanguardUpgrade: () => void;
-  onResetApp: () => void;
-  onLogout: () => void;
-  onShowHowToUse: () => void;
-  userEmail?: string;
+    usage: Usage;
+    onShowUpgrade: () => void;
+    onShowVanguardUpgrade: () => void;
+    onResetApp: () => void;
+    onLogout: () => void;
+    onShowHowToUse: () => void;
+    userEmail?: string;
+    isDeveloperMode?: boolean;
 }
 
 const TIER_NAMES: Record<UserTier, string> = {
@@ -20,12 +22,67 @@ const TIER_NAMES: Record<UserTier, string> = {
     vanguard_pro: 'Founder (Vanguard Pro)'
 };
 
-const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({ usage, onShowUpgrade, onShowVanguardUpgrade, onResetApp, onLogout, onShowHowToUse, userEmail }) => {
+const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({ usage, onShowUpgrade, onShowVanguardUpgrade, onResetApp, onLogout, onShowHowToUse, userEmail, isDeveloperMode = false }) => {
     const [showTierUpgrade, setShowTierUpgrade] = useState(false);
+    const [displayName, setDisplayName] = useState<string>('');
+    const [isEditingName, setIsEditingName] = useState(false);
+    const [isLoadingName, setIsLoadingName] = useState(true);
+    const [nameError, setNameError] = useState<string>('');
     
     const displayEmail = userEmail || (localStorage.getItem('otakonAuthMethod') !== 'skip' 
       ? `user@${localStorage.getItem('otakonAuthMethod') || 'local'}.com`
       : 'Anonymous User');
+
+    // Check if user signed in with email (not OAuth)
+    const isEmailUser = !localStorage.getItem('otakonAuthMethod') || localStorage.getItem('otakonAuthMethod') === 'email';
+
+    // Load display name on component mount
+    useEffect(() => {
+        const loadDisplayName = async () => {
+            try {
+                setIsLoadingName(true);
+                const name = await profileService.getName();
+                setDisplayName(name || '');
+            } catch (error) {
+                console.error('Failed to load display name:', error);
+                setDisplayName('');
+            } finally {
+                setIsLoadingName(false);
+            }
+        };
+
+        loadDisplayName();
+    }, []);
+
+    // Handle name save
+    const handleSaveName = async () => {
+        if (!displayName.trim()) {
+            setNameError('Name cannot be empty');
+            return;
+        }
+
+        try {
+            setNameError('');
+            await profileService.setName(displayName.trim());
+            setIsEditingName(false);
+            console.log('✅ Display name saved successfully');
+        } catch (error) {
+            console.error('Failed to save display name:', error);
+            setNameError('Failed to save name. Please try again.');
+        }
+    };
+
+    // Handle name cancel
+    const handleCancelName = async () => {
+        try {
+            const currentName = await profileService.getName();
+            setDisplayName(currentName || '');
+            setIsEditingName(false);
+            setNameError('');
+        } catch (error) {
+            console.error('Failed to reload display name:', error);
+        }
+    };
 
     return (
         <div className="space-y-8">
@@ -39,12 +96,57 @@ const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({ usage, onShowUp
                     </div>
                      <div>
                         <label className="block text-sm font-medium text-neutral-400">Display Name</label>
-                        <input
-                            type="text"
-                            disabled
-                            placeholder="Name editing coming soon"
-                            className="w-full mt-1 bg-[#2E2E2E] border border-[#424242] rounded-md py-2 px-3 text-[#F5F5F5] placeholder-[#6E6E6E] focus:outline-none focus:ring-2 focus:ring-[#FFAB40] disabled:opacity-50"
-                        />
+                        {isLoadingName ? (
+                            <div className="w-full mt-1 bg-[#2E2E2E] border border-[#424242] rounded-md py-2 px-3 text-neutral-400">
+                                Loading...
+                            </div>
+                        ) : isEditingName ? (
+                            <div className="space-y-2">
+                                <input
+                                    type="text"
+                                    value={displayName}
+                                    onChange={(e) => setDisplayName(e.target.value)}
+                                    placeholder="Enter your display name"
+                                    className="w-full mt-1 bg-[#2E2E2E] border border-[#424242] rounded-md py-2 px-3 text-[#F5F5F5] placeholder-[#6E6E6E] focus:outline-none focus:ring-2 focus:ring-[#FFAB40]"
+                                />
+                                {nameError && (
+                                    <p className="text-red-400 text-sm">{nameError}</p>
+                                )}
+                                <div className="flex space-x-2">
+                                    <button
+                                        onClick={handleSaveName}
+                                        className="px-3 py-1 bg-[#FFAB40] text-black rounded-md text-sm font-medium hover:bg-[#FF9800] transition-colors"
+                                    >
+                                        Save
+                                    </button>
+                                    <button
+                                        onClick={handleCancelName}
+                                        className="px-3 py-1 bg-[#424242] text-white rounded-md text-sm font-medium hover:bg-[#525252] transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex items-center space-x-2">
+                                <div className="flex-1 bg-[#2E2E2E] border border-[#424242] rounded-md py-2 px-3 text-[#F5F5F5]">
+                                    {displayName || 'No name set'}
+                                </div>
+                                {isEmailUser && (
+                                    <button
+                                        onClick={() => setIsEditingName(true)}
+                                        className="px-3 py-1 bg-[#FFAB40] text-black rounded-md text-sm font-medium hover:bg-[#FF9800] transition-colors"
+                                    >
+                                        Edit
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                        {!isEmailUser && displayName && (
+                            <p className="text-xs text-neutral-500 mt-1">
+                                Name from {localStorage.getItem('otakonAuthMethod') === 'google' ? 'Google' : 'Discord'} account
+                            </p>
+                        )}
                     </div>
                 </div>
             </div>
@@ -140,22 +242,30 @@ const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({ usage, onShowUp
                     <div className="bg-red-900/20 border border-red-500/30 p-4 rounded-lg flex items-center justify-between">
                         <div>
                             <p className="font-semibold text-white">Logout</p>
-                            <p className="text-sm text-neutral-400">Sign out of your account and return to login screen.</p>
+                            <p className="text-sm text-neutral-400">
+                                {isDeveloperMode 
+                                    ? "Sign out of developer mode and return to login screen." 
+                                    : "Sign out of your account and return to login screen."
+                                }
+                            </p>
                         </div>
                         <button onClick={onLogout} className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md transition-colors flex-shrink-0">
                             Logout
                         </button>
                     </div>
                     
-                    <div className="bg-red-900/20 border border-red-500/30 p-4 rounded-lg flex items-center justify-between">
-                        <div>
-                            <p className="font-semibold text-white">Reset Application</p>
-                            <p className="text-sm text-neutral-400">This will permanently delete all data and log you out.</p>
+                    {/* Reset Application - Only available in developer mode */}
+                    {isDeveloperMode && (
+                        <div className="bg-red-900/20 border border-red-500/30 p-4 rounded-lg flex items-center justify-between">
+                            <div>
+                                <p className="font-semibold text-white">Reset Application</p>
+                                <p className="text-sm text-neutral-400">This will permanently delete all data and log you out. (Developer mode only)</p>
+                            </div>
+                            <button onClick={onResetApp} className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md transition-colors flex-shrink-0">
+                                Reset
+                            </button>
                         </div>
-                        <button onClick={onResetApp} className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md transition-colors flex-shrink-0">
-                            Reset
-                        </button>
-                    </div>
+                    )}
                 </div>
             </div>
             <TierUpgradeModal

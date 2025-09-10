@@ -62,7 +62,7 @@ export class DailyEngagementService {
         current: 0,
         title: 'Screenshot Master',
         description: 'Analyze screenshots to help your gaming',
-        reward: '+50 Otakon Points'
+        reward: '+50 Otagon Points'
       },
       {
         id: 'help_others',
@@ -71,7 +71,7 @@ export class DailyEngagementService {
         current: 0,
         title: 'Community Helper',
         description: 'Help other players with their questions',
-        reward: '+30 Otakon Points'
+        reward: '+30 Otagon Points'
       },
       {
         id: 'new_games',
@@ -80,7 +80,7 @@ export class DailyEngagementService {
         current: 0,
         title: 'Game Explorer',
         description: 'Try analyzing different games',
-        reward: '+40 Otakon Points'
+        reward: '+40 Otagon Points'
       },
       {
         id: 'insights',
@@ -89,7 +89,7 @@ export class DailyEngagementService {
         current: 0,
         title: 'Insight Creator',
         description: 'Create new insights for your games',
-        reward: '+25 Otakon Points'
+        reward: '+25 Otagon Points'
       }
     ];
 

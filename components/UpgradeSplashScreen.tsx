@@ -82,25 +82,27 @@ const UpgradeSplashScreen: React.FC<UpgradeSplashScreenProps> = ({ onUpgrade, on
     };
 
     return (
-        <div className="h-screen bg-gradient-to-br from-black to-[#0A0A0A] text-white flex flex-col items-center justify-center font-inter p-6 sm:p-8 animate-fade-in">
+        <div className="h-screen bg-gradient-to-br from-black to-[#0A0A0A] text-white flex flex-col items-center justify-center font-inter px-4 sm:px-6 md:px-8 py-4 sm:py-6 md:py-8 animate-fade-in overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-full bg-gradient-radial-at-top from-[#FF4D4D]/30 to-transparent pointer-events-none"></div>
             
-            <div className="w-full max-w-5xl mx-auto bg-gradient-to-r from-[#1C1C1C]/90 to-[#0A0A0A]/90 backdrop-blur-xl border-2 border-[#424242]/60 rounded-3xl shadow-2xl p-8 sm:p-12 text-center animate-scale-in relative hover:border-[#424242]/80 transition-all duration-500">
-                <button
-                    onClick={onClose}
-                    className="absolute top-6 right-6 text-neutral-400 hover:text-white transition-all duration-300 z-10 hover:scale-110"
-                    aria-label="Close modal"
-                >
-                    <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
+            <div className="w-full max-w-5xl mx-auto bg-gradient-to-r from-[#1C1C1C]/90 to-[#0A0A0A]/90 backdrop-blur-xl border-2 border-[#424242]/60 rounded-3xl shadow-2xl p-6 sm:p-8 md:p-10 text-center animate-scale-in relative hover:border-[#424242]/80 transition-all duration-500">
+                {/* Header with title and close button */}
+                <div className="flex items-center justify-between mb-3">
+                    <h1 className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#FF4D4D] to-[#FFAB40] leading-normal">Upgrade Your Plan</h1>
+                    <button
+                        onClick={onClose}
+                        className="text-neutral-400 hover:text-white transition-all duration-300 hover:scale-110"
+                        aria-label="Close modal"
+                    >
+                        <svg className="w-6 h-6 sm:w-7 sm:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <p className="text-neutral-300 text-base mb-8 leading-relaxed">Unlock your full potential and support the community.</p>
 
-                <h1 className="text-4xl sm:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#FF4D4D] to-[#FFAB40] mb-4 leading-tight">Upgrade Your Plan</h1>
-                <p className="text-neutral-300 text-xl mb-10 leading-relaxed">Unlock your full potential and support the community.</p>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10 text-left">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mt-6 sm:mt-8 text-left">
                     {/* Pro Plan */}
                     <div className="bg-neutral-900/50 border border-neutral-700 rounded-xl p-6 flex flex-col">
-                        <h3 className="text-2xl font-bold text-white">Pro</h3>
+                        <h3 className="text-xl font-bold text-white">Pro</h3>
                         <p className="text-neutral-400 mt-1 mb-6">For serious gamers who want the best.</p>
                         <div className="mb-6">
                             <span className="text-4xl font-bold text-white">$3.99</span>
@@ -112,7 +114,7 @@ const UpgradeSplashScreen: React.FC<UpgradeSplashScreenProps> = ({ onUpgrade, on
                         <div className="mt-auto">
                             <button 
                                 onClick={handleProUpgrade} 
-                                className="w-full bg-neutral-700 hover:bg-neutral-600 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center"
+                                className="w-full bg-neutral-700 hover:bg-neutral-600 text-white font-bold py-3 px-6 rounded-xl transition-colors flex items-center justify-center"
                             >
                                 Go Pro
                             </button>
@@ -124,7 +126,7 @@ const UpgradeSplashScreen: React.FC<UpgradeSplashScreenProps> = ({ onUpgrade, on
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-[#FF4D4D] to-[#D98C1F] text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
                             Best Value
                         </div>
-                        <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-orange-500">Pro Vanguard</h3>
+                        <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-orange-500">Pro Vanguard</h3>
                         <p className="text-neutral-400 mt-1 mb-6">Become a founding member.</p>
                         <div className="mb-6">
                             <span className="text-4xl font-bold text-white">$20</span>
@@ -138,7 +140,7 @@ const UpgradeSplashScreen: React.FC<UpgradeSplashScreenProps> = ({ onUpgrade, on
                         <div className="mt-auto">
                             <button 
                                 onClick={handleVanguardUpgrade} 
-                                className="w-full bg-neutral-700 hover:bg-neutral-600 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center"
+                                className="w-full bg-neutral-700 hover:bg-neutral-600 text-white font-bold py-3 px-6 rounded-xl transition-colors flex items-center justify-center"
                             >
                                 Become a Vanguard
                             </button>
@@ -149,7 +151,7 @@ const UpgradeSplashScreen: React.FC<UpgradeSplashScreenProps> = ({ onUpgrade, on
                 <div className="mt-8">
                     <button
                         onClick={handleClose}
-                        className="w-full text-neutral-400 font-medium py-2 px-6 rounded-lg hover:bg-neutral-800/50 transition-colors flex items-center justify-center"
+                        className="w-full text-neutral-400 font-medium py-2 px-4 rounded-xl hover:bg-neutral-800/50 transition-colors flex items-center justify-center"
                     >
                         Maybe Later
                     </button>

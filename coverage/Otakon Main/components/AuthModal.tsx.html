@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/317</span>
+                <span class='fraction'>0/339</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/317</span>
+                <span class='fraction'>0/339</span>
             </div>
         
             
@@ -380,7 +380,51 @@
 <a name='L315'></a><a href='#L315'>315</a>
 <a name='L316'></a><a href='#L316'>316</a>
 <a name='L317'></a><a href='#L317'>317</a>
-<a name='L318'></a><a href='#L318'>318</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L318'></a><a href='#L318'>318</a>
+<a name='L319'></a><a href='#L319'>319</a>
+<a name='L320'></a><a href='#L320'>320</a>
+<a name='L321'></a><a href='#L321'>321</a>
+<a name='L322'></a><a href='#L322'>322</a>
+<a name='L323'></a><a href='#L323'>323</a>
+<a name='L324'></a><a href='#L324'>324</a>
+<a name='L325'></a><a href='#L325'>325</a>
+<a name='L326'></a><a href='#L326'>326</a>
+<a name='L327'></a><a href='#L327'>327</a>
+<a name='L328'></a><a href='#L328'>328</a>
+<a name='L329'></a><a href='#L329'>329</a>
+<a name='L330'></a><a href='#L330'>330</a>
+<a name='L331'></a><a href='#L331'>331</a>
+<a name='L332'></a><a href='#L332'>332</a>
+<a name='L333'></a><a href='#L333'>333</a>
+<a name='L334'></a><a href='#L334'>334</a>
+<a name='L335'></a><a href='#L335'>335</a>
+<a name='L336'></a><a href='#L336'>336</a>
+<a name='L337'></a><a href='#L337'>337</a>
+<a name='L338'></a><a href='#L338'>338</a>
+<a name='L339'></a><a href='#L339'>339</a>
+<a name='L340'></a><a href='#L340'>340</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -940,24 +984,46 @@
 <span class="cstat-no" title="statement not covered" >            &lt;div className="space-y-3"&gt;</span>
 <span class="cstat-no" title="statement not covered" >              &lt;button</span>
 <span class="cstat-no" title="statement not covered" >                type="button"</span>
-<span class="cstat-no" title="statement not covered" >                onClick={() =&gt; authService.signInWithGoogle()}</span>
+<span class="cstat-no" title="statement not covered" >                onClick={async () =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >                  setLoading(true);</span>
+<span class="cstat-no" title="statement not covered" >                  try {</span>
+<span class="cstat-no" title="statement not covered" >                    await authService.signInWithGoogle();</span>
+<span class="cstat-no" title="statement not covered" >                  } catch (error) {</span>
+<span class="cstat-no" title="statement not covered" >                    console.error('Google sign-in error:', error);</span>
+<span class="cstat-no" title="statement not covered" >                  }</span>
+<span class="cstat-no" title="statement not covered" >                }}</span>
 <span class="cstat-no" title="statement not covered" >                disabled={loading}</span>
 <span class="cstat-no" title="statement not covered" >                className="w-full flex items-center justify-center gap-3 bg-white text-gray-900 font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"</span>
 <span class="cstat-no" title="statement not covered" >              &gt;</span>
-<span class="cstat-no" title="statement not covered" >                &lt;GoogleIcon className="w-5 h-5" /&gt;</span>
-<span class="cstat-no" title="statement not covered" >                Continue with Google</span>
+<span class="cstat-no" title="statement not covered" >                {loading ? (</span>
+<span class="cstat-no" title="statement not covered" >                  &lt;div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900"&gt;&lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >                ) : (</span>
+<span class="cstat-no" title="statement not covered" >                  &lt;GoogleIcon className="w-5 h-5" /&gt;</span>
+<span class="cstat-no" title="statement not covered" >                )}</span>
+<span class="cstat-no" title="statement not covered" >                {loading ? 'Signing in...' : 'Continue with Google'}</span>
 <span class="cstat-no" title="statement not covered" >              &lt;/button&gt;</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >              &lt;button</span>
 <span class="cstat-no" title="statement not covered" >                type="button"</span>
-<span class="cstat-no" title="statement not covered" >                onClick={() =&gt; authService.signInWithDiscord()}</span>
+<span class="cstat-no" title="statement not covered" >                onClick={async () =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >                  setLoading(true);</span>
+<span class="cstat-no" title="statement not covered" >                  try {</span>
+<span class="cstat-no" title="statement not covered" >                    await authService.signInWithDiscord();</span>
+<span class="cstat-no" title="statement not covered" >                  } catch (error) {</span>
+<span class="cstat-no" title="statement not covered" >                    console.error('Discord sign-in error:', error);</span>
+<span class="cstat-no" title="statement not covered" >                  }</span>
+<span class="cstat-no" title="statement not covered" >                }}</span>
 <span class="cstat-no" title="statement not covered" >                disabled={loading}</span>
 <span class="cstat-no" title="statement not covered" >                className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-[#5865F2] to-[#4752C4] text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-md"</span>
 <span class="cstat-no" title="statement not covered" >              &gt;</span>
-<span class="cstat-no" title="statement not covered" >                &lt;div className="flex-shrink-0"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                  &lt;DiscordIcon className="w-5 h-5 text-white" /&gt;</span>
-<span class="cstat-no" title="statement not covered" >                &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                &lt;span className="font-medium"&gt;Continue with Discord&lt;/span&gt;</span>
+<span class="cstat-no" title="statement not covered" >                {loading ? (</span>
+<span class="cstat-no" title="statement not covered" >                  &lt;div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"&gt;&lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >                ) : (</span>
+<span class="cstat-no" title="statement not covered" >                  &lt;div className="flex-shrink-0"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;DiscordIcon className="w-5 h-5 text-white" /&gt;</span>
+<span class="cstat-no" title="statement not covered" >                  &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >                )}</span>
+<span class="cstat-no" title="statement not covered" >                &lt;span className="font-medium"&gt;{loading ? 'Signing in...' : 'Continue with Discord'}&lt;/span&gt;</span>
 <span class="cstat-no" title="statement not covered" >              &lt;/button&gt;</span>
 <span class="cstat-no" title="statement not covered" >            &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >          &lt;/&gt;</span>
@@ -1021,7 +1087,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-30T01:27:04.971Z
+                at 2025-09-10T12:28:31.809Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

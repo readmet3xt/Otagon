@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/293</span>
+                <span class='fraction'>0/289</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/293</span>
+                <span class='fraction'>0/289</span>
             </div>
         
             
@@ -351,15 +351,7 @@
 <a name='L286'></a><a href='#L286'>286</a>
 <a name='L287'></a><a href='#L287'>287</a>
 <a name='L288'></a><a href='#L288'>288</a>
-<a name='L289'></a><a href='#L289'>289</a>
-<a name='L290'></a><a href='#L290'>290</a>
-<a name='L291'></a><a href='#L291'>291</a>
-<a name='L292'></a><a href='#L292'>292</a>
-<a name='L293'></a><a href='#L293'>293</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<a name='L289'></a><a href='#L289'>289</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -808,36 +800,32 @@
 <span class="cstat-no" title="statement not covered" >          &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >          &lt;form onSubmit={handleSubmit} className="space-y-6"&gt;</span>
-<span class="cstat-no" title="statement not covered" >            {/* Connection Code Format Notice */}</span>
-<span class="cstat-no" title="statement not covered" >            {code &amp;&amp; code.length === 6 &amp;&amp; (</span>
-<span class="cstat-no" title="statement not covered" >              &lt;div className="p-4 rounded-2xl border-2 bg-gradient-to-r from-green-600/20 to-emerald-600/20 border-green-600/40 text-green-400 backdrop-blur-sm"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                &lt;div className="flex items-center gap-3 text-base"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                  &lt;span className="text-green-400"&gt;✓&lt;/span&gt;</span>
-<span class="cstat-no" title="statement not covered" >                  &lt;span&gt;Enhanced 6-digit connection code detected&lt;/span&gt;</span>
-<span class="cstat-no" title="statement not covered" >                &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                &lt;div className="text-sm mt-2 text-green-300"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                  Ready to connect with enhanced features</span>
-<span class="cstat-no" title="statement not covered" >                &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >              &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >            )}</span>
-<span class="cstat-no" title="statement not covered" >            </span>
 <span class="cstat-no" title="statement not covered" >            &lt;div&gt;</span>
 <span class="cstat-no" title="statement not covered" >              &lt;label htmlFor="connection-code" className="block text-base font-medium text-[#CFCFCF] mb-3"&gt;</span>
 <span class="cstat-no" title="statement not covered" >                6-Digit Connection Code</span>
 <span class="cstat-no" title="statement not covered" >              &lt;/label&gt;</span>
-<span class="cstat-no" title="statement not covered" >              &lt;input</span>
-<span class="cstat-no" title="statement not covered" >                id="connection-code"</span>
-<span class="cstat-no" title="statement not covered" >                type="text"</span>
-<span class="cstat-no" title="statement not covered" >                value={code}</span>
-<span class="cstat-no" title="statement not covered" >                onChange={(e) =&gt; setCode(e.target.value)}</span>
-<span class="cstat-no" title="statement not covered" >                placeholder="123456"</span>
-<span class="cstat-no" title="statement not covered" >                maxLength={6}</span>
-<span class="cstat-no" title="statement not covered" >                pattern="\d{6}"</span>
-<span class="cstat-no" title="statement not covered" >                title="Enter exactly 6 digits"</span>
-<span class="cstat-no" title="statement not covered" >                disabled={isConnecting || isConnected}</span>
-<span class="cstat-no" title="statement not covered" >                required</span>
-<span class="cstat-no" title="statement not covered" >                className="w-full bg-gradient-to-r from-[#2E2E2E] to-[#1A1A1A] border-2 border-[#424242]/60 rounded-xl py-3 px-4 text-[#F5F5F5] placeholder-[#6E6E6E] focus:outline-none focus:ring-2 focus:ring-[#FFAB40] focus:border-[#FFAB40]/60 disabled:opacity-50 text-lg backdrop-blur-sm"</span>
-<span class="cstat-no" title="statement not covered" >              /&gt;</span>
+<span class="cstat-no" title="statement not covered" >              &lt;div className="relative"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                &lt;input</span>
+<span class="cstat-no" title="statement not covered" >                  id="connection-code"</span>
+<span class="cstat-no" title="statement not covered" >                  type="text"</span>
+<span class="cstat-no" title="statement not covered" >                  value={code}</span>
+<span class="cstat-no" title="statement not covered" >                  onChange={(e) =&gt; setCode(e.target.value)}</span>
+<span class="cstat-no" title="statement not covered" >                  placeholder="123456"</span>
+<span class="cstat-no" title="statement not covered" >                  maxLength={6}</span>
+<span class="cstat-no" title="statement not covered" >                  pattern="\d{6}"</span>
+<span class="cstat-no" title="statement not covered" >                  title="Enter exactly 6 digits"</span>
+<span class="cstat-no" title="statement not covered" >                  disabled={isConnecting || isConnected}</span>
+<span class="cstat-no" title="statement not covered" >                  required</span>
+<span class="cstat-no" title="statement not covered" >                  className="w-full bg-gradient-to-r from-[#2E2E2E] to-[#1A1A1A] border-2 border-[#424242]/60 rounded-xl py-3 px-4 pr-12 text-[#F5F5F5] placeholder-[#6E6E6E] focus:outline-none focus:ring-2 focus:ring-[#FFAB40] focus:border-[#FFAB40]/60 disabled:opacity-50 text-lg backdrop-blur-sm"</span>
+<span class="cstat-no" title="statement not covered" >                /&gt;</span>
+<span class="cstat-no" title="statement not covered" >                {code &amp;&amp; code.length === 6 &amp;&amp; (</span>
+<span class="cstat-no" title="statement not covered" >                  &lt;div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-green-400"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                      &lt;path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /&gt;</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;/svg&gt;</span>
+<span class="cstat-no" title="statement not covered" >                  &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >                )}</span>
+<span class="cstat-no" title="statement not covered" >              &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >            &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >            </span>
 <span class="cstat-no" title="statement not covered" >            {error &amp;&amp; &lt;p className="text-[#E53A3A] text-base"&gt;{error}&lt;/p&gt;}</span>
@@ -946,7 +934,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-30T01:27:04.971Z
+                at 2025-09-10T12:28:31.809Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

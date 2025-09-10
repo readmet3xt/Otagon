@@ -66,14 +66,20 @@ class SupabaseDataService {
     this.userId = user?.id || null;
   }
 
-  private async getUserId(): Promise<string> {
+  private async getUserId(): Promise<string | null> {
     if (!this.userId) {
       await this.initializeUserId();
     }
-    if (!this.userId) {
-      throw new Error('User not authenticated');
-    }
     return this.userId;
+  }
+
+  private async isAuthenticated(): Promise<boolean> {
+    if (this.userId !== null) {
+      return true;
+    }
+    // If userId is null, try to initialize it
+    await this.initializeUserId();
+    return this.userId !== null;
   }
 
   // =====================================================
@@ -82,22 +88,53 @@ class SupabaseDataService {
 
   async getUserUsageData(): Promise<UserUsageData> {
     try {
+      if (!(await this.isAuthenticated())) {
+        throw new Error('User not authenticated');
+      }
       const userId = await this.getUserId();
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
       const { data, error } = await supabase.rpc('migrate_user_usage_data', {
         p_user_id: userId
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase usage data fetch failed:', error);
+        // Return default usage data if function doesn't exist
+        return {
+          tier: 'free',
+          queries_used: 0,
+          queries_limit: 50,
+          last_reset: new Date().toISOString(),
+          monthly_queries: 0,
+          monthly_limit: 50
+        };
+      }
       return data;
     } catch (error) {
       console.error('Supabase usage data fetch failed:', error);
-      throw error;
+      // Return default usage data if function doesn't exist
+      return {
+        tier: 'free',
+        queries_used: 0,
+        queries_limit: 50,
+        last_reset: new Date().toISOString(),
+        monthly_queries: 0,
+        monthly_limit: 50
+      };
     }
   }
 
   async updateUserUsage(field: string, value: any): Promise<void> {
     try {
+      if (!(await this.isAuthenticated())) {
+        throw new Error('User not authenticated');
+      }
       const userId = await this.getUserId();
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
       const { error } = await supabase.rpc('update_user_usage', {
         p_user_id: userId,
         p_field: field,
@@ -127,16 +164,37 @@ class SupabaseDataService {
 
   async getUserAppState(): Promise<UserAppState> {
     try {
+      if (!(await this.isAuthenticated())) {
+        throw new Error('User not authenticated');
+      }
       const userId = await this.getUserId();
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
       const { data, error } = await supabase.rpc('migrate_user_app_state', {
         p_user_id: userId
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase app state fetch failed:', error);
+        // Return default app state if function doesn't exist
+        return {
+          appSettings: {},
+          preferences: {},
+          onboardingData: {},
+          profileData: {}
+        };
+      }
       return data;
     } catch (error) {
       console.error('Supabase app state fetch failed:', error);
-      throw error;
+      // Return default app state if function doesn't exist
+      return {
+        appSettings: {},
+        preferences: {},
+        onboardingData: {},
+        profileData: {}
+      };
     }
   }
 
@@ -258,7 +316,13 @@ class SupabaseDataService {
 
   async getAppCache(cacheKey: string): Promise<AppCache | null> {
     try {
+      if (!(await this.isAuthenticated())) {
+        throw new Error('User not authenticated');
+      }
       const userId = await this.getUserId();
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
       const { data, error } = await supabase.rpc('get_app_cache', {
         p_user_id: userId,
         p_cache_key: cacheKey
@@ -274,6 +338,10 @@ class SupabaseDataService {
 
   async setAppCache(cacheKey: string, cacheData: any, expiresAt?: string): Promise<void> {
     try {
+      if (!(await this.isAuthenticated())) {
+        throw new Error('User not authenticated');
+      }
+      
       const userId = await this.getUserId();
       const { error } = await supabase.rpc('set_app_cache', {
         p_user_id: userId,
@@ -308,24 +376,37 @@ class SupabaseDataService {
 
   async shouldShowWelcomeMessage(): Promise<boolean> {
     try {
+      const isDevMode = ((import.meta as any)?.env?.DEV === true) || (typeof window !== 'undefined' && localStorage.getItem('otakon_developer_mode') === 'true');
+      if (!(await this.isAuthenticated())) {
+        // In dev/developer mode, fall back to localStorage-based welcome logic
+        if (isDevMode) {
+          return this.shouldShowLocalStorageWelcome();
+        }
+        throw new Error('User not authenticated');
+      }
       const userId = await this.getUserId();
+      if (!userId) {
+        if (isDevMode) {
+          return this.shouldShowLocalStorageWelcome();
+        }
+        throw new Error('User not authenticated');
+      }
       const { data, error } = await supabase.rpc('should_show_welcome_message', {
         p_user_id: userId
       });
 
-      if (error) throw error;
+      if (error) {
+        console.warn('Supabase welcome message check failed:', error);
+        // In dev/developer mode, fall back to localStorage-based welcome logic
+        const isDev = ((import.meta as any)?.env?.DEV === true) || (typeof window !== 'undefined' && localStorage.getItem('otakon_developer_mode') === 'true');
+        return isDev ? this.shouldShowLocalStorageWelcome() : false;
+      }
       return data || false;
     } catch (error) {
       console.warn('Supabase welcome message check failed:', error);
-      
-      // In development mode, return false to avoid showing welcome messages
-      if (import.meta.env.DEV) {
-        console.warn('⚠️ Using fallback welcome message state for development mode');
-        return false;
-      }
-      
-      // Return false instead of localStorage fallback - we want Supabase only
-      return false;
+      // In dev/developer mode, fall back to localStorage-based welcome logic
+      const isDev = ((import.meta as any)?.env?.DEV === true) || (typeof window !== 'undefined' && localStorage.getItem('otakon_developer_mode') === 'true');
+      return isDev ? this.shouldShowLocalStorageWelcome() : false;
     }
   }
 
@@ -342,7 +423,13 @@ class SupabaseDataService {
       console.log('✅ Welcome message state updated in Supabase');
     } catch (error) {
       console.error('❌ Supabase welcome message update failed:', error);
-      throw error; // Let the caller handle the error
+      // In dev/developer mode, update localStorage fallback to keep UX consistent
+      const isDev = ((import.meta as any)?.env?.DEV === true) || (typeof window !== 'undefined' && localStorage.getItem('otakon_developer_mode') === 'true');
+      if (isDev) {
+        this.updateLocalStorageWelcomeShown();
+        return;
+      }
+      throw error; // Let the caller handle the error outside dev
     }
   }
 
@@ -362,6 +449,61 @@ class SupabaseDataService {
     }
   }
 
+  // =====================================================
+  // APP STATE PERSISTENCE
+  // =====================================================
+
+  async saveAppState(appState: any): Promise<void> {
+    try {
+      if (!(await this.isAuthenticated())) {
+        throw new Error('User not authenticated');
+      }
+      const userId = await this.getUserId();
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
+      
+      const { error } = await supabase.rpc('save_app_state', {
+        p_user_id: userId,
+        p_app_state: appState
+      });
+
+      if (error) throw error;
+      
+      console.log('✅ App state saved to Supabase');
+    } catch (error) {
+      console.error('Error saving app state:', error);
+      // Fallback to localStorage
+      localStorage.setItem('otakon_app_state_backup', JSON.stringify(appState));
+      throw error;
+    }
+  }
+
+  async getAppState(): Promise<any> {
+    try {
+      if (!(await this.isAuthenticated())) {
+        throw new Error('User not authenticated');
+      }
+      const userId = await this.getUserId();
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
+      
+      const { data, error } = await supabase.rpc('get_app_state', {
+        p_user_id: userId
+      });
+
+      if (error) throw error;
+      
+      return data || {};
+    } catch (error) {
+      console.error('Error getting app state:', error);
+      // Fallback to localStorage
+      const backup = localStorage.getItem('otakon_app_state_backup');
+      return backup ? JSON.parse(backup) : {};
+    }
+  }
+
   async resetWelcomeMessageTracking(): Promise<void> {
     try {
       const userId = await this.getUserId();
@@ -374,7 +516,13 @@ class SupabaseDataService {
       console.log('✅ Welcome message tracking reset in Supabase');
     } catch (error) {
       console.error('❌ Supabase welcome message reset failed:', error);
-      throw error; // Let the caller handle the error
+      // In dev/developer mode, reset localStorage fallback for welcome state
+      const isDev = ((import.meta as any)?.env?.DEV === true) || (typeof window !== 'undefined' && localStorage.getItem('otakon_developer_mode') === 'true');
+      if (isDev) {
+        this.resetLocalStorageWelcomeTracking();
+        return;
+      }
+      throw error; // Let the caller handle the error outside dev
     }
   }
 
@@ -384,7 +532,13 @@ class SupabaseDataService {
 
   async checkMigrationStatus(): Promise<any> {
     try {
+      if (!(await this.isAuthenticated())) {
+        throw new Error('User not authenticated');
+      }
       const userId = await this.getUserId();
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
       const { data, error } = await supabase.rpc('check_user_migration_status', {
         p_user_id: userId
       });
@@ -873,5 +1027,7 @@ export const {
   checkMigrationStatus,
   getCompleteUserData,
   migrateAllLocalStorageData,
-  clearAllLocalStorageData
+  clearAllLocalStorageData,
+  saveAppState,
+  getAppState
 } = supabaseDataService;

@@ -275,7 +275,7 @@ describe('FeedbackSecurityService', () => {
     });
 
     it('should block write operations on system configuration tables', () => {
-      const systemTables = ['users', 'users_new', 'user_preferences', 'app_settings', 'system_config'];
+      const systemTables = ['users', 'users', 'user_preferences', 'app_settings', 'system_config'];
       
       systemTables.forEach(table => {
         expect(feedbackSecurityService.validateDatabaseOperation('insert', table, { test: 'data' })).toBe(false);

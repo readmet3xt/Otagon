@@ -54,7 +54,8 @@ export interface CacheResult {
 
 class UniversalContentCacheService {
   private static instance: UniversalContentCacheService;
-  private readonly CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
+  private readonly CACHE_DURATION = 90 * 24 * 60 * 60 * 1000; // EXTENDED: 90 days instead of 7 days
+  private readonly PROGRESS_CACHE_DURATION = 365 * 24 * 60 * 60 * 1000; // NEW: 1 year for progress data
   private readonly SIMILARITY_THRESHOLD = 0.85; // 85% similarity threshold
   private readonly MAX_CACHE_SIZE = 1000; // Maximum cache entries per user
   private readonly MAX_RELATED_QUERIES = 10; // Maximum related queries to track
@@ -282,7 +283,7 @@ class UniversalContentCacheService {
       const cacheKey = `universalCache_${content.queryHash}`;
       const expiresAt = new Date(content.expiresAt);
       
-      await supabaseDataService.setAppCache(cacheKey, content, expiresAt);
+      await supabaseDataService.setAppCache(cacheKey, content, expiresAt.toISOString());
     } catch (error) {
       console.error('Failed to store content in Supabase:', error);
     }
@@ -360,7 +361,7 @@ class UniversalContentCacheService {
             const entriesToKeep = sortedEntries.slice(-this.MAX_CACHE_SIZE);
             
             // Update cache with only valid entries
-            await supabaseDataService.setAppCache(cacheKey, { entries: entriesToKeep }, new Date());
+            await supabaseDataService.setAppCache(cacheKey, { entries: entriesToKeep }, new Date().toISOString());
           }
         }
       }
@@ -428,20 +429,83 @@ class UniversalContentCacheService {
     try {
       if (contentType) {
         const cacheKey = `universalCache_${contentType}`;
-        await supabaseDataService.deleteAppCache(cacheKey);
+        await supabaseDataService.setAppCache(cacheKey, null);
         console.log(`🗑️ Cleared cache for ${contentType}`);
       } else {
         // Clear all cache types
         const cacheTypes = ['game_help', 'insight', 'task', 'game_info', 'general', 'unreleased_game'];
         for (const type of cacheTypes) {
           const cacheKey = `universalCache_${type}`;
-          await supabaseDataService.deleteAppCache(cacheKey);
+          await supabaseDataService.setAppCache(cacheKey, null);
         }
         console.log('🗑️ Cleared all universal cache');
       }
     } catch (error) {
       console.error('Failed to clear cache:', error);
     }
+  }
+
+  // NEW: Cache player progress with extended duration
+  async cachePlayerProgress(
+    gameId: string,
+    progressData: any,
+    metadata: any
+  ): Promise<void> {
+    const cacheKey = `player_progress_${gameId}`;
+    const cacheData: CachedContent = {
+      id: this.generateId(),
+      query: `Player progress for ${gameId}`,
+      queryHash: this.generateHash(cacheKey),
+      content: JSON.stringify(progressData),
+      contentType: 'game_help',
+      gameName: gameId,
+      userTier: metadata.userTier || 'free',
+      userId: metadata.userId,
+      timestamp: Date.now(),
+      expiresAt: Date.now() + this.PROGRESS_CACHE_DURATION, // 1 year
+      accessCount: 0,
+      lastAccessed: Date.now(),
+      metadata: {
+        ...metadata,
+        model: 'progress_tracker',
+        tokens: 0,
+        cost: 0,
+        tags: ['player_progress', 'long_term'],
+        relatedQueries: [],
+        cacheType: 'player_progress',
+        isLongTerm: true
+      }
+    };
+    
+    await this.setCachedContent(cacheKey, cacheData);
+  }
+
+  // NEW: Get long-term player progress
+  async getPlayerProgress(gameId: string): Promise<any | null> {
+    const cacheKey = `player_progress_${gameId}`;
+    const cached = await this.getCachedContent(cacheKey);
+    
+    if (cached && !this.isExpired(cached.expiresAt)) {
+      return JSON.parse(cached.content);
+    }
+    
+    return null;
+  }
+
+  // NEW: Generate unique ID for cache entries
+  private generateId(): string {
+    return `cache_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  // NEW: Generate hash for cache keys
+  private generateHash(key: string): string {
+    let hash = 0;
+    for (let i = 0; i < key.length; i++) {
+      const char = key.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return hash.toString(36);
   }
 }
 

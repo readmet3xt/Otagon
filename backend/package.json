@@ -1,0 +1,26 @@
+{
+  "name": "otakon-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "NODE_ENV=development node --enable-source-maps dist/index.js",
+    "start": "NODE_ENV=production node --enable-source-maps dist/index.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@google-cloud/secret-manager": "^5.5.0",
+    "@google/genai": "^1.12.0",
+    "@supabase/supabase-js": "^2.55.0",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "helmet": "^7.2.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "typescript": "~5.8.2"
+  }
+}

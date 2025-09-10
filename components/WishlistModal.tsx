@@ -26,6 +26,8 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({
   const [newGamePlatform, setNewGamePlatform] = useState('');
   const [isAddingGame, setIsAddingGame] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [candidateGames, setCandidateGames] = useState<string[]>([]);
+  const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
 
   useEffect(() => {
     if (isOpen) {
@@ -36,7 +38,8 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({
   const loadWishlist = async () => {
     setIsLoading(true);
     try {
-      const items = await wishlistService.getWishlist();
+      const svc = await getWishlistService();
+      const items = await svc.getWishlist();
       setWishlistItems(items);
     } catch (error) {
       console.error('Failed to load wishlist:', error);
@@ -50,7 +53,8 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({
 
     setIsAddingGame(true);
     try {
-      const newItem = await wishlistService.addToWishlist({
+      const svc = await getWishlistService();
+      const newItem = await svc.addToWishlist({
         gameName: newGameName.trim(),
         platform: newGamePlatform || undefined,
         gameId: 'everything-else',
@@ -80,7 +84,8 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({
   const handleRemoveGame = async (itemId: string) => {
     if (window.confirm('Remove this game from your wishlist?')) {
       try {
-        const success = await wishlistService.removeFromWishlist(itemId);
+        const svc = await getWishlistService();
+        const success = await svc.removeFromWishlist(itemId);
         if (success) {
           setWishlistItems(prev => prev.filter(item => item.id !== itemId));
         }
@@ -90,6 +95,52 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({
       }
     }
   };
+
+  // Build context-aware candidate games from conversations (Everything Else + game tabs)
+  useEffect(() => {
+    if (!isOpen) return;
+    try {
+      const raw = typeof window !== 'undefined' ? localStorage.getItem('otakonConversations') : null;
+      if (!raw) { setCandidateGames([]); return; }
+      const conversations = JSON.parse(raw) as Record<string, any>;
+      const titles = new Set<string>();
+      // Add all game conversation titles (exclude everything-else)
+      Object.values(conversations).forEach((convo: any) => {
+        if (convo && convo.id && convo.id !== 'everything-else' && typeof convo.title === 'string' && convo.title.trim().length > 0) {
+          titles.add(convo.title.trim());
+        }
+      });
+      // Also scan recent Everything Else messages for likely game mentions from suggestions array if present
+      const ee = conversations['everything-else'];
+      if (ee?.messages && Array.isArray(ee.messages)) {
+        const recent = ee.messages.slice(-30);
+        recent.forEach((m: any) => {
+          if (m?.suggestions && Array.isArray(m.suggestions)) {
+            m.suggestions.forEach((s: any) => {
+              if (typeof s === 'string' && s.length >= 3 && s.length <= 60) titles.add(s.trim());
+            });
+          }
+        });
+      }
+      // Exclude items already in wishlist
+      const existing = new Set(wishlistItems.map(w => (w.gameName || '').trim().toLowerCase()));
+      const candidates = Array.from(titles).filter(t => !existing.has(t.toLowerCase()));
+      setCandidateGames(candidates);
+    } catch (e) {
+      console.warn('Failed to build wishlist suggestions from context:', e);
+      setCandidateGames([]);
+    }
+  }, [isOpen, wishlistItems]);
+
+  // Filter suggestions as user types
+  useEffect(() => {
+    const q = newGameName.trim().toLowerCase();
+    if (!q) { setFilteredSuggestions([]); return; }
+    const list = candidateGames
+      .filter(name => name.toLowerCase().includes(q))
+      .slice(0, 6);
+    setFilteredSuggestions(list);
+  }, [newGameName, candidateGames]);
 
   if (!isOpen) return null;
 
@@ -146,7 +197,7 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({
               Add New Game
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-              <div>
+              <div className="relative">
                 <label className="block text-sm font-medium text-[#CFCFCF] mb-2">Game Name *</label>
                 <input
                   type="text"
@@ -155,6 +206,20 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({
                   className="w-full px-3 py-2 bg-[#1C1C1C] border border-[#424242] rounded text-white text-sm focus:border-[#FFAB40] focus:outline-none transition-colors"
                   placeholder="Enter game name"
                 />
+                {filteredSuggestions.length > 0 && (
+                  <div className="absolute z-10 mt-1 w-full bg-[#0F0F0F] border border-[#424242]/60 rounded-lg shadow-xl overflow-hidden">
+                    {filteredSuggestions.map(s => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => { setNewGameName(s); setFilteredSuggestions([]); }}
+                        className="w-full text-left px-3 py-2 text-sm text-[#E5E5E5] hover:bg-[#1C1C1C]"
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-[#CFCFCF] mb-2">Platform</label>

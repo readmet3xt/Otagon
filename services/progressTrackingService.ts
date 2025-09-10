@@ -53,7 +53,7 @@ export class ProgressTrackingService {
     gameVersion: string = 'base_game'
   ): Promise<GameProgress> {
     const { data } = await supabase
-      .from('games_new')
+      .from('games')
       .select(`
         current_progress_level,
         game_version,

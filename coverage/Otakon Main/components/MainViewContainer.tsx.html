@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/320</span>
+                <span class='fraction'>0/304</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/320</span>
+                <span class='fraction'>0/304</span>
             </div>
         
             
@@ -366,39 +366,7 @@
 <a name='L301'></a><a href='#L301'>301</a>
 <a name='L302'></a><a href='#L302'>302</a>
 <a name='L303'></a><a href='#L303'>303</a>
-<a name='L304'></a><a href='#L304'>304</a>
-<a name='L305'></a><a href='#L305'>305</a>
-<a name='L306'></a><a href='#L306'>306</a>
-<a name='L307'></a><a href='#L307'>307</a>
-<a name='L308'></a><a href='#L308'>308</a>
-<a name='L309'></a><a href='#L309'>309</a>
-<a name='L310'></a><a href='#L310'>310</a>
-<a name='L311'></a><a href='#L311'>311</a>
-<a name='L312'></a><a href='#L312'>312</a>
-<a name='L313'></a><a href='#L313'>313</a>
-<a name='L314'></a><a href='#L314'>314</a>
-<a name='L315'></a><a href='#L315'>315</a>
-<a name='L316'></a><a href='#L316'>316</a>
-<a name='L317'></a><a href='#L317'>317</a>
-<a name='L318'></a><a href='#L318'>318</a>
-<a name='L319'></a><a href='#L319'>319</a>
-<a name='L320'></a><a href='#L320'>320</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<a name='L304'></a><a href='#L304'>304</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -758,7 +726,6 @@
 <span class="cstat-no" title="statement not covered" >  const touchEndX = useRef&lt;number | null&gt;(null);</span>
 <span class="cstat-no" title="statement not covered" >  const chatEndRef = useRef&lt;HTMLDivElement&gt;(null);</span>
 <span class="cstat-no" title="statement not covered" >  const chatContainerRef = useRef&lt;HTMLDivElement&gt;(null);</span>
-<span class="cstat-no" title="statement not covered" >  const [showScrollToBottom, setShowScrollToBottom] = useState(false);</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >  const orderedInsightIds = activeConversation.insightsOrder || Object.keys(activeConversation.insights || {});</span>
 <span class="cstat-no" title="statement not covered" ></span>
@@ -769,43 +736,40 @@
 <span class="cstat-no" title="statement not covered" >  const activeIndex = views.indexOf(activeSubView);</span>
 <span class="cstat-no" title="statement not covered" >  const previousIndex = usePrevious(activeIndex);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  // Scroll to bottom when chat content changes</span>
+<span class="cstat-no" title="statement not covered" >  // Auto-scroll to top when switching to insight tabs to show latest information</span>
+<span class="cstat-no" title="statement not covered" >  useEffect(() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    if (activeSubView !== 'chat' &amp;&amp; activeSubView !== previousIndex) {</span>
+<span class="cstat-no" title="statement not covered" >      const insightContainer = document.querySelector(`[data-insight-id="${activeSubView}"]`);</span>
+<span class="cstat-no" title="statement not covered" >      if (insightContainer) {</span>
+<span class="cstat-no" title="statement not covered" >        insightContainer.scrollTo({ top: 0, behavior: 'smooth' });</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" >  }, [activeSubView, previousIndex]);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  // Auto-scroll to show latest AI response when generating or generated</span>
 <span class="cstat-no" title="statement not covered" >  useEffect(() =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    if (activeSubView === 'chat') {</span>
-<span class="cstat-no" title="statement not covered" >      console.log('🔍 Chat content changed, scrolling to bottom:', {</span>
+<span class="cstat-no" title="statement not covered" >      console.log('🔍 Chat content changed, checking for AI response:', {</span>
 <span class="cstat-no" title="statement not covered" >        messagesCount: messages.length,</span>
 <span class="cstat-no" title="statement not covered" >        loadingCount: loadingMessages.length,</span>
 <span class="cstat-no" title="statement not covered" >        activeSubView</span>
 <span class="cstat-no" title="statement not covered" >      });</span>
 <span class="cstat-no" title="statement not covered" >      </span>
-<span class="cstat-no" title="statement not covered" >      // Immediate scroll</span>
-<span class="cstat-no" title="statement not covered" >      scrollToBottom();</span>
-<span class="cstat-no" title="statement not covered" >      </span>
-<span class="cstat-no" title="statement not covered" >      // Also scroll after a delay to catch any delayed updates</span>
-<span class="cstat-no" title="statement not covered" >      const delayedScroll = setTimeout(() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >      // Always scroll to show latest interaction (AI response or loading)</span>
+<span class="cstat-no" title="statement not covered" >      if (messages.length &gt; 0 || loadingMessages.length &gt; 0) {</span>
+<span class="cstat-no" title="statement not covered" >        // Immediate scroll</span>
 <span class="cstat-no" title="statement not covered" >        scrollToBottom();</span>
-<span class="cstat-no" title="statement not covered" >      }, 300);</span>
-<span class="cstat-no" title="statement not covered" >      </span>
-<span class="cstat-no" title="statement not covered" >      return () =&gt; clearTimeout(delayedScroll);</span>
+<span class="cstat-no" title="statement not covered" >        </span>
+<span class="cstat-no" title="statement not covered" >        // Also scroll after a delay to catch any delayed updates (streaming responses)</span>
+<span class="cstat-no" title="statement not covered" >        const delayedScroll = setTimeout(() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >          scrollToBottom();</span>
+<span class="cstat-no" title="statement not covered" >        }, 300);</span>
+<span class="cstat-no" title="statement not covered" >        </span>
+<span class="cstat-no" title="statement not covered" >        return () =&gt; clearTimeout(delayedScroll);</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
 <span class="cstat-no" title="statement not covered" >  }, [messages, loadingMessages, activeSubView]);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  // Handle scroll detection to show/hide scroll to bottom button</span>
-<span class="cstat-no" title="statement not covered" >  useEffect(() =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    const chatContainer = chatContainerRef.current;</span>
-<span class="cstat-no" title="statement not covered" >    if (!chatContainer) return;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    const handleScroll = () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      const { scrollTop, scrollHeight, clientHeight } = chatContainer;</span>
-<span class="cstat-no" title="statement not covered" >      const isAtBottom = scrollTop + clientHeight &gt;= scrollHeight - 10; // 10px threshold</span>
-<span class="cstat-no" title="statement not covered" >      setShowScrollToBottom(!isAtBottom);</span>
-<span class="cstat-no" title="statement not covered" >    };</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    chatContainer.addEventListener('scroll', handleScroll);</span>
-<span class="cstat-no" title="statement not covered" >    return () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      chatContainer.removeEventListener('scroll', handleScroll);</span>
-<span class="cstat-no" title="statement not covered" >    };</span>
-<span class="cstat-no" title="statement not covered" >  }, [activeSubView]);</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >  const scrollToBottom = () =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    if (import.meta.env.DEV) {</span>
@@ -884,18 +848,20 @@
 <span class="cstat-no" title="statement not covered" >      return (</span>
 <span class="cstat-no" title="statement not covered" >        &lt;div</span>
 <span class="cstat-no" title="statement not covered" >          key="chat-view"</span>
-<span class="cstat-no" title="statement not covered" >          className="flex-shrink-0 w-full h-full overflow-y-auto px-2 sm:px-3 md:px-4 lg:px-6 pt-3 sm:pt-4 md:pt-6 pb-3 sm:pb-4"</span>
+<span class="cstat-no" title="statement not covered" >          className="flex-shrink-0 w-full h-full overflow-y-auto px-3 sm:px-4 md:px-6 lg:px-8 pt-4 sm:pt-6 md:pt-8 pb-20 sm:pb-24"</span>
 <span class="cstat-no" title="statement not covered" >          ref={chatContainerRef}</span>
 <span class="cstat-no" title="statement not covered" >          aria-live="polite"</span>
 <span class="cstat-no" title="statement not covered" >          aria-atomic="false"</span>
 <span class="cstat-no" title="statement not covered" >          role="log"</span>
 <span class="cstat-no" title="statement not covered" >        &gt;</span>
 <span class="cstat-no" title="statement not covered" >          {messages.length === 0 ? (</span>
-<span class="cstat-no" title="statement not covered" >            &lt;div className="flex-1 flex flex-col justify-end h-full"&gt;</span>
-<span class="cstat-no" title="statement not covered" >              &lt;SuggestedPrompts onPromptClick={onSendMessage} isInputDisabled={isInputDisabled} isFirstTime={isFirstTime} /&gt;</span>
+<span class="cstat-no" title="statement not covered" >            &lt;div className="flex-1 flex flex-col justify-center items-center h-full"&gt;</span>
+<span class="cstat-no" title="statement not covered" >              {loadingMessages.length === 0 &amp;&amp; (</span>
+<span class="cstat-no" title="statement not covered" >                &lt;SuggestedPrompts onPromptClick={onSendMessage} isInputDisabled={isInputDisabled} isFirstTime={isFirstTime} /&gt;</span>
+<span class="cstat-no" title="statement not covered" >              )}</span>
 <span class="cstat-no" title="statement not covered" >            &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >          ) : (</span>
-<span class="cstat-no" title="statement not covered" >            &lt;div className="flex flex-col gap-3 sm:gap-4 md:gap-6 lg:gap-8 w-full max-w-[95%] sm:max-w-4xl md:max-w-5xl mx-auto my-2 sm:my-3 md:my-4 lg:my-6"&gt;</span>
+<span class="cstat-no" title="statement not covered" >            &lt;div className="flex flex-col gap-4 sm:gap-6 md:gap-8 lg:gap-10 w-full max-w-[95%] sm:max-w-4xl md:max-w-5xl mx-auto my-4 sm:my-6 md:my-8 lg:my-10"&gt;</span>
 <span class="cstat-no" title="statement not covered" >              {messages.map(msg =&gt; (</span>
 <span class="cstat-no" title="statement not covered" >                &lt;ChatMessage</span>
 <span class="cstat-no" title="statement not covered" >                  key={msg.id}</span>
@@ -910,30 +876,16 @@
 <span class="cstat-no" title="statement not covered" >                  isEverythingElse={activeConversation.id === 'everything-else'}</span>
 <span class="cstat-no" title="statement not covered" >                /&gt;</span>
 <span class="cstat-no" title="statement not covered" >              ))}</span>
-<span class="cstat-no" title="statement not covered" >              &lt;div ref={chatEndRef} /&gt;</span>
 <span class="cstat-no" title="statement not covered" >              </span>
-<span class="cstat-no" title="statement not covered" >              {/* Show suggested prompts below messages for easy access */}</span>
-<span class="cstat-no" title="statement not covered" >              &lt;div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-[#424242]/20"&gt;</span>
+<span class="cstat-no" title="statement not covered" >              {/* Show suggested prompts directly below messages as part of chat flow - only when not loading */}</span>
+<span class="cstat-no" title="statement not covered" >              {loadingMessages.length === 0 &amp;&amp; (</span>
 <span class="cstat-no" title="statement not covered" >                &lt;SuggestedPrompts onPromptClick={onSendMessage} isInputDisabled={isInputDisabled} isFirstTime={isFirstTime} /&gt;</span>
-<span class="cstat-no" title="statement not covered" >              &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >              )}</span>
+<span class="cstat-no" title="statement not covered" >              </span>
+<span class="cstat-no" title="statement not covered" >              &lt;div ref={chatEndRef} /&gt;</span>
 <span class="cstat-no" title="statement not covered" >            &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >          )}</span>
 <span class="cstat-no" title="statement not covered" >          </span>
-<span class="cstat-no" title="statement not covered" >          {/* Scroll to Bottom Button */}</span>
-<span class="cstat-no" title="statement not covered" >          {showScrollToBottom &amp;&amp; (</span>
-<span class="cstat-no" title="statement not covered" >            &lt;button</span>
-<span class="cstat-no" title="statement not covered" >              onClick={() =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >                console.log('🔍 Scroll to bottom button clicked');</span>
-<span class="cstat-no" title="statement not covered" >                scrollToBottom();</span>
-<span class="cstat-no" title="statement not covered" >              }}</span>
-<span class="cstat-no" title="statement not covered" >              className="fixed bottom-20 sm:bottom-24 right-3 sm:right-6 z-50 bg-[#E53A3A] hover:bg-[#D98C1F] text-white p-2.5 sm:p-3 rounded-full shadow-lg transition-all duration-200 hover:scale-110 active:scale-95"</span>
-<span class="cstat-no" title="statement not covered" >              title="Scroll to bottom"</span>
-<span class="cstat-no" title="statement not covered" >            &gt;</span>
-<span class="cstat-no" title="statement not covered" >              &lt;svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                &lt;path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" /&gt;</span>
-<span class="cstat-no" title="statement not covered" >              &lt;/svg&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;/button&gt;</span>
-<span class="cstat-no" title="statement not covered" >          )}</span>
 <span class="cstat-no" title="statement not covered" >        &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >      );</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
@@ -978,7 +930,7 @@
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >      // Regular insight tabs</span>
 <span class="cstat-no" title="statement not covered" >      return (</span>
-<span class="cstat-no" title="statement not covered" >        &lt;div key={insight.id} className="flex-shrink-0 w-full h-full overflow-y-auto p-3 sm:p-4 md:p-6 lg:p-8"&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;div key={insight.id} data-insight-id={insight.id} className="flex-shrink-0 w-full h-full overflow-y-auto p-3 sm:p-4 md:p-6 lg:p-8"&gt;</span>
 <span class="cstat-no" title="statement not covered" >          &lt;div className="prose prose-invert prose-sm sm:prose-base md:prose-lg max-w-none prose-p:text-[#CFCFCF] prose-headings:text-[#F5F5F5] prose-strong:text-white prose-a:text-[#FFAB40] prose-a:no-underline hover:prose-a:underline prose-code:text-[#FFAB40] prose-code:bg-[#1C1C1C] prose-code:p-1 prose-code:rounded-md prose-li:marker:text-[#FFAB40] prose-h2:text-xl sm:text-2xl prose-h3:text-lg sm:text-xl prose-h4:text-base sm:text-lg"&gt;</span>
 <span class="cstat-no" title="statement not covered" >            &lt;ReactMarkdown remarkPlugins={[remarkGfm]}&gt;</span>
 <span class="cstat-no" title="statement not covered" >              {insight.content}</span>
@@ -1027,7 +979,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-30T01:27:04.971Z
+                at 2025-09-10T12:28:31.809Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/130</span>
+                <span class='fraction'>0/145</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/130</span>
+                <span class='fraction'>0/145</span>
             </div>
         
             
@@ -193,7 +193,37 @@
 <a name='L128'></a><a href='#L128'>128</a>
 <a name='L129'></a><a href='#L129'>129</a>
 <a name='L130'></a><a href='#L130'>130</a>
-<a name='L131'></a><a href='#L131'>131</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L131'></a><a href='#L131'>131</a>
+<a name='L132'></a><a href='#L132'>132</a>
+<a name='L133'></a><a href='#L133'>133</a>
+<a name='L134'></a><a href='#L134'>134</a>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a>
+<a name='L142'></a><a href='#L142'>142</a>
+<a name='L143'></a><a href='#L143'>143</a>
+<a name='L144'></a><a href='#L144'>144</a>
+<a name='L145'></a><a href='#L145'>145</a>
+<a name='L146'></a><a href='#L146'>146</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -340,6 +370,11 @@
 <span class="cstat-no" title="statement not covered" >  useEffect(() =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    const handleAuthCallback = async () =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >      try {</span>
+<span class="cstat-no" title="statement not covered" >        console.log('Handling OAuth callback...');</span>
+<span class="cstat-no" title="statement not covered" >        </span>
+<span class="cstat-no" title="statement not covered" >        // Wait a moment for Supabase to process the OAuth response</span>
+<span class="cstat-no" title="statement not covered" >        await new Promise(resolve =&gt; setTimeout(resolve, 1000));</span>
+<span class="cstat-no" title="statement not covered" >        </span>
 <span class="cstat-no" title="statement not covered" >        // Get the current session</span>
 <span class="cstat-no" title="statement not covered" >        const { data: { session }, error } = await supabase.auth.getSession();</span>
 <span class="cstat-no" title="statement not covered" >        </span>
@@ -351,11 +386,11 @@
 <span class="cstat-no" title="statement not covered" >          return;</span>
 <span class="cstat-no" title="statement not covered" >        }</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        if (session) {</span>
+<span class="cstat-no" title="statement not covered" >        if (session?.user) {</span>
 <span class="cstat-no" title="statement not covered" >          console.log('Auth successful, session:', session);</span>
 <span class="cstat-no" title="statement not covered" >          setStatus('success');</span>
 <span class="cstat-no" title="statement not covered" >          </span>
-<span class="cstat-no" title="statement not covered" >          // Wait a moment to show success, then redirect to splash screen</span>
+<span class="cstat-no" title="statement not covered" >          // Wait a moment to show success, then redirect</span>
 <span class="cstat-no" title="statement not covered" >          setTimeout(() =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >            if (onRedirectToSplash) {</span>
 <span class="cstat-no" title="statement not covered" >              onRedirectToSplash();</span>
@@ -383,9 +418,19 @@
 <span class="cstat-no" title="statement not covered" >              }</span>
 <span class="cstat-no" title="statement not covered" >            }, 1500);</span>
 <span class="cstat-no" title="statement not covered" >          } else {</span>
-<span class="cstat-no" title="statement not covered" >            setError('No authentication session found. Please try signing in again.');</span>
+<span class="cstat-no" title="statement not covered" >            // Try to get the OAuth error from URL parameters</span>
+<span class="cstat-no" title="statement not covered" >            const urlParams = new URLSearchParams(window.location.search);</span>
+<span class="cstat-no" title="statement not covered" >            const hashParams = new URLSearchParams(window.location.hash.substring(1));</span>
+<span class="cstat-no" title="statement not covered" >            </span>
+<span class="cstat-no" title="statement not covered" >            const oauthError = urlParams.get('error') || hashParams.get('error');</span>
+<span class="cstat-no" title="statement not covered" >            if (oauthError) {</span>
+<span class="cstat-no" title="statement not covered" >              setError(`OAuth error: ${oauthError}`);</span>
+<span class="cstat-no" title="statement not covered" >              onAuthError(`OAuth error: ${oauthError}`);</span>
+<span class="cstat-no" title="statement not covered" >            } else {</span>
+<span class="cstat-no" title="statement not covered" >              setError('No authentication session found. Please try signing in again.');</span>
+<span class="cstat-no" title="statement not covered" >              onAuthError('No authentication session found. Please try signing in again.');</span>
+<span class="cstat-no" title="statement not covered" >            }</span>
 <span class="cstat-no" title="statement not covered" >            setStatus('error');</span>
-<span class="cstat-no" title="statement not covered" >            onAuthError('No authentication session found. Please try signing in again.');</span>
 <span class="cstat-no" title="statement not covered" >          }</span>
 <span class="cstat-no" title="statement not covered" >        }</span>
 <span class="cstat-no" title="statement not covered" >      } catch (err) {</span>
@@ -460,7 +505,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-30T01:27:04.971Z
+                at 2025-09-10T12:28:31.809Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

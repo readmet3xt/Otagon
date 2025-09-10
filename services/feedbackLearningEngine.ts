@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { feedbackSecurityService } from './feedbackSecurityService';
 
 export interface FeedbackAnalysis {
   rejectionPattern: string;
@@ -9,7 +10,7 @@ export interface FeedbackAnalysis {
 
 export class FeedbackLearningEngine {
   
-  // Track progress update feedback with version context
+  // Track progress update feedback with version context (with security validation)
   async trackProgressFeedback(
     historyId: string,
     feedback: 'confirmed' | 'rejected',
@@ -27,18 +28,26 @@ export class FeedbackLearningEngine {
     });
     
     try {
+      // SECURITY VALIDATION: Ensure database operation is allowed
+      const systemData = {
+        category: 'progress_feedback',
+        event_type: feedback,
+        history_id: historyId,
+        game_version: gameVersion,
+        user_reason: userReason,
+        ai_confidence: aiConfidence,
+        feedback_type: 'progress_update',
+        timestamp: new Date().toISOString()
+      };
+
+      if (!feedbackSecurityService.validateDatabaseOperation('insert', 'system_new', { system_data: systemData })) {
+        console.error('🚨 SECURITY BLOCKED: Progress feedback database operation not allowed');
+        return;
+      }
+
       // Store feedback in system_new table with version context
       const { error } = await supabase.from('system_new').insert({
-        system_data: {
-          category: 'progress_feedback',
-          event_type: feedback,
-          history_id: historyId,
-          game_version: gameVersion,
-          user_reason: userReason,
-          ai_confidence: aiConfidence,
-          feedback_type: 'progress_update',
-          timestamp: new Date().toISOString()
-        }
+        system_data: systemData
       });
 
       if (error) {
@@ -52,14 +61,20 @@ export class FeedbackLearningEngine {
         await this.analyzeRejectionPattern(historyId, userReason, gameVersion);
       }
 
-      // Update progress history with feedback
-      await supabase
-        .from('progress_history')
-        .update({
-          user_feedback: feedback,
-          feedback_timestamp: new Date().toISOString()
-        })
-        .eq('id', historyId);
+      // SECURITY VALIDATION: Ensure progress history update is allowed
+      if (feedbackSecurityService.validateDatabaseOperation('update', 'progress_history', {
+        user_feedback: feedback,
+        feedback_timestamp: new Date().toISOString()
+      })) {
+        // Update progress history with feedback
+        await supabase
+          .from('progress_history')
+          .update({
+            user_feedback: feedback,
+            feedback_timestamp: new Date().toISOString()
+          })
+          .eq('id', historyId);
+      }
 
       console.log('🧠 Feedback Learning: Feedback tracking completed successfully');
 
@@ -281,7 +296,7 @@ export class FeedbackLearningEngine {
 
       // Revert the game progress
       const { error: gameError } = await supabase
-        .from('games_new')
+        .from('games')
         .update({
           current_progress_level: historyEntry.old_level,
           completed_events: supabase.rpc('array_remove', { arr: historyEntry.completed_events || [], element: historyEntry.event_id }),

@@ -69,8 +69,9 @@ export const useMigration = () => {
       // Step 1: Check localStorage data
       setMigrationState(prev => ({ ...prev, progress: 10 }));
       
-      const conversationsData = localStorage.getItem('otakonConversations');
-      const usageData = localStorage.getItem('otakonUsage');
+      // Check if localStorage is available before accessing it
+      const conversationsData = typeof window !== 'undefined' && window.localStorage ? localStorage.getItem('otakonConversations') : null;
+      const usageData = typeof window !== 'undefined' && window.localStorage ? localStorage.getItem('otakonUsage') : null;
       
       if (!conversationsData && !usageData) {
         setMigrationState(prev => ({ 

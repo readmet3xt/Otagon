@@ -5,7 +5,7 @@ const PrivacyPolicyPage: React.FC = () => {
     <>
       <p className="text-neutral-400 mb-4 text-base">Last Updated: August 15, 2025</p>
 
-      <p>Welcome to Otakon! This Privacy Policy explains how we collect, use, and protect your information when you use our services. We are based in Hyderabad, India, and serve users across the globe.</p>
+      <p>Welcome to Otagon! This Privacy Policy explains how we collect, use, and protect your information when you use our services. We are based in Hyderabad, India, and serve users across the globe.</p>
 
       <h2 className="text-2xl font-bold text-white mt-8 mb-4">1. Information We Collect</h2>
       <p>We collect information to provide and improve our services:</p>

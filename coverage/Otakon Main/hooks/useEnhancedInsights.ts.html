@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/362</span>
+                <span class='fraction'>0/366</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/362</span>
+                <span class='fraction'>0/366</span>
             </div>
         
             
@@ -425,7 +425,15 @@
 <a name='L360'></a><a href='#L360'>360</a>
 <a name='L361'></a><a href='#L361'>361</a>
 <a name='L362'></a><a href='#L362'>362</a>
-<a name='L363'></a><a href='#L363'>363</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L363'></a><a href='#L363'>363</a>
+<a name='L364'></a><a href='#L364'>364</a>
+<a name='L365'></a><a href='#L365'>365</a>
+<a name='L366'></a><a href='#L366'>366</a>
+<a name='L367'></a><a href='#L367'>367</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -927,7 +935,7 @@
 <span class="cstat-no" title="statement not covered" >                gameName, </span>
 <span class="cstat-no" title="statement not covered" >                genre, </span>
 <span class="cstat-no" title="statement not covered" >                progress, </span>
-<span class="cstat-no" title="statement not covered" >                'paid', // Fix userTier type</span>
+<span class="cstat-no" title="statement not covered" >                userTier,</span>
 <span class="cstat-no" title="statement not covered" >                Promise.resolve(resolvedProfile), // Add profile parameter</span>
 <span class="cstat-no" title="statement not covered" >                await gameContext, // Await gameContext</span>
 <span class="cstat-no" title="statement not covered" >                (error) =&gt; console.error('Insight generation error:', error)</span>
@@ -977,13 +985,15 @@
 <span class="cstat-no" title="statement not covered" >    /**</span>
 <span class="cstat-no" title="statement not covered" >     * Update existing insights when user makes explicit queries</span>
 <span class="cstat-no" title="statement not covered" >     * Always uses Gemini 2.5 Flash for cost optimization</span>
+<span class="cstat-no" title="statement not covered" >     * Intelligently updates multiple relevant tabs based on AI response context</span>
 <span class="cstat-no" title="statement not covered" >     */</span>
 <span class="cstat-no" title="statement not covered" >    const updateInsightsForUserQuery = useCallback(async (</span>
 <span class="cstat-no" title="statement not covered" >        gameName: string, </span>
 <span class="cstat-no" title="statement not covered" >        genre: string, </span>
 <span class="cstat-no" title="statement not covered" >        progress: number, </span>
 <span class="cstat-no" title="statement not covered" >        conversationId: string,</span>
-<span class="cstat-no" title="statement not covered" >        userTier: 'free' | 'paid'</span>
+<span class="cstat-no" title="statement not covered" >        userTier: 'free' | 'paid',</span>
+<span class="cstat-no" title="statement not covered" >        aiResponseContext?: string // Add AI response context for intelligent tab selection</span>
 <span class="cstat-no" title="statement not covered" >    ) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >        if (!gameName || !genre || !profile || !insightTabs.length) return;</span>
 <span class="cstat-no" title="statement not covered" >        </span>
@@ -1001,9 +1011,11 @@
 <span class="cstat-no" title="statement not covered" >                progress, </span>
 <span class="cstat-no" title="statement not covered" >                conversationId,</span>
 <span class="cstat-no" title="statement not covered" >                insightTabs,</span>
-<span class="cstat-no" title="statement not covered" >                'paid', // Fix userTier type</span>
+<span class="cstat-no" title="statement not covered" >                userTier,</span>
 <span class="cstat-no" title="statement not covered" >                Promise.resolve(resolvedProfile), // Add profile parameter</span>
-<span class="cstat-no" title="statement not covered" >                (error) =&gt; console.error('Insight update error:', error)</span>
+<span class="cstat-no" title="statement not covered" >                (error) =&gt; console.error('Insight update error:', error),</span>
+<span class="cstat-no" title="statement not covered" >                insights, // Pass existing insights for context from Pro calls</span>
+<span class="cstat-no" title="statement not covered" >                aiResponseContext // Pass AI response context for intelligent tab selection</span>
 <span class="cstat-no" title="statement not covered" >            );</span>
 <span class="cstat-no" title="statement not covered" >            </span>
 <span class="cstat-no" title="statement not covered" >            // Update insights with new content</span>
@@ -1079,7 +1091,7 @@
 <span class="cstat-no" title="statement not covered" >                progress, </span>
 <span class="cstat-no" title="statement not covered" >                conversationId,</span>
 <span class="cstat-no" title="statement not covered" >                [tabToRetry], // Only retry this specific tab</span>
-<span class="cstat-no" title="statement not covered" >                'paid', // Fix userTier type</span>
+<span class="cstat-no" title="statement not covered" >                userTier,</span>
 <span class="cstat-no" title="statement not covered" >                Promise.resolve(resolvedProfile), // Add profile parameter</span>
 <span class="cstat-no" title="statement not covered" >                (error) =&gt; console.error('Insight retry error:', error)</span>
 <span class="cstat-no" title="statement not covered" >            );</span>
@@ -1156,7 +1168,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-30T01:27:04.971Z
+                at 2025-09-10T12:28:31.809Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

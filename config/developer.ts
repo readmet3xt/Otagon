@@ -5,7 +5,8 @@
 // 1. Add the email address to the DEVELOPER_EMAILS array below
 // 2. OR use an email that ends with @otakon.app
 // 3. OR use an email that contains 'dev' or 'developer' (case insensitive)
-// 4. OR run the app in development mode (NODE_ENV=development or import.meta.env.DEV)
+// 
+// NOTE: Development environment no longer grants automatic access to developer features
 
 export const DEVELOPER_EMAILS = [
   // Add developer email addresses here
@@ -40,7 +41,14 @@ export const isDevelopmentEnvironment = (): boolean => {
 };
 
 export const canAccessDeveloperFeatures = (email?: string): boolean => {
-  // Developer features are only available in development environment
-  // OR for developer accounts in any environment
-  return isDevelopmentEnvironment() || isDeveloperAccount(email);
+  // Check if developer mode was activated via password authentication
+  const isDeveloperModeActive = localStorage.getItem('otakon_developer_mode') === 'true';
+  
+  if (isDeveloperModeActive) {
+    console.log('🔧 Developer mode active - allowing developer features');
+    return true;
+  }
+  
+  // Fallback: Check if email is in developer list (for production)
+  return isDeveloperAccount(email);
 };

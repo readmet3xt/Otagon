@@ -1,3 +1,5 @@
+import { TaskCompletionPrompt } from './taskCompletionPromptingService';
+
 export enum ConnectionStatus {
   DISCONNECTED = 'DISCONNECTED',
   CONNECTING = 'CONNECTING',
@@ -18,6 +20,7 @@ export type ChatMessage = {
   triumph?: { type: string; name: string; };
   showUpgradeButton?: boolean;
   feedback?: ChatMessageFeedback;
+  taskCompletionPrompt?: TaskCompletionPrompt; // NEW: Task completion prompt
 };
 
 export type UserTier = 'free' | 'pro' | 'vanguard_pro';
@@ -156,6 +159,69 @@ export const insightTabsConfig: Record<string, InsightTab[]> = {
         { id: 'efficiency_tips', title: 'Efficiency & Optimization', instruction: "Provide 3 actionable tips for improving the efficiency of the player's current setup, such as optimizing a production line, improving traffic flow, or managing finances better." },
         { id: 'hidden_mechanics', title: 'Hidden Mechanics', instruction: "Explain one non-obvious game mechanic that can significantly impact gameplay, which the player may not be aware of yet." },
         { id: 'disaster_prep', title: 'Disaster Prep', instruction: "Great endeavors are often tested. **Do not name the specific disaster or event.** Hint at a potential future challenge in a thematic way and suggest 2-3 concrete, preventative measures. For example: 'The markets are fickle; diversifying your income streams and building a cash reserve can weather any financial storm.' or 'The earth sometimes trembles. Ensuring your infrastructure is reinforced near fault lines could prevent a catastrophe.'" },
+    ],
+    'Sports': [
+        storySoFarTab,
+        { id: 'team_management', title: 'Team Management', instruction: "Analyze the current team composition and suggest 2-3 strategic improvements. Consider player stats, chemistry, formation adjustments, or tactical changes that could enhance performance based on the current season progress." },
+        { id: 'training_focus', title: 'Training Focus', instruction: "Based on the current team's strengths and weaknesses, recommend specific training priorities. Suggest which players need development, what skills to focus on, and how to prepare for upcoming challenges." },
+        { id: 'tactical_analysis', title: 'Tactical Analysis', instruction: "Provide detailed tactical advice for the current situation. This could include formation strategies, player positioning, set-piece tactics, or counter-strategies against specific opponents you've faced or are about to face." },
+        { id: 'season_progression', title: 'Season Progression', instruction: "Outline the key objectives and milestones for the current season phase. Suggest realistic goals, important matches to focus on, and strategic decisions that could impact the team's long-term success." },
+    ],
+    'Multiplayer Shooter': [
+        storySoFarTab,
+        { id: 'meta_analysis', title: 'Meta Analysis', instruction: "Analyze the current meta and suggest 2-3 effective loadouts or strategies. Consider weapon balance, map-specific tactics, and counter-strategies against popular playstyles in the current meta." },
+        { id: 'team_coordination', title: 'Team Coordination', instruction: "Provide advanced team play strategies. Suggest communication tactics, role assignments, positioning strategies, and how to counter common enemy team compositions or strategies." },
+        { id: 'map_control', title: 'Map Control', instruction: "Offer detailed map control strategies for the current or upcoming maps. Include key positions, rotation paths, objective control tactics, and how to maintain map dominance." },
+        { id: 'skill_development', title: 'Skill Development', instruction: "Identify specific skills to improve based on current performance. Suggest aim training routines, movement techniques, game sense improvements, or mechanical skills that could elevate gameplay." },
+    ],
+    'Multiplayer Sports': [
+        storySoFarTab,
+        { id: 'competitive_strategy', title: 'Competitive Strategy', instruction: "Analyze the competitive landscape and suggest strategies for ranked/competitive play. Consider meta shifts, opponent tendencies, and advanced tactics that separate good players from great ones." },
+        { id: 'team_synergy', title: 'Team Synergy', instruction: "Provide advice on building effective team compositions and strategies. Suggest player combinations, communication protocols, and how to maximize team chemistry and coordination." },
+        { id: 'performance_optimization', title: 'Performance Optimization', instruction: "Offer specific tips for improving individual and team performance. Include practice routines, skill development priorities, and how to adapt to different opponents and playstyles." },
+        { id: 'ranked_progression', title: 'Ranked Progression', instruction: "Outline a strategic approach to climbing ranks. Suggest focus areas, common mistakes to avoid, and how to maintain consistency in competitive matches." },
+    ],
+    'Racing': [
+        storySoFarTab,
+        { id: 'vehicle_tuning', title: 'Vehicle Tuning', instruction: "Analyze the current vehicle setup and suggest tuning adjustments. Consider track characteristics, weather conditions, and racing style to recommend optimal configurations for current or upcoming races." },
+        { id: 'track_strategy', title: 'Track Strategy', instruction: "Provide detailed racing strategies for current or upcoming tracks. Include braking points, racing lines, overtaking opportunities, and how to handle specific track sections or challenges." },
+        { id: 'race_craft', title: 'Race Craft', instruction: "Offer advanced racing techniques and strategies. Include defensive driving, overtaking tactics, pit stop strategies, and how to manage tire wear and fuel consumption effectively." },
+        { id: 'championship_focus', title: 'Championship Focus', instruction: "Outline strategic priorities for the current championship or season. Suggest which races to focus on, points management strategies, and how to maximize championship potential." },
+    ],
+    'Fighting': [
+        storySoFarTab,
+        { id: 'character_analysis', title: 'Character Analysis', instruction: "Analyze the current character's strengths, weaknesses, and optimal playstyle. Suggest advanced techniques, combo routes, and how to maximize the character's potential in different matchups." },
+        { id: 'matchup_strategy', title: 'Matchup Strategy', instruction: "Provide detailed matchup strategies against common opponents. Include character-specific tactics, counter-strategies, and how to exploit opponent weaknesses while covering your own." },
+        { id: 'execution_training', title: 'Execution Training', instruction: "Suggest specific training routines to improve execution and consistency. Include combo practice, timing drills, and techniques to master difficult inputs or advanced mechanics." },
+        { id: 'tournament_prep', title: 'Tournament Prep', instruction: "Outline preparation strategies for competitive play. Include mental preparation, warm-up routines, and how to maintain peak performance during extended tournament sessions." },
+    ],
+    'Battle Royale': [
+        storySoFarTab,
+        { id: 'drop_strategy', title: 'Drop Strategy', instruction: "Analyze optimal landing locations and early-game strategies. Consider loot quality, player density, and how to maximize survival chances while securing good equipment for the mid-game." },
+        { id: 'positioning_tactics', title: 'Positioning Tactics', instruction: "Provide advanced positioning strategies for different phases of the match. Include rotation timing, zone management, and how to maintain advantageous positions while avoiding third-party situations." },
+        { id: 'loadout_optimization', title: 'Loadout Optimization', instruction: "Suggest optimal weapon combinations and equipment priorities. Consider current meta, personal playstyle, and how to adapt loadouts based on available loot and enemy compositions." },
+        { id: 'endgame_strategy', title: 'Endgame Strategy', instruction: "Offer detailed endgame tactics and positioning. Include final circle strategies, engagement timing, and how to maximize win probability in high-pressure final situations." },
+    ],
+    'MMORPG': [
+        storySoFarTab,
+        { id: 'class_optimization', title: 'Class Optimization', instruction: "Analyze the current class build and suggest optimizations. Include talent choices, gear priorities, stat allocation, and how to maximize effectiveness for current content and playstyle." },
+        { id: 'content_progression', title: 'Content Progression', instruction: "Provide a roadmap for progressing through current and upcoming content. Suggest priority activities, gear upgrades, and how to efficiently advance through dungeons, raids, or PvP content." },
+        { id: 'economy_management', title: 'Economy Management', instruction: "Offer strategies for managing in-game resources and economy. Include gold-making tips, auction house strategies, and how to optimize spending for maximum character progression." },
+        { id: 'social_strategies', title: 'Social Strategies', instruction: "Suggest approaches for building effective guild relationships and finding groups. Include communication tips, role expectations, and how to become a valuable team member in group content." },
+    ],
+    'Puzzle': [
+        storySoFarTab,
+        { id: 'puzzle_patterns', title: 'Puzzle Patterns', instruction: "Identify common puzzle patterns and solution strategies. Provide systematic approaches to different puzzle types and how to recognize key elements that lead to solutions." },
+        { id: 'logical_reasoning', title: 'Logical Reasoning', instruction: "Offer advanced logical reasoning techniques and problem-solving methods. Include how to break down complex puzzles, eliminate possibilities, and approach problems systematically." },
+        { id: 'time_optimization', title: 'Time Optimization', instruction: "Suggest strategies for solving puzzles more efficiently. Include speed-solving techniques, pattern recognition shortcuts, and how to minimize trial-and-error approaches." },
+        { id: 'difficulty_progression', title: 'Difficulty Progression', instruction: "Outline strategies for tackling increasingly difficult puzzles. Include preparation methods, skill development priorities, and how to build confidence for challenging content." },
+    ],
+    'Horror': [
+        storySoFarTab,
+        { id: 'survival_strategies', title: 'Survival Strategies', instruction: "Provide comprehensive survival tactics for the current situation. Include resource management, safe zone identification, and how to navigate dangerous areas while minimizing risk." },
+        { id: 'enemy_behavior', title: 'Enemy Behavior', instruction: "Analyze enemy patterns and suggest counter-strategies. Include how to avoid detection, exploit enemy weaknesses, and use the environment to your advantage against threats." },
+        { id: 'atmosphere_navigation', title: 'Atmosphere Navigation', instruction: "Offer strategies for managing the psychological aspects of horror gameplay. Include how to maintain composure, use audio cues effectively, and navigate tense situations." },
+        { id: 'resource_management', title: 'Resource Management', instruction: "Suggest optimal resource allocation and conservation strategies. Include inventory management, crafting priorities, and how to maximize survival potential with limited supplies." },
     ]
 };
 
@@ -168,6 +234,8 @@ export interface PlayerProfile {
   isFirstTime: boolean;
   createdAt: number;
   lastUpdated: number;
+  experienceLevel?: 'beginner' | 'intermediate' | 'advanced';
+  preferences?: string[];
 }
 
 export interface BuildSnapshot {
@@ -195,6 +263,7 @@ export interface GameContext {
   secretsFound: string[];
   buildHistory: BuildSnapshot[];
   sessionSummaries: SessionSummary[];
+  gameName?: string;
 }
 
 export interface ProactiveInsight {
@@ -246,6 +315,15 @@ export interface ResponseFormatting {
   useNumberedLists: boolean;
   useCallouts: boolean;
   useProgressIndicators: boolean;
+  sections?: ResponseSection[];
+  tone?: 'casual' | 'formal' | 'encouraging' | 'technical';
+  maxLength?: number;
+}
+
+export interface ResponseSection {
+  title: string;
+  content: string;
+  footer?: string;
 }
 
 // Enhanced Conversation interface extending current Conversation

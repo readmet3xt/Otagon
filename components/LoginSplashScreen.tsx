@@ -38,6 +38,20 @@ const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, onOpe
     // Analytics tracking
     const { startOnboardingStep, completeOnboardingStep, trackOnboardingDropOff, trackButtonClick } = useAnalytics();
 
+    // Monitor authentication errors
+    useEffect(() => {
+        const unsubscribe = authService.subscribe((authState) => {
+            if (authState.error && !authState.loading) {
+                console.error('Authentication error detected:', authState.error);
+                setErrorMessage(authState.error.message || 'Authentication failed. Please try again.');
+                // Reset button animations on error
+                setButtonAnimations({ google: false, discord: false, email: false });
+            }
+        });
+
+        return unsubscribe;
+    }, []);
+
     // Start tracking onboarding step
     useEffect(() => {
         startOnboardingStep('login', 1, { component: 'LoginSplashScreen' });
@@ -51,6 +65,9 @@ const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, onOpe
     const handleAuth = async (method: 'google' | 'discord' | 'email') => {
         // Track button click
         trackButtonClick(method, 'LoginSplashScreen', { method });
+        
+        // Clear any existing error messages
+        setErrorMessage('');
         
         // Only animate the specific button that was clicked
         setButtonAnimations(prev => ({ 
@@ -499,6 +516,11 @@ const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, onOpe
                         className="flex flex-col items-center justify-center gap-4 w-full max-w-lg px-4 sm:px-0 animate-fade-slide-up mt-12"
                        
                     >
+                        {errorMessage && (
+                            <div className="w-full bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm backdrop-blur-sm">
+                                {errorMessage}
+                            </div>
+                        )}
                     <button
                         onClick={() => handleAuth('google')}
                         disabled={isLoading}

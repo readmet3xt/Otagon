@@ -10,6 +10,7 @@ import HelpGuideTab from './HelpGuideTab';
 import UserPreferencesTab from './UserPreferencesTab';
 import SupabaseMigrationStatus from './SupabaseMigrationStatus';
 import { PerformanceDashboard } from './PerformanceDashboard';
+import { canAccessDeveloperFeatures } from '../config/developer';
 
 import { apiCostService } from '../services/apiCostService';
 import { APICostSummary } from '../services/apiCostService';
@@ -321,28 +322,32 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, usage, o
                         <li className="md:flex-none"><TabButton id="preferences" label="AI Preferences" icon={<StarIcon className="w-6 h-6 md:w-7 md:h-7" />} /></li>
                         <li className="md:flex-none"><TabButton id="subscription" label="Subscription" icon={<CreditCardIcon className="w-6 h-6 md:w-7 md:h-7" />} /></li>
                         <li className="md:flex-none"><TabButton id="help" label="Help Guide" icon={<QuestionMarkCircleIcon className="w-6 h-6 md:w-7 md:h-7" />} /></li>
-                        {/* Admin tab - only show for admin users */}
-                        <li className="md:flex-none">
-                            <TabButton id="admin" label="Admin" icon={
-                                <svg className="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                                </svg>
-                            } />
-                        </li>
-                        <li className="md:flex-none">
-                            <TabButton id="migration" label="Migration" icon={
-                                <svg className="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                                </svg>
-                            } />
-                        </li>
-                        <li className="md:flex-none">
-                            <TabButton id="performance" label="Performance" icon={
-                                <svg className="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                </svg>
-                            } />
-                        </li>
+                        {/* Admin tabs - only show for developer accounts or in developer mode */}
+                        {canAccessDeveloperFeatures(userEmail) && (
+                            <>
+                                <li className="md:flex-none">
+                                    <TabButton id="admin" label="Admin" icon={
+                                        <svg className="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                                        </svg>
+                                    } />
+                                </li>
+                                <li className="md:flex-none">
+                                    <TabButton id="migration" label="Migration" icon={
+                                        <svg className="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                        </svg>
+                                    } />
+                                </li>
+                                <li className="md:flex-none">
+                                    <TabButton id="performance" label="Performance" icon={
+                                        <svg className="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                        </svg>
+                                    } />
+                                </li>
+                            </>
+                        )}
                     </ul>
                 </div>
             </nav>
@@ -358,24 +363,25 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, usage, o
                         onLogout={() => { onLogout(); onClose(); }}
                         onShowHowToUse={() => { onShowHowToUse(); onClose(); }}
                         userEmail={userEmail}
+                        isDeveloperMode={canAccessDeveloperFeatures(userEmail)}
                     />
                 )}
                 {activeTab === 'preferences' && <UserPreferencesTab />}
                 {activeTab === 'subscription' && <SubscriptionSettingsTab usage={usage} refreshUsage={refreshUsage} userEmail={userEmail} />}
                 {activeTab === 'help' && <HelpGuideTab />}
-                {activeTab === 'admin' && (
+                {activeTab === 'admin' && canAccessDeveloperFeatures(userEmail) && (
                     <div>
                         <h2 className="text-xl font-bold text-white mb-6">💰 API Cost Dashboard</h2>
                         <AdminTabContent onClearFirstRunCache={onClearFirstRunCache} />
                     </div>
                 )}
-                {activeTab === 'migration' && (
+                {activeTab === 'migration' && canAccessDeveloperFeatures(userEmail) && (
                     <div>
                         <h2 className="text-xl font-bold text-white mb-6">🚀 Supabase Migration</h2>
                         <SupabaseMigrationStatus />
                     </div>
                 )}
-                {activeTab === 'performance' && (
+                {activeTab === 'performance' && canAccessDeveloperFeatures(userEmail) && (
                     <div>
                         <h2 className="text-xl font-bold text-white mb-6">⚡ Performance Dashboard</h2>
                         <PerformanceDashboard />

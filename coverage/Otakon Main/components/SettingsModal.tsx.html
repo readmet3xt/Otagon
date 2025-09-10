@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/376</span>
+                <span class='fraction'>0/397</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/376</span>
+                <span class='fraction'>0/397</span>
             </div>
         
             
@@ -438,7 +438,49 @@
 <a name='L373'></a><a href='#L373'>373</a>
 <a name='L374'></a><a href='#L374'>374</a>
 <a name='L375'></a><a href='#L375'>375</a>
-<a name='L376'></a><a href='#L376'>376</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L376'></a><a href='#L376'>376</a>
+<a name='L377'></a><a href='#L377'>377</a>
+<a name='L378'></a><a href='#L378'>378</a>
+<a name='L379'></a><a href='#L379'>379</a>
+<a name='L380'></a><a href='#L380'>380</a>
+<a name='L381'></a><a href='#L381'>381</a>
+<a name='L382'></a><a href='#L382'>382</a>
+<a name='L383'></a><a href='#L383'>383</a>
+<a name='L384'></a><a href='#L384'>384</a>
+<a name='L385'></a><a href='#L385'>385</a>
+<a name='L386'></a><a href='#L386'>386</a>
+<a name='L387'></a><a href='#L387'>387</a>
+<a name='L388'></a><a href='#L388'>388</a>
+<a name='L389'></a><a href='#L389'>389</a>
+<a name='L390'></a><a href='#L390'>390</a>
+<a name='L391'></a><a href='#L391'>391</a>
+<a name='L392'></a><a href='#L392'>392</a>
+<a name='L393'></a><a href='#L393'>393</a>
+<a name='L394'></a><a href='#L394'>394</a>
+<a name='L395'></a><a href='#L395'>395</a>
+<a name='L396'></a><a href='#L396'>396</a>
+<a name='L397'></a><a href='#L397'>397</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -825,6 +867,7 @@
 <span class="cstat-no" title="statement not covered" >import UserPreferencesTab from './UserPreferencesTab';</span>
 <span class="cstat-no" title="statement not covered" >import SupabaseMigrationStatus from './SupabaseMigrationStatus';</span>
 <span class="cstat-no" title="statement not covered" >import { PerformanceDashboard } from './PerformanceDashboard';</span>
+<span class="cstat-no" title="statement not covered" >import { canAccessDeveloperFeatures } from '../config/developer';</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >import { apiCostService } from '../services/apiCostService';</span>
 <span class="cstat-no" title="statement not covered" >import { APICostSummary } from '../services/apiCostService';</span>
@@ -841,12 +884,14 @@
 <span class="cstat-no" title="statement not covered" >  onResetApp: () =&gt; void;</span>
 <span class="cstat-no" title="statement not covered" >  onShowHowToUse: () =&gt; void;</span>
 <span class="cstat-no" title="statement not covered" >  userEmail?: string;</span>
+<span class="cstat-no" title="statement not covered" >  onClearFirstRunCache?: () =&gt; void;</span>
+<span class="cstat-no" title="statement not covered" >  refreshUsage?: () =&gt; void;</span>
 <span class="cstat-no" title="statement not covered" >}</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >type ActiveTab = 'general' | 'preferences' | 'subscription' | 'help' | 'admin' | 'migration' | 'performance';</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >// Admin Tab Content Component</span>
-<span class="cstat-no" title="statement not covered" >const AdminTabContent: React.FC = () =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >const AdminTabContent: React.FC&lt;{ onClearFirstRunCache?: () =&gt; void }&gt; = ({ onClearFirstRunCache }) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    const [costSummary, setCostSummary] = useState&lt;APICostSummary | null&gt;(null);</span>
 <span class="cstat-no" title="statement not covered" >    const [recommendations, setRecommendations] = useState&lt;string[]&gt;([]);</span>
 <span class="cstat-no" title="statement not covered" >    const [isLoading, setIsLoading] = useState(false);</span>
@@ -971,6 +1016,19 @@
 <span class="cstat-no" title="statement not covered" >                        &gt;</span>
 <span class="cstat-no" title="statement not covered" >                            ⚠️ Reset All Data</span>
 <span class="cstat-no" title="statement not covered" >                        &lt;/button&gt;</span>
+<span class="cstat-no" title="statement not covered" >                        {onClearFirstRunCache &amp;&amp; (</span>
+<span class="cstat-no" title="statement not covered" >                            &lt;button</span>
+<span class="cstat-no" title="statement not covered" >                                onClick={() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >                                    if (window.confirm('This will clear all first run experience cache and force a fresh onboarding flow. Continue?')) {</span>
+<span class="cstat-no" title="statement not covered" >                                        onClearFirstRunCache();</span>
+<span class="cstat-no" title="statement not covered" >                                    }</span>
+<span class="cstat-no" title="statement not covered" >                                }}</span>
+<span class="cstat-no" title="statement not covered" >                                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"</span>
+<span class="cstat-no" title="statement not covered" >                                title="Clear first run experience cache"</span>
+<span class="cstat-no" title="statement not covered" >                            &gt;</span>
+<span class="cstat-no" title="statement not covered" >                                🧹 Clear First Run Cache</span>
+<span class="cstat-no" title="statement not covered" >                            &lt;/button&gt;</span>
+<span class="cstat-no" title="statement not covered" >                        )}</span>
 <span class="cstat-no" title="statement not covered" >                    &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >                    {/* Recommendations */}</span>
@@ -1003,7 +1061,7 @@
 <span class="cstat-no" title="statement not covered" >    );</span>
 <span class="cstat-no" title="statement not covered" >};</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >const SettingsModal: React.FC&lt;SettingsModalProps&gt; = ({ isOpen, onClose, usage, onShowUpgrade, onShowVanguardUpgrade, onLogout, onResetApp, onShowHowToUse, userEmail }) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >const SettingsModal: React.FC&lt;SettingsModalProps&gt; = ({ isOpen, onClose, usage, onShowUpgrade, onShowVanguardUpgrade, onLogout, onResetApp, onShowHowToUse, userEmail, onClearFirstRunCache, refreshUsage }) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >  const [activeTab, setActiveTab] = useState&lt;ActiveTab&gt;('general');</span>
 <span class="cstat-no" title="statement not covered" >  const modalRef = useRef&lt;HTMLDivElement&gt;(null);</span>
 <span class="cstat-no" title="statement not covered" >  </span>
@@ -1085,7 +1143,7 @@
 <span class="cstat-no" title="statement not covered" >    return (</span>
 <span class="cstat-no" title="statement not covered" >      &lt;button</span>
 <span class="cstat-no" title="statement not covered" >        onClick={handleClick}</span>
-<span class="cstat-no" title="statement not covered" >        className={`w-full flex items-center justify-center md:justify-start gap-4 px-4 py-3 text-base font-medium rounded-xl transition-all duration-300 ${</span>
+<span class="cstat-no" title="statement not covered" >        className={`w-full flex items-center justify-center md:justify-start gap-2 md:gap-4 px-3 py-3 md:px-5 md:py-5 text-sm md:text-base font-medium rounded-xl transition-all duration-300 ${</span>
 <span class="cstat-no" title="statement not covered" >          isActive</span>
 <span class="cstat-no" title="statement not covered" >            ? 'bg-gradient-to-r from-[#E53A3A]/20 to-[#D98C1F]/20 text-white border-2 border-[#E53A3A]/40 shadow-lg shadow-[#E53A3A]/10'</span>
 <span class="cstat-no" title="statement not covered" >            : 'text-neutral-400 hover:bg-gradient-to-r hover:from-neutral-700/50 hover:to-neutral-600/50 hover:text-white hover:scale-105'</span>
@@ -1100,54 +1158,58 @@
 <span class="cstat-no" title="statement not covered" >  return (</span>
 <span class="cstat-no" title="statement not covered" >    &lt;div className="fixed inset-0 bg-gradient-to-br from-black/80 to-[#0A0A0A]/80 backdrop-blur-xl flex items-center justify-center z-50 animate-fade-in" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="settings-title"&gt;</span>
 <span class="cstat-no" title="statement not covered" >      &lt;div</span>
-<span class="cstat-no" title="statement not covered" >        className="bg-gradient-to-r from-[#1C1C1C]/95 to-[#0A0A0A]/95 backdrop-blur-xl border-2 border-[#424242]/60 rounded-3xl shadow-2xl w-full max-w-5xl m-6 relative animate-scale-in flex flex-col max-h-[90vh] h-auto md:h-[75vh] hover:border-[#424242]/80 transition-all duration-500"</span>
+<span class="cstat-no" title="statement not covered" >        className="bg-gradient-to-r from-[#1C1C1C]/95 to-[#0A0A0A]/95 backdrop-blur-xl border-2 border-[#424242]/60 rounded-3xl shadow-2xl w-full max-w-6xl m-4 md:m-6 relative animate-scale-in flex flex-col max-h-[95vh] h-auto md:h-[80vh] hover:border-[#424242]/80 transition-all duration-500"</span>
 <span class="cstat-no" title="statement not covered" >        onClick={(e) =&gt; e.stopPropagation()}</span>
 <span class="cstat-no" title="statement not covered" >        ref={modalRef}</span>
 <span class="cstat-no" title="statement not covered" >      &gt;</span>
 <span class="cstat-no" title="statement not covered" >        &lt;button</span>
 <span class="cstat-no" title="statement not covered" >          onClick={onClose}</span>
-<span class="cstat-no" title="statement not covered" >          className="absolute top-6 right-6 text-neutral-400 hover:text-white transition-all duration-300 z-10 md:hidden hover:scale-110"</span>
+<span class="cstat-no" title="statement not covered" >          className="absolute top-3 right-3 md:top-6 md:right-6 text-neutral-400 hover:text-white transition-all duration-300 z-20 hover:scale-110 p-2"</span>
 <span class="cstat-no" title="statement not covered" >          aria-label="Close settings"</span>
 <span class="cstat-no" title="statement not covered" >        &gt;</span>
-<span class="cstat-no" title="statement not covered" >          &lt;svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"&gt;&lt;path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"&gt;&lt;/path&gt;&lt;/svg&gt;</span>
+<span class="cstat-no" title="statement not covered" >          &lt;svg className="w-8 h-8 md:w-9 md:h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24"&gt;&lt;path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"&gt;&lt;/path&gt;&lt;/svg&gt;</span>
 <span class="cstat-no" title="statement not covered" >        &lt;/button&gt;</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >        &lt;div className="flex flex-col md:flex-row flex-1 overflow-hidden"&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;nav className="flex-shrink-0 w-full md:w-64 p-6 border-b-2 md:border-b-0 md:border-r-2 border-neutral-800/60 flex flex-row md:flex-col justify-between"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                &lt;div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    &lt;h2 id="settings-title" className="text-xl font-bold text-white mb-6 px-2 hidden md:block leading-tight"&gt;Settings&lt;/h2&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    &lt;ul className="flex flex-row md:flex-col gap-2 w-full"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;li className="flex-1 md:flex-none"&gt;&lt;TabButton id="general" label="General" icon={&lt;UserCircleIcon className="w-6 h-6" /&gt;} /&gt;&lt;/li&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;li className="flex-1 md:flex-none"&gt;&lt;TabButton id="preferences" label="AI Preferences" icon={&lt;StarIcon className="w-6 h-6" /&gt;} /&gt;&lt;/li&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;li className="flex-1 md:flex-none"&gt;&lt;TabButton id="subscription" label="Subscription" icon={&lt;CreditCardIcon className="w-6 h-6" /&gt;} /&gt;&lt;/li&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;li className="flex-1 md:flex-none"&gt;&lt;TabButton id="help" label="Help Guide" icon={&lt;QuestionMarkCircleIcon className="w-6 h-6" /&gt;} /&gt;&lt;/li&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        {/* Admin tab - only show for admin users */}</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;li className="flex-1 md:flex-none"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                            &lt;TabButton id="admin" label="Admin" icon={</span>
-<span class="cstat-no" title="statement not covered" >                                &lt;svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                    &lt;path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" /&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                &lt;/svg&gt;</span>
-<span class="cstat-no" title="statement not covered" >                            } /&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;/li&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;li className="flex-1 md:flex-none"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                            &lt;TabButton id="migration" label="Migration" icon={</span>
-<span class="cstat-no" title="statement not covered" >                                &lt;svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                    &lt;path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                &lt;/svg&gt;</span>
-<span class="cstat-no" title="statement not covered" >                            } /&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;/li&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;li className="flex-1 md:flex-none"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                            &lt;TabButton id="performance" label="Performance" icon={</span>
-<span class="cstat-no" title="statement not covered" >                                &lt;svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                    &lt;path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                &lt;/svg&gt;</span>
-<span class="cstat-no" title="statement not covered" >                            } /&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;/li&gt;</span>
+<span class="cstat-no" title="statement not covered" >            &lt;nav className="flex-shrink-0 w-full md:w-72 p-6 md:p-8 border-b-2 md:border-b-0 md:border-r-2 border-neutral-800/60 flex flex-row md:flex-col justify-between"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                &lt;div className="w-full"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;h2 id="settings-title" className="text-2xl font-bold text-white mb-8 px-2 hidden md:block leading-tight"&gt;Settings&lt;/h2&gt;</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;ul className="grid grid-cols-4 md:flex md:flex-col gap-2 md:gap-4 w-full pr-20 md:pr-0 mt-8 md:mt-0"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                        &lt;li className="md:flex-none"&gt;&lt;TabButton id="general" label="General" icon={&lt;UserCircleIcon className="w-6 h-6 md:w-7 md:h-7" /&gt;} /&gt;&lt;/li&gt;</span>
+<span class="cstat-no" title="statement not covered" >                        &lt;li className="md:flex-none"&gt;&lt;TabButton id="preferences" label="AI Preferences" icon={&lt;StarIcon className="w-6 h-6 md:w-7 md:h-7" /&gt;} /&gt;&lt;/li&gt;</span>
+<span class="cstat-no" title="statement not covered" >                        &lt;li className="md:flex-none"&gt;&lt;TabButton id="subscription" label="Subscription" icon={&lt;CreditCardIcon className="w-6 h-6 md:w-7 md:h-7" /&gt;} /&gt;&lt;/li&gt;</span>
+<span class="cstat-no" title="statement not covered" >                        &lt;li className="md:flex-none"&gt;&lt;TabButton id="help" label="Help Guide" icon={&lt;QuestionMarkCircleIcon className="w-6 h-6 md:w-7 md:h-7" /&gt;} /&gt;&lt;/li&gt;</span>
+<span class="cstat-no" title="statement not covered" >                        {/* Admin tabs - only show for developer accounts or in developer mode */}</span>
+<span class="cstat-no" title="statement not covered" >                        {canAccessDeveloperFeatures(userEmail) &amp;&amp; (</span>
+<span class="cstat-no" title="statement not covered" >                            &lt;&gt;</span>
+<span class="cstat-no" title="statement not covered" >                                &lt;li className="md:flex-none"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                                    &lt;TabButton id="admin" label="Admin" icon={</span>
+<span class="cstat-no" title="statement not covered" >                                        &lt;svg className="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                                            &lt;path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" /&gt;</span>
+<span class="cstat-no" title="statement not covered" >                                        &lt;/svg&gt;</span>
+<span class="cstat-no" title="statement not covered" >                                    } /&gt;</span>
+<span class="cstat-no" title="statement not covered" >                                &lt;/li&gt;</span>
+<span class="cstat-no" title="statement not covered" >                                &lt;li className="md:flex-none"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                                    &lt;TabButton id="migration" label="Migration" icon={</span>
+<span class="cstat-no" title="statement not covered" >                                        &lt;svg className="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                                            &lt;path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /&gt;</span>
+<span class="cstat-no" title="statement not covered" >                                        &lt;/svg&gt;</span>
+<span class="cstat-no" title="statement not covered" >                                    } /&gt;</span>
+<span class="cstat-no" title="statement not covered" >                                &lt;/li&gt;</span>
+<span class="cstat-no" title="statement not covered" >                                &lt;li className="md:flex-none"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                                    &lt;TabButton id="performance" label="Performance" icon={</span>
+<span class="cstat-no" title="statement not covered" >                                        &lt;svg className="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                                            &lt;path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /&gt;</span>
+<span class="cstat-no" title="statement not covered" >                                        &lt;/svg&gt;</span>
+<span class="cstat-no" title="statement not covered" >                                    } /&gt;</span>
+<span class="cstat-no" title="statement not covered" >                                &lt;/li&gt;</span>
+<span class="cstat-no" title="statement not covered" >                            &lt;/&gt;</span>
+<span class="cstat-no" title="statement not covered" >                        )}</span>
 <span class="cstat-no" title="statement not covered" >                    &lt;/ul&gt;</span>
 <span class="cstat-no" title="statement not covered" >                &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >            &lt;/nav&gt;</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >            &lt;main className="flex-1 overflow-y-auto p-8 sm:p-10"&gt;</span>
+<span class="cstat-no" title="statement not covered" >            &lt;main className="flex-1 overflow-y-auto p-6 md:p-8 lg:p-12"&gt;</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >                {activeTab === 'general' &amp;&amp; (</span>
 <span class="cstat-no" title="statement not covered" >                    &lt;GeneralSettingsTab</span>
@@ -1158,26 +1220,27 @@
 <span class="cstat-no" title="statement not covered" >                        onLogout={() =&gt; { onLogout(); onClose(); }}</span>
 <span class="cstat-no" title="statement not covered" >                        onShowHowToUse={() =&gt; { onShowHowToUse(); onClose(); }}</span>
 <span class="cstat-no" title="statement not covered" >                        userEmail={userEmail}</span>
+<span class="cstat-no" title="statement not covered" >                        isDeveloperMode={canAccessDeveloperFeatures(userEmail)}</span>
 <span class="cstat-no" title="statement not covered" >                    /&gt;</span>
 <span class="cstat-no" title="statement not covered" >                )}</span>
 <span class="cstat-no" title="statement not covered" >                {activeTab === 'preferences' &amp;&amp; &lt;UserPreferencesTab /&gt;}</span>
-<span class="cstat-no" title="statement not covered" >                {activeTab === 'subscription' &amp;&amp; &lt;SubscriptionSettingsTab usage={usage} /&gt;}</span>
+<span class="cstat-no" title="statement not covered" >                {activeTab === 'subscription' &amp;&amp; &lt;SubscriptionSettingsTab usage={usage} refreshUsage={refreshUsage} userEmail={userEmail} /&gt;}</span>
 <span class="cstat-no" title="statement not covered" >                {activeTab === 'help' &amp;&amp; &lt;HelpGuideTab /&gt;}</span>
-<span class="cstat-no" title="statement not covered" >                {activeTab === 'admin' &amp;&amp; (</span>
+<span class="cstat-no" title="statement not covered" >                {activeTab === 'admin' &amp;&amp; canAccessDeveloperFeatures(userEmail) &amp;&amp; (</span>
 <span class="cstat-no" title="statement not covered" >                    &lt;div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;h2 className="text-xl font-bold text-white mb-4"&gt;💰 API Cost Dashboard&lt;/h2&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;AdminTabContent /&gt;</span>
+<span class="cstat-no" title="statement not covered" >                        &lt;h2 className="text-xl font-bold text-white mb-6"&gt;💰 API Cost Dashboard&lt;/h2&gt;</span>
+<span class="cstat-no" title="statement not covered" >                        &lt;AdminTabContent onClearFirstRunCache={onClearFirstRunCache} /&gt;</span>
 <span class="cstat-no" title="statement not covered" >                    &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >                )}</span>
-<span class="cstat-no" title="statement not covered" >                {activeTab === 'migration' &amp;&amp; (</span>
+<span class="cstat-no" title="statement not covered" >                {activeTab === 'migration' &amp;&amp; canAccessDeveloperFeatures(userEmail) &amp;&amp; (</span>
 <span class="cstat-no" title="statement not covered" >                    &lt;div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;h2 className="text-xl font-bold text-white mb-4"&gt;🚀 Supabase Migration&lt;/h2&gt;</span>
+<span class="cstat-no" title="statement not covered" >                        &lt;h2 className="text-xl font-bold text-white mb-6"&gt;🚀 Supabase Migration&lt;/h2&gt;</span>
 <span class="cstat-no" title="statement not covered" >                        &lt;SupabaseMigrationStatus /&gt;</span>
 <span class="cstat-no" title="statement not covered" >                    &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >                )}</span>
-<span class="cstat-no" title="statement not covered" >                {activeTab === 'performance' &amp;&amp; (</span>
+<span class="cstat-no" title="statement not covered" >                {activeTab === 'performance' &amp;&amp; canAccessDeveloperFeatures(userEmail) &amp;&amp; (</span>
 <span class="cstat-no" title="statement not covered" >                    &lt;div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;h2 className="text-xl font-bold text-white mb-4"&gt;⚡ Performance Dashboard&lt;/h2&gt;</span>
+<span class="cstat-no" title="statement not covered" >                        &lt;h2 className="text-xl font-bold text-white mb-6"&gt;⚡ Performance Dashboard&lt;/h2&gt;</span>
 <span class="cstat-no" title="statement not covered" >                        &lt;PerformanceDashboard /&gt;</span>
 <span class="cstat-no" title="statement not covered" >                    &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >                )}</span>
@@ -1195,7 +1258,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-30T01:27:04.971Z
+                at 2025-09-10T12:28:31.809Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

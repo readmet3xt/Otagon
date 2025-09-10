@@ -37,8 +37,11 @@ export default defineConfig(({ mode }) => {
       spaFallbackPlugin()
     ],
     define: {
-      'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+      'process.env.API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY),
+      'process.env.GEMINI_API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY),
+      'process.env.SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL),
+      'process.env.SUPABASE_ANON_KEY': JSON.stringify(env.VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY),
+      'process.env.API_BASE_URL': JSON.stringify(env.VITE_API_BASE_URL),
     },
     resolve: {
       alias: {
@@ -46,90 +49,64 @@ export default defineConfig(({ mode }) => {
       }
     },
     build: {
+      outDir: 'dist',
+      sourcemap: false,
+      // Raise only the warning threshold; does not affect runtime
+      chunkSizeWarningLimit: 1200,
       cssCodeSplit: true,
-      // Optimize chunk sizes with better splitting
       rollupOptions: {
+        input: {
+          main: './index.html'
+        },
+        external: [],
         output: {
           manualChunks: (id) => {
-            // Vendor chunks for better caching
+            // Vendor chunks
             if (id.includes('node_modules')) {
-              if (id.includes('react') || id.includes('react-dom')) {
-                return 'vendor-react';
-              }
+              // Split react core vs react-dom to avoid a single big vendor chunk
+              if (id.includes('react-dom')) return 'vendor-react-dom';
+              if (id.includes('/react/')) return 'vendor-react';
               if (id.includes('@supabase')) {
                 return 'vendor-supabase';
               }
-              if (id.includes('@google') || id.includes('genai')) {
+              if (id.includes('@google/genai')) {
                 return 'vendor-ai';
               }
               if (id.includes('@heroicons') || id.includes('lottie')) {
                 return 'vendor-ui';
               }
-              // Group other node_modules
-              return 'vendor-other';
+              if (id.includes('react-markdown') || id.includes('remark-gfm')) {
+                return 'vendor-markdown';
+              }
+              return 'vendor-misc';
             }
-            // Group services by functionality
-            if (id.includes('/services/')) {
-              if (id.includes('supabase') || id.includes('database')) {
-                return 'services-data';
+            
+            // Service chunks
+            if (id.includes('/services/') && !id.includes('/services/types')) {
+              if (id.includes('geminiService') || id.includes('aiContextService') || id.includes('unifiedAIService')) {
+                return 'app-ai-services';
               }
-              if (id.includes('gemini') || id.includes('ai')) {
-                return 'services-ai';
+              if (id.includes('supabase') || id.includes('profileService') || id.includes('authService')) {
+                return 'app-data-services';
               }
-              if (id.includes('pwa') || id.includes('analytics')) {
-                return 'services-pwa';
-              }
-              return 'services-core';
+              return 'app-services';
             }
-            // Group components by feature
+            
+            // Component chunks
             if (id.includes('/components/')) {
-              if (id.includes('Chat') || id.includes('Message')) {
-                return 'components-chat';
+              if (id.includes('Modal') || id.includes('Screen')) {
+                return 'app-modals';
               }
-              if (id.includes('Settings') || id.includes('Modal')) {
-                return 'components-settings';
+              if (id.includes('/new-landing/')) {
+                return 'app-landing';
               }
-              if (id.includes('Landing') || id.includes('Splash')) {
-                return 'components-landing';
-              }
-              return 'components-other';
+              return 'app-components';
             }
-          },
-          // Optimize chunk naming
-          chunkFileNames: (chunkInfo) => {
-            const facadeModuleId = chunkInfo.facadeModuleId ? chunkInfo.facadeModuleId.split('/').pop() : 'chunk';
-            return `assets/${facadeModuleId}-[hash].js`;
-          },
-          // Optimize asset naming
-          assetFileNames: (assetInfo) => {
-            if (!assetInfo.name) return 'assets/[name]-[hash].[ext]';
-            const info = assetInfo.name.split('.');
-            const ext = info[info.length - 1];
-            if (/\.(css)$/.test(assetInfo.name)) {
-              return `assets/css/[name]-[hash].${ext}`;
-            }
-            if (/\.(png|jpe?g|svg|gif|tiff|bmp|ico)$/i.test(assetInfo.name)) {
-              return `assets/images/[name]-[hash].${ext}`;
-            }
-            return `assets/[name]-[hash].${ext}`;
           }
         }
-      },
-      // Increase chunk size warning limit
-      chunkSizeWarningLimit: 1500,
-      // Enable source maps for production debugging
-      sourcemap: false,
-      // Optimize dependencies
-      commonjsOptions: {
-        include: [/node_modules/]
-      },
-      // Enable minification (using esbuild for better performance)
-      minify: 'esbuild',
-      esbuild: {
-        drop: ['console', 'debugger'],
-        pure: ['console.log', 'console.info']
       }
     },
+    publicDir: 'public',
     // Optimize development server
     server: {
       hmr: {

@@ -205,9 +205,9 @@ const PricingSection = ({ onCtaClick }: { onCtaClick: () => void }) => {
     ];
 
     return (
-        <section id="pricing" className="py-20 md:py-28 bg-transparent">
+        <section id="pricing" className="py-10 md:py-14 bg-transparent">
             <div className="container mx-auto px-8">
-                <div className="text-center mb-16 md:mb-20 animate-fade-slide-up">
+                <div className="text-center mb-8 md:mb-10 animate-fade-slide-up">
                     <h2 className="text-5xl md:text-6xl font-bold tracking-tight text-white mb-6">Choose Your Plan</h2>
                     <p className="text-xl text-neutral-300 mt-6 leading-relaxed">Start for free. Upgrade when you're ready.</p>
                 </div>
@@ -318,9 +318,9 @@ const CommunityChallengeSection = ({ onShareClick }: { onShareClick: () => void 
     const progressPercentage = (currentProUsers / proUserGoal) * 100;
 
     return (
-        <section id="community-challenge" className="py-16 md:py-20 bg-transparent">
+        <section id="community-challenge" className="py-8 md:py-10 bg-transparent">
             <div className="container mx-auto px-6 max-w-4xl">
-                <div className="text-center mb-12 md:mb-16 animate-fade-slide-up">
+                <div className="text-center mb-6 md:mb-8 animate-fade-slide-up">
                     <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white">Help Us Go Ad-Free for Everyone!</h2>
                     
                 </div>
@@ -389,7 +389,7 @@ const CommunityChallengeSection = ({ onShareClick }: { onShareClick: () => void 
 };
 
 const EarnByPlayingSection = ({ onApplyClick }: { onApplyClick: () => void }) => (
-    <section id="earn-by-playing" className="py-16 md:py-20 bg-transparent">
+    <section id="earn-by-playing" className="py-8 md:py-10 bg-transparent">
         <div className="container mx-auto px-6 max-w-4xl">
             {/* Gradient border wrapper */}
             <div className="p-[1px] bg-gradient-to-br from-[#E53A3A]/50 to-[#D98C1F]/50 rounded-xl animate-fade-slide-up">
@@ -436,10 +436,10 @@ const EarnByPlayingSection = ({ onApplyClick }: { onApplyClick: () => void }) =>
 
 
 const FounderSection = () => (
-    <section id="founder" className="py-20 md:py-28 bg-transparent">
+    <section id="founder" className="py-10 md:py-14 bg-transparent">
         <div className="container mx-auto px-8 md:px-10 max-w-5xl">
             {/* Section Header */}
-            <div className="text-center mb-16 md:mb-20 animate-fade-slide-up">
+            <div className="text-center mb-8 md:mb-10 animate-fade-slide-up">
                 <h2 className="text-4xl md:text-6xl font-bold tracking-tight text-white mb-6">
                     Meet Our Founder
                 </h2>
@@ -616,7 +616,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
             {/* Main Content */}
             <main>
                 {/* Hero Section */}
-                <section className="relative pt-20 pb-12 md:pb-16 text-center">
+                <section className="relative pt-20 pb-6 md:pb-8 text-center">
                     <div 
                       className="absolute inset-0 -z-10 opacity-10"
                       style={{
@@ -641,7 +641,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
 
                         <AppMockup />
                         
-                        <p className="text-xl md:text-2xl text-neutral-300 max-w-4xl mx-auto mb-16 leading-relaxed animate-fade-slide-up">
+                        <p className="text-xl md:text-2xl text-neutral-300 max-w-4xl mx-auto mb-8 leading-relaxed animate-fade-slide-up">
                             Otagon sees your screen and gives you the perfect nudge to keep you playing—without ruining the surprise. Stop searching, start playing.
                         </p>
                         
@@ -685,9 +685,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                 </section>
 
                 {/* How It Works Section */}
-                <section className="py-20 md:py-28 bg-transparent relative">
+                <section className="py-10 md:py-14 bg-transparent relative">
                     <div className="container mx-auto px-8 max-w-6xl relative z-10">
-                        <div className="text-center mb-16 md:mb-20 animate-fade-slide-up">
+                        <div className="text-center mb-8 md:mb-10 animate-fade-slide-up">
                             <h2 className="text-5xl md:text-6xl font-bold tracking-tight text-white mb-6">From Stuck to Unstoppable in 3 Steps</h2>
                             <p className="text-xl text-neutral-300 mt-6 leading-relaxed">Get unstuck, get smart, get back to gaming—all without leaving your game.</p>
                         </div>
@@ -730,10 +730,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                 </section>
 
                 {/* Features Section */}
-                <section id="features" className="py-20 md:py-28 bg-transparent relative">
+                <section id="features" className="py-10 md:py-14 bg-transparent relative">
 
                     <div className="container mx-auto px-8 max-w-6xl relative z-10">
-                        <div className="text-center mb-16 md:mb-20 animate-fade-slide-up">
+                        <div className="text-center mb-8 md:mb-10 animate-fade-slide-up">
                             <h2 className="text-5xl md:text-6xl font-bold tracking-tight text-white mb-6">Your All-in-One Gaming Assistant</h2>
                             <p className="text-xl text-neutral-300 mt-6 leading-relaxed">Features built to enhance your gameplay, not spoil it</p>
                         </div>
@@ -766,9 +766,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                 </section>
 
                 {/* For Every Gamer, For Every Genre Section */}
-                <section className="py-20 md:py-28 bg-transparent relative">
+                <section className="py-10 md:py-14 bg-transparent relative">
                     <div className="container mx-auto px-8 max-w-6xl relative z-10">
-                        <div className="text-center mb-16 md:mb-20 animate-fade-slide-up">
+                        <div className="text-center mb-8 md:mb-10 animate-fade-slide-up">
                             <h2 className="text-5xl md:text-6xl font-bold tracking-tight text-white mb-6">For Every Challenge, In Every World</h2>
                         </div>
                         
@@ -816,7 +816,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                             <div className="text-center animate-fade-slide-up">
                                 <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-[#E53A3A]/20 to-[#D98C1F]/20 border-2 border-[#E53A3A]/40 mx-auto mb-4">
                                     <svg className="w-8 h-8 text-[#E53A3A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                     </svg>
                                 </div>
                                 <h3 className="text-xl font-bold text-white mb-3">Open-World Adventures</h3>
@@ -866,10 +866,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                 <EarnByPlayingSection onApplyClick={onGetStarted} />
 
                 {/* Testimonials Section */}
-                <section className="py-20 md:py-28 bg-transparent relative">
+                <section className="py-10 md:py-14 bg-transparent relative">
 
                     <div className="container mx-auto px-8 max-w-6xl relative z-10">
-                        <div className="text-center mb-16 md:mb-20 animate-fade-slide-up">
+                        <div className="text-center mb-8 md:mb-10 animate-fade-slide-up">
                             <h2 className="text-5xl md:text-6xl font-bold tracking-tight text-white mb-6">Don't Just Take Our Word For It</h2>
                             <p className="text-xl text-neutral-300 mt-6 leading-relaxed">See what early adopters are saying about Otagon.</p>
                         </div>
@@ -922,7 +922,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                         
                         {/* Logo and Branding - Centered on mobile, left side on desktop */}
                         <div className="flex flex-col items-center md:items-start text-center md:text-left order-2 md:order-1">
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-0">
                                 <button 
                                     onClick={onGetStarted}
                                     className="cursor-pointer hover:scale-105 transition-transform duration-300"

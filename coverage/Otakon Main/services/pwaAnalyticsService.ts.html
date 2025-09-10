@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/247</span>
+                <span class='fraction'>0/236</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/247</span>
+                <span class='fraction'>0/236</span>
             </div>
         
             
@@ -299,29 +299,7 @@
 <a name='L234'></a><a href='#L234'>234</a>
 <a name='L235'></a><a href='#L235'>235</a>
 <a name='L236'></a><a href='#L236'>236</a>
-<a name='L237'></a><a href='#L237'>237</a>
-<a name='L238'></a><a href='#L238'>238</a>
-<a name='L239'></a><a href='#L239'>239</a>
-<a name='L240'></a><a href='#L240'>240</a>
-<a name='L241'></a><a href='#L241'>241</a>
-<a name='L242'></a><a href='#L242'>242</a>
-<a name='L243'></a><a href='#L243'>243</a>
-<a name='L244'></a><a href='#L244'>244</a>
-<a name='L245'></a><a href='#L245'>245</a>
-<a name='L246'></a><a href='#L246'>246</a>
-<a name='L247'></a><a href='#L247'>247</a>
-<a name='L248'></a><a href='#L248'>248</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<a name='L237'></a><a href='#L237'>237</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -558,6 +536,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >import { supabaseDataService } from './supabaseDataService';</span></span></span>
+<span class="cstat-no" title="statement not covered" >import { unifiedDataService, STORAGE_KEYS } from './unifiedDataService';</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >export interface PWAInstallEvent {</span>
 <span class="cstat-no" title="statement not covered" >  timestamp: number;</span>
@@ -617,7 +596,7 @@
 <span class="cstat-no" title="statement not covered" >    };</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
-<span class="cstat-no" title="statement not covered" >      // Try to update in Supabase first</span>
+<span class="cstat-no" title="statement not covered" >      // Use unified data service for consistent pattern</span>
 <span class="cstat-no" title="statement not covered" >      const existingData = await this.getInstallStats();</span>
 <span class="cstat-no" title="statement not covered" >      existingData.push(installEvent);</span>
 <span class="cstat-no" title="statement not covered" >      </span>
@@ -626,14 +605,15 @@
 <span class="cstat-no" title="statement not covered" >        existingData.splice(0, existingData.length - 100);</span>
 <span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >      await supabaseDataService.updateUserAppState('pwaAnalytics', { installs: existingData });</span>
+<span class="cstat-no" title="statement not covered" >      // Use unified data service to update app state</span>
+<span class="cstat-no" title="statement not covered" >      await unifiedDataService.updateUserAppState('pwaAnalytics', { installs: existingData });</span>
 <span class="cstat-no" title="statement not covered" >      </span>
 <span class="cstat-no" title="statement not covered" >      // Also update localStorage as backup</span>
-<span class="cstat-no" title="statement not covered" >      localStorage.setItem(this.STORAGE_KEY_INSTALLS, JSON.stringify(existingData));</span>
+<span class="cstat-no" title="statement not covered" >      localStorage.setItem(STORAGE_KEYS.PWA_INSTALLS, JSON.stringify(existingData));</span>
 <span class="cstat-no" title="statement not covered" >      </span>
-<span class="cstat-no" title="statement not covered" >      console.log('✅ PWA Install tracked in Supabase:', installEvent);</span>
+<span class="cstat-no" title="statement not covered" >      console.log('✅ PWA Install tracked via unified service:', installEvent);</span>
 <span class="cstat-no" title="statement not covered" >    } catch (error) {</span>
-<span class="cstat-no" title="statement not covered" >      console.warn('Supabase PWA install tracking failed, using localStorage fallback:', error);</span>
+<span class="cstat-no" title="statement not covered" >      console.warn('PWA install tracking failed, using localStorage fallback:', error);</span>
 <span class="cstat-no" title="statement not covered" >      // Fallback to localStorage only</span>
 <span class="cstat-no" title="statement not covered" >      const existingData = this.getLocalStorageInstalls();</span>
 <span class="cstat-no" title="statement not covered" >      existingData.push(installEvent);</span>
@@ -642,7 +622,7 @@
 <span class="cstat-no" title="statement not covered" >        existingData.splice(0, existingData.length - 100);</span>
 <span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" >      </span>
-<span class="cstat-no" title="statement not covered" >      localStorage.setItem(this.STORAGE_KEY_INSTALLS, JSON.stringify(existingData));</span>
+<span class="cstat-no" title="statement not covered" >      localStorage.setItem(STORAGE_KEYS.PWA_INSTALLS, JSON.stringify(existingData));</span>
 <span class="cstat-no" title="statement not covered" >      console.log('PWA Install tracked (localStorage fallback):', installEvent);</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
 <span class="cstat-no" title="statement not covered" >  }</span>
@@ -655,70 +635,57 @@
 <span class="cstat-no" title="statement not covered" >    };</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
-<span class="cstat-no" title="statement not covered" >      // Try to update in Supabase first</span>
+<span class="cstat-no" title="statement not covered" >      // Use unified data service for consistent pattern</span>
 <span class="cstat-no" title="statement not covered" >      const existingData = await this.getEngagementStats();</span>
 <span class="cstat-no" title="statement not covered" >      existingData.push(engagementEvent);</span>
 <span class="cstat-no" title="statement not covered" >      </span>
-<span class="cstat-no" title="statement not covered" >      // Keep only last 500 engagement events</span>
-<span class="cstat-no" title="statement not covered" >      if (existingData.length &gt; 500) {</span>
-<span class="cstat-no" title="statement not covered" >        existingData.splice(0, existingData.length - 500);</span>
+<span class="cstat-no" title="statement not covered" >      // Keep only last 100 engagement events</span>
+<span class="cstat-no" title="statement not covered" >      if (existingData.length &gt; 100) {</span>
+<span class="cstat-no" title="statement not covered" >        existingData.splice(0, existingData.length - 100);</span>
 <span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >      await supabaseDataService.updateUserAppState('pwaAnalytics', { engagement: existingData });</span>
+<span class="cstat-no" title="statement not covered" >      // Use unified data service to update app state</span>
+<span class="cstat-no" title="statement not covered" >      await unifiedDataService.updateUserAppState('pwaAnalytics', { engagement: existingData });</span>
 <span class="cstat-no" title="statement not covered" >      </span>
 <span class="cstat-no" title="statement not covered" >      // Also update localStorage as backup</span>
-<span class="cstat-no" title="statement not covered" >      localStorage.setItem(this.STORAGE_KEY_ENGAGEMENT, JSON.stringify(existingData));</span>
+<span class="cstat-no" title="statement not covered" >      localStorage.setItem(STORAGE_KEYS.PWA_ENGAGEMENT, JSON.stringify(existingData));</span>
 <span class="cstat-no" title="statement not covered" >      </span>
-<span class="cstat-no" title="statement not covered" >      console.log('✅ PWA Engagement tracked in Supabase:', engagementEvent);</span>
+<span class="cstat-no" title="statement not covered" >      console.log('✅ PWA Engagement tracked via unified service:', engagementEvent);</span>
 <span class="cstat-no" title="statement not covered" >    } catch (error) {</span>
-<span class="cstat-no" title="statement not covered" >      console.warn('Supabase PWA engagement tracking failed, using localStorage fallback:', error);</span>
+<span class="cstat-no" title="statement not covered" >      console.warn('PWA engagement tracking failed, using localStorage fallback:', error);</span>
 <span class="cstat-no" title="statement not covered" >      // Fallback to localStorage only</span>
 <span class="cstat-no" title="statement not covered" >      const existingData = this.getLocalStorageEngagement();</span>
 <span class="cstat-no" title="statement not covered" >      existingData.push(engagementEvent);</span>
 <span class="cstat-no" title="statement not covered" >      </span>
-<span class="cstat-no" title="statement not covered" >      if (existingData.length &gt; 500) {</span>
-<span class="cstat-no" title="statement not covered" >        existingData.splice(0, existingData.length - 500);</span>
+<span class="cstat-no" title="statement not covered" >      if (existingData.length &gt; 100) {</span>
+<span class="cstat-no" title="statement not covered" >        existingData.splice(0, existingData.length - 100);</span>
 <span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" >      </span>
-<span class="cstat-no" title="statement not covered" >      localStorage.setItem(this.STORAGE_KEY_ENGAGEMENT, JSON.stringify(existingData));</span>
+<span class="cstat-no" title="statement not covered" >      localStorage.setItem(STORAGE_KEYS.PWA_ENGAGEMENT, JSON.stringify(existingData));</span>
 <span class="cstat-no" title="statement not covered" >      console.log('PWA Engagement tracked (localStorage fallback):', engagementEvent);</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
 <span class="cstat-no" title="statement not covered" >  }</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >  async getInstallStats(): Promise&lt;PWAInstallEvent[]&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
-<span class="cstat-no" title="statement not covered" >      // Try to get from Supabase first</span>
-<span class="cstat-no" title="statement not covered" >      const supabaseData = await supabaseDataService.getUserAppState();</span>
-<span class="cstat-no" title="statement not covered" >      const pwaAnalytics = supabaseData.pwaAnalytics;</span>
-<span class="cstat-no" title="statement not covered" >      const pwaInstalls = pwaAnalytics?.installs;</span>
-<span class="cstat-no" title="statement not covered" >      </span>
-<span class="cstat-no" title="statement not covered" >      if (pwaInstalls &amp;&amp; Array.isArray(pwaInstalls)) {</span>
-<span class="cstat-no" title="statement not covered" >        return pwaInstalls as PWAInstallEvent[];</span>
-<span class="cstat-no" title="statement not covered" >      }</span>
-<span class="cstat-no" title="statement not covered" >      </span>
-<span class="cstat-no" title="statement not covered" >      // If no Supabase data, try localStorage</span>
-<span class="cstat-no" title="statement not covered" >      return this.getLocalStorageInstalls();</span>
+<span class="cstat-no" title="statement not covered" >      // Use unified data service for consistent pattern</span>
+<span class="cstat-no" title="statement not covered" >      const result = await unifiedDataService.getUserAppState();</span>
+<span class="cstat-no" title="statement not covered" >      const pwaAnalytics = result.data.pwaAnalytics || {};</span>
+<span class="cstat-no" title="statement not covered" >      return pwaAnalytics.installs || [];</span>
 <span class="cstat-no" title="statement not covered" >    } catch (error) {</span>
-<span class="cstat-no" title="statement not covered" >      console.warn('Supabase PWA install stats fetch failed, using localStorage fallback:', error);</span>
+<span class="cstat-no" title="statement not covered" >      console.warn('Failed to get install stats from unified service, using localStorage fallback:', error);</span>
 <span class="cstat-no" title="statement not covered" >      return this.getLocalStorageInstalls();</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
 <span class="cstat-no" title="statement not covered" >  }</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >  async getEngagementStats(): Promise&lt;PWAEngagementEvent[]&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
-<span class="cstat-no" title="statement not covered" >      // Try to get from Supabase first</span>
-<span class="cstat-no" title="statement not covered" >      const supabaseData = await supabaseDataService.getUserAppState();</span>
-<span class="cstat-no" title="statement not covered" >      const pwaAnalytics = supabaseData.pwaAnalytics;</span>
-<span class="cstat-no" title="statement not covered" >      const pwaEngagement = pwaAnalytics?.engagement;</span>
-<span class="cstat-no" title="statement not covered" >      </span>
-<span class="cstat-no" title="statement not covered" >      if (pwaEngagement &amp;&amp; Array.isArray(pwaEngagement)) {</span>
-<span class="cstat-no" title="statement not covered" >        return pwaEngagement as PWAEngagementEvent[];</span>
-<span class="cstat-no" title="statement not covered" >      }</span>
-<span class="cstat-no" title="statement not covered" >      </span>
-<span class="cstat-no" title="statement not covered" >      // If no Supabase data, try localStorage</span>
-<span class="cstat-no" title="statement not covered" >      return this.getLocalStorageEngagement();</span>
+<span class="cstat-no" title="statement not covered" >      // Use unified data service for consistent pattern</span>
+<span class="cstat-no" title="statement not covered" >      const result = await unifiedDataService.getUserAppState();</span>
+<span class="cstat-no" title="statement not covered" >      const pwaAnalytics = result.data.pwaAnalytics || {};</span>
+<span class="cstat-no" title="statement not covered" >      return pwaAnalytics.engagement || [];</span>
 <span class="cstat-no" title="statement not covered" >    } catch (error) {</span>
-<span class="cstat-no" title="statement not covered" >      console.warn('Supabase PWA engagement stats fetch failed, using localStorage fallback:', error);</span>
+<span class="cstat-no" title="statement not covered" >      console.warn('Failed to get engagement stats from unified service, using localStorage fallback:', error);</span>
 <span class="cstat-no" title="statement not covered" >      return this.getLocalStorageEngagement();</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
 <span class="cstat-no" title="statement not covered" >  }</span>
@@ -811,7 +778,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-30T01:27:04.971Z
+                at 2025-09-10T12:28:31.809Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

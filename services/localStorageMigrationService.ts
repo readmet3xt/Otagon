@@ -132,7 +132,7 @@ export class LocalStorageMigrationService {
       if (value) {
         try {
           await this.supabase
-            .from('users_new')
+            .from('users')
             .upsert({
               auth_user_id: userId,
               preferences: { [pref.category]: { [pref.key]: value } }
@@ -163,7 +163,7 @@ export class LocalStorageMigrationService {
       if (value) {
         try {
           await this.supabase
-            .from('users_new')
+            .from('users')
             .upsert({
               auth_user_id: userId,
               app_state: { [key]: value }
@@ -187,7 +187,7 @@ export class LocalStorageMigrationService {
     if (feedbackData) {
       try {
         await this.supabase
-          .from('analytics_new')
+          .from('analytics')
           .insert({
             user_id: userId,
             category: 'feedback',
@@ -207,7 +207,7 @@ export class LocalStorageMigrationService {
     if (pwaInstalls || pwaEngagement) {
       try {
         await this.supabase
-          .from('analytics_new')
+          .from('analytics')
           .insert({
             user_id: userId,
             category: 'pwa',
@@ -259,7 +259,7 @@ export class LocalStorageMigrationService {
     if (dailyGoals) {
       try {
         await this.supabase
-          .from('analytics_new')
+          .from('analytics')
           .insert({
             user_id: userId,
             category: 'sessions',
@@ -277,7 +277,7 @@ export class LocalStorageMigrationService {
     if (userStreaks) {
       try {
         await this.supabase
-          .from('analytics_new')
+          .from('analytics')
           .insert({
             user_id: userId,
             category: 'sessions',
@@ -295,7 +295,7 @@ export class LocalStorageMigrationService {
     if (lastSessionTime) {
       try {
         await this.supabase
-          .from('analytics_new')
+          .from('analytics')
           .insert({
             user_id: userId,
             category: 'sessions',
@@ -318,12 +318,12 @@ export class LocalStorageMigrationService {
       if (!userId) return { migrated: false, tables: [] };
 
       const { data: userData } = await this.supabase
-        .from('users_new')
+        .from('users')
         .select('preferences, app_state')
         .eq('auth_user_id', userId);
 
       const { data: analytics } = await this.supabase
-        .from('analytics_new')
+        .from('analytics')
         .select('category')
         .eq('user_id', userId);
 

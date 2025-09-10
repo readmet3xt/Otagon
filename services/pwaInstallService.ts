@@ -139,10 +139,18 @@ class PWAInstallService implements PWAInstallServiceInterface {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
       const isIOSStandalone = (window.navigator as any).standalone === true;
       
-      // Check Supabase first
-      const appState = await supabaseDataService.getUserAppState();
-      const hasInstalledPWA = appState.pwaInstalled === true;
-      const hasGlobalInstallFlag = appState.pwaGlobalInstalled === true;
+      // Check Supabase first (only if authenticated)
+      let hasInstalledPWA = false;
+      let hasGlobalInstallFlag = false;
+      
+      try {
+        const appState = await supabaseDataService.getUserAppState();
+        hasInstalledPWA = appState.pwaInstalled === true;
+        hasGlobalInstallFlag = appState.pwaGlobalInstalled === true;
+      } catch (error) {
+        // User not authenticated, will use localStorage fallback
+        console.log('PWA: User not authenticated, using localStorage fallback');
+      }
       
       // Fallback to localStorage
       const localHasInstalledPWA = localStorage.getItem('otakonPWAInstalled') === 'true';
@@ -277,9 +285,13 @@ class PWAInstallService implements PWAInstallServiceInterface {
   // Manually mark PWA as installed (useful for testing)
   async markAsInstalled() {
     try {
-      // Update in Supabase
-      await supabaseDataService.updateUserAppState('pwaInstalled', true);
-      await supabaseDataService.updateUserAppState('pwaGlobalInstalled', true);
+      // Update in Supabase (only if authenticated)
+      try {
+        await supabaseDataService.updateUserAppState('pwaInstalled', true);
+        await supabaseDataService.updateUserAppState('pwaGlobalInstalled', true);
+      } catch (error) {
+        console.log('PWA: User not authenticated, updating localStorage only');
+      }
       
       // Also update localStorage as backup
       localStorage.setItem('otakonPWAInstalled', 'true');
@@ -299,9 +311,13 @@ class PWAInstallService implements PWAInstallServiceInterface {
   // Reset installation status (useful for testing)
   async resetInstallationStatus() {
     try {
-      // Clear from Supabase
-      await supabaseDataService.updateUserAppState('pwaInstalled', false);
-      await supabaseDataService.updateUserAppState('pwaGlobalInstalled', false);
+      // Clear from Supabase (only if authenticated)
+      try {
+        await supabaseDataService.updateUserAppState('pwaInstalled', false);
+        await supabaseDataService.updateUserAppState('pwaGlobalInstalled', false);
+      } catch (error) {
+        console.log('PWA: User not authenticated, clearing localStorage only');
+      }
       
       // Also clear localStorage
       localStorage.removeItem('otakonPWAInstalled');

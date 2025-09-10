@@ -63,7 +63,7 @@ export class TierService {
     try {
       // Check if user already has a tier assigned in users table
       const { data: existingUser } = await supabase
-        .from('users_new')
+        .from('users')
         .select('tier')
         .eq('auth_user_id', userId)
         .single();
@@ -75,7 +75,7 @@ export class TierService {
 
       // Update user tier in new consolidated users table
       const { error } = await supabase
-        .from('users_new')
+        .from('users')
         .upsert({
           auth_user_id: userId,
           tier: 'free'
@@ -100,7 +100,7 @@ export class TierService {
   async upgradeToPro(userId: string): Promise<boolean> {
     try {
       const { error } = await supabase
-        .from('users_new')
+        .from('users')
         .update({
           tier: 'pro'
         })
@@ -125,7 +125,7 @@ export class TierService {
   async upgradeToVanguardPro(userId: string): Promise<boolean> {
     try {
       const { error } = await supabase
-        .from('users_new')
+        .from('users')
         .update({
           tier: 'vanguard_pro'
         })
@@ -150,7 +150,7 @@ export class TierService {
   async getUserTier(userId: string): Promise<TierInfo | null> {
     try {
       const { data, error } = await supabase
-        .from('users_new')
+        .from('users')
         .select('tier')
         .eq('auth_user_id', userId)
         .single();

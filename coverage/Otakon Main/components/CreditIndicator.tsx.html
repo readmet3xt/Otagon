@@ -320,9 +320,9 @@
 <span class="cstat-no" title="statement not covered" >  const percent = limit &gt; 0 ? Math.max(0, 100 - (current / limit) * 100) : 0;</span>
 <span class="cstat-no" title="statement not covered" >  </span>
 <span class="cstat-no" title="statement not covered" >  return (</span>
-<span class="cstat-no" title="statement not covered" >    &lt;div className="flex items-center gap-1.5 w-20"&gt;</span>
+<span class="cstat-no" title="statement not covered" >    &lt;div className="flex items-center gap-2 w-20 lg:w-24 xl:w-28"&gt;</span>
 <span class="cstat-no" title="statement not covered" >      {children}</span>
-<span class="cstat-no" title="statement not covered" >      &lt;div className="w-full h-2 bg-neutral-800/60 rounded-sm overflow-hidden border border-neutral-600/40"&gt;</span>
+<span class="cstat-no" title="statement not covered" >      &lt;div className="w-full h-2.5 lg:h-3 bg-neutral-800/60 rounded-sm overflow-hidden border border-neutral-600/40"&gt;</span>
 <span class="cstat-no" title="statement not covered" >        &lt;div </span>
 <span class="cstat-no" title="statement not covered" >          className={`h-full ${colorClass} transition-all duration-500 rounded-sm`}</span>
 <span class="cstat-no" title="statement not covered" >          style={{ width: `${percent}%` }}</span>
@@ -353,7 +353,7 @@
 <span class="cstat-no" title="statement not covered" >        &lt;button</span>
 <span class="cstat-no" title="statement not covered" >          type="button"</span>
 <span class="cstat-no" title="statement not covered" >          onClick={onClick}</span>
-<span class="cstat-no" title="statement not covered" >          className="credit-indicator-button flex items-center justify-center sm:justify-start w-10 sm:w-12 md:w-auto h-10 sm:h-12 rounded-lg sm:rounded-xl transition-all duration-300 hover:scale-105 active:scale-95"</span>
+<span class="cstat-no" title="statement not covered" >          className="credit-indicator-button flex items-center justify-center h-10 sm:h-12 px-2 sm:px-3 rounded-lg sm:rounded-xl transition-all duration-300 hover:scale-105 active:scale-95"</span>
 <span class="cstat-no" title="statement not covered" >          style={{</span>
 <span class="cstat-no" title="statement not covered" >            background: 'linear-gradient(135deg, #E53A3A, #D98C1F, #E53A3A)',</span>
 <span class="cstat-no" title="statement not covered" >            padding: '2px',</span>
@@ -361,57 +361,57 @@
 <span class="cstat-no" title="statement not covered" >          }}</span>
 <span class="cstat-no" title="statement not covered" >          aria-label="View query credits"</span>
 <span class="cstat-no" title="statement not covered" >        &gt;</span>
-<span class="cstat-no" title="statement not covered" >          &lt;div className="w-full h-full flex items-center justify-center sm:px-3" style={{</span>
+<span class="cstat-no" title="statement not covered" >          &lt;div className="w-full h-full flex items-center justify-center p-1.5 sm:p-2" style={{</span>
 <span class="cstat-no" title="statement not covered" >            background: '#111111',</span>
 <span class="cstat-no" title="statement not covered" >            borderRadius: '10px'</span>
 <span class="cstat-no" title="statement not covered" >          }}&gt;</span>
-<span class="cstat-no" title="statement not covered" >        {/* Mobile View: Circular Bars */}</span>
-<span class="cstat-no" title="statement not covered" >        &lt;div className="sm:hidden w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center bg-neutral-900/50 rounded-full p-0.5"&gt;</span>
-<span class="cstat-no" title="statement not covered" >           &lt;svg className="w-full h-full" viewBox="0 0 32 32" fill="none"&gt;</span>
-<span class="cstat-no" title="statement not covered" >              &lt;defs&gt;</span>
-<span class="cstat-no" title="statement not covered" >                &lt;linearGradient id="sky-gradient" x1="0" y1="0" x2="1" y2="1"&gt;</span>
+<span class="cstat-no" title="statement not covered" >            {/* Mobile &amp; Tablet View: Circular Bars */}</span>
+<span class="cstat-no" title="statement not covered" >            &lt;div className="lg:hidden w-8 h-8 flex items-center justify-center bg-neutral-900/50 rounded-full p-0.5"&gt;</span>
+<span class="cstat-no" title="statement not covered" >              &lt;svg className="w-full h-full" viewBox="0 0 32 32" fill="none"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                &lt;defs&gt;</span>
+<span class="cstat-no" title="statement not covered" >                  &lt;linearGradient id="sky-gradient" x1="0" y1="0" x2="1" y2="1"&gt;</span>
 <span class="cstat-no" title="statement not covered" >                    &lt;stop offset="0%" stopColor="#38bdf8" /&gt;</span>
 <span class="cstat-no" title="statement not covered" >                    &lt;stop offset="100%" stopColor="#0ea5e9" /&gt;</span>
-<span class="cstat-no" title="statement not covered" >                &lt;/linearGradient&gt;</span>
-<span class="cstat-no" title="statement not covered" >                &lt;linearGradient id="emerald-gradient" x1="0" y1="0" x2="1" y2="1"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                  &lt;/linearGradient&gt;</span>
+<span class="cstat-no" title="statement not covered" >                  &lt;linearGradient id="emerald-gradient" x1="0" y1="0" x2="1" y2="1"&gt;</span>
 <span class="cstat-no" title="statement not covered" >                    &lt;stop offset="0%" stopColor="#34d399" /&gt;</span>
 <span class="cstat-no" title="statement not covered" >                    &lt;stop offset="100%" stopColor="#10b981" /&gt;</span>
-<span class="cstat-no" title="statement not covered" >                &lt;/linearGradient&gt;</span>
-<span class="cstat-no" title="statement not covered" >              &lt;/defs&gt;</span>
-<span class="cstat-no" title="statement not covered" >              {/* Outer circle (text) */}</span>
-<span class="cstat-no" title="statement not covered" >              &lt;circle cx="16" cy="16" r={radiusOuter} stroke="#424242" strokeWidth={strokeWidth} /&gt;</span>
-<span class="cstat-no" title="statement not covered" >              &lt;circle </span>
-<span class="cstat-no" title="statement not covered" >                cx="16" cy="16" r={radiusOuter} </span>
-<span class="cstat-no" title="statement not covered" >                stroke="url(#sky-gradient)" </span>
-<span class="cstat-no" title="statement not covered" >                strokeWidth={strokeWidth} </span>
-<span class="cstat-no" title="statement not covered" >                strokeDasharray={circumferenceOuter}</span>
-<span class="cstat-no" title="statement not covered" >                strokeDashoffset={offsetOuter}</span>
-<span class="cstat-no" title="statement not covered" >                strokeLinecap="round"</span>
-<span class="cstat-no" title="statement not covered" >                transform="rotate(-90 16 16)"</span>
-<span class="cstat-no" title="statement not covered" >              /&gt;</span>
-<span class="cstat-no" title="statement not covered" >              {/* Inner circle (image) */}</span>
-<span class="cstat-no" title="statement not covered" >              &lt;circle cx="16" cy="16" r={radiusInner} stroke="#424242" strokeWidth={strokeWidth} /&gt;</span>
-<span class="cstat-no" title="statement not covered" >              &lt;circle </span>
-<span class="cstat-no" title="statement not covered" >                cx="16" cy="16" r={radiusInner} </span>
-<span class="cstat-no" title="statement not covered" >                stroke="url(#emerald-gradient)" </span>
-<span class="cstat-no" title="statement not covered" >                strokeWidth={strokeWidth}</span>
-<span class="cstat-no" title="statement not covered" >                strokeDasharray={circumferenceInner}</span>
-<span class="cstat-no" title="statement not covered" >                strokeDashoffset={offsetInner}</span>
-<span class="cstat-no" title="statement not covered" >                strokeLinecap="round"</span>
-<span class="cstat-no" title="statement not covered" >                transform="rotate(-90 16 16)"</span>
-<span class="cstat-no" title="statement not covered" >              /&gt;</span>
-<span class="cstat-no" title="statement not covered" >           &lt;/svg&gt;</span>
-<span class="cstat-no" title="statement not covered" >        &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >                  &lt;/linearGradient&gt;</span>
+<span class="cstat-no" title="statement not covered" >                &lt;/defs&gt;</span>
+<span class="cstat-no" title="statement not covered" >                {/* Outer circle (text) */}</span>
+<span class="cstat-no" title="statement not covered" >                &lt;circle cx="16" cy="16" r={radiusOuter} stroke="#424242" strokeWidth={strokeWidth} /&gt;</span>
+<span class="cstat-no" title="statement not covered" >                &lt;circle </span>
+<span class="cstat-no" title="statement not covered" >                  cx="16" cy="16" r={radiusOuter} </span>
+<span class="cstat-no" title="statement not covered" >                  stroke="url(#sky-gradient)" </span>
+<span class="cstat-no" title="statement not covered" >                  strokeWidth={strokeWidth} </span>
+<span class="cstat-no" title="statement not covered" >                  strokeDasharray={circumferenceOuter}</span>
+<span class="cstat-no" title="statement not covered" >                  strokeDashoffset={offsetOuter}</span>
+<span class="cstat-no" title="statement not covered" >                  strokeLinecap="round"</span>
+<span class="cstat-no" title="statement not covered" >                  transform="rotate(-90 16 16)"</span>
+<span class="cstat-no" title="statement not covered" >                /&gt;</span>
+<span class="cstat-no" title="statement not covered" >                {/* Inner circle (image) */}</span>
+<span class="cstat-no" title="statement not covered" >                &lt;circle cx="16" cy="16" r={radiusInner} stroke="#424242" strokeWidth={strokeWidth} /&gt;</span>
+<span class="cstat-no" title="statement not covered" >                &lt;circle </span>
+<span class="cstat-no" title="statement not covered" >                  cx="16" cy="16" r={radiusInner} </span>
+<span class="cstat-no" title="statement not covered" >                  stroke="url(#emerald-gradient)" </span>
+<span class="cstat-no" title="statement not covered" >                  strokeWidth={strokeWidth}</span>
+<span class="cstat-no" title="statement not covered" >                  strokeDasharray={circumferenceInner}</span>
+<span class="cstat-no" title="statement not covered" >                  strokeDashoffset={offsetInner}</span>
+<span class="cstat-no" title="statement not covered" >                  strokeLinecap="round"</span>
+<span class="cstat-no" title="statement not covered" >                  transform="rotate(-90 16 16)"</span>
+<span class="cstat-no" title="statement not covered" >                /&gt;</span>
+<span class="cstat-no" title="statement not covered" >              &lt;/svg&gt;</span>
+<span class="cstat-no" title="statement not covered" >            &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        {/* Desktop View: Horizontal Bars */}</span>
-<span class="cstat-no" title="statement not covered" >        &lt;div className="hidden sm:flex flex-col gap-1"&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;CreditBar current={usage.textCount} limit={usage.textLimit} colorClass="bg-gradient-to-r from-sky-400 to-sky-500"&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;TextIcon className="w-3 h-3 text-sky-400 flex-shrink-0" /&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;/CreditBar&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;CreditBar current={usage.imageCount} limit={usage.imageLimit} colorClass="bg-gradient-to-r from-emerald-400 to-emerald-500"&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;ImageIcon className="w-3 h-3 text-emerald-400 flex-shrink-0" /&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;/CreditBar&gt;</span>
-<span class="cstat-no" title="statement not covered" >        &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >            {/* Desktop View: Horizontal Bars */}</span>
+<span class="cstat-no" title="statement not covered" >            &lt;div className="hidden lg:flex flex-col gap-1.5"&gt;</span>
+<span class="cstat-no" title="statement not covered" >              &lt;CreditBar current={usage.textCount} limit={usage.textLimit} colorClass="bg-gradient-to-r from-sky-400 to-sky-500"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                &lt;TextIcon className="w-3 h-3 lg:w-3 lg:h-3 xl:w-4 xl:h-4 text-sky-400 flex-shrink-0" /&gt;</span>
+<span class="cstat-no" title="statement not covered" >              &lt;/CreditBar&gt;</span>
+<span class="cstat-no" title="statement not covered" >              &lt;CreditBar current={usage.imageCount} limit={usage.imageLimit} colorClass="bg-gradient-to-r from-emerald-400 to-emerald-500"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                &lt;ImageIcon className="w-3 h-3 lg:w-3 lg:h-3 xl:w-4 xl:h-4 text-emerald-400 flex-shrink-0" /&gt;</span>
+<span class="cstat-no" title="statement not covered" >              &lt;/CreditBar&gt;</span>
+<span class="cstat-no" title="statement not covered" >            &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >      &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >    &lt;/button&gt;</span>
 <span class="cstat-no" title="statement not covered" >  );</span>
@@ -424,7 +424,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-30T01:27:04.971Z
+                at 2025-09-10T12:28:31.809Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

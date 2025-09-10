@@ -9,7 +9,7 @@ export const STORAGE_KEYS = {
   IMAGE_COUNT: 'otakonImageQueryCount',
   LAST_USAGE_DATE: 'otakonLastUsageDate',
   
-  // User app state (aligns with users_new.app_state JSONB)
+  // User app state (aligns with users.app_state JSONB)
   APP_STATE: 'otakonAppState',
   LAST_VISITED: 'otakonLastVisited',
   UI_PREFERENCES: 'otakonUIPreferences',
@@ -24,7 +24,7 @@ export const STORAGE_KEYS = {
   PWA_INSTALLED: 'otakonPWAInstalled',
   PWA_GLOBAL_INSTALLED: 'otakonPWAGlobalInstalled',
   
-  // User preferences (aligns with users_new.preferences JSONB)
+  // User preferences (aligns with users.preferences JSONB)
   USER_PREFERENCES: 'otakonUserPreferences',
   GAME_GENRE: 'otakonGameGenre',
   DETAIL_LEVEL: 'otakonDetailLevel',
@@ -47,7 +47,7 @@ export const STORAGE_KEYS = {
   // App cache (aligns with app_cache table)
   APP_CACHE: 'otakonAppCache',
   
-  // Otaku Diary specific (aligns with users_new.app_state.otakuDiary)
+  // Otaku Diary specific (aligns with users.app_state.otakuDiary)
   TASKS_PREFIX: 'otakon_tasks_',
   FAVORITES_PREFIX: 'otakon_favorites_',
   
@@ -94,14 +94,15 @@ export class UnifiedDataService {
   }
 
   private checkDeveloperMode(): void {
-    // Check if we're in development mode (no authenticated user)
-    this.isDeveloperMode = !this.isAuthenticated;
+    // Check if we're in development mode (no authenticated user AND auth method is 'skip')
+    const authMethod = localStorage.getItem('otakonAuthMethod');
+    this.isDeveloperMode = !this.isAuthenticated && authMethod === 'skip';
   }
 
   /**
-   * Generic method to get data with Supabase-first, localStorage fallback pattern
-   * For authenticated users: Supabase only
-   * For developer mode: Supabase first, then localStorage fallback
+   * Generic method to get data with strict mode separation
+   * For authenticated users: Supabase only (no fallbacks)
+   * For developer mode: localStorage only (no Supabase)
    */
   async getData<T>(
     key: string,
@@ -110,7 +111,7 @@ export class UnifiedDataService {
     defaultValue: T
   ): Promise<UnifiedDataResult<T>> {
     try {
-      // For authenticated users, only use Supabase
+      // For authenticated users: Supabase only
       if (this.isAuthenticated) {
         const data = await supabaseGetter();
         return {
@@ -120,33 +121,24 @@ export class UnifiedDataService {
         };
       }
 
-      // For developer mode: try Supabase first, then localStorage
-      try {
-        const data = await supabaseGetter();
-        // Also sync to localStorage for consistency
-        this.setLocalStorageData(localStorageKey, data);
-        return {
-          data,
-          source: 'supabase',
-          authenticated: false
-        };
-      } catch (error) {
-        console.warn(`Supabase fetch failed for ${key}, using localStorage fallback:`, error);
-        
-        const localData = this.getLocalStorageData(localStorageKey, defaultValue);
-        return {
-          data: localData,
-          source: 'localStorage',
-          authenticated: false
-        };
-      }
+      // For developer mode: localStorage only
+      const localData = this.getLocalStorageData(localStorageKey, defaultValue);
+      return {
+        data: localData,
+        source: 'localStorage',
+        authenticated: false
+      };
     } catch (error) {
       console.error(`Failed to get data for ${key}:`, error);
       
-      // Final fallback to localStorage
-      const fallbackData = this.getLocalStorageData(localStorageKey, defaultValue);
+      // For authenticated users, throw error (no fallback)
+      if (this.isAuthenticated) {
+        throw error;
+      }
+      
+      // For developer mode, return default value
       return {
-        data: fallbackData,
+        data: defaultValue,
         source: 'fallback',
         authenticated: false
       };
@@ -154,9 +146,9 @@ export class UnifiedDataService {
   }
 
   /**
-   * Generic method to set data with Supabase-first, localStorage fallback pattern
-   * For authenticated users: Supabase only
-   * For developer mode: localStorage first (immediate), then Supabase attempt
+   * Generic method to set data with strict mode separation
+   * For authenticated users: Supabase only (no fallbacks)
+   * For developer mode: localStorage only (no Supabase)
    */
   async setData<T>(
     key: string,
@@ -175,32 +167,26 @@ export class UnifiedDataService {
         };
       }
 
-      // For developer mode: localStorage first (immediate), then Supabase attempt
-      this.setLocalStorageData(localStorageKey, value);
-      
-      try {
-        await supabaseSetter();
-        return {
-          data: undefined as any,
-          source: 'supabase',
-          authenticated: false
-        };
-      } catch (error) {
-        console.warn(`Supabase update failed for ${key}, but localStorage was updated:`, error);
-        return {
-          data: undefined as any,
-          source: 'localStorage',
-          authenticated: false
-        };
-      }
-    } catch (error) {
-      console.error(`Failed to set data for ${key}:`, error);
-      
-      // Ensure localStorage is updated even if everything else fails
+      // For developer mode: localStorage only
       this.setLocalStorageData(localStorageKey, value);
       return {
         data: undefined as any,
-        source: 'fallback',
+        source: 'localStorage',
+        authenticated: false
+      };
+    } catch (error) {
+      console.error(`Failed to set data for ${key}:`, error);
+      
+      // For authenticated users, throw error (no fallback)
+      if (this.isAuthenticated) {
+        throw error;
+      }
+      
+      // For developer mode, still try to save to localStorage
+      this.setLocalStorageData(localStorageKey, value);
+      return {
+        data: undefined as any,
+        source: 'localStorage',
         authenticated: false
       };
     }

@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/484</span>
+                <span class='fraction'>0/490</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/484</span>
+                <span class='fraction'>0/490</span>
             </div>
         
             
@@ -546,7 +546,19 @@
 <a name='L481'></a><a href='#L481'>481</a>
 <a name='L482'></a><a href='#L482'>482</a>
 <a name='L483'></a><a href='#L483'>483</a>
-<a name='L484'></a><a href='#L484'>484</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L484'></a><a href='#L484'>484</a>
+<a name='L485'></a><a href='#L485'>485</a>
+<a name='L486'></a><a href='#L486'>486</a>
+<a name='L487'></a><a href='#L487'>487</a>
+<a name='L488'></a><a href='#L488'>488</a>
+<a name='L489'></a><a href='#L489'>489</a>
+<a name='L490'></a><a href='#L490'>490</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1213,7 +1225,7 @@
 <span class="cstat-no" title="statement not covered" >        const textarea = textareaRef.current;</span>
 <span class="cstat-no" title="statement not covered" >        if (textarea) {</span>
 <span class="cstat-no" title="statement not covered" >            const MAX_HEIGHT = 120; // Reduced for mobile (approx 5 lines)</span>
-<span class="cstat-no" title="statement not covered" >            const MIN_HEIGHT = 44;</span>
+<span class="cstat-no" title="statement not covered" >            const MIN_HEIGHT = 24; // Single line height</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >            if (value.trim() === '' &amp;&amp; selectedImages.length === 0) {</span>
 <span class="cstat-no" title="statement not covered" >                 textarea.style.height = `${MIN_HEIGHT}px`;</span>
@@ -1443,7 +1455,7 @@
 <span class="cstat-no" title="statement not covered" >                    &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >                )}</span>
 <span class="cstat-no" title="statement not covered" >                &lt;div className="p-0 bg-transparent rounded-xl sm:rounded-2xl border-2 border-[#424242]/60 focus-within:p-[2px] focus-within:bg-gradient-to-r focus-within:from-[#E53A3A] focus-within:to-[#D98C1F] focus-within:border-transparent focus-within:shadow-[0_0_20px_rgba(229,58,58,0.4)] sm:focus-within:shadow-[0_0_30px_rgba(229,58,58,0.5)] transition-all duration-300"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    &lt;div className="flex items-center bg-gradient-to-r from-[#1C1C1C] to-[#0A0A0A] rounded-xl sm:rounded-2xl w-full px-2 sm:px-3 md:px-4 gap-2 sm:gap-3 py-1.5 sm:py-2"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;div className="flex items-center bg-gradient-to-r from-[#1C1C1C] to-[#0A0A0A] rounded-xl sm:rounded-2xl w-full px-2 sm:px-3 md:px-4 gap-2 sm:gap-3 py-1.5 sm:py-2 md:py-2.5"&gt;</span>
 <span class="cstat-no" title="statement not covered" >                        &lt;input </span>
 <span class="cstat-no" title="statement not covered" >                            type="file" </span>
 <span class="cstat-no" title="statement not covered" >                            ref={fileInputRef} </span>
@@ -1461,7 +1473,7 @@
 <span class="cstat-no" title="statement not covered" >                        &gt;</span>
 <span class="cstat-no" title="statement not covered" >                            &lt;CameraIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5"/&gt;</span>
 <span class="cstat-no" title="statement not covered" >                        &lt;/button&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;div className="relative flex-grow"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                        &lt;div className="relative flex-grow flex items-center"&gt;</span>
 <span class="cstat-no" title="statement not covered" >                             {showSuggestions &amp;&amp; (</span>
 <span class="cstat-no" title="statement not covered" >                                &lt;CommandSuggestions</span>
 <span class="cstat-no" title="statement not covered" >                                    suggestions={suggestions}</span>
@@ -1473,12 +1485,18 @@
 <span class="cstat-no" title="statement not covered" >                            &lt;textarea</span>
 <span class="cstat-no" title="statement not covered" >                                ref={textareaRef}</span>
 <span class="cstat-no" title="statement not covered" >                                rows={1}</span>
-<span class="cstat-no" title="statement not covered" >                                style={{ height: '44px' }}</span>
+<span class="cstat-no" title="statement not covered" >                                style={{ </span>
+<span class="cstat-no" title="statement not covered" >                                    minHeight: '24px', </span>
+<span class="cstat-no" title="statement not covered" >                                    height: '24px',</span>
+<span class="cstat-no" title="statement not covered" >                                    lineHeight: '24px', </span>
+<span class="cstat-no" title="statement not covered" >                                    padding: '0',</span>
+<span class="cstat-no" title="statement not covered" >                                    margin: '0'</span>
+<span class="cstat-no" title="statement not covered" >                                }}</span>
 <span class="cstat-no" title="statement not covered" >                                value={value}</span>
 <span class="cstat-no" title="statement not covered" >                                onChange={handleValueChange}</span>
 <span class="cstat-no" title="statement not covered" >                                onKeyDown={handleKeyDown}</span>
 <span class="cstat-no" title="statement not covered" >                                placeholder={placeholderText}</span>
-<span class="cstat-no" title="statement not covered" >                                className="flex-grow w-full bg-transparent py-2 sm:py-2.5 md:py-3 px-2 sm:px-3 text-[#F5F5F5] placeholder-[#A3A3A3] focus:outline-none resize-none overflow-y-auto disabled:opacity-60 text-xs sm:text-sm md:text-base leading-relaxed"</span>
+<span class="cstat-no" title="statement not covered" >                                className="flex-grow w-full bg-transparent py-0 px-2 sm:px-3 text-[#F5F5F5] placeholder-[#A3A3A3] focus:outline-none resize-none overflow-y-auto disabled:opacity-60 text-xs sm:text-sm md:text-base leading-tight chat-input-textarea"</span>
 <span class="cstat-no" title="statement not covered" >                                aria-label="Chat input"</span>
 <span class="cstat-no" title="statement not covered" >                                disabled={isProcessing}</span>
 <span class="cstat-no" title="statement not covered" >                            /&gt;</span>
@@ -1519,7 +1537,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-30T01:27:04.971Z
+                at 2025-09-10T12:28:31.809Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
