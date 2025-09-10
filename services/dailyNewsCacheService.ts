@@ -38,8 +38,9 @@ class DailyNewsCacheService {
     HOT_TRAILERS: 'hot_trailers'
   };
 
-  private isInitialized = false;
-  private constructor() {}
+  private constructor() {
+    this.loadCacheFromStorage();
+  }
 
   public static getInstance(): DailyNewsCacheService {
     if (!DailyNewsCacheService.instance) {
@@ -48,18 +49,11 @@ class DailyNewsCacheService {
     return DailyNewsCacheService.instance;
   }
 
-  private async ensureInitialized(): Promise<void> {
-    if (this.isInitialized) return;
-    await this.loadCacheFromStorage();
-    this.isInitialized = true;
-  }
-
   /**
    * Check if we need to make a grounding search call for this prompt
    * Now considers free user windows and cache history
    */
   public async needsGroundingSearch(prompt: string, userTier: string): Promise<{ needsSearch: boolean; reason: string; canUseFreeWindow: boolean }> {
-    await this.ensureInitialized();
     const promptKey = this.getPromptKey(prompt);
     const cached = this.cache[promptKey];
     
@@ -122,7 +116,6 @@ class DailyNewsCacheService {
    * Check if we're in a free user window for a specific prompt
    */
   public async isInFreeUserWindow(promptKey: string): Promise<boolean> {
-    await this.ensureInitialized();
     try {
       const cacheData = await supabaseDataService.getAppCache(`freeUserWindow_${promptKey}`);
       if (cacheData && cacheData.cacheData) {
@@ -140,7 +133,6 @@ class DailyNewsCacheService {
    * Start a free user window for a specific prompt
    */
   public async startFreeUserWindow(promptKey: string): Promise<void> {
-    await this.ensureInitialized();
     const now = Date.now();
     const windowData = {
       startTime: now,
@@ -196,7 +188,6 @@ class DailyNewsCacheService {
    * This provides content context for AI to generate fresh news (15-day period)
    */
   public async getRecentNewsContext(promptKey: string): Promise<string> {
-    await this.ensureInitialized();
     try {
       const historyData = await supabaseDataService.getAppCache(`cacheHistory_${promptKey}`);
       if (historyData && historyData.cacheData && historyData.cacheData.history) {
@@ -287,7 +278,6 @@ class DailyNewsCacheService {
    * Get cached response for a specific prompt, or null if cache is expired
    */
   public getCachedResponse(prompt: string): CachedNewsResponse | null {
-    // No await here; reading memory cache is safe pre-init
     const promptKey = this.getPromptKey(prompt);
     const cached = this.cache[promptKey];
     
@@ -316,7 +306,6 @@ class DailyNewsCacheService {
     userTier: string, 
     userId?: string
   ): Promise<void> {
-    await this.ensureInitialized();
     const promptKey = this.getPromptKey(prompt);
     const now = Date.now();
     
@@ -352,7 +341,6 @@ class DailyNewsCacheService {
    * Store cache entry in Supabase with history tracking
    */
   private async storeInSupabase(promptKey: string, response: CachedNewsResponse, contentHash: string): Promise<void> {
-    await this.ensureInitialized();
     try {
       // Create history entry
       const historyEntry: CacheHistoryEntry = {

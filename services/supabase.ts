@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { User, Session, AuthError } from '@supabase/supabase-js';
-// Avoid eager import to prevent circular dependency with tierService
+import { tierService } from './tierService';
 import { LocalStorageReplacer } from './silentMigrationService';
 
 // Environment variables for Supabase
@@ -157,7 +157,6 @@ export class AuthService {
         if (event === 'SIGNED_IN' && session?.user) {
           console.log('🎉 User signed in, assigning free tier...');
           try {
-            const { tierService } = await import('./tierService');
             await tierService.assignFreeTier(session.user.id);
             
             // Start silent migration of localStorage data to Supabase

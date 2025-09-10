@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@plugin "@tailwindcss/typography";
-
 /* Hide scrollbar utility */
 .scrollbar-hide {
   -ms-overflow-style: none;  /* Internet Explorer 10+ */

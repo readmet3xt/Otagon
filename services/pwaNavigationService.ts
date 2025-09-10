@@ -12,7 +12,6 @@ export interface PWANavigationState {
 
 class PWANavigationService {
   private static instance: PWANavigationService;
-  private isInitialized: boolean = false;
   private navigationState: PWANavigationState = {
     isPWAInstalled: false,
     isRunningInPWA: false,
@@ -30,10 +29,11 @@ class PWANavigationService {
     return PWANavigationService.instance;
   }
 
-  constructor() {}
+  constructor() {
+    this.initialize();
+  }
 
   private initialize() {
-    if (this.isInitialized) return;
     // Check if running in PWA mode
     this.checkPWAMode();
     
@@ -48,13 +48,6 @@ class PWANavigationService {
     
     // Check for hands-free preference
     this.checkHandsFreePreference();
-    this.isInitialized = true;
-  }
-
-  private ensureInitialized() {
-    if (!this.isInitialized) {
-      this.initialize();
-    }
   }
 
   private checkPWAMode() {
@@ -176,13 +169,11 @@ class PWANavigationService {
 
   // Get current navigation state
   getNavigationState(): PWANavigationState {
-    this.ensureInitialized();
     return { ...this.navigationState };
   }
 
   // Subscribe to navigation state changes
   subscribe(callback: (state: PWANavigationState) => void): () => void {
-    this.ensureInitialized();
     this.listeners.add(callback);
     
     // Immediately call with current state
@@ -201,7 +192,6 @@ class PWANavigationService {
 
   // Set hands-free preference
   async setHandsFreePreference(enabled: boolean) {
-    this.ensureInitialized();
     try {
       // Update in Supabase
       await supabaseDataService.updateUserPreferences('pwa', { handsFreeEnabled: enabled });
@@ -226,7 +216,6 @@ class PWANavigationService {
 
   // Get recommended navigation path
   getRecommendedNavigationPath(): 'login' | 'chat' | 'onboarding' {
-    this.ensureInitialized();
     if (this.navigationState.shouldShowLogin) {
       return 'login';
     } else if (this.navigationState.shouldShowChat) {
