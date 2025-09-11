@@ -29,7 +29,9 @@ export class ServiceFactory {
       const instance = new ServiceClass();
       this.services.set(key, instance);
       
-      console.log(`🔧 ServiceFactory: Created instance of ${key}`);
+      if (import.meta.env.DEV) {
+        console.log(`🔧 ServiceFactory: Created instance of ${key}`);
+      }
     }
     
     return this.services.get(key);

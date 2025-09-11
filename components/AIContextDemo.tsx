@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { aiContextService } from '../services/aiContextService';
-import { unifiedUsageService } from '../services/unifiedUsageService';
+// Dynamic imports to avoid circular dependencies
+// import { aiContextService } from '../services/aiContextService';
+// import { unifiedUsageService } from '../services/unifiedUsageService';
 
 const AIContextDemo: React.FC = () => {
   const [userContext, setUserContext] = useState<any>(null);
@@ -15,6 +16,7 @@ const AIContextDemo: React.FC = () => {
   const loadContextData = async () => {
     setIsLoading(true);
     try {
+      const { aiContextService } = await import('../services/aiContextService');
       const [contexts, patterns] = await Promise.all([
         aiContextService.getUserContext(),
         aiContextService.getGlobalLearningPatterns()
@@ -31,12 +33,14 @@ const AIContextDemo: React.FC = () => {
 
   const simulateUserBehavior = async () => {
     try {
+      const { aiContextService } = await import('../services/aiContextService');
       await aiContextService.trackUserBehavior(
         'demo_action',
         { action: 'demo_click', timestamp: Date.now() },
         { demo: true, component: 'AIContextDemo' }
       );
       
+      const { aiContextService } = await import('../services/aiContextService');
       await aiContextService.storeUserContext('preferences', {
         preferred_game_genres: ['RPG', 'Action'],
         preferred_response_length: 'detailed',
@@ -53,6 +57,7 @@ const AIContextDemo: React.FC = () => {
 
   const generateAIContext = async () => {
     try {
+      const { aiContextService } = await import('../services/aiContextService');
       const contextString = await aiContextService.generateUserContextForAI();
       setDemoMessage(`Generated AI Context:\n${contextString}`);
     } catch (error) {
@@ -62,6 +67,7 @@ const AIContextDemo: React.FC = () => {
   };
 
   const clearCache = () => {
+    const { aiContextService } = await import('../services/aiContextService');
     aiContextService.clearCache();
     setDemoMessage('Cache cleared! Refresh to see changes.');
   };

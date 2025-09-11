@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { profileAwareInsightService } from '../services/profileAwareInsightService';
-import { enhancedInsightService } from '../services/enhancedInsightService';
-import { playerProfileService } from '../services/playerProfileService';
+// Dynamic imports to avoid circular dependencies
+// import { profileAwareInsightService } from '../services/profileAwareInsightService';
+// import { enhancedInsightService } from '../services/enhancedInsightService';
+// import { playerProfileService } from '../services/playerProfileService';
 import { PlayerProfile, GameContext, EnhancedInsightTab } from '../services/types';
 
 export interface EnhancedInsight {

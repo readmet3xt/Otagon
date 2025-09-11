@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { advancedCacheService, CachePerformanceMetrics } from '../services/advancedCacheService';
+// Dynamic import to avoid circular dependency
+// import { advancedCacheService, CachePerformanceMetrics } from '../services/advancedCacheService';
 import { useAdvancedCache } from '../hooks/useAdvancedCache';
 
 interface CachePerformanceDashboardProps {
@@ -46,7 +47,8 @@ export default function CachePerformanceDashboard({ isOpen, onClose }: CachePerf
 
   // ===== METRICS UPDATES =====
 
-  const updateMetrics = useCallback(() => {
+    const updateMetrics = useCallback(async () => {
+    const { advancedCacheService } = await import('../services/advancedCacheService');
     const newMetrics = advancedCacheService.getPerformanceMetrics();
     const newCacheInfo = advancedCacheService.getCacheInfo();
     
@@ -67,6 +69,7 @@ export default function CachePerformanceDashboard({ isOpen, onClose }: CachePerf
 
   const clearAllCache = async () => {
     try {
+      const { advancedCacheService } = await import('../services/advancedCacheService');
       await advancedCacheService.clear();
       updateMetrics();
       console.log('🗑️ All cache cleared');
@@ -77,6 +80,7 @@ export default function CachePerformanceDashboard({ isOpen, onClose }: CachePerf
 
   const clearStrategyCache = async (strategy: string) => {
     try {
+      const { advancedCacheService } = await import('../services/advancedCacheService');
       await advancedCacheService.clearStrategy(strategy);
       updateMetrics();
       console.log(`🗑️ Cache cleared for strategy: ${strategy}`);
@@ -87,6 +91,7 @@ export default function CachePerformanceDashboard({ isOpen, onClose }: CachePerf
 
   const triggerPrediction = async () => {
     try {
+      const { advancedCacheService } = await import('../services/advancedCacheService');
       await advancedCacheService.predictAndPrecache();
       console.log('🔮 Predictive caching triggered');
     } catch (error) {

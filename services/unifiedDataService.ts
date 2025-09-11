@@ -55,8 +55,7 @@ export const STORAGE_KEYS = {
   PWA_INSTALLS: 'otakon_pwa_installs',
   PWA_ENGAGEMENT: 'otakon_pwa_engagement',
   
-  // Migration and app state
-  MIGRATION_STATUS: 'otakon_migration_status',
+  // App state
   APP_CLOSED_TIME: 'otakon_app_closed_time',
   WELCOME_MESSAGE_SHOWN: 'otakon_welcome_message_shown'
 } as const;

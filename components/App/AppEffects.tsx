@@ -1,12 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import { useAppStateContext } from './AppStateProvider';
-import { authService } from '../../services/supabase';
-import { pwaNavigationService } from '../../services/pwaNavigationService';
-import { performanceMonitoringService } from '../../services/performanceMonitoringService';
-import { supabaseDataService } from '../../services/supabaseDataService';
-import { profileService } from '../../services/profileService';
-import { suggestedPromptsService } from '../../services/suggestedPromptsService';
-import { DailyEngagementService } from '../../services/dailyEngagementService';
+// Dynamic imports to avoid circular dependencies
+// import { authService } from '../../services/supabase';
+// import { pwaNavigationService } from '../../services/pwaNavigationService';
+// import { performanceMonitoringService } from '../../services/performanceMonitoringService';
+// import { supabaseDataService } from '../../services/supabaseDataService';
+// import { profileService } from '../../services/profileService';
+// import { suggestedPromptsService } from '../../services/suggestedPromptsService';
+// import { DailyEngagementService } from '../../services/dailyEngagementService';
 import { STORAGE_KEYS, TIMING } from '../../utils/constants';
 import { getTimeGreeting, extractFirstName } from '../../utils/helpers';
 
@@ -44,13 +45,19 @@ export const AppEffects: React.FC<AppEffectsProps> = ({
 
   // Initialize services
   useEffect(() => {
-    console.log('🚀 Performance monitoring initialized');
-    performanceMonitoringService.initialize();
+    const initializeServices = async () => {
+      const { performanceMonitoringService } = await import('../../services/performanceMonitoringService');
+      console.log('🚀 Performance monitoring initialized');
+      performanceMonitoringService.initialize();
+    };
+    initializeServices();
   }, []);
 
   // Auth state subscription
   useEffect(() => {
-    const unsubscribe = authService.subscribe((authState) => {
+    const setupAuthSubscription = async () => {
+      const { authService } = await import('../../services/supabase');
+      const unsubscribe = authService.subscribe((authState) => {
       console.log('Auth state change detected:', { 
         hasUser: !!authState.user, 
         loading: authState.loading, 
@@ -74,12 +81,16 @@ export const AppEffects: React.FC<AppEffectsProps> = ({
   }, [onboardingStatus, setAuthState]);
 
   // PWA Navigation state subscription
+  // PWA Navigation subscription
   useEffect(() => {
-    const unsubscribe = pwaNavigationService.subscribe((newState) => {
-      setPwaNavigationState(newState);
-    });
-
-    return unsubscribe;
+    const setupPwaNavigationSubscription = async () => {
+      const { pwaNavigationService } = await import('../../services/pwaNavigationService');
+      const unsubscribe = pwaNavigationService.subscribe((newState) => {
+        setPwaNavigationState(newState);
+      });
+      return unsubscribe;
+    };
+    setupPwaNavigationSubscription();
   }, [setPwaNavigationState]);
 
   // OAuth callback handling
@@ -107,6 +118,7 @@ export const AppEffects: React.FC<AppEffectsProps> = ({
         
         // Handle OAuth callback
         try {
+          const { authService } = await import('../../services/supabase');
           await authService.handleOAuthCallback();
           console.log('OAuth callback handled successfully');
         } catch (error) {
@@ -128,6 +140,7 @@ export const AppEffects: React.FC<AppEffectsProps> = ({
       const checkDailyEngagement = async () => {
         console.log('Checking daily engagement conditions...');
         
+        const { DailyEngagementService } = await import('../../services/dailyEngagementService');
         const shouldShow = await DailyEngagementService.getInstance().shouldShowDailyCheckin();
         console.log('Should show daily checkin:', shouldShow);
         
@@ -143,14 +156,23 @@ export const AppEffects: React.FC<AppEffectsProps> = ({
 
   // Note: Welcome message logic is handled in App.tsx to prevent duplication
 
-  // Load usage data on mount
+  // Load usage data on mount - only when authenticated or in developer mode
   useEffect(() => {
-    loadUsageData();
-  }, [loadUsageData]);
+    // Only load usage data if user is authenticated or in developer mode
+    const isDeveloperMode = localStorage.getItem('otakon_developer_mode') === 'true';
+    const authMethod = localStorage.getItem('otakonAuthMethod');
+    const isDeveloperAuth = authMethod === 'skip';
+    const isAuthenticated = !!authState.user;
+    
+    if (isAuthenticated || isDeveloperMode || isDeveloperAuth) {
+      loadUsageData();
+    }
+  }, [loadUsageData, authState.user]);
 
       // Reset suggested prompts on app initialization
     useEffect(() => {
       console.log('🔄 Suggested prompts reset on app initialization');
+      // const { suggestedPromptsService } = await import('../../services/suggestedPromptsService');
       // suggestedPromptsService.reset(); // Commented out as reset method doesn't exist
     }, []);
 

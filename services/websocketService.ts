@@ -18,7 +18,7 @@ const connect = (
   onClose: () => void
 ) => {
   if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
-    if (import.meta.env.DEV) console.log("WebSocket is already open or connecting.");
+    // Skip logging for already connected state
     return;
   }
 
@@ -42,7 +42,7 @@ const connect = (
   }
 
   ws.onopen = () => {
-    if (import.meta.env.DEV) console.log("WebSocket connection established to:", fullUrl);
+    // Connection established - no need to log every connection
     reconnectAttempts = 0;
     onOpen();
     // Flush queued messages
@@ -66,10 +66,7 @@ const connect = (
   ws.onmessage = (event) => {
     try {
       const data = JSON.parse(event.data);
-      if (import.meta.env.DEV) {
-        console.log("🔌 WebSocket message received:", data);
-        console.log("🔌 Message type:", data.type);
-      }
+      // Only log errors in development, not every message
       onMessage(data);
     } catch (e) {
       if (import.meta.env.DEV) console.error("Failed to parse WebSocket message:", event.data, e);
@@ -82,7 +79,10 @@ const connect = (
   };
 
   ws.onclose = (event: CloseEvent) => {
-    if (import.meta.env.DEV) console.log(`WebSocket connection closed. Code: ${event.code}, Reason: '${event.reason}', Clean: ${event.wasClean}`);
+    // Only log unexpected closures
+    if (!event.wasClean && import.meta.env.DEV) {
+      console.warn(`WebSocket connection closed unexpectedly. Code: ${event.code}, Reason: '${event.reason}'`);
+    }
 
     if (!event.wasClean) {
       let errorMessage = "Connection closed unexpectedly.";
@@ -124,7 +124,7 @@ const send = (data: object) => {
   } else {
     // Queue and let onopen flush
     sendQueue.push(data);
-    if (import.meta.env.DEV) console.warn("WebSocket is not connected. Queued message:", data);
+    // Message queued - no need to log every queued message
   }
 };
 

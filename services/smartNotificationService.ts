@@ -7,13 +7,16 @@ export interface SmartNotificationService {
 }
 
 class SmartNotificationServiceImpl implements SmartNotificationService {
-  private isInitialized = false;
   private screenLocked = false;
   private lastActivity = Date.now();
   private readonly LOCK_TIMEOUT = 30000; // 30 seconds of inactivity = locked
 
-  async initialize(): Promise<void> {
-    if (this.isInitialized) return;
+  constructor() {
+    // Initialize immediately instead of lazy initialization for Firebase hosting compatibility
+    this.initialize();
+  }
+
+  private async initialize(): Promise<void> {
 
     try {
       // Don't request notification permission during initialization
@@ -25,7 +28,7 @@ class SmartNotificationServiceImpl implements SmartNotificationService {
       // Set up activity monitoring
       this.setupActivityMonitoring();
       
-      this.isInitialized = true;
+      // Initialization complete - no need for isInitialized flag
       console.log('Smart notification service initialized');
     } catch (error) {
       console.error('Failed to initialize smart notification service:', error);

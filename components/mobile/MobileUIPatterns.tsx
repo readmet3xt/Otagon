@@ -59,7 +59,7 @@ const MobileTabBar: React.FC<MobileTabBarProps> = ({
             <div className="relative">
               {tab.icon}
               {tab.badge && tab.badge > 0 && (
-                <span className="absolute -top-2 -right-2 bg-[#E53A3A] text-white text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
+                <span className="absolute -top-2 -right-2 bg-[#E53A3A] text-white text-xs rounded-full min-w-[20px] h-[20px] flex items-center justify-center touch-friendly">
                   {tab.badge > 99 ? '99+' : tab.badge}
                 </span>
               )}

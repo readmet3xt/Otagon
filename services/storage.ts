@@ -1,19 +1,19 @@
-// Simple storage utility that automatically uses the localStorage replacer
+// Simple storage utility that uses dual storage service
 // This makes it easy to replace localStorage calls throughout your app
 
-import { localStorageReplacer } from './supabase';
+import { dualStorageService } from './dualStorageService';
 
-// Simple wrapper functions that automatically use the replacer
+// Simple wrapper functions that automatically use dual storage
 export const storage = {
-  // Set item (automatically migrates to Supabase)
+  // Set item (automatically saves to Supabase and localStorage)
   async setItem(key: string, value: any): Promise<void> {
     const serializedValue = typeof value === 'string' ? value : JSON.stringify(value);
-    await localStorageReplacer.setItem(key, serializedValue);
+    await dualStorageService.set(key, serializedValue);
   },
 
   // Get item (automatically reads from Supabase first, falls back to localStorage)
   async getItem(key: string): Promise<any> {
-    const value = await localStorageReplacer.getItem(key);
+    const value = await dualStorageService.get(key);
     if (value === null) return null;
     
     try {
@@ -25,18 +25,18 @@ export const storage = {
 
   // Remove item (automatically removes from both)
   async removeItem(key: string): Promise<void> {
-    await localStorageReplacer.removeItem(key);
+    await dualStorageService.remove(key);
   },
 
   // Check if item exists
   async hasItem(key: string): Promise<boolean> {
-    const value = await localStorageReplacer.getItem(key);
+    const value = await dualStorageService.get(key);
     return value !== null;
   },
 
   // Clear all storage
   async clear(): Promise<void> {
-    await localStorageReplacer.clear();
+    await dualStorageService.clear();
   }
 };
 

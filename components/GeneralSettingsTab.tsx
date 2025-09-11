@@ -3,7 +3,8 @@ import { Usage, UserTier } from '../services/types';
 import StarIcon from './StarIcon';
 import { TierUpgradeModal } from './TierUpgradeModal';
 import GuestTierSwitcher from './GuestTierSwitcher';
-import { profileService } from '../services/profileService';
+// Dynamic import to avoid circular dependency
+// import { profileService } from '../services/profileService';
 
 interface GeneralSettingsTabProps {
     usage: Usage;
@@ -41,6 +42,7 @@ const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({ usage, onShowUp
         const loadDisplayName = async () => {
             try {
                 setIsLoadingName(true);
+                const { profileService } = await import('../services/profileService');
                 const name = await profileService.getName();
                 setDisplayName(name || '');
             } catch (error) {
@@ -63,6 +65,7 @@ const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({ usage, onShowUp
 
         try {
             setNameError('');
+            const { profileService } = await import('../services/profileService');
             await profileService.setName(displayName.trim());
             setIsEditingName(false);
             console.log('✅ Display name saved successfully');
@@ -75,6 +78,7 @@ const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({ usage, onShowUp
     // Handle name cancel
     const handleCancelName = async () => {
         try {
+            const { profileService } = await import('../services/profileService');
             const currentName = await profileService.getName();
             setDisplayName(currentName || '');
             setIsEditingName(false);

@@ -1,40 +1,5 @@
 import { supabase } from './supabase';
-
-export interface GameProgress {
-  current_progress_level: number;
-  game_version: string;
-  completed_events: string[];
-  progress_metadata: any;
-  last_progress_update: string;
-  progress_confidence: number;
-}
-
-export interface GameEvent {
-  id: string;
-  game_id: string;
-  game_version: string;
-  event_id: string;
-  event_type: string;
-  description: string;
-  unlocks_progress_level: number;
-  lore_context?: string;
-  difficulty_rating: number;
-}
-
-export interface ProgressHistory {
-  id: string;
-  user_id: string;
-  game_id: string;
-  game_version: string;
-  event_id: string;
-  old_level: number;
-  new_level: number;
-  ai_confidence: number;
-  ai_reasoning: string;
-  ai_evidence: string[];
-  user_feedback: string;
-  created_at: string;
-}
+import { GameProgress, GameEvent, ProgressHistory } from './types';
 
 export interface ProgressUpdateResult {
   success: boolean;

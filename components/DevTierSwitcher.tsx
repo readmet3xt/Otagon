@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserTier } from '../services/types';
-import { unifiedUsageService } from '../services/unifiedUsageService';
+// Dynamic import to avoid circular dependency
+// import { unifiedUsageService } from '../services/unifiedUsageService';
 
 interface DevTierSwitcherProps {
   currentTier: UserTier;
@@ -43,12 +44,15 @@ const DevTierSwitcher: React.FC<DevTierSwitcherProps> = ({ currentTier, onSwitch
       // Then attempt to update the backend
       if (nextTier === 'free') {
         console.log('🔄 Calling switchToFree...');
+        const { unifiedUsageService } = await import('../services/unifiedUsageService');
         await unifiedUsageService.switchToFree();
       } else if (nextTier === 'pro') {
         console.log('🔄 Calling switchToPro...');
+        const { unifiedUsageService } = await import('../services/unifiedUsageService');
         await unifiedUsageService.switchToPro();
       } else if (nextTier === 'vanguard_pro') {
         console.log('🔄 Calling switchToVanguard...');
+        const { unifiedUsageService } = await import('../services/unifiedUsageService');
         await unifiedUsageService.switchToVanguard();
       }
       

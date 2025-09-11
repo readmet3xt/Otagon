@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import type { DiaryTask } from '../services/otakuDiaryService';
-import { taskDetectionService } from '../services/taskDetectionService';
-import { unifiedUsageService } from '../services/unifiedUsageService';
+import type { DiaryTask } from '../services/types';
+// Dynamic import to avoid circular dependency
+// import { taskDetectionService } from '../services/taskDetectionService';
+// Dynamic import to avoid circular dependency
+// import { unifiedUsageService } from '../services/unifiedUsageService';
+// Dynamic import to avoid circular dependency
+// import { otakuDiaryService } from '../services/otakuDiaryService';
 
 interface ToDoListTabProps {
   gameId: string;
@@ -44,6 +48,7 @@ const ToDoListTab: React.FC<ToDoListTabProps> = ({ gameId, tasks, onTaskUpdate, 
 
     try {
       console.log('🔍 Creating task...');
+      // Using static import instead of dynamic import for Firebase hosting compatibility
       const { otakuDiaryService } = await import('../services/otakuDiaryService');
       const result = await otakuDiaryService.createTask({
         title: newTaskTitle.trim(),
@@ -87,6 +92,7 @@ const ToDoListTab: React.FC<ToDoListTabProps> = ({ gameId, tasks, onTaskUpdate, 
     if (!editTitle.trim()) return;
 
     try {
+      // Using static import instead of dynamic import for Firebase hosting compatibility
       const { otakuDiaryService } = await import('../services/otakuDiaryService');
       await otakuDiaryService.updateTask(gameId, taskId, {
         title: editTitle.trim(),
@@ -107,6 +113,7 @@ const ToDoListTab: React.FC<ToDoListTabProps> = ({ gameId, tasks, onTaskUpdate, 
   const handleDeleteTask = async (taskId: string) => {
     if (window.confirm('Are you sure you want to delete this task?')) {
       try {
+        // Using static import instead of dynamic import for Firebase hosting compatibility
         const { otakuDiaryService } = await import('../services/otakuDiaryService');
         await otakuDiaryService.deleteTask(gameId, taskId);
         onTaskUpdate();
@@ -118,6 +125,7 @@ const ToDoListTab: React.FC<ToDoListTabProps> = ({ gameId, tasks, onTaskUpdate, 
 
   const handleMarkComplete = async (taskId: string) => {
     try {
+      // Using static import instead of dynamic import for Firebase hosting compatibility
       const { otakuDiaryService } = await import('../services/otakuDiaryService');
       await otakuDiaryService.markTaskComplete(gameId, taskId);
       onTaskUpdate();
@@ -128,6 +136,7 @@ const ToDoListTab: React.FC<ToDoListTabProps> = ({ gameId, tasks, onTaskUpdate, 
 
   const handleMarkNeedHelp = async (taskId: string) => {
     try {
+      // Using static import instead of dynamic import for Firebase hosting compatibility
       const { otakuDiaryService } = await import('../services/otakuDiaryService');
       await otakuDiaryService.markTaskNeedHelp(gameId, taskId);
       onTaskUpdate();
@@ -138,6 +147,7 @@ const ToDoListTab: React.FC<ToDoListTabProps> = ({ gameId, tasks, onTaskUpdate, 
 
   const handleMoveToUserCreated = async (taskId: string) => {
     try {
+      // Using static import instead of dynamic import for Firebase hosting compatibility
       const { otakuDiaryService } = await import('../services/otakuDiaryService');
       await otakuDiaryService.moveTaskToUserCreated(gameId, taskId);
       onTaskUpdate();

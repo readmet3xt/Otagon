@@ -1,6 +1,7 @@
 import React from 'react';
 import { UserTier } from '../services/types';
-import { unifiedUsageService } from '../services/unifiedUsageService';
+// Dynamic import to avoid circular dependency
+// import { unifiedUsageService } from '../services/unifiedUsageService';
 
 interface GuestTierSwitcherProps {
   currentTier: UserTier;
@@ -16,7 +17,7 @@ const TIER_NAMES: Record<UserTier, string> = {
 const GuestTierSwitcher: React.FC<GuestTierSwitcherProps> = ({ currentTier, onSwitch }) => {
   const tiers: UserTier[] = ['free', 'pro', 'vanguard_pro'];
 
-  const handleCycleTier = () => {
+  const handleCycleTier = async () => {
     const currentIndex = tiers.indexOf(currentTier);
     const nextIndex = (currentIndex + 1) % tiers.length;
     const nextTier = tiers[nextIndex];
@@ -24,10 +25,13 @@ const GuestTierSwitcher: React.FC<GuestTierSwitcherProps> = ({ currentTier, onSw
     console.log(`🔄 Switching from ${currentTier} to ${nextTier}`);
 
     if (nextTier === 'free') {
+      const { unifiedUsageService } = await import('../services/unifiedUsageService');
       unifiedUsageService.switchToFree();
     } else if (nextTier === 'pro') {
+      const { unifiedUsageService } = await import('../services/unifiedUsageService');
       unifiedUsageService.switchToPro();
     } else if (nextTier === 'vanguard_pro') {
+      const { unifiedUsageService } = await import('../services/unifiedUsageService');
       unifiedUsageService.switchToVanguard();
     }
     

@@ -377,36 +377,68 @@ class SupabaseDataService {
   async shouldShowWelcomeMessage(): Promise<boolean> {
     try {
       const isDevMode = ((import.meta as any)?.env?.DEV === true) || (typeof window !== 'undefined' && localStorage.getItem('otakon_developer_mode') === 'true');
+      
+      // Check if we've already determined welcome status for this session to avoid repeated calls
+      const sessionKey = 'otakon_welcome_status_determined';
+      const cachedStatus = sessionStorage.getItem(sessionKey);
+      if (cachedStatus !== null) {
+        return cachedStatus === 'true';
+      }
+      
       if (!(await this.isAuthenticated())) {
         // In dev/developer mode, fall back to localStorage-based welcome logic
         if (isDevMode) {
-          return this.shouldShowLocalStorageWelcome();
+          const result = this.shouldShowLocalStorageWelcome();
+          sessionStorage.setItem(sessionKey, result.toString());
+          return result;
         }
-        throw new Error('User not authenticated');
+        // Cache negative result to prevent repeated calls
+        sessionStorage.setItem(sessionKey, 'false');
+        return false;
       }
+      
       const userId = await this.getUserId();
       if (!userId) {
         if (isDevMode) {
-          return this.shouldShowLocalStorageWelcome();
+          const result = this.shouldShowLocalStorageWelcome();
+          sessionStorage.setItem(sessionKey, result.toString());
+          return result;
         }
-        throw new Error('User not authenticated');
+        // Cache negative result to prevent repeated calls
+        sessionStorage.setItem(sessionKey, 'false');
+        return false;
       }
+      
       const { data, error } = await supabase.rpc('should_show_welcome_message', {
         p_user_id: userId
       });
 
       if (error) {
-        console.warn('Supabase welcome message check failed:', error);
+        // Only log error in development mode to reduce console noise
+        if (isDevMode) {
+          console.warn('Supabase welcome message check failed:', error);
+        }
         // In dev/developer mode, fall back to localStorage-based welcome logic
         const isDev = ((import.meta as any)?.env?.DEV === true) || (typeof window !== 'undefined' && localStorage.getItem('otakon_developer_mode') === 'true');
-        return isDev ? this.shouldShowLocalStorageWelcome() : false;
+        const result = isDev ? this.shouldShowLocalStorageWelcome() : false;
+        sessionStorage.setItem(sessionKey, result.toString());
+        return result;
       }
-      return data || false;
+      
+      const result = data || false;
+      sessionStorage.setItem(sessionKey, result.toString());
+      return result;
     } catch (error) {
-      console.warn('Supabase welcome message check failed:', error);
+      // Only log error in development mode to reduce console noise
+      const isDevMode = ((import.meta as any)?.env?.DEV === true) || (typeof window !== 'undefined' && localStorage.getItem('otakon_developer_mode') === 'true');
+      if (isDevMode) {
+        console.warn('Supabase welcome message check failed:', error);
+      }
       // In dev/developer mode, fall back to localStorage-based welcome logic
       const isDev = ((import.meta as any)?.env?.DEV === true) || (typeof window !== 'undefined' && localStorage.getItem('otakon_developer_mode') === 'true');
-      return isDev ? this.shouldShowLocalStorageWelcome() : false;
+      const result = isDev ? this.shouldShowLocalStorageWelcome() : false;
+      sessionStorage.setItem('otakon_welcome_status_determined', result.toString());
+      return result;
     }
   }
 
@@ -526,30 +558,6 @@ class SupabaseDataService {
     }
   }
 
-  // =====================================================
-  // MIGRATION AND UTILITY FUNCTIONS
-  // =====================================================
-
-  async checkMigrationStatus(): Promise<any> {
-    try {
-      if (!(await this.isAuthenticated())) {
-        throw new Error('User not authenticated');
-      }
-      const userId = await this.getUserId();
-      if (!userId) {
-        throw new Error('User not authenticated');
-      }
-      const { data, error } = await supabase.rpc('check_user_migration_status', {
-        p_user_id: userId
-      });
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.warn('Migration status check failed:', error);
-      return { needsMigration: true, migrationStatus: 'unknown' };
-    }
-  }
 
   async getCompleteUserData(): Promise<any> {
     try {
@@ -719,7 +727,6 @@ class SupabaseDataService {
       usage: this.getLocalStorageUsageData(),
       appState: this.getLocalStorageAppState(),
       preferences: this.getLocalStoragePreferences(),
-      migrationComplete: false,
       lastUpdated: new Date().toISOString()
     };
   }
@@ -766,238 +773,6 @@ class SupabaseDataService {
   // =====================================================
   // BULK OPERATIONS
   // =====================================================
-
-  // =====================================================
-  // COMPREHENSIVE LOCALSTORAGE MIGRATION
-  // =====================================================
-
-  // Helper method to get localStorage data safely
-  private getLocalStorageData(key: string): any {
-    try {
-      const stored = localStorage.getItem(key);
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
-    }
-  }
-
-  async migrateAllLocalStorageData(): Promise<void> {
-    try {
-      const userId = await this.getUserId();
-      
-      // Migrate usage data from localStorage directly
-      const usageData = this.getLocalStorageData('otakon_usage_data');
-      if (usageData) {
-        await this.updateUserUsage('tier', usageData.tier);
-        await this.updateUserUsage('textCount', usageData.textCount);
-        await this.updateUserUsage('imageCount', usageData.imageCount);
-        await this.updateUserUsage('lastMonth', usageData.lastMonth);
-        await this.updateUserUsage('usageHistory', usageData.usageHistory);
-        await this.updateUserUsage('tierHistory', usageData.tierHistory);
-        await this.updateUserUsage('lastReset', usageData.lastReset);
-      }
-
-      // Migrate app state from localStorage directly
-      const appState = this.getLocalStorageData('otakon_app_state');
-      if (appState) {
-        await this.updateUserAppState('lastVisited', appState.lastVisited);
-        await this.updateUserAppState('uiPreferences', appState.uiPreferences);
-        await this.updateUserAppState('featureFlags', appState.featureFlags);
-        await this.updateUserAppState('appSettings', appState.appSettings);
-        await this.updateUserAppState('lastInteraction', appState.lastInteraction);
-      }
-
-      // Migrate preferences from localStorage directly
-      const preferences = this.getLocalStorageData('otakon_preferences');
-      if (preferences) {
-        await this.updateUserPreferences('gameGenre', preferences.gameGenre);
-        await this.updateUserPreferences('detailLevel', preferences.detailLevel);
-        await this.updateUserPreferences('aiPersonality', preferences.aiPersonality);
-        await this.updateUserPreferences('preferredResponseFormat', preferences.preferredResponseFormat);
-        await this.updateUserPreferences('skillLevel', preferences.skillLevel);
-        await this.updateUserPreferences('notificationPreferences', preferences.notificationPreferences);
-        await this.updateUserPreferences('accessibilitySettings', preferences.accessibilitySettings);
-      }
-
-      // Migrate additional localStorage keys
-      await this.migrateAdditionalLocalStorageKeys();
-
-      console.log('✅ All localStorage data migrated to Supabase successfully');
-    } catch (error) {
-      console.error('❌ Failed to migrate localStorage data:', error);
-    }
-  }
-
-  private async migrateAdditionalLocalStorageKeys(): Promise<void> {
-    try {
-      const userId = await this.getUserId();
-      
-      // Migrate profile setup and welcome message tracking
-      const profileSetupCompleted = localStorage.getItem('otakon_profile_setup_completed');
-      const welcomeMessageShown = localStorage.getItem('otakon_welcome_message_shown');
-      const lastWelcomeTime = localStorage.getItem('otakon_last_welcome_time');
-      const lastSessionDate = localStorage.getItem('otakon_last_session_date');
-      const firstRunCompleted = localStorage.getItem('otakon_first_run_completed');
-      const firstGameConversationDate = localStorage.getItem('otakon_first_game_conversation_date');
-      const appClosedTime = localStorage.getItem('otakon_app_closed_time');
-      const hasInteractedWithChat = localStorage.getItem('otakon_has_interacted_with_chat');
-      const onboardingComplete = localStorage.getItem('otakonOnboardingComplete');
-      const hasConnectedBefore = localStorage.getItem('otakonHasConnectedBefore');
-      const authMethod = localStorage.getItem('otakonAuthMethod');
-      const installDismissed = localStorage.getItem('otakonInstallDismissed');
-      const lastConnectionCode = localStorage.getItem('lastConnectionCode');
-      const lastSuggestedPromptsShown = localStorage.getItem('lastSuggestedPromptsShown');
-
-      // Migrate to app_state
-      const appStateUpdates: Record<string, any> = {};
-      if (profileSetupCompleted) appStateUpdates.profileSetupCompleted = profileSetupCompleted === 'true';
-      if (welcomeMessageShown) appStateUpdates.welcomeMessageShown = welcomeMessageShown === 'true';
-      if (lastWelcomeTime) appStateUpdates.lastWelcomeTime = parseInt(lastWelcomeTime, 10);
-      if (lastSessionDate) appStateUpdates.lastSessionDate = lastSessionDate;
-      if (firstRunCompleted) appStateUpdates.firstRunCompleted = firstRunCompleted === 'true';
-      if (firstGameConversationDate) appStateUpdates.firstGameConversationDate = firstGameConversationDate;
-      if (appClosedTime) appStateUpdates.appClosedTime = parseInt(appClosedTime, 10);
-      if (hasInteractedWithChat) appStateUpdates.hasInteractedWithChat = hasInteractedWithChat === 'true';
-      if (onboardingComplete) appStateUpdates.onboardingComplete = onboardingComplete === 'true';
-      if (hasConnectedBefore) appStateUpdates.hasConnectedBefore = hasConnectedBefore === 'true';
-      if (authMethod) appStateUpdates.authMethod = authMethod;
-      if (installDismissed) appStateUpdates.installDismissed = installDismissed === 'true';
-      if (lastConnectionCode) appStateUpdates.lastConnectionCode = lastConnectionCode;
-      if (lastSuggestedPromptsShown) appStateUpdates.lastSuggestedPromptsShown = lastSuggestedPromptsShown;
-
-      // Update app_state in Supabase
-      if (Object.keys(appStateUpdates).length > 0) {
-        await this.updateUserAppState('bulk', appStateUpdates);
-      }
-
-      // Migrate TTS preferences
-      const speechRate = localStorage.getItem('otakonSpeechRate');
-      const preferredVoiceURI = localStorage.getItem('otakonPreferredVoiceURI');
-      if (speechRate || preferredVoiceURI) {
-        const ttsPreferences: Record<string, any> = {};
-        if (speechRate) ttsPreferences.speechRate = speechRate;
-        if (preferredVoiceURI) ttsPreferences.preferredVoiceURI = preferredVoiceURI;
-        await this.updateUserPreferences('tts', ttsPreferences);
-      }
-
-      // Migrate PWA preferences
-      const handsFreeEnabled = localStorage.getItem('otakonHandsFreeEnabled');
-      if (handsFreeEnabled) {
-        await this.updateUserPreferences('pwa', { handsFreeEnabled: handsFreeEnabled === 'true' });
-      }
-
-      // Migrate PWA analytics
-      const pwaInstalls = localStorage.getItem('otakon_pwa_installs');
-      const pwaEngagement = localStorage.getItem('otakon_pwa_engagement');
-      if (pwaInstalls || pwaEngagement) {
-        const pwaData: Record<string, any> = {};
-        if (pwaInstalls) pwaData.installs = JSON.parse(pwaInstalls);
-        if (pwaEngagement) pwaData.engagement = JSON.parse(pwaEngagement);
-        await this.updateUserAppState('pwaAnalytics', pwaData);
-      }
-
-      // Migrate proactive insights
-      const proactiveInsights = localStorage.getItem('otakon_proactive_insights');
-      const triggerHistory = localStorage.getItem('otakon_trigger_history');
-      if (proactiveInsights || triggerHistory) {
-        const insightsData: Record<string, any> = {};
-        if (proactiveInsights) insightsData.insights = JSON.parse(proactiveInsights);
-        if (triggerHistory) insightsData.triggerHistory = JSON.parse(triggerHistory);
-        await this.updateUserAppState('proactiveInsights', insightsData);
-      }
-
-      // Migrate character detection cache
-      const characterCache = localStorage.getItem('otakon_character_cache');
-      const gameLanguageProfiles = localStorage.getItem('otakon_game_language_profiles');
-      if (characterCache || gameLanguageProfiles) {
-        const characterData: Record<string, any> = {};
-        if (characterCache) characterData.characterCache = JSON.parse(characterCache);
-        if (gameLanguageProfiles) characterData.gameLanguageProfiles = JSON.parse(gameLanguageProfiles);
-        await this.setAppCache('characterDetection', characterData, new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString());
-      }
-
-      // Migrate API cost records
-      const apiCostRecords = localStorage.getItem('otakon_api_cost_records');
-      if (apiCostRecords) {
-        await this.updateUserAppState('apiCostRecords', JSON.parse(apiCostRecords));
-      }
-
-      // Migrate wishlist data
-      const wishlist = localStorage.getItem('otakon_wishlist');
-      if (wishlist) {
-        await this.updateUserAppState('wishlist', JSON.parse(wishlist));
-      }
-
-      // Migrate tasks and favorites (Otaku Diary)
-      const taskKeys = Object.keys(localStorage).filter(key => key.startsWith('otakon_tasks_'));
-      const favoriteKeys = Object.keys(localStorage).filter(key => key.startsWith('otakon_favorites_'));
-      
-      if (taskKeys.length > 0 || favoriteKeys.length > 0) {
-        const diaryData: Record<string, any> = {};
-        
-        // Migrate tasks
-        taskKeys.forEach(key => {
-          const gameId = key.replace('otakon_tasks_', '');
-          const tasks = JSON.parse(localStorage.getItem(key) || '[]');
-          if (tasks.length > 0) {
-            diaryData[`tasks_${gameId}`] = tasks;
-          }
-        });
-
-        // Migrate favorites
-        favoriteKeys.forEach(key => {
-          const gameId = key.replace('otakon_favorites_', '');
-          const favorites = JSON.parse(localStorage.getItem(key) || '[]');
-          if (favorites.length > 0) {
-            diaryData[`favorites_${gameId}`] = favorites;
-          }
-        });
-
-        if (Object.keys(diaryData).length > 0) {
-          await this.updateUserAppState('otakuDiary', diaryData);
-        }
-      }
-
-      // Migrate daily goals and streaks
-      const dailyGoals = localStorage.getItem('dailyGoals_' + new Date().toDateString());
-      const userStreaks = localStorage.getItem('userStreaks');
-      const lastSessionTime = localStorage.getItem('lastSessionTime');
-      
-      if (dailyGoals || userStreaks || lastSessionTime) {
-        const engagementData: Record<string, any> = {};
-        if (dailyGoals) engagementData.dailyGoals = JSON.parse(dailyGoals);
-        if (userStreaks) engagementData.userStreaks = JSON.parse(userStreaks);
-        if (lastSessionTime) engagementData.lastSessionTime = lastSessionTime;
-        
-        await this.updateDailyEngagement('bulk', engagementData);
-      }
-
-      // Migrate feedback data
-      const feedbackData = localStorage.getItem('otakonFeedbackData');
-      if (feedbackData) {
-        await this.updateUserAppState('feedbackData', JSON.parse(feedbackData));
-      }
-
-      console.log('✅ Additional localStorage keys migrated successfully');
-    } catch (error) {
-      console.error('❌ Failed to migrate additional localStorage keys:', error);
-    }
-  }
-
-  async clearAllLocalStorageData(): Promise<void> {
-    try {
-      const keys = Object.keys(localStorage);
-      const otakonKeys = keys.filter(key => key.startsWith('otakon_'));
-      
-      otakonKeys.forEach(key => {
-        localStorage.removeItem(key);
-      });
-
-      console.log(`✅ Cleared ${otakonKeys.length} localStorage items`);
-    } catch (error) {
-      console.error('❌ Failed to clear localStorage data:', error);
-    }
-  }
 }
 
 // Export singleton instance
@@ -1024,10 +799,7 @@ export const {
   updateWelcomeMessageShown,
   markFirstRunCompleted,
   resetWelcomeMessageTracking,
-  checkMigrationStatus,
   getCompleteUserData,
-  migrateAllLocalStorageData,
-  clearAllLocalStorageData,
   saveAppState,
   getAppState
 } = supabaseDataService;

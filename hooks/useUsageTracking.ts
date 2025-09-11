@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { Usage } from '../services/types';
-import { unifiedUsageService } from '../services/unifiedUsageService';
+// Dynamic import to avoid circular dependency
+// import { unifiedUsageService } from '../services/unifiedUsageService';
 
 interface UseUsageTrackingProps {
   usage: Usage;

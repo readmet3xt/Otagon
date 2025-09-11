@@ -4,9 +4,20 @@ import { supabaseDataService } from './supabaseDataService';
 
 let synth: SpeechSynthesis;
 let voices: SpeechSynthesisVoice[] = [];
-let isInitialized = false;
+// Removed isInitialized flag for Firebase hosting compatibility
 
 const SPEECH_RATE_KEY = 'otakonSpeechRate';
+
+// Initialize TTS service immediately for Firebase hosting compatibility
+const initializeTTS = (): void => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        synth = window.speechSynthesis;
+        // Don't call populateVoiceList here to avoid hoisting issues
+    }
+};
+
+// Initialize immediately
+initializeTTS();
 
 // Function to populate voices, returns a promise that resolves when voices are loaded.
 const populateVoiceList = (): Promise<void> => {
@@ -58,8 +69,7 @@ const setupMediaSession = () => {
 
 const init = async () => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        if (isInitialized) return;
-        isInitialized = true;
+        // TTS is already initialized in module scope for Firebase hosting compatibility
         synth = window.speechSynthesis;
         await populateVoiceList();
         setupMediaSession();

@@ -1,5 +1,6 @@
 import { unifiedUsageService } from './unifiedUsageService';
 import { supabaseDataService } from './supabaseDataService';
+import { supabase } from './supabase';
 
 export interface CachedNewsResponse {
   content: string;
@@ -482,6 +483,20 @@ class DailyNewsCacheService {
    */
   private async loadFromSupabase(): Promise<void> {
     try {
+      // Only attempt to load from Supabase if user is authenticated or in developer mode
+      const isDeveloperMode = localStorage.getItem('otakon_developer_mode') === 'true';
+      const authMethod = localStorage.getItem('otakonAuthMethod');
+      const isDeveloperAuth = authMethod === 'skip';
+      
+      // Check if we have a user session
+      const { data: { user } } = await supabase.auth.getUser();
+      const isAuthenticated = !!user;
+      
+      if (!isAuthenticated && !isDeveloperMode && !isDeveloperAuth) {
+        // User not authenticated and not in developer mode, skip Supabase loading
+        return;
+      }
+      
       for (const promptKey of Object.values(this.PROMPT_KEYS)) {
         const cacheData = await supabaseDataService.getAppCache(`dailyCache_${promptKey}`);
         if (cacheData && cacheData.cacheData && !this.isExpired(cacheData.cacheData.timestamp)) {

@@ -1,14 +1,4 @@
-import { Conversation, ChatMessage } from './types';
-import { DiaryTask } from './otakuDiaryService';
-
-export interface TaskCompletionPrompt {
-  id: string;
-  tasks: DiaryTask[];
-  promptText: string;
-  timestamp: number;
-  conversationId: string;
-  userTier: 'free' | 'pro' | 'vanguard_pro';
-}
+import { Conversation, ChatMessage, DiaryTask, TaskCompletionPrompt } from './types';
 
 export interface TaskCompletionResponse {
   taskId: string;

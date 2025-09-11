@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { authService } from './supabase';
+import { OnboardingFunnelStats, TierConversionStats, FeatureUsageStats } from './types';
 
 export interface OnboardingStep {
   stepName: string;
@@ -35,34 +36,6 @@ export interface FeatureUsageEvent {
   usageCount?: number;
   durationMs?: number;
   metadata?: Record<string, any>;
-}
-
-export interface OnboardingFunnelStats {
-  stepName: string;
-  stepOrder: number;
-  totalUsers: number;
-  completedUsers: number;
-  droppedOffUsers: number;
-  completionRate: number;
-  avgDurationMs: number;
-}
-
-export interface TierConversionStats {
-  fromTier: string;
-  toTier: string;
-  totalAttempts: number;
-  successfulUpgrades: number;
-  conversionRate: number;
-  avgAmount: number;
-}
-
-export interface FeatureUsageStats {
-  featureName: string;
-  featureCategory: string;
-  totalUsers: number;
-  totalUsageCount: number;
-  avgUsagePerUser: number;
-  mostActiveUsers: number;
 }
 
 class AnalyticsService {

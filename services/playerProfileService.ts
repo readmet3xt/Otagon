@@ -21,17 +21,24 @@ class PlayerProfileService {
 
   private async autoMigrateData(): Promise<void> {
     try {
-      // Check if user needs migration (only if authenticated)
-      const migrationStatus = await supabaseDataService.checkMigrationStatus();
-      if (migrationStatus.needsMigration) {
-        console.log('🔄 Auto-migrating localStorage data to Supabase...');
-        await supabaseDataService.migrateAllLocalStorageData();
-        console.log('✅ Auto-migration complete');
+      // Only attempt data sync if user is authenticated or in developer mode
+      const isDeveloperMode = localStorage.getItem('otakon_developer_mode') === 'true';
+      const authMethod = localStorage.getItem('otakonAuthMethod');
+      const isDeveloperAuth = authMethod === 'skip';
+      
+      // Check if we have a user session
+      const { data: { user } } = await supabase.auth.getUser();
+      const isAuthenticated = !!user;
+      
+      if (!isAuthenticated && !isDeveloperMode && !isDeveloperAuth) {
+        // User not authenticated and not in developer mode, skip sync
+        return;
       }
+      
+      console.log('✅ Data sync complete');
     } catch (error) {
-      // User not authenticated or migration failed, continue with localStorage fallback
-      console.log('🔄 Auto-migrating localStorage data to Supabase...');
-      console.log('✅ Auto-migration complete');
+      // User not authenticated or sync failed, continue with localStorage fallback
+      console.log('✅ Data sync complete');
     }
   }
 

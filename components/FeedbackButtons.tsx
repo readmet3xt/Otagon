@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import ThumbUpIcon from './ThumbUpIcon';
 import ThumbDownIcon from './ThumbDownIcon';
 import { ChatMessageFeedback } from '../services/types';
-import { aiContextService } from '../services/aiContextService';
+// Dynamic import to avoid circular dependency
+// import { aiContextService } from '../services/aiContextService';
 
 interface FeedbackButtonsProps {
   onFeedback: (type: 'up' | 'down') => void;
@@ -25,6 +26,7 @@ const FeedbackButtons: React.FC<FeedbackButtonsProps> = ({ onFeedback, feedbackS
 
   const loadAIContext = async () => {
     try {
+      const { aiContextService } = await import('../services/aiContextService');
       const contextString = await aiContextService.generateUserContextForAI();
       if (contextString) {
         setAiContext(contextString);
@@ -36,6 +38,7 @@ const FeedbackButtons: React.FC<FeedbackButtonsProps> = ({ onFeedback, feedbackS
 
   const handleFeedback = (type: 'up' | 'down') => {
     // Track user behavior for AI learning
+    const { aiContextService } = await import('../services/aiContextService');
     aiContextService.trackUserBehavior(
       'feedback_given',
       { 

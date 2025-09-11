@@ -13,11 +13,9 @@ npm ci
 echo "🔨 Building application..."
 npm run build
 
-# Fix Tailwind CDN in built HTML
-echo "🎨 Adding Tailwind CDN to built HTML..."
+# Remove Tailwind CDN from production build (it's only for development)
+echo "🎨 Removing Tailwind CDN from production build..."
 sed -i '' '/cdn\.tailwindcss\.com/d' dist/index.html
-sed -i '' '/<script type="module" crossorigin src="\/assets\/main-/i\
-    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>' dist/index.html
 
 # Verify build
 if [ ! -d "dist" ]; then
@@ -25,6 +23,6 @@ if [ ! -d "dist" ]; then
   exit 1
 fi
 
-echo "✅ Build completed successfully with Tailwind CDN"
+echo "✅ Build completed successfully without Tailwind CDN"
 echo "📁 Build output:"
 ls -la dist/

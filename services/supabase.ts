@@ -1,11 +1,20 @@
 import { createClient } from '@supabase/supabase-js';
 import { User, Session, AuthError } from '@supabase/supabase-js';
-import { tierService } from './tierService';
-import { LocalStorageReplacer } from './silentMigrationService';
+// Removed tierService import to avoid circular dependency - using dynamic import instead
 
 // Environment variables for Supabase
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY || process.env.SUPABASE_ANON_KEY;
+
+// Debug environment variables (only in development)
+if (import.meta.env.DEV) {
+  console.log('🔧 Supabase Config Debug:', {
+    supabaseUrl: supabaseUrl ? '✅ Set' : '❌ Missing',
+    supabaseKey: supabaseKey ? '✅ Set' : '❌ Missing',
+    viteUrl: import.meta.env.VITE_SUPABASE_URL ? '✅ Set' : '❌ Missing',
+    viteKey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY ? '✅ Set' : '❌ Missing'
+  });
+}
 
 // For now, use placeholder values to prevent crashes
 const fallbackUrl = 'https://placeholder.supabase.co';
@@ -22,9 +31,6 @@ export const supabase = createClient(supabaseUrl || fallbackUrl, supabaseKey || 
     detectSessionInUrl: true,
   },
 });
-
-// Initialize silent migration service
-export const localStorageReplacer = new LocalStorageReplacer(supabase);
 
 // Auth types
 export interface AuthState {
@@ -118,10 +124,9 @@ export class AuthService {
         loading: false 
       });
 
-      // If user already has a session, start migration
+      // If user already has a session, initialize services
       if (session?.user) {
-        console.log('Existing session found, checking if migration is needed...');
-        // The migration service will automatically check and migrate if needed
+        console.log('Existing session found, initializing services...');
       }
 
       // Listen for auth changes
@@ -157,10 +162,11 @@ export class AuthService {
         if (event === 'SIGNED_IN' && session?.user) {
           console.log('🎉 User signed in, assigning free tier...');
           try {
+            // Dynamic import to avoid circular dependency
+            const { tierService } = await import('./tierService');
             await tierService.assignFreeTier(session.user.id);
             
-            // Start silent migration of localStorage data to Supabase
-            console.log('Starting silent migration of localStorage data...');
+            console.log('Free tier assigned to new user');
           } catch (error) {
             console.error('Error assigning free tier:', error);
           }

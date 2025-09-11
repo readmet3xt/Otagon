@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import type { DiaryTask, DiaryFavorite } from '../services/otakuDiaryService';
-import { unifiedUsageService } from '../services/unifiedUsageService';
+import type { DiaryTask, DiaryFavorite } from '../services/types';
+// Dynamic import to avoid circular dependency
+// import { unifiedUsageService } from '../services/unifiedUsageService';
 import ToDoListTab from './ToDoListTab';
 import FavoritesTab from './FavoritesTab';
+// Dynamic import to avoid circular dependency
+// import { otakuDiaryService } from '../services/otakuDiaryService';
 
 interface OtakuDiaryTabProps {
   gameId: string;
@@ -37,6 +40,7 @@ const OtakuDiaryTab: React.FC<OtakuDiaryTabProps> = ({ gameId, gameTitle }) => {
   const loadDiaryData = async () => {
     setIsLoading(true);
     try {
+      // Using dynamic import to avoid circular dependency
       const { otakuDiaryService } = await import('../services/otakuDiaryService');
       const [tasksData, favoritesData] = await Promise.all([
         otakuDiaryService.getTasks(gameId),

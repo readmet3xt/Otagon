@@ -34,16 +34,18 @@ import SuggestedPrompts from './components/SuggestedPrompts';
 import { useChat } from './hooks/useChat';
 import { useConnection } from './hooks/useConnection';
 import { useTutorial } from './hooks/useTutorial';
-import { profileService } from './services/profileService';
-import { longTermMemoryService } from './services/longTermMemoryService';
+// Dynamic imports to avoid circular dependencies
+// import { profileService } from './services/profileService';
+// import { longTermMemoryService } from './services/longTermMemoryService';
 import { contextManagementService } from './services/contextManagementService';
 import ConversationTabs from './components/ConversationTabs';
 import ContactUsModal from './components/ContactUsModal';
 import LandingContactUsModal from './components/new-landing/ContactUsModal';
 import HandsFreeToggle from './components/HandsFreeToggle';
+// Dynamic imports to avoid circular dependencies
 import { ttsService } from './services/ttsService';
-import { unifiedUsageService } from './services/unifiedUsageService';
-import { addFeedback } from './services/feedbackService';
+// import { unifiedUsageService } from './services/unifiedUsageService';
+// import { addFeedback } from './services/feedbackService';
 // Lazy loaded components - removed direct imports
 import SubTabs from './components/SubTabs';
 import UITutorial from './components/UITutorial';
@@ -73,33 +75,35 @@ import AuthModal from './components/AuthModal';
 import ErrorBoundary from './components/ErrorBoundary';
 import AuthCallbackHandler from './components/AuthCallbackHandler';
 import PWAInstallBanner from './components/PWAInstallBanner';
-import { pwaNavigationService, PWANavigationState } from './services/pwaNavigationService';
-import { smartNotificationService } from './services/smartNotificationService';
-import { pwaAnalyticsService } from './services/pwaAnalyticsService';
-import { offlineStorageService } from './services/offlineStorageService';
-import { unifiedCacheService } from './services/unifiedCacheService';
-import { unifiedStorageService } from './services/unifiedStorageService';
-import { aiContextService } from './services/aiContextService';
-import { unifiedAIService } from './services/unifiedAIService';
-import { ServiceFactory } from './services/ServiceFactory';
-import { pushNotificationService } from './services/pushNotificationService';
-import { appShortcutsService } from './services/appShortcutsService';
-import { performanceMonitoringService } from './services/performanceMonitoringService';
+// Dynamic imports to avoid circular dependencies
+// import { pwaNavigationService, PWANavigationState } from './services/pwaNavigationService';
+// import { smartNotificationService } from './services/smartNotificationService';
+// import { pwaAnalyticsService } from './services/pwaAnalyticsService';
+// import { offlineStorageService } from './services/offlineStorageService';
+// import { unifiedCacheService } from './services/unifiedCacheService';
+// import { unifiedStorageService } from './services/unifiedStorageService';
+// import { aiContextService } from './services/aiContextService';
+// import { unifiedAIService } from './services/unifiedAIService';
+// import { ServiceFactory } from './services/ServiceFactory';
+// import { pushNotificationService } from './services/pushNotificationService';
+// import { appShortcutsService } from './services/appShortcutsService';
+// import { performanceMonitoringService } from './services/performanceMonitoringService';
 
 
 import DailyCheckinBanner from './components/DailyCheckinBanner';
 
 
 import AchievementNotification from './components/AchievementNotification';
-import dailyEngagementService, { Achievement } from './services/dailyEngagementService';
-import { PlayerProfileSetupModal } from './components/PlayerProfileSetupModal';
+// Dynamic imports to avoid circular dependencies
+import dailyEngagementService from './services/dailyEngagementService';
 import { playerProfileService } from './services/playerProfileService';
-import { suggestedPromptsService } from './services/suggestedPromptsService';
+// import { suggestedPromptsService } from './services/suggestedPromptsService';
 import { ProactiveInsightsPanel } from './components/ProactiveInsightsPanel';
 import { useEnhancedInsights } from './hooks/useEnhancedInsights';
-import { proactiveInsightService } from './services/proactiveInsightService';
+// Dynamic imports to avoid circular dependencies
+// import { proactiveInsightService } from './services/proactiveInsightService';
 import { databaseService } from './services/databaseService';
-import { supabaseDataService } from './services/supabaseDataService';
+// import { supabaseDataService } from './services/supabaseDataService';
 import ScreenshotButton from './components/ScreenshotButton';
 import CharacterImmersionTest from './components/CharacterImmersionTest';
 // OtakuDiaryModal and WishlistModal now lazy loaded
@@ -234,8 +238,21 @@ const AppComponent: React.FC = () => {
     const [authState, setAuthState] = useState<AuthState>(() => authService.getAuthState());
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     
+    // Helper function to check if user is authenticated or in developer mode
+    const isUserAuthenticatedOrDeveloper = useCallback(() => {
+        const isDeveloperMode = localStorage.getItem('otakon_developer_mode') === 'true';
+        const authMethod = localStorage.getItem('otakonAuthMethod');
+        const isDeveloperAuth = authMethod === 'skip';
+        const isAuthenticated = !!authState.user;
+        
+        return isAuthenticated || isDeveloperMode || isDeveloperAuth;
+    }, [authState.user]);
+    
     // PWA Navigation State
-    const [pwaNavigationState, setPwaNavigationState] = useState<PWANavigationState>(() => pwaNavigationService.getNavigationState());
+    const [pwaNavigationState, setPwaNavigationState] = useState<PWANavigationState>(() => {
+      // Initialize with default state, will be updated in useEffect
+      return { shouldShowLogin: false, shouldShowChat: false };
+    });
     
     // OAuth Callback State
     const [isOAuthCallback, setIsOAuthCallback] = useState(false);
@@ -345,6 +362,7 @@ const AppComponent: React.FC = () => {
             await new Promise(resolve => setTimeout(resolve, 150));
             
             // Get the current tier directly without calling getUsage (which calls checkAndResetUsage)
+            const { unifiedUsageService } = await import('./services/unifiedUsageService');
             const currentTier = await unifiedUsageService.getCurrentTier();
             
             // Get the current usage data
@@ -509,10 +527,16 @@ const AppComponent: React.FC = () => {
         }
     }, [onboardingStatus, authState.user, authState.loading]);
 
-    // Load usage data on mount
+    // Load usage data on mount - only when authenticated or in developer mode
     useEffect(() => {
         const loadUsageData = async () => {
+            // Only load usage data if user is authenticated or in developer mode
+            if (!isUserAuthenticatedOrDeveloper()) {
+                return;
+            }
+            
             try {
+                const { unifiedUsageService } = await import('./services/unifiedUsageService');
                 const usageData = await unifiedUsageService.getUsage();
                 setUsage(usageData);
             } catch (error) {
@@ -521,24 +545,28 @@ const AppComponent: React.FC = () => {
         };
         
         loadUsageData();
-    }, []);
+    }, [isUserAuthenticatedOrDeveloper]);
 
     
     // PWA Navigation effect - handle post-install navigation
     useEffect(() => {
-        if (pwaNavigationState.isRunningInPWA) {
-            const recommendedPath = pwaNavigationService.getRecommendedNavigationPath();
-            
-            if (recommendedPath === 'login' && onboardingStatus !== 'login') {
-                // PWA installed, user not logged in - always show login
-                setOnboardingStatus('login');
-                setView('app');
-            } else if (recommendedPath === 'chat' && onboardingStatus !== 'complete') {
-                // PWA installed, user logged in - go to main app
-                setOnboardingStatus('complete');
-                setView('app');
+        const handlePWANavigation = async () => {
+            if (pwaNavigationState.isRunningInPWA) {
+                const { pwaNavigationService } = await import('./services/pwaNavigationService');
+                const recommendedPath = pwaNavigationService.getRecommendedNavigationPath();
+                
+                if (recommendedPath === 'login' && onboardingStatus !== 'login') {
+                    // PWA installed, user not logged in - always show login
+                    setOnboardingStatus('login');
+                    setView('app');
+                } else if (recommendedPath === 'chat' && onboardingStatus !== 'complete') {
+                    // PWA installed, user logged in - go to main app
+                    setOnboardingStatus('complete');
+                    setView('app');
+                }
             }
-        }
+        };
+        handlePWANavigation();
     }, [pwaNavigationState, onboardingStatus]);
 
     // Initialize suggested prompts cooldown from localStorage
@@ -640,8 +668,12 @@ const AppComponent: React.FC = () => {
     
     // Initialize performance monitoring
     useEffect(() => {
-        performanceMonitoringService.initialize();
-        console.log('🚀 Performance monitoring initialized');
+        const initializePerformanceMonitoring = async () => {
+            const { performanceMonitoringService } = await import('./services/performanceMonitoringService');
+            performanceMonitoringService.initialize();
+            console.log('🚀 Performance monitoring initialized');
+        };
+        initializePerformanceMonitoring();
     }, []);
 
     // Check for OAuth callback on component mount - SIMPLIFIED AND FIXED
@@ -811,7 +843,11 @@ const AppComponent: React.FC = () => {
     }, [authState.user, authState.loading]);
 
     useEffect(() => {
-        ttsService.init(); // Initialize TTS service on app load.
+        const initializeTTS = async () => {
+            const { ttsService } = await import('./services/ttsService');
+            ttsService.init(); // Initialize TTS service on app load.
+        };
+        initializeTTS();
 
         const handler = (e: Event) => {
             e.preventDefault();
@@ -827,18 +863,21 @@ const AppComponent: React.FC = () => {
         const initializePWAServices = async () => {
             try {
                 // Initialize offline storage
+                const { offlineStorageService } = await import('./services/offlineStorageService');
                 if (offlineStorageService.isAvailable()) {
                     await offlineStorageService.initialize();
                     console.log('Offline storage initialized');
                 }
 
                 // Initialize app shortcuts
+                const { appShortcutsService } = await import('./services/appShortcutsService');
                 if (appShortcutsService.isSupported()) {
                     await appShortcutsService.installShortcuts();
                     console.log('App shortcuts initialized');
                 }
 
                 // Track session start
+                const { pwaAnalyticsService } = await import('./services/pwaAnalyticsService');
                 pwaAnalyticsService.trackSessionStart();
                 console.log('PWA analytics initialized');
 
@@ -859,24 +898,24 @@ const AppComponent: React.FC = () => {
 
     // Daily Engagement Effects
     useEffect(() => {
-        console.log('Daily Engagement Effect - view:', view, 'onboardingStatus:', onboardingStatus, 'usage.tier:', usage.tier);
-        
-        // Show daily engagement during app usage
-        if (view === 'app') {
-            console.log('Checking daily engagement conditions...');
+        const handleDailyEngagement = async () => {
+            console.log('Daily Engagement Effect - view:', view, 'onboardingStatus:', onboardingStatus, 'usage.tier:', usage.tier);
             
-            // Check if we should show daily check-in (unchanged behavior)
-            const shouldShowCheckin = dailyEngagementService.shouldShowDailyCheckin();
-            console.log('Should show daily checkin:', shouldShowCheckin);
-            if (shouldShowCheckin) {
-                console.log('Setting showDailyCheckin to true');
-                setShowDailyCheckin(true);
+            // Show daily engagement during app usage
+            if (view === 'app') {
+                console.log('Checking daily engagement conditions...');
+                
+                // Check if we should show daily check-in (unchanged behavior)
+                const { dailyEngagementService } = await import('./services/dailyEngagementService');
+                const shouldShowCheckin = dailyEngagementService.shouldShowDailyCheckin();
+                console.log('Should show daily checkin:', shouldShowCheckin);
+                if (shouldShowCheckin) {
+                    console.log('Setting showDailyCheckin to true');
+                    setShowDailyCheckin(true);
+                }
             }
-            
-            // Session continuation is handled after conversations are available
-            
-
-        }
+        };
+        handleDailyEngagement();
     }, [view, onboardingStatus, usage.tier]);
 
     // Player Profile Setup Check - Show for first-time and returning users, once per session
@@ -1027,6 +1066,11 @@ const AppComponent: React.FC = () => {
     // Guarded by sessionStorage to avoid duplication with centralized welcome effect
     useEffect(() => {
         const checkFirstTimeExperience = async () => {
+            // Only run if user is authenticated or in developer mode
+            if (!isUserAuthenticatedOrDeveloper()) {
+                return;
+            }
+            
             // Prevent duplicate welcome messages within the same tab/session (e.g., StrictMode remounts)
             const alreadyWelcomed = sessionStorage.getItem('otakon_welcome_added_this_session') === 'true';
             if (alreadyWelcomed) {
@@ -1098,83 +1142,123 @@ const AppComponent: React.FC = () => {
         };
         
         checkFirstTimeExperience();
-    }, [conversations, isFirstTime, addSystemMessage, getTimeGreeting]);
+    }, [conversations, isFirstTime, addSystemMessage, getTimeGreeting, isUserAuthenticatedOrDeveloper]);
     
-    // Enhanced Insights Hook
-    const enhancedInsights = useEnhancedInsights(
+    // Enhanced Insights Hook with debouncing to prevent infinite loops
+    const insightsUpdateTimeout = useRef<NodeJS.Timeout | null>(null);
+    const lastInsightsUpdate = useRef<string>('');
+    
+    // Only initialize enhanced insights when in app view AND user is authenticated or in developer mode
+    const enhancedInsights = (view === 'app' && isUserAuthenticatedOrDeveloper()) ? useEnhancedInsights(
         activeConversationId,
         activeConversation?.id,
         activeConversation?.genre,
         activeConversation?.progress,
         // 🔥 CRITICAL INTEGRATION: Connect enhanced insights to main conversation system
         (newInsights, newInsightsOrder) => {
-            if (activeConversation && activeConversation.id !== 'everything-else') {
-                console.log('🔄 Enhanced insights callback triggered for conversation:', activeConversation.id);
-                console.log('🔄 New insights received:', newInsights);
-                console.log('🔄 New insights order:', newInsightsOrder);
+            // Only process insights when in app view, not landing view
+            if (view === 'app' && activeConversation && activeConversation.id !== 'everything-else') {
+                // Create a hash of the insights to detect if they've actually changed
+                const insightsHash = JSON.stringify({ newInsights, newInsightsOrder });
                 
-                // Always ensure Otaku Diary tab exists and is preserved
-                const otakuDiaryInsight = {
-                    id: 'otaku-diary',
-                    title: '📖 Otaku Diary',
-                    content: '📝 **Your Personal Game Diary**\n\n✨ Track your tasks and favorite moments\n\n🎯 **Features:**\n• Create and manage to-do lists\n• Save favorite AI responses and insights\n• Track your gaming progress\n• Organize your thoughts and discoveries\n\n🚀 **Available for all users!**',
-                    status: 'loaded' as const,
-                    isNew: false,
-                    lastUpdated: Date.now()
-                };
+                // Skip if we've already processed these exact insights
+                if (insightsHash === lastInsightsUpdate.current) {
+                    return;
+                }
                 
-                // Start with existing insights to preserve Otaku Diary
-                const existingInsights = activeConversation.insights || {};
+                // Clear any pending update
+                if (insightsUpdateTimeout.current) {
+                    clearTimeout(insightsUpdateTimeout.current);
+                }
                 
-                // Add enhanced insights, but ensure Otaku Diary is preserved
-                const updatedInsights = { 
-                    ...existingInsights,  // Keep existing insights (including Otaku Diary)
-                    ...newInsights,       // Add enhanced insights
-                    'otaku-diary': otakuDiaryInsight // Always ensure Otaku Diary exists
-                };
-                
-                // Create insights order with Otaku Diary first, then existing insights, then enhanced insights
-                const existingOrder = activeConversation.insightsOrder || [];
-                const enhancedOrder = newInsightsOrder.filter(id => id !== 'otaku-diary'); // Remove Otaku Diary from enhanced order
-                const updatedInsightsOrder = ['otaku-diary', ...existingOrder.filter(id => id !== 'otaku-diary'), ...enhancedOrder];
-                
-                // Remove duplicates from insightsOrder
-                const uniqueInsightsOrder = [...new Set(updatedInsightsOrder)];
-                
-                console.log('🔄 Final updated insights:', updatedInsights);
-                console.log('🔄 Final updated insights order:', uniqueInsightsOrder);
-                
-                // Update the conversation with new insights
-                updateConversation(activeConversation.id, (convo) => ({
-                    ...convo,
-                    insights: updatedInsights,
-                    insightsOrder: uniqueInsightsOrder
-                }));
-                
-                console.log(`🔄 Integrated ${Object.keys(newInsights).length} enhanced insights to conversation: ${activeConversation.id} (Otaku Diary preserved and prioritized)`);
+                // Debounce the update to prevent rapid-fire calls
+                insightsUpdateTimeout.current = setTimeout(() => {
+                    // Only log in development mode to reduce console noise
+                    if (import.meta.env.DEV) {
+                        console.log('🔄 Enhanced insights callback triggered for conversation:', activeConversation.id);
+                        console.log('🔄 New insights received:', newInsights);
+                        console.log('🔄 New insights order:', newInsightsOrder);
+                    }
+                    
+                    // Always ensure Otaku Diary tab exists and is preserved
+                    const otakuDiaryInsight = {
+                        id: 'otaku-diary',
+                        title: '📖 Otaku Diary',
+                        content: '📝 **Your Personal Game Diary**\n\n✨ Track your tasks and favorite moments\n\n🎯 **Features:**\n• Create and manage to-do lists\n• Save favorite AI responses and insights\n• Track your gaming progress\n• Organize your thoughts and discoveries\n\n🚀 **Available for all users!**',
+                        status: 'loaded' as const,
+                        isNew: false,
+                        lastUpdated: Date.now()
+                    };
+                    
+                    // Start with existing insights to preserve Otaku Diary
+                    const existingInsights = activeConversation.insights || {};
+                    
+                    // Add enhanced insights, but ensure Otaku Diary is preserved
+                    const updatedInsights = { 
+                        ...existingInsights,  // Keep existing insights (including Otaku Diary)
+                        ...newInsights,       // Add enhanced insights
+                        'otaku-diary': otakuDiaryInsight // Always ensure Otaku Diary exists
+                    };
+                    
+                    // Create insights order with Otaku Diary first, then existing insights, then enhanced insights
+                    const existingOrder = activeConversation.insightsOrder || [];
+                    const enhancedOrder = newInsightsOrder.filter(id => id !== 'otaku-diary'); // Remove Otaku Diary from enhanced order
+                    const updatedInsightsOrder = ['otaku-diary', ...existingOrder.filter(id => id !== 'otaku-diary'), ...enhancedOrder];
+                    
+                    // Remove duplicates from insightsOrder
+                    const uniqueInsightsOrder = [...new Set(updatedInsightsOrder)];
+                    
+                    if (import.meta.env.DEV) {
+                        console.log('🔄 Final updated insights:', updatedInsights);
+                        console.log('🔄 Final updated insights order:', uniqueInsightsOrder);
+                    }
+                    
+                    // Update the conversation with new insights
+                    updateConversation(activeConversation.id, (convo) => ({
+                        ...convo,
+                        insights: updatedInsights,
+                        insightsOrder: uniqueInsightsOrder
+                    }));
+                    
+                    // Update the hash to prevent duplicate processing
+                    lastInsightsUpdate.current = insightsHash;
+                    
+                    if (import.meta.env.DEV) {
+                        console.log(`🔄 Integrated ${Object.keys(newInsights).length} enhanced insights to conversation: ${activeConversation.id} (Otaku Diary preserved and prioritized)`);
+                    }
+                }, 100); // 100ms debounce
             }
         }
-    );
+    ) : null; // Return null when not in app view
     
     // 🔥 CRITICAL INTEGRATION: Ensure all game conversations have Otaku Diary tab
     useEffect(() => {
-        if (activeConversation && activeConversation.id !== 'everything-else') {
+        if (view === 'app' && isUserAuthenticatedOrDeveloper() && activeConversation && activeConversation.id !== 'everything-else') {
             // Add a safeguard to prevent running this effect too many times for the same conversation
             const hasRunKey = `otaku-diary-check-${activeConversation.id}`;
             if (sessionStorage.getItem(hasRunKey)) {
-                console.log(`✅ Otaku Diary check already completed for conversation: ${activeConversation.id}`);
+                // Only log in development mode to reduce console noise
+                if (import.meta.env.DEV) {
+                    console.log(`✅ Otaku Diary check already completed for conversation: ${activeConversation.id}`);
+                }
                 return;
             }
             
-            console.log(`🔍 Checking Otaku Diary for conversation: ${activeConversation.id}`);
-            console.log(`🔍 Current insights:`, activeConversation.insights);
-            console.log(`🔍 Current insightsOrder:`, activeConversation.insightsOrder);
-            console.log(`🔍 Current activeSubView:`, activeSubView);
+            // Only log in development mode to reduce console noise
+            if (import.meta.env.DEV) {
+                console.log(`🔍 Checking Otaku Diary for conversation: ${activeConversation.id}`);
+                console.log(`🔍 Current insights:`, activeConversation.insights);
+                console.log(`🔍 Current insightsOrder:`, activeConversation.insightsOrder);
+                console.log(`🔍 Current activeSubView:`, activeSubView);
+            }
             
             const hasOtakuDiary = activeConversation.insights?.['otaku-diary'];
             
             if (!hasOtakuDiary) {
-                console.log(`🔄 Adding missing Otaku Diary tab to conversation: ${activeConversation.id}`);
+                // Only log in development mode to reduce console noise
+                if (import.meta.env.DEV) {
+                    console.log(`🔄 Adding missing Otaku Diary tab to conversation: ${activeConversation.id}`);
+                }
                 
                 // Create Otaku Diary tab
                 const otakuDiaryInsight = {
@@ -1199,27 +1283,39 @@ const AppComponent: React.FC = () => {
                     insightsOrder: uniqueInsightsOrder
                 }));
                 
-                console.log(`✅ Added Otaku Diary tab to conversation: ${activeConversation.id}`);
-                console.log(`✅ Updated insights:`, updatedInsights);
-                console.log(`✅ Updated insightsOrder:`, uniqueInsightsOrder);
+                // Only log in development mode to reduce console noise
+                if (import.meta.env.DEV) {
+                    console.log(`✅ Added Otaku Diary tab to conversation: ${activeConversation.id}`);
+                    console.log(`✅ Updated insights:`, updatedInsights);
+                    console.log(`✅ Updated insightsOrder:`, uniqueInsightsOrder);
+                }
             } else {
-                console.log(`✅ Otaku Diary tab already exists for conversation: ${activeConversation.id}`);
+                // Only log in development mode to reduce console noise
+                if (import.meta.env.DEV) {
+                    console.log(`✅ Otaku Diary tab already exists for conversation: ${activeConversation.id}`);
+                }
             }
             
             // Mark this check as completed
             sessionStorage.setItem(hasRunKey, 'true');
         }
-    }, [activeConversation?.id]); // Only depend on the ID, not the entire object or updateConversation
+    }, [view, activeConversation?.id, isUserAuthenticatedOrDeveloper]); // Include auth check in dependencies
     
     // 🔥 AGGRESSIVE INTEGRATION: Force Otaku Diary tab creation for all game conversations
     useEffect(() => {
+        // Only run this effect when in app view AND user is authenticated or in developer mode
+        if (view !== 'app' || !isUserAuthenticatedOrDeveloper()) return;
+        
         // Only run this effect once when conversations are first loaded, not on every change
         if (Object.keys(conversations).length === 0) return;
         
         // Add a safeguard to prevent running this effect too many times
         const hasRunKey = `otaku-diary-integration-${Object.keys(conversations).length}`;
         if (sessionStorage.getItem(hasRunKey)) {
-            console.log('✅ Otaku Diary integration already completed for current conversation set');
+            // Only log in development mode to reduce console noise
+            if (import.meta.env.DEV) {
+                console.log('✅ Otaku Diary integration already completed for current conversation set');
+            }
             return;
         }
         
@@ -1232,15 +1328,24 @@ const AppComponent: React.FC = () => {
         );
         
         if (conversationsNeedingOtakuDiary.length === 0) {
-            console.log('✅ All game conversations already have Otaku Diary tabs');
+            // Only log in development mode to reduce console noise
+            if (import.meta.env.DEV) {
+                console.log('✅ All game conversations already have Otaku Diary tabs');
+            }
             sessionStorage.setItem(hasRunKey, 'true');
             return;
         }
         
-        console.log(`🔄 Adding Otaku Diary tabs to ${conversationsNeedingOtakuDiary.length} conversations`);
+        // Only log in development mode to reduce console noise
+        if (import.meta.env.DEV) {
+            console.log(`🔄 Adding Otaku Diary tabs to ${conversationsNeedingOtakuDiary.length} conversations`);
+        }
         
         conversationsNeedingOtakuDiary.forEach(conversation => {
-            console.log(`🔄 Force-adding Otaku Diary tab to conversation: ${conversation.id}`);
+            // Only log in development mode to reduce console noise
+            if (import.meta.env.DEV) {
+                console.log(`🔄 Force-adding Otaku Diary tab to conversation: ${conversation.id}`);
+            }
             
             // Create Otaku Diary tab
             const otakuDiaryInsight = {
@@ -1265,12 +1370,15 @@ const AppComponent: React.FC = () => {
                 insightsOrder: uniqueInsightsOrder
             }));
             
-            console.log(`✅ Force-added Otaku Diary tab to conversation: ${conversation.id}`);
+            // Only log in development mode to reduce console noise
+            if (import.meta.env.DEV) {
+                console.log(`✅ Force-added Otaku Diary tab to conversation: ${conversation.id}`);
+            }
         });
         
         // Mark this integration as completed
         sessionStorage.setItem(hasRunKey, 'true');
-    }, [conversations]); // Remove updateConversation dependency to prevent infinite loop
+    }, [view, conversations, isUserAuthenticatedOrDeveloper]); // Include auth check in dependencies
     
     // Enhanced suggested prompts logic that can access conversations
     const shouldShowSuggestedPromptsEnhanced = useCallback((): boolean => {
@@ -2064,7 +2172,7 @@ const AppComponent: React.FC = () => {
         }
         try {
             aiContextService.clearCache();
-            unifiedAIService.clearCache();
+            unifiedAIService().clearCache();
         } catch (e) {
             console.warn('Failed to clear AI caches:', e);
         }
@@ -2246,7 +2354,7 @@ const AppComponent: React.FC = () => {
                     }
                     try {
                         aiContextService.clearCache();
-                        unifiedAIService.clearCache();
+                        unifiedAIService().clearCache();
                     } catch (e) {
                         console.warn('Failed to clear AI caches:', e);
                     }
@@ -3035,14 +3143,22 @@ const AppComponent: React.FC = () => {
     };
 
     // Centralized welcome message system that prevents duplicates and adapts to user queries
+    const welcomeMessageProcessed = useRef(false);
+    
     useEffect(() => {
-        console.log('🔍 Welcome message useEffect triggered:', { view, onboardingStatus });
+        // Only log in development mode to reduce console noise
+        if (import.meta.env.DEV) {
+            console.log('🔍 Welcome message useEffect triggered:', { view, onboardingStatus });
+        }
         
-        if (view === 'app' && onboardingStatus === 'complete') {
+        if (view === 'app' && onboardingStatus === 'complete' && isUserAuthenticatedOrDeveloper() && !welcomeMessageProcessed.current) {
             // Skip centralized welcome when first-time path is active to prevent duplicates
             const firstRunGuard = isFirstTime || sessionStorage.getItem('otakon_welcome_added_this_session') === 'true';
             if (firstRunGuard) {
-                console.log('🛑 Skipping centralized welcome due to first-run guard');
+                if (import.meta.env.DEV) {
+                    console.log('🛑 Skipping centralized welcome due to first-run guard');
+                }
+                welcomeMessageProcessed.current = true;
                 return;
             }
             // Check if we've already added a welcome message in this session
@@ -3052,10 +3168,16 @@ const AppComponent: React.FC = () => {
             const firstTimeGuard = hasAddedWelcomeThisSession || hasAddedWelcomeThisView;
             
             if (firstTimeGuard) {
-                console.log('Welcome message already added this session, skipping');
+                if (import.meta.env.DEV) {
+                    console.log('Welcome message already added this session, skipping');
+                }
+                welcomeMessageProcessed.current = true;
                 return;
             }
             // In development, proceed even if not authenticated; downstream will fall back gracefully
+            
+            // Mark as processed to prevent re-runs
+            welcomeMessageProcessed.current = true;
             
             // Use Supabase with localStorage fallback
             const checkWelcomeMessage = async () => {
@@ -3189,7 +3311,7 @@ const AppComponent: React.FC = () => {
             // Execute the welcome message check
             checkWelcomeMessage();
         }
-    }, [view, onboardingStatus, addSystemMessage, conversations]);
+    }, [view, onboardingStatus, addSystemMessage, isUserAuthenticatedOrDeveloper]);
 
 
 

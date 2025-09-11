@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { universalContentCacheService } from '../services/universalContentCacheService';
+// Dynamic import to avoid circular dependency
+// import { universalContentCacheService } from '../services/universalContentCacheService';
 
 /**
  * 🎯 Universal Cache Status Component
@@ -24,6 +25,7 @@ export const UniversalCacheStatus: React.FC = () => {
   const loadCacheStats = async () => {
     setIsLoading(true);
     try {
+      const { universalContentCacheService } = await import('../services/universalContentCacheService');
       const stats = await universalContentCacheService.getCacheStats();
       setCacheStats(stats);
       setLastUpdated(new Date());
@@ -36,6 +38,7 @@ export const UniversalCacheStatus: React.FC = () => {
 
   const clearCache = async (contentType?: string) => {
     try {
+      const { universalContentCacheService } = await import('../services/universalContentCacheService');
       await universalContentCacheService.clearCache(contentType);
       await loadCacheStats(); // Reload stats after clearing
     } catch (error) {

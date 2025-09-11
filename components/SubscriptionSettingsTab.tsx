@@ -1,7 +1,8 @@
 import React from 'react';
 import { Usage } from '../services/types';
 import DevTierSwitcher from './DevTierSwitcher';
-import { unifiedUsageService } from '../services/unifiedUsageService';
+// Dynamic import to avoid circular dependency
+// import { unifiedUsageService } from '../services/unifiedUsageService';
 import { canAccessDeveloperFeatures } from '../config/developer';
 
 interface SubscriptionSettingsTabProps {

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { send } from '../services/websocketService';
+// Dynamic import to avoid circular dependency
+// import { send } from '../services/websocketService';
 import { UserTier } from '../services/types';
 
 interface ScreenshotButtonProps {
@@ -120,7 +121,7 @@ const ScreenshotButton: React.FC<ScreenshotButtonProps> = ({
     }
   };
 
-  const handleClick = () => {
+  const handleClick = async () => {
     if (!isConnected) { onRequestConnect?.(); return; }
     if (isProcessing) return;
     
@@ -136,6 +137,7 @@ const ScreenshotButton: React.FC<ScreenshotButtonProps> = ({
       processImmediate,
     };
     if (mode === 'multi') msg.count = 5;
+    const { send } = await import('../services/websocketService');
     if (typeof send === 'function') send(msg);
   };
 

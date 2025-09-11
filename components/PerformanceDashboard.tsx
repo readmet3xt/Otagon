@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { performanceMonitoringService } from '../services/performanceMonitoringService';
+// Dynamic import to avoid circular dependency
+// import { performanceMonitoringService } from '../services/performanceMonitoringService';
 
 interface PerformanceMetrics {
   CLS: number;
@@ -48,8 +49,9 @@ export const PerformanceDashboard: React.FC = () => {
     updatePerformanceData();
   }, []);
 
-  const updatePerformanceData = () => {
+    const updatePerformanceData = async () => {
     try {
+      const { performanceMonitoringService } = await import('../services/performanceMonitoringService');
       const summary = performanceMonitoringService.getPerformanceSummary();
       setPerformanceSummary(summary);
     } catch (error) {
@@ -107,8 +109,9 @@ export const PerformanceDashboard: React.FC = () => {
     }
   };
 
-  const exportPerformanceData = () => {
+    const exportPerformanceData = async () => {
     try {
+      const { performanceMonitoringService } = await import('../services/performanceMonitoringService');
       const data = performanceMonitoringService.exportData();
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -124,9 +127,10 @@ export const PerformanceDashboard: React.FC = () => {
     }
   };
 
-  const clearPerformanceData = () => {
+  const clearPerformanceData = async () => {
     if (confirm('Are you sure you want to clear all performance data? This action cannot be undone.')) {
       try {
+        const { performanceMonitoringService } = await import('../services/performanceMonitoringService');
         performanceMonitoringService.clearData();
         updatePerformanceData();
       } catch (error) {
@@ -226,7 +230,10 @@ export const PerformanceDashboard: React.FC = () => {
           </div>
           {performanceSummary.errorCount > 0 && (
             <button
-              onClick={() => console.log('Performance errors:', performanceMonitoringService.exportData().errors)}
+              onClick={async () => {
+                const { performanceMonitoringService } = await import('../services/performanceMonitoringService');
+                console.log('Performance errors:', performanceMonitoringService.exportData().errors);
+              }}
               className="text-xs text-red-600 hover:text-red-800 underline"
             >
               View Details

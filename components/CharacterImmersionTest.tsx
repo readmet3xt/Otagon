@@ -1,8 +1,14 @@
 import React, { useEffect } from 'react';
-import { characterDetectionService } from '../services/characterDetectionService';
+// Dynamic import to avoid circular dependency
+// import { characterDetectionService } from '../services/characterDetectionService';
 
 const CharacterImmersionTest: React.FC = () => {
   useEffect(() => {
+    // Disabled excessive logging - only run tests in development mode
+    if (process.env.NODE_ENV !== 'development') {
+      return;
+    }
+    
     console.log('🧪 Starting Character Immersion Tests...');
     
     // Test 1: Character detection from messages
@@ -19,6 +25,7 @@ const CharacterImmersionTest: React.FC = () => {
     ];
     
     mockMessages.forEach((message, index) => {
+      const { characterDetectionService } = await import('../services/characterDetectionService');
       const detectedCharacter = characterDetectionService.detectCharacterFromMessages([message]);
       if (detectedCharacter) {
         console.log(`✅ Message ${index + 1}: Character detected: ${detectedCharacter.name} (${detectedCharacter.confidence} confidence)`);
@@ -42,6 +49,7 @@ const CharacterImmersionTest: React.FC = () => {
     
     testGames.forEach(gameTitle => {
       const gameId = gameTitle.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+      const { characterDetectionService } = await import('../services/characterDetectionService');
       const gameProfile = characterDetectionService.getGameLanguageProfile(gameId, gameTitle);
       
       console.log(`✅ ${gameProfile.gameName}:`);
@@ -61,6 +69,7 @@ const CharacterImmersionTest: React.FC = () => {
       console.log(`\n🎮 ${gameTitle}:`);
       
       testCharacters.forEach(characterName => {
+        const { characterDetectionService } = await import('../services/characterDetectionService');
         const addressFormat = characterDetectionService.getCharacterAddressFormat(gameId, characterName);
         console.log(`   ${characterName} → ${addressFormat}`);
       });
@@ -70,6 +79,7 @@ const CharacterImmersionTest: React.FC = () => {
     console.log('\n🧪 Test 4: Immersive Language Patterns');
     testGames.slice(0, 3).forEach(gameTitle => {
       const gameId = gameTitle.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+      const { characterDetectionService } = await import('../services/characterDetectionService');
       const languagePatterns = characterDetectionService.getImmersiveLanguagePatterns(gameId);
       
       console.log(`\n🎭 ${gameTitle} Language Patterns:`);
@@ -90,6 +100,7 @@ const CharacterImmersionTest: React.FC = () => {
     ];
     
     mockImageDescriptions.forEach((description, index) => {
+      const { characterDetectionService } = await import('../services/characterDetectionService');
       const detectedCharacter = characterDetectionService.detectCharacterFromImageContext(description);
       if (detectedCharacter) {
         console.log(`✅ Image ${index + 1}: Character detected: ${detectedCharacter.name} (${detectedCharacter.confidence} confidence)`);
@@ -103,6 +114,7 @@ const CharacterImmersionTest: React.FC = () => {
     
     // Test 6: Cached data
     console.log('\n🧪 Test 6: Cached Data');
+    const { characterDetectionService } = await import('../services/characterDetectionService');
     const cachedCharacters = characterDetectionService.getCachedCharacters();
     const gameProfiles = characterDetectionService.getGameLanguageProfiles();
     

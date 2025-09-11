@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { newsPrompts } from '../services/types';
-import { suggestedPromptsService } from '../services/suggestedPromptsService';
+// Dynamic import to avoid circular dependency
+// import { suggestedPromptsService } from '../services/suggestedPromptsService';
 
 interface SuggestedPromptsProps {
     onPromptClick: (prompt: string) => void;
@@ -13,6 +14,8 @@ interface SuggestedPromptsProps {
 const SuggestedPrompts: React.FC<SuggestedPromptsProps> = ({ onPromptClick, isInputDisabled, isFirstTime = false }) => {
     const [isTinyScreen, setIsTinyScreen] = React.useState(false);
     const [accordionOpen, setAccordionOpen] = React.useState(true);
+    const [unusedPrompts, setUnusedPrompts] = React.useState<string[]>([]);
+    const [allPromptsUsed, setAllPromptsUsed] = React.useState(false);
 
     React.useEffect(() => {
         const mq = window.matchMedia('(max-width: 480px)'); // Increased breakpoint for better mobile experience
@@ -25,15 +28,23 @@ const SuggestedPrompts: React.FC<SuggestedPromptsProps> = ({ onPromptClick, isIn
         return () => mq.removeEventListener('change', apply);
     }, []);
     
-    // Get unused prompts
-    const unusedPrompts = suggestedPromptsService.getUnusedPrompts(newsPrompts);
-    const allPromptsUsed = suggestedPromptsService.areAllPromptsUsed(newsPrompts);
+    React.useEffect(() => {
+        const loadPrompts = async () => {
+            const { suggestedPromptsService } = await import('../services/suggestedPromptsService');
+            const unused = suggestedPromptsService.getUnusedPrompts(newsPrompts);
+            const allUsed = suggestedPromptsService.areAllPromptsUsed(newsPrompts);
+            setUnusedPrompts(unused);
+            setAllPromptsUsed(allUsed);
+        };
+        loadPrompts();
+    }, []);
     
     // Always show prompts, no welcome message (handled by system message)
     const showPrompts = true;
 
     // Handle prompt click and mark as used
-    const handlePromptClick = (prompt: string) => {
+    const handlePromptClick = async (prompt: string) => {
+        const { suggestedPromptsService } = await import('../services/suggestedPromptsService');
         suggestedPromptsService.markPromptAsUsed(prompt);
         onPromptClick(prompt);
     };
@@ -68,9 +79,9 @@ const SuggestedPrompts: React.FC<SuggestedPromptsProps> = ({ onPromptClick, isIn
                                 key={prompt}
                                 onClick={() => handlePromptClick(prompt)}
                                 disabled={isInputDisabled}
-                                className={`group text-left px-2 sm:px-3 py-2 sm:py-3 rounded-lg bg-gradient-to-r from-[#1C1C1C]/80 to-[#0A0A0A]/80 border border-[#424242]/40 text-xs sm:text-sm text-[#E5E5E5] min-h-[50px] sm:min-h-[60px]
+                                className={`group text-left px-2 sm:px-3 py-2 sm:py-3 rounded-lg bg-gradient-to-r from-[#1C1C1C]/80 to-[#0A0A0A]/80 border border-[#424242]/40 text-xs sm:text-sm text-[#E5E5E5] min-h-[44px] sm:min-h-[48px]
                                             hover:bg-gradient-to-r hover:from-[#E53A3A]/20 hover:to-[#D98C1F]/20 hover:border-[#E53A3A]/60 hover:scale-105 hover:shadow-lg hover:shadow-[#E53A3A]/20
-                                            transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFAB40]/50`}
+                                            transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFAB40]/50 touch-friendly`}
                             >
                                 <span className="block transition-colors group-hover:text-[#F5F5F5] leading-tight">{prompt}</span>
                             </button>

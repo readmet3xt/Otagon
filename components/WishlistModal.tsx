@@ -1,15 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { WishlistItem } from '../services/wishlistService';
-
-// Dynamic import to avoid bundle conflicts
-let wishlistService: any = null;
-const getWishlistService = async () => {
-  if (!wishlistService) {
-    const module = await import('../services/wishlistService');
-    wishlistService = module.wishlistService;
-  }
-  return wishlistService;
-};
+import { WishlistItem } from '../services/types';
+// Dynamic import to avoid circular dependency
+// import { wishlistService } from '../services/wishlistService';
 
 interface WishlistModalProps {
   isOpen: boolean;
@@ -38,8 +30,9 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({
   const loadWishlist = async () => {
     setIsLoading(true);
     try {
-      const svc = await getWishlistService();
-      const items = await svc.getWishlist();
+      // Using static import instead of dynamic import for Firebase hosting compatibility
+      const { wishlistService } = await import('../services/wishlistService');
+      const items = await wishlistService.getWishlist();
       setWishlistItems(items);
     } catch (error) {
       console.error('Failed to load wishlist:', error);
@@ -53,8 +46,9 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({
 
     setIsAddingGame(true);
     try {
-      const svc = await getWishlistService();
-      const newItem = await svc.addToWishlist({
+      // Using static import instead of dynamic import for Firebase hosting compatibility
+      const { wishlistService } = await import('../services/wishlistService');
+      const newItem = await wishlistService.addToWishlist({
         gameName: newGameName.trim(),
         platform: newGamePlatform || undefined,
         gameId: 'everything-else',
@@ -84,8 +78,9 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({
   const handleRemoveGame = async (itemId: string) => {
     if (window.confirm('Remove this game from your wishlist?')) {
       try {
-        const svc = await getWishlistService();
-        const success = await svc.removeFromWishlist(itemId);
+        // Using static import instead of dynamic import for Firebase hosting compatibility
+        const { wishlistService } = await import('../services/wishlistService');
+        const success = await wishlistService.removeFromWishlist(itemId);
         if (success) {
           setWishlistItems(prev => prev.filter(item => item.id !== itemId));
         }

@@ -1,5 +1,7 @@
 import React from 'react';
-import type { TaskCompletionPrompt as TaskCompletionPromptType } from '../services/taskCompletionPromptingService';
+import { TaskCompletionPrompt as TaskCompletionPromptType } from '../services/types';
+// Dynamic import to avoid circular dependency
+// import { taskCompletionPromptingService } from '../services/taskCompletionPromptingService';
 
 interface TaskCompletionPromptProps {
   prompt: TaskCompletionPromptType;
@@ -14,6 +16,7 @@ export const TaskCompletionPrompt: React.FC<TaskCompletionPromptProps> = ({
 }) => {
   const handleTaskCompletion = async (taskId: string, completed: boolean) => {
     // Record the completion response
+    // Using dynamic import to avoid circular dependency
     const { taskCompletionPromptingService } = await import('../services/taskCompletionPromptingService');
     taskCompletionPromptingService.recordCompletionResponse(conversationId, taskId, completed);
     

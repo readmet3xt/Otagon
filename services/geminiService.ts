@@ -11,6 +11,8 @@ import { supabaseDataService } from './supabaseDataService';
 // Dynamic import will be used when needed
 import { dailyNewsCacheService } from './dailyNewsCacheService';
 import { universalContentCacheService, type CacheQuery } from './universalContentCacheService';
+// Static imports to replace dynamic imports for Firebase hosting compatibility
+import { progressTrackingService } from './progressTrackingService';
 
 const API_KEY = process.env.API_KEY;
 
@@ -711,7 +713,7 @@ ${(() => {
     // Save to universal cache after success via wrapped onUpdate
     const handleUpdateReleases = async (text: string) => {
         try {
-            const { universalContentCacheService } = await import('./universalContentCacheService');
+            // Using static import instead of dynamic import for Firebase hosting compatibility
             await universalContentCacheService.cacheContent({
                 query: "Which games are releasing soon?",
                 contentType: 'general',
@@ -782,7 +784,7 @@ ${(() => {
     
     const handleUpdateReviews = async (text: string) => {
         try {
-            const { universalContentCacheService } = await import('./universalContentCacheService');
+            // Using static import instead of dynamic import for Firebase hosting compatibility
             await universalContentCacheService.cacheContent({
                 query: "What are the latest game reviews?",
                 contentType: 'general',
@@ -854,7 +856,7 @@ ${(() => {
     
     const handleUpdateTrailers = async (text: string) => {
         try {
-            const { universalContentCacheService } = await import('./universalContentCacheService');
+            // Using static import instead of dynamic import for Firebase hosting compatibility
             await universalContentCacheService.cacheContent({
                 query: "Show me the hottest new game trailers.",
                 contentType: 'general',
@@ -1694,7 +1696,7 @@ export const detectProgressFromResponse = async (
                               conversation.title.toLowerCase().includes('baldurs') ? 'baldurs_gate_3' : 'unknown';
 
                 if (gameId !== 'unknown') {
-                    const { progressTrackingService } = await import('./progressTrackingService');
+                    // Using static import instead of dynamic import for Firebase hosting compatibility
                     await progressTrackingService.updateProgressForAnyGame(
                         userId,
                         gameId,

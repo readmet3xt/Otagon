@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { XMarkIcon, FireIcon, TrophyIcon, StarIcon } from '@heroicons/react/24/outline';
-import dailyEngagementService, { DailyGoal, UserStreak } from '../services/dailyEngagementService';
+// Dynamic import to avoid circular dependency
+// import dailyEngagementService, { DailyGoal, UserStreak } from '../services/dailyEngagementService';
 
 interface DailyCheckinBannerProps {
   onClose: () => void;
@@ -19,6 +20,7 @@ const DailyCheckinBanner: React.FC<DailyCheckinBannerProps> = ({
 
   useEffect(() => {
     // Load daily data
+    const { dailyEngagementService } = await import('../services/dailyEngagementService');
     const dailyGoals = dailyEngagementService.getDailyGoals();
     const userStreaks = dailyEngagementService.getUserStreaks();
     
@@ -26,11 +28,13 @@ const DailyCheckinBanner: React.FC<DailyCheckinBannerProps> = ({
     setStreaks(userStreaks);
     
     // Update login streak
+    const { dailyEngagementService } = await import('../services/dailyEngagementService');
     dailyEngagementService.updateLoginStreak();
   }, []);
 
   const handleClose = () => {
     setIsVisible(false);
+    const { dailyEngagementService } = await import('../services/dailyEngagementService');
     dailyEngagementService.markDailyCheckinShown();
     setTimeout(onClose, 300);
   };

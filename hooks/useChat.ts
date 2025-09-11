@@ -16,18 +16,26 @@ import {
     generateInsightStream,
     generateInsightWithSearch
 } from '../services/geminiService';
-import tabManagementService from '../services/tabManagementService';
-import { ttsService } from '../services/ttsService';
+// Dynamic imports to avoid circular dependencies
+// import tabManagementService from '../services/tabManagementService';
+// import { ttsService } from '../services/ttsService';
+// Static imports to replace dynamic imports for Firebase hosting compatibility
+import { gameKnowledgeService } from '../services/gameKnowledgeService';
+// import { taskCompletionPromptingService } from '../services/taskCompletionPromptingService';
+// import { universalContentCacheService } from '../services/universalContentCacheService';
+// import { KNOWLEDGE_CUTOFF_LABEL } from '../services/constants';
+// import { screenshotTimelineService } from '../services/screenshotTimelineService';
+// import { unifiedAIService } from '../services/unifiedAIService';
+// import { otakuDiaryService } from '../services/otakuDiaryService';
 import { unifiedUsageService } from '../services/unifiedUsageService';
-import { smartNotificationService } from '../services/smartNotificationService';
+// import { smartNotificationService } from '../services/smartNotificationService';
 import { gameAnalyticsService } from '../services/gameAnalyticsService';
 import { analyticsService } from '../services/analyticsService';
-import { playerProfileService } from '../services/playerProfileService';
-import { contextManagementService } from '../services/contextManagementService';
-import { longTermMemoryService } from '../services/longTermMemoryService';
-import { screenshotTimelineService } from '../services/screenshotTimelineService';
-import { unifiedAIService } from '../services/unifiedAIService';
-import { otakuDiaryService } from '../services/otakuDiaryService';
+// import { playerProfileService } from '../services/playerProfileService';
+// import { contextManagementService } from '../services/contextManagementService';
+// import { longTermMemoryService } from '../services/longTermMemoryService';
+// import { databaseService } from '../services/databaseService';
+// import { supabaseDataService } from '../services/supabaseDataService';
 
 const COOLDOWN_KEY = 'geminiCooldownEnd';
 const COOLDOWN_DURATION = 60 * 60 * 1000; // 1 hour
@@ -96,6 +104,24 @@ export const useChat = (isHandsFreeMode: boolean) => {
         conversationsOrderRef.current = conversationsOrder;
     }, [conversationsOrder]);
     
+    const saveConversationsToSupabase = useCallback(async () => {
+        try {
+            const { data: { user } } = await authService.getUser();
+            if (!user) return;
+
+            // Save each conversation to Supabase
+            for (const [conversationId, conversation] of Object.entries(conversations)) {
+                if (conversationId === EVERYTHING_ELSE_ID) continue; // Skip the default conversation
+                
+                await databaseService.saveConversation(conversation, user.id);
+            }
+            
+            console.log('💾 Conversations saved to Supabase');
+        } catch (error) {
+            console.warn('Failed to save conversations to Supabase:', error);
+        }
+    }, [conversations]);
+    
     const saveConversationsToLocalStorage = useCallback(() => {
         try {
             // Save conversations to localStorage for persistence in developer mode
@@ -120,8 +146,66 @@ export const useChat = (isHandsFreeMode: boolean) => {
     }, [conversations, conversationsOrder, activeConversationId]);
 
     useEffect(() => {
-        // Load conversations from localStorage on app startup
-        const loadConversationsFromStorage = () => {
+        // Load conversations from Supabase on app startup
+        const loadConversationsFromSupabase = async () => {
+            try {
+                // Check if user is authenticated
+                const { data: { user } } = await authService.getUser();
+                if (!user) {
+                    // Fallback to localStorage for unauthenticated users
+                    loadConversationsFromLocalStorage();
+                    return;
+                }
+
+                // Load conversations from Supabase
+                const supabaseConversations = await databaseService.loadConversations(user.id);
+                
+                if (supabaseConversations && supabaseConversations.length > 0) {
+                    // Convert Supabase format to app format
+                    const conversations: Conversations = {};
+                    const order: string[] = [];
+                    
+                    supabaseConversations.forEach((conv: any) => {
+                        conversations[conv.id] = {
+                            id: conv.id,
+                            title: conv.title || 'Untitled Conversation',
+                            messages: conv.messages || [],
+                            createdAt: new Date(conv.created_at).getTime(),
+                            updatedAt: new Date(conv.updated_at).getTime(),
+                            insights: conv.insights || [],
+                            pinned: conv.pinned || false
+                        };
+                        order.push(conv.id);
+                    });
+                    
+                    // Ensure we have the everything-else conversation
+                    if (!conversations[EVERYTHING_ELSE_ID]) {
+                        conversations[EVERYTHING_ELSE_ID] = {
+                            id: EVERYTHING_ELSE_ID,
+                            title: 'Everything else',
+                            messages: [],
+                            createdAt: Date.now(),
+                        };
+                        order.unshift(EVERYTHING_ELSE_ID);
+                    }
+                    
+                    setChatState({
+                        conversations,
+                        order,
+                        activeId: EVERYTHING_ELSE_ID
+                    });
+                    console.log('💾 Conversations loaded from Supabase');
+                    return;
+                }
+            } catch (error) {
+                console.warn('Failed to load conversations from Supabase:', error);
+            }
+            
+            // Fallback to localStorage
+            loadConversationsFromLocalStorage();
+        };
+
+        const loadConversationsFromLocalStorage = () => {
             try {
                 const savedConversations = localStorage.getItem(CONVERSATIONS_STORAGE_KEY);
                 const savedOrder = localStorage.getItem('otakon_conversations_order');
@@ -168,15 +252,18 @@ export const useChat = (isHandsFreeMode: boolean) => {
                 activeId: EVERYTHING_ELSE_ID
             });
         };
-        
-        loadConversationsFromStorage();
+
+        loadConversationsFromSupabase();
     }, []);
 
 
     useEffect(() => {
-        const handler = setTimeout(saveConversationsToLocalStorage, 500);
+        const handler = setTimeout(() => {
+            saveConversationsToLocalStorage();
+            saveConversationsToSupabase();
+        }, 500);
         return () => clearTimeout(handler);
-    }, [chatState, saveConversationsToLocalStorage]);
+    }, [chatState, saveConversationsToLocalStorage, saveConversationsToSupabase]);
 
     useEffect(() => {
         const cooldownEnd = localStorage.getItem(COOLDOWN_KEY);
@@ -559,7 +646,7 @@ export const useChat = (isHandsFreeMode: boolean) => {
         try {
             // --- Game Knowledge System Integration ---
             // Try to get a smart response from our knowledge base first
-            const { gameKnowledgeService } = await import('../services/gameKnowledgeService');
+            // Using static import instead of dynamic import for Firebase hosting compatibility
             const gameTitle = sourceConversation.id !== EVERYTHING_ELSE_ID ? sourceConversation.id : undefined;
             
             const smartResponse = await gameKnowledgeService.getSmartResponse(text.trim(), gameTitle);
@@ -652,7 +739,7 @@ export const useChat = (isHandsFreeMode: boolean) => {
 
             // NEW: Add task completion context
             if (sourceConversation.id !== EVERYTHING_ELSE_ID) {
-                const { taskCompletionPromptingService } = await import('../services/taskCompletionPromptingService');
+                // Using static import instead of dynamic import for Firebase hosting compatibility
                 const completionContext = taskCompletionPromptingService.formatCompletionContext(sourceConversation.id);
                 if (completionContext) {
                     metaNotes += `${completionContext}\n`;
@@ -668,7 +755,7 @@ export const useChat = (isHandsFreeMode: boolean) => {
             const latestInfoQuery = isProUser && isLatestInfoQuery(text);
             if (latestInfoQuery) {
                 try {
-                    const { universalContentCacheService } = await import('../services/universalContentCacheService');
+                    // Using static import instead of dynamic import for Firebase hosting compatibility
                     const cacheType = sourceConversation.id === EVERYTHING_ELSE_ID ? 'general' : 'game_info';
                     const cached = await universalContentCacheService.getCachedContent({
                         query: text.trim(),
@@ -688,7 +775,7 @@ export const useChat = (isHandsFreeMode: boolean) => {
                 }
                 // Append cutoff guidance for paid, latest-info queries
                 try {
-                    const { KNOWLEDGE_CUTOFF_LABEL } = await import('../services/constants');
+                    // Using static import instead of dynamic import for Firebase hosting compatibility
                     metaNotes += `[KNOWLEDGE_CUTOFF: ${KNOWLEDGE_CUTOFF_LABEL}] For information after this date, prefer current, verified sources.\n`;
                 } catch {
                     metaNotes += `[KNOWLEDGE_CUTOFF: January 2025] For information after this date, prefer current, verified sources.\n`;
@@ -836,7 +923,7 @@ export const useChat = (isHandsFreeMode: boolean) => {
                 // NEW: Track game switch in screenshot timeline service
                 if (images && images.length > 0) {
                     try {
-                        const { screenshotTimelineService } = await import('../services/screenshotTimelineService');
+                        // Using static import instead of dynamic import for Firebase hosting compatibility
                         await screenshotTimelineService.handleGameSwitch(
                             sourceConvoId,
                             finalTargetConvoId,
@@ -871,10 +958,10 @@ export const useChat = (isHandsFreeMode: boolean) => {
                         // Get insight tab context from the conversation
                         const targetConversation = conversations[finalTargetConvoId];
                         const insightTabContext = targetConversation?.insights ? 
-                          unifiedAIService.getInsightTabContext(targetConversation) : '';
+                          unifiedAIService().getInsightTabContext(targetConversation) : '';
                         
                         // Generate AI suggested tasks
-                        const suggestedTasks = await unifiedAIService.generateSuggestedTasks(
+                        const suggestedTasks = await unifiedAIService().generateSuggestedTasks(
                           targetConversation || { id: finalTargetConvoId, title: identifiedGameName || 'Unknown Game' },
                           text,
                           rawTextResponse
@@ -895,9 +982,7 @@ export const useChat = (isHandsFreeMode: boolean) => {
             let taskCompletionPrompt = undefined;
             if (finalTargetConvoId !== EVERYTHING_ELSE_ID) {
                 try {
-                    const { unifiedAIService } = await import('../services/unifiedAIService');
-                    const { otakuDiaryService } = await import('../services/otakuDiaryService');
-                    const { taskCompletionPromptingService } = await import('../services/taskCompletionPromptingService');
+                    // Using static imports instead of dynamic imports for Firebase hosting compatibility
                     
                     const userTier = await unifiedUsageService.getTier();
                     const centralTasks = await otakuDiaryService.getCentralTasks(finalTargetConvoId);
@@ -1046,7 +1131,7 @@ export const useChat = (isHandsFreeMode: boolean) => {
             // Cache paid latest-info responses for reuse across the app
             if (latestInfoQuery && finalCleanedText) {
                 try {
-                    const { universalContentCacheService } = await import('../services/universalContentCacheService');
+                    // Using static import instead of dynamic import for Firebase hosting compatibility
                     const cacheType = sourceConvoId === EVERYTHING_ELSE_ID ? 'general' : 'game_info';
                     await universalContentCacheService.cacheContent({
                         query: text.trim(),
@@ -1235,7 +1320,7 @@ Progress: ${conversation.progress}%`;
                 // Try cache first (global, device-agnostic)
                 let fullContent = '';
                 try {
-                    const { universalContentCacheService } = await import('../services/universalContentCacheService');
+                    // Using static import instead of dynamic import for Firebase hosting compatibility
                     const cached = await universalContentCacheService.getCachedContent({
                         query: `${conversation.title}:${insightId}:${insightTabConfig.title}`,
                         contentType: 'insight_tab',
@@ -1258,7 +1343,7 @@ Progress: ${conversation.progress}%`;
                     );
                     // Save to cache
                     try {
-                        const { universalContentCacheService } = await import('../services/universalContentCacheService');
+                        // Using static import instead of dynamic import for Firebase hosting compatibility
                         await universalContentCacheService.cacheContent({
                             query: `${conversation.title}:${insightId}:${insightTabConfig.title}`,
                             contentType: 'insight_tab',

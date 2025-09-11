@@ -1,19 +1,23 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { Usage, UserTier } from '../services/types';
 import UserCircleIcon from './UserCircleIcon';
 import CreditCardIcon from './CreditCardIcon';
 import QuestionMarkCircleIcon from './QuestionMarkCircleIcon';
-import StarIcon from './StarIcon';
+import SettingsIcon from './SettingsIcon';
 import GeneralSettingsTab from './GeneralSettingsTab';
 import SubscriptionSettingsTab from './SubscriptionSettingsTab';
 import HelpGuideTab from './HelpGuideTab';
 import UserPreferencesTab from './UserPreferencesTab';
-import SupabaseMigrationStatus from './SupabaseMigrationStatus';
-import { PerformanceDashboard } from './PerformanceDashboard';
 import { canAccessDeveloperFeatures } from '../config/developer';
 
-import { apiCostService } from '../services/apiCostService';
-import { APICostSummary } from '../services/apiCostService';
+// Lazy load PerformanceDashboard to avoid duplication
+const LazyPerformanceDashboard = lazy(() => 
+  import('./PerformanceDashboard').then(module => ({ default: module.PerformanceDashboard }))
+);
+
+// Dynamic import to avoid circular dependency
+// import { apiCostService } from '../services/apiCostService';
+// import { APICostSummary } from '../services/apiCostService';
 
 
 
@@ -31,11 +35,11 @@ interface SettingsModalProps {
   refreshUsage?: () => void;
 }
 
-type ActiveTab = 'general' | 'preferences' | 'subscription' | 'help' | 'admin' | 'migration' | 'performance';
+type ActiveTab = 'general' | 'preferences' | 'subscription' | 'help' | 'admin' | 'performance';
 
 // Admin Tab Content Component
 const AdminTabContent: React.FC<{ onClearFirstRunCache?: () => void }> = ({ onClearFirstRunCache }) => {
-    const [costSummary, setCostSummary] = useState<APICostSummary | null>(null);
+    const [costSummary, setCostSummary] = useState<any | null>(null);
     const [recommendations, setRecommendations] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -46,7 +50,8 @@ const AdminTabContent: React.FC<{ onClearFirstRunCache?: () => void }> = ({ onCl
     const loadCostData = async () => {
         setIsLoading(true);
         try {
-            const [summary, recs] = await Promise.all([
+            const { apiCostService } = await import('../services/apiCostService');
+        const [summary, recs] = await Promise.all([
                 apiCostService.getCostSummary(),
                 apiCostService.getCostOptimizationRecommendations()
             ]);
@@ -61,7 +66,8 @@ const AdminTabContent: React.FC<{ onClearFirstRunCache?: () => void }> = ({ onCl
 
     const handleExportData = async () => {
         try {
-            const csvData = await apiCostService.exportCostData();
+            const { apiCostService } = await import('../services/apiCostService');
+        const csvData = await apiCostService.exportCostData();
             
             // Create download link
             const blob = new Blob([csvData], { type: 'text/csv' });
@@ -81,6 +87,7 @@ const AdminTabContent: React.FC<{ onClearFirstRunCache?: () => void }> = ({ onCl
     const handleCleanup = async () => {
         if (window.confirm('This will delete API cost records older than 90 days. Continue?')) {
             try {
+                const { apiCostService } = await import('../services/apiCostService');
                 await apiCostService.cleanupOldRecords(90);
                 await loadCostData(); // Reload data
                 alert('Cleanup completed successfully');
@@ -94,6 +101,7 @@ const AdminTabContent: React.FC<{ onClearFirstRunCache?: () => void }> = ({ onCl
     const handleReset = async () => {
         if (window.confirm('This will delete ALL API cost records. This action cannot be undone. Continue?')) {
             try {
+                const { apiCostService } = await import('../services/apiCostService');
                 await apiCostService.resetCostTracking();
                 await loadCostData(); // Reload data
                 alert('Cost tracking reset successfully');
@@ -319,7 +327,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, usage, o
                     <h2 id="settings-title" className="text-2xl font-bold text-white mb-8 px-2 hidden md:block leading-tight">Settings</h2>
                     <ul className="grid grid-cols-4 md:flex md:flex-col gap-2 md:gap-4 w-full pr-20 md:pr-0 mt-8 md:mt-0">
                         <li className="md:flex-none"><TabButton id="general" label="General" icon={<UserCircleIcon className="w-6 h-6 md:w-7 md:h-7" />} /></li>
-                        <li className="md:flex-none"><TabButton id="preferences" label="AI Preferences" icon={<StarIcon className="w-6 h-6 md:w-7 md:h-7" />} /></li>
+                        <li className="md:flex-none"><TabButton id="preferences" label="AI Preferences" icon={<SettingsIcon className="w-6 h-6 md:w-7 md:h-7" />} /></li>
                         <li className="md:flex-none"><TabButton id="subscription" label="Subscription" icon={<CreditCardIcon className="w-6 h-6 md:w-7 md:h-7" />} /></li>
                         <li className="md:flex-none"><TabButton id="help" label="Help Guide" icon={<QuestionMarkCircleIcon className="w-6 h-6 md:w-7 md:h-7" />} /></li>
                         {/* Admin tabs - only show for developer accounts or in developer mode */}
@@ -327,22 +335,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, usage, o
                             <>
                                 <li className="md:flex-none">
                                     <TabButton id="admin" label="Admin" icon={
-                                        <svg className="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                                        </svg>
-                                    } />
-                                </li>
-                                <li className="md:flex-none">
-                                    <TabButton id="migration" label="Migration" icon={
-                                        <svg className="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                        <svg className="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                            <circle cx="12" cy="12" r="3" />
                                         </svg>
                                     } />
                                 </li>
                                 <li className="md:flex-none">
                                     <TabButton id="performance" label="Performance" icon={
-                                        <svg className="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                        <svg className="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M13 10V3L4 14h7v7l9-11h-7z" />
                                         </svg>
                                     } />
                                 </li>
@@ -375,16 +377,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, usage, o
                         <AdminTabContent onClearFirstRunCache={onClearFirstRunCache} />
                     </div>
                 )}
-                {activeTab === 'migration' && canAccessDeveloperFeatures(userEmail) && (
-                    <div>
-                        <h2 className="text-xl font-bold text-white mb-6">🚀 Supabase Migration</h2>
-                        <SupabaseMigrationStatus />
-                    </div>
-                )}
                 {activeTab === 'performance' && canAccessDeveloperFeatures(userEmail) && (
                     <div>
                         <h2 className="text-xl font-bold text-white mb-6">⚡ Performance Dashboard</h2>
-                        <PerformanceDashboard />
+                        <Suspense fallback={
+                            <div className="flex items-center justify-center p-8">
+                                <div className="w-8 h-8 border-2 border-gray-300 border-t-[#E53A3A] rounded-full animate-spin"></div>
+                                <span className="ml-3 text-gray-400">Loading performance dashboard...</span>
+                            </div>
+                        }>
+                            <LazyPerformanceDashboard />
+                        </Suspense>
                     </div>
                 )}
             </main>

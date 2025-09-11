@@ -90,11 +90,6 @@ export * from './feedbackService';
 export { feedbackLearningEngine } from './feedbackLearningEngine';
 export { contactService } from './contactService';
 
-// Migration Services (consolidated into unifiedStorageService)
-// Legacy migration services (deprecated - use unifiedStorageService)
-export { LocalStorageMigrationService } from './localStorageMigrationService';
-export { SilentMigrationService } from './silentMigrationService';
-
 // Utility Services
 export { requestBatchingService } from './requestBatchingService';
 export { TabManagementService } from './tabManagementService';

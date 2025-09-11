@@ -22,5 +22,4 @@ export { useEnhancedInsights } from './useEnhancedInsights';
 export { useGameAnalytics } from './useGameAnalytics';
 export { useGlobalContent } from './useGlobalContent';
 export { useLongPress } from './useLongPress';
-export { useMigration } from './useMigration';
 export { useProgressTracking } from './useProgressTracking';

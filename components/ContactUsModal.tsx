@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { XMarkIcon, EnvelopeIcon, PhoneIcon, MapPinIcon } from '@heroicons/react/24/outline';
-import { contactService } from '../services/contactService';
+// Dynamic import to avoid circular dependency
+// import { contactService } from '../services/contactService';
 
 interface ContactUsModalProps {
   onClose: () => void;
@@ -38,6 +39,7 @@ const ContactUsModal: React.FC<ContactUsModalProps> = ({ onClose }) => {
 
     try {
       // Submit to database using contact service
+      const { contactService } = await import('../services/contactService');
       const result = await contactService.submitContactForm(formData);
       
       if (result.success) {

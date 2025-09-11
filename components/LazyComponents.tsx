@@ -29,20 +29,24 @@ export const LazyProFeaturesSplashScreen = lazy(() => import('./ProFeaturesSplas
 export const LazyTierSplashScreen = lazy(() => import('./TierSplashScreen'));
 
 // Lazy load feature components that aren't always needed
-export const LazyLandingPage = lazy(() => import('./new-landing/LandingPage'));
+export const LazyLandingPage = lazy(() => import('./LandingPage'));
 export const LazyPerformanceDashboard = lazy(() => import('./PerformanceDashboard'));
 export const LazyCachePerformanceDashboard = lazy(() => import('./CachePerformanceDashboard'));
 
-// Simple loading fallback component (animation only)
-export const LoadingFallback: React.FC<{ message?: string }> = () => (
-  <div className="fixed inset-0 flex items-center justify-center z-50">
-    <div className="w-44 h-20 flex items-center justify-center">
-      <DotLottieReact
-        src="https://lottie.host/5208dfc0-fcec-424d-a426-e2d8988bf9fa/oiI54cVHly.lottie"
-        loop
-        autoplay
-        style={{ width: '100%', height: '100%' }}
-      />
+// Simple loading fallback component (animation only) - Responsive for all devices
+export const LoadingFallback: React.FC<{ message?: string }> = ({ message }) => (
+  <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 loading-overlay">
+    <div className="flex flex-col items-center space-y-4 p-6 loading-fade-in">
+      {/* Simple CSS spinner instead of Lottie for better performance */}
+      <div className="loading-spinner-responsive relative">
+        <div className="w-full h-full border-2 border-gray-300 border-t-[#E53A3A] rounded-full animate-spin"></div>
+        <div className="absolute inset-0 w-full h-full border-2 border-transparent border-r-[#D98C1F] rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+      </div>
+      {message && (
+        <p className="text-white text-sm font-medium text-center max-w-xs">
+          {message}
+        </p>
+      )}
     </div>
   </div>
 );

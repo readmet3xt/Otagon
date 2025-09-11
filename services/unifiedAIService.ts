@@ -1,5 +1,5 @@
 import { GoogleGenAI, GenerateContentResponse, Part, Content, Chat, Type } from "@google/genai";
-import { ChatMessage, Conversation, GeminiModel, insightTabsConfig, PlayerProfile, GameContext, EnhancedInsightTab } from "./types";
+import { ChatMessage, Conversation, GeminiModel, insightTabsConfig, PlayerProfile, GameContext, EnhancedInsightTab, DetectedTask, TaskCompletionPrompt } from "./types";
 import { profileService } from "./profileService";
 import { aiContextService } from "./aiContextService";
 import { characterDetectionService } from "./characterDetectionService";
@@ -13,7 +13,10 @@ import { longTermMemoryService } from './longTermMemoryService';
 import { screenshotTimelineService } from './screenshotTimelineService';
 import { ServiceFactory, BaseService } from './ServiceFactory';
 import { STORAGE_KEYS } from '../utils/constants';
-import type { TaskCompletionPrompt } from './taskCompletionPromptingService';
+// Static imports to replace dynamic imports for Firebase hosting compatibility
+import { progressiveInsightService } from './progressiveInsightService';
+// Removed otakuDiaryService and taskCompletionPromptingService imports to eliminate circular dependency
+// These will be loaded dynamically when needed
 
 /**
  * 🎯 UNIFIED AI SERVICE
@@ -57,14 +60,14 @@ export interface AIResponse {
   taskCompletionPrompt?: TaskCompletionPrompt; // NEW: Task completion prompt
 }
 
-// NEW: Interface for detected tasks
-export interface DetectedTask {
-  title: string;
-  description: string;
-  category: 'quest' | 'boss' | 'exploration' | 'item' | 'character' | 'custom';
-  confidence: number;
-  source: string;
-}
+// NEW: Interface for detected tasks (moved to types.ts to break circular dependency)
+// export interface DetectedTask {
+//   title: string;
+//   description: string;
+//   category: 'quest' | 'boss' | 'exploration' | 'item' | 'character' | 'custom';
+//   confidence: number;
+//   source: string;
+// }
 
 export interface InsightResult {
   tabId: string;
@@ -134,7 +137,8 @@ export class UnifiedAIService extends BaseService {
       console.warn("Gemini API Key not found. Please set the API_KEY environment variable.");
     }
     
-    this.ai = new GoogleGenAI({ apiKey: API_KEY! });
+    // Don't initialize AI immediately to avoid API key errors during static import
+    // AI will be initialized lazily when first needed
     this.config = {
       useProactiveInsights: true,
       useProfileAwareInsights: true,
@@ -145,6 +149,27 @@ export class UnifiedAIService extends BaseService {
     };
     
     this.initialize();
+  }
+
+  private ensureAIInitialized(): void {
+    if (!this.ai) {
+      const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || process.env.API_KEY;
+      
+      // Debug API key loading (only in development)
+      if (import.meta.env.DEV) {
+        console.log('🔧 AI Service Debug:', {
+          viteKey: import.meta.env.VITE_GEMINI_API_KEY ? '✅ Set' : '❌ Missing',
+          processKey: process.env.API_KEY ? '✅ Set' : '❌ Missing',
+          finalKey: API_KEY ? '✅ Set' : '❌ Missing'
+        });
+      }
+      
+      if (!API_KEY) {
+        console.warn("Gemini API Key not found. Please set the VITE_GEMINI_API_KEY environment variable.");
+        return;
+      }
+      this.ai = new GoogleGenAI({ apiKey: API_KEY });
+    }
   }
 
   // ===== INITIALIZATION =====
@@ -210,7 +235,7 @@ export class UnifiedAIService extends BaseService {
       let progressiveUpdates: Record<string, { title: string; content: string }> = {};
       if (conversation.id !== 'everything-else' && conversation.insights) {
         try {
-          const { progressiveInsightService } = await import('./progressiveInsightService');
+          // Using static import instead of dynamic import for Firebase hosting compatibility
           const progressiveContext = {
             gameName: conversation.title || 'Unknown Game',
             genre: conversation.genre || 'default',
@@ -262,14 +287,16 @@ export class UnifiedAIService extends BaseService {
       if (conversation.id !== 'everything-else') {
         try {
           const userTier = await unifiedUsageService.getTier();
-          const { otakuDiaryService } = await import('./otakuDiaryService');
+          // Using static import instead of dynamic import for Firebase hosting compatibility
           
           // Get central tasks (user-created + AI-generated tasks they added)
+          const { otakuDiaryService } = await import('./otakuDiaryService');
           const centralTasks = await otakuDiaryService.getCentralTasks(conversation.id);
           
           // Get AI-generated tasks (for Pro/Vanguard users when no central tasks)
           const aiGeneratedTasks = await otakuDiaryService.getAISuggestedTasks(conversation.id);
           
+          // Using dynamic import to avoid circular dependency
           const { taskCompletionPromptingService } = await import('./taskCompletionPromptingService');
           taskCompletionPrompt = taskCompletionPromptingService.generateCompletionPrompt(
             conversation.id,
@@ -767,6 +794,13 @@ Generate comprehensive, detailed wiki-style content for each insight tab that pr
     const { model, contents, config, signal } = params;
     
     try {
+      // Ensure AI is initialized before use
+      this.ensureAIInitialized();
+      
+      if (!this.ai) {
+        throw new Error('AI service not available: No API key provided');
+      }
+
       const response = await this.ai.models.generateContent({
         model,
         contents,
@@ -793,6 +827,13 @@ Generate comprehensive, detailed wiki-style content for each insight tab that pr
     const { model, contents, config, onChunk, signal } = params;
     
     try {
+      // Ensure AI is initialized before use
+      this.ensureAIInitialized();
+      
+      if (!this.ai) {
+        throw new Error('AI service not available: No API key provided');
+      }
+
       const stream = await this.ai.models.generateContentStream({
         model,
         contents,
@@ -1465,6 +1506,7 @@ When generating new insights, avoid duplicating content from these existing tabs
   // NEW: Get completed tasks context for AI awareness
   private async getCompletedTasksContext(conversationId: string): Promise<string> {
     try {
+      // Using static import instead of dynamic import for Firebase hosting compatibility
       const { otakuDiaryService } = await import('./otakuDiaryService');
       const tasks = await otakuDiaryService.getTasks(conversationId);
       const completedTasks = tasks.filter(task => task.status === 'completed');
@@ -1626,5 +1668,11 @@ Return a JSON array of tasks with:
   }
 }
 
-// Export singleton instance
-export const unifiedAIService = ServiceFactory.create(UnifiedAIService);
+// Export singleton instance (lazy creation to avoid circular dependency issues)
+let _unifiedAIService: UnifiedAIService | null = null;
+export const unifiedAIService = (): UnifiedAIService => {
+  if (!_unifiedAIService) {
+    _unifiedAIService = ServiceFactory.create(UnifiedAIService);
+  }
+  return _unifiedAIService;
+};

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { apiCostService } from '../services/apiCostService';
-import { APICostSummary } from '../services/apiCostService';
+// Dynamic imports to avoid circular dependencies
+// import { apiCostService } from '../services/apiCostService';
+// import { APICostSummary } from '../services/apiCostService';
 
 interface AdminCostDashboardProps {
     isOpen: boolean;
@@ -22,6 +23,7 @@ export const AdminCostDashboard: React.FC<AdminCostDashboardProps> = ({ isOpen, 
     const loadCostData = async () => {
         setIsLoading(true);
         try {
+            const { apiCostService } = await import('../services/apiCostService');
             const [summary, recs] = await Promise.all([
                 apiCostService.getCostSummary(),
                 apiCostService.getCostOptimizationRecommendations()
@@ -37,6 +39,7 @@ export const AdminCostDashboard: React.FC<AdminCostDashboardProps> = ({ isOpen, 
 
     const handleExportData = async () => {
         try {
+            const { apiCostService } = await import('../services/apiCostService');
             const csvData = await apiCostService.exportCostData();
             setExportData(csvData);
             
@@ -58,6 +61,7 @@ export const AdminCostDashboard: React.FC<AdminCostDashboardProps> = ({ isOpen, 
     const handleCleanup = async () => {
         if (window.confirm('This will delete API cost records older than 90 days. Continue?')) {
             try {
+                const { apiCostService } = await import('../services/apiCostService');
                 await apiCostService.cleanupOldRecords(90);
                 await loadCostData(); // Reload data
                 alert('Cleanup completed successfully');
@@ -71,6 +75,7 @@ export const AdminCostDashboard: React.FC<AdminCostDashboardProps> = ({ isOpen, 
     const handleReset = async () => {
         if (window.confirm('This will delete ALL API cost records. This action cannot be undone. Continue?')) {
             try {
+                const { apiCostService } = await import('../services/apiCostService');
                 await apiCostService.resetCostTracking();
                 await loadCostData(); // Reload data
                 alert('Cost tracking reset successfully');

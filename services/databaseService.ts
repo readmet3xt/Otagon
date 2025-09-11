@@ -558,32 +558,38 @@ class DatabaseService {
     }
 
     /**
-     * Migrate data from localStorage to database
+     * Save conversation to database
      */
-    async migrateFromLocalStorage(userId: string): Promise<boolean> {
+    async saveConversation(conversation: any, userId: string): Promise<boolean> {
         try {
-            // This is a placeholder - actual migration logic would go here
-            console.log('Migration from localStorage initiated for user:', userId);
+            const { error } = await supabase
+                .from('conversations')
+                .upsert({
+                    id: conversation.id,
+                    user_id: userId,
+                    title: conversation.title,
+                    messages: conversation.messages,
+                    insights: conversation.insights || [],
+                    pinned: conversation.pinned || false,
+                    created_at: new Date(conversation.createdAt).toISOString(),
+                    updated_at: new Date().toISOString()
+                });
+
+            if (error) {
+                console.error('Error saving conversation:', error);
+                return false;
+            }
+
             return true;
         } catch (error) {
-            console.error('Error in migrateFromLocalStorage:', error);
+            console.error('Error in saveConversation:', error);
             return false;
         }
     }
 
     /**
-     * Clean up localStorage after migration
+     * Placeholder for future database operations
      */
-    async cleanupLocalStorage(): Promise<boolean> {
-        try {
-            // This is a placeholder - actual cleanup logic would go here
-            console.log('LocalStorage cleanup initiated');
-            return true;
-        } catch (error) {
-            console.error('Error in cleanupLocalStorage:', error);
-            return false;
-        }
-    }
 
     /**
      * Save usage data to database

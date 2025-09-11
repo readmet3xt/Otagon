@@ -8,6 +8,9 @@ import ActionButtons from './ActionButtons';
 import TypingIndicator from './TypingIndicator';
 import StarIcon from './StarIcon';
 import DownloadIcon from './DownloadIcon';
+// Static import to replace dynamic import for Firebase hosting compatibility
+// Dynamic import to avoid circular dependency
+// import { wishlistService } from '../services/wishlistService';
 import Logo from './Logo';
 import UserAvatar from './UserAvatar';
 import TaskCompletionPrompt from './TaskCompletionPrompt';
@@ -157,7 +160,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
             // Extract game name from the message (simple heuristic)
             const gameName = extractGameName(text);
             if (gameName) {
-                // Import wishlistService dynamically to avoid circular dependencies
+                // Using static import instead of dynamic import for Firebase hosting compatibility
                 const { wishlistService } = await import('../services/wishlistService');
                 await wishlistService.addToWishlist({
                     gameName,

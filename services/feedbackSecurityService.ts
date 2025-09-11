@@ -509,8 +509,8 @@ class FeedbackSecurityService {
       this.securityLog = this.securityLog.slice(-1000);
     }
 
-    // Log to console for development
-    if (result === 'blocked') {
+    // Log to console for development only
+    if (result === 'blocked' && process.env.NODE_ENV === 'development') {
       console.warn('🚨 FEEDBACK SECURITY BLOCKED:', {
         userId,
         action,

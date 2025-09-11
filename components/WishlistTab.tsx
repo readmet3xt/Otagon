@@ -1,14 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { WishlistItem } from '../services/wishlistService';
-// Dynamic import to avoid bundle conflicts
-let wishlistService: any = null;
-const getWishlistService = async () => {
-  if (!wishlistService) {
-    const module = await import('../services/wishlistService');
-    wishlistService = module.wishlistService;
-  }
-  return wishlistService;
-};
+import { WishlistItem } from '../services/types';
+// Dynamic import to avoid circular dependency
+// import { wishlistService } from '../services/wishlistService';
 
 interface WishlistTabProps {
   onOpenWishlistModal: () => void;
@@ -26,6 +19,7 @@ const WishlistTab: React.FC<WishlistTabProps> = ({ onOpenWishlistModal }) => {
   const loadWishlist = async () => {
     setIsLoading(true);
     try {
+      const { wishlistService } = await import('../services/wishlistService');
       const items = await wishlistService.getWishlist();
       setWishlistItems(items);
       

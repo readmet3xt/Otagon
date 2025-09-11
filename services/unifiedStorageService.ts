@@ -7,20 +7,17 @@ import { Conversation, Usage } from './types';
 /**
  * 🎯 UNIFIED STORAGE SERVICE
  * 
- * This service consolidates all storage and migration functionality from:
+ * This service consolidates all storage functionality from:
  * - dualStorageService.ts (Dual storage management)
  * - offlineStorageService.ts (Offline storage handling)
  * - storage.ts (Basic storage operations)
- * - localStorageMigrationService.ts (LocalStorage migration)
- * - silentMigrationService.ts (Silent migration handling)
  * 
  * Features:
  * 1. Multi-tier storage (localStorage, IndexedDB, Supabase)
  * 2. Automatic offline/online synchronization
- * 3. Intelligent migration strategies
- * 4. Data persistence and recovery
- * 5. Storage optimization and cleanup
- * 6. Cross-platform compatibility
+ * 3. Data persistence and recovery
+ * 4. Storage optimization and cleanup
+ * 5. Cross-platform compatibility
  */
 
 // ===== STORAGE INTERFACES =====
@@ -31,7 +28,6 @@ export interface StorageConfig {
   useSupabase: boolean;
   fallbackToLocal: boolean;
   autoSync: boolean;
-  migrationEnabled: boolean;
 }
 
 export interface StorageEntry {
@@ -41,21 +37,6 @@ export interface StorageEntry {
   category?: string;
   version: number;
   metadata?: Record<string, any>;
-}
-
-export interface MigrationResult {
-  success: boolean;
-  migratedTables: string[];
-  errors: string[];
-  totalItems: number;
-  duration: number;
-}
-
-export interface MigrationProgress {
-  currentStep: string;
-  currentTable: string;
-  progress: number;
-  status: 'idle' | 'migrating' | 'completed' | 'error';
 }
 
 export interface OfflineData {
@@ -90,8 +71,6 @@ export interface StorageStats {
 export class UnifiedStorageService extends BaseService {
   private config: StorageConfig;
   private db: IDBDatabase | null = null;
-  private isMigrating = false;
-  private migrationComplete = false;
   private syncInProgress = false;
   private readonly DB_NAME = 'OtakonUnifiedDB';
   private readonly DB_VERSION = 2;
@@ -111,8 +90,7 @@ export class UnifiedStorageService extends BaseService {
       useIndexedDB: true,
       useSupabase: true,
       fallbackToLocal: true,
-      autoSync: true,
-      migrationEnabled: true
+      autoSync: true
     };
     
     this.initialize();
@@ -125,11 +103,6 @@ export class UnifiedStorageService extends BaseService {
       // Initialize IndexedDB
       if (this.config.useIndexedDB) {
         await this.initializeIndexedDB();
-      }
-
-      // Start migration if enabled
-      if (this.config.migrationEnabled) {
-        await this.startMigration();
       }
 
       // Start auto-sync if enabled
@@ -394,249 +367,6 @@ export class UnifiedStorageService extends BaseService {
     return await this.get('usage', 'usage');
   }
 
-  // ===== MIGRATION METHODS =====
-
-  async startMigration(): Promise<MigrationResult> {
-    if (this.isMigrating) {
-      throw new Error('Migration already in progress');
-    }
-
-    this.isMigrating = true;
-    const startTime = Date.now();
-    const result: MigrationResult = {
-      success: false,
-      migratedTables: [],
-      errors: [],
-      totalItems: 0,
-      duration: 0
-    };
-
-    try {
-      // Check if migration is needed
-      if (!(await this.isMigrationNeeded())) {
-        result.success = true;
-        result.duration = Date.now() - startTime;
-        return result;
-      }
-
-      // Check authentication
-      if (!(await this.isAuthenticated())) {
-        result.errors.push('User not authenticated');
-        return result;
-      }
-
-      const userId = await this.getCurrentUserId();
-      if (!userId) {
-        result.errors.push('Could not get user ID');
-        return result;
-      }
-
-      // Migrate user preferences
-      try {
-        const prefsResult = await this.migrateUserPreferences(userId);
-        if (prefsResult.success) {
-          result.migratedTables.push('user_preferences');
-          result.totalItems += prefsResult.count;
-        }
-      } catch (error) {
-        result.errors.push(`User preferences: ${error}`);
-      }
-
-      // Migrate app state
-      try {
-        const stateResult = await this.migrateAppState(userId);
-        if (stateResult.success) {
-          result.migratedTables.push('app_state');
-          result.totalItems += stateResult.count;
-        }
-      } catch (error) {
-        result.errors.push(`App state: ${error}`);
-      }
-
-      // Migrate analytics data
-      try {
-        const analyticsResult = await this.migrateAnalytics(userId);
-        if (analyticsResult.success) {
-          result.migratedTables.push('user_analytics');
-          result.totalItems += analyticsResult.count;
-        }
-      } catch (error) {
-        result.errors.push(`Analytics: ${error}`);
-      }
-
-      // Migrate session data
-      try {
-        const sessionResult = await this.migrateSessionData(userId);
-        if (sessionResult.success) {
-          result.migratedTables.push('session_data');
-          result.totalItems += sessionResult.count;
-        }
-      } catch (error) {
-        result.errors.push(`Session data: ${error}`);
-      }
-
-      result.success = result.errors.length === 0;
-      result.duration = Date.now() - startTime;
-      this.migrationComplete = true;
-
-    } catch (error) {
-      result.errors.push(`Migration failed: ${error}`);
-    } finally {
-      this.isMigrating = false;
-    }
-
-    return result;
-  }
-
-  private async isMigrationNeeded(): Promise<boolean> {
-    try {
-      const userId = await this.getCurrentUserId();
-      if (!userId) return false;
-
-      // Check if we already have data in Supabase
-      const { data: userData } = await supabase
-        .from('users')
-        .select('preferences, app_state')
-        .eq('auth_user_id', userId)
-        .limit(1);
-
-      const hasSupabaseData = userData && (userData[0]?.preferences || userData[0]?.app_state);
-      
-      // If we have localStorage data but no Supabase data, migration is needed
-      const hasLocalData = Object.keys(localStorage).length > 0;
-      return hasLocalData && !hasSupabaseData;
-    } catch (error) {
-      console.warn('Failed to check migration status:', error);
-      return true;
-    }
-  }
-
-  private async migrateUserPreferences(userId: string): Promise<{ success: boolean; count: number }> {
-    const preferences: Record<string, any> = {};
-    let count = 0;
-
-    // Migrate TTS preferences
-    const ttsEnabled = localStorage.getItem('otakonTTSEnabled');
-    if (ttsEnabled) {
-      preferences.ttsEnabled = ttsEnabled === 'true';
-      count++;
-    }
-
-    // Migrate PWA preferences
-    const pwaInstalled = localStorage.getItem('otakonPWAInstalled');
-    if (pwaInstalled) {
-      preferences.pwaInstalled = pwaInstalled === 'true';
-      count++;
-    }
-
-    // Migrate onboarding preferences
-    const onboardingComplete = localStorage.getItem(STORAGE_KEYS.ONBOARDING_COMPLETE);
-    if (onboardingComplete) {
-      preferences.onboardingComplete = onboardingComplete === 'true';
-      count++;
-    }
-
-    if (count > 0) {
-      await supabase
-        .from('users')
-        .upsert({
-          auth_user_id: userId,
-          preferences
-        });
-    }
-
-    return { success: true, count };
-  }
-
-  private async migrateAppState(userId: string): Promise<{ success: boolean; count: number }> {
-    const appState: Record<string, any> = {};
-    let count = 0;
-
-    // Migrate connection history
-    const lastConnectionCode = localStorage.getItem(STORAGE_KEYS.LAST_CONNECTION_CODE);
-    if (lastConnectionCode) {
-      appState.lastConnectionCode = lastConnectionCode;
-      count++;
-    }
-
-    // Migrate profile setup status
-    const profileSetupCompleted = localStorage.getItem(STORAGE_KEYS.PROFILE_SETUP_COMPLETED);
-    if (profileSetupCompleted) {
-      appState.profileSetupCompleted = profileSetupCompleted === 'true';
-      count++;
-    }
-
-    if (count > 0) {
-      await supabase
-        .from('users')
-        .upsert({
-          auth_user_id: userId,
-          app_state: appState
-        });
-    }
-
-    return { success: true, count };
-  }
-
-  private async migrateAnalytics(userId: string): Promise<{ success: boolean; count: number }> {
-    const analytics: Record<string, any> = {};
-    let count = 0;
-
-    // Migrate feedback data
-    const feedbackData = localStorage.getItem('otakon_feedback_data');
-    if (feedbackData) {
-      analytics.feedbackData = JSON.parse(feedbackData);
-      count++;
-    }
-
-    // Migrate PWA analytics
-    const pwaAnalytics = localStorage.getItem('otakon_pwa_analytics');
-    if (pwaAnalytics) {
-      analytics.pwaAnalytics = JSON.parse(pwaAnalytics);
-      count++;
-    }
-
-    if (count > 0) {
-      await supabase
-        .from('users')
-        .upsert({
-          auth_user_id: userId,
-          user_analytics: analytics
-        });
-    }
-
-    return { success: true, count };
-  }
-
-  private async migrateSessionData(userId: string): Promise<{ success: boolean; count: number }> {
-    const sessionData: Record<string, any> = {};
-    let count = 0;
-
-    // Migrate daily goals
-    const dailyGoals = localStorage.getItem('otakon_daily_goals');
-    if (dailyGoals) {
-      sessionData.dailyGoals = JSON.parse(dailyGoals);
-      count++;
-    }
-
-    // Migrate streaks
-    const streaks = localStorage.getItem('otakon_streaks');
-    if (streaks) {
-      sessionData.streaks = JSON.parse(streaks);
-      count++;
-    }
-
-    if (count > 0) {
-      await supabase
-        .from('users')
-        .upsert({
-          auth_user_id: userId,
-          session_data: sessionData
-        });
-    }
-
-    return { success: true, count };
-  }
 
   // ===== SYNC METHODS =====
 
@@ -1030,8 +760,6 @@ export class UnifiedStorageService extends BaseService {
   destroy(): void {
     console.log('🧹 UnifiedStorageService: Destroy called');
     this.db = null;
-    this.isMigrating = false;
-    this.migrationComplete = false;
     this.syncInProgress = false;
   }
 }

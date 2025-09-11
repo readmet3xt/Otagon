@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PlayerProfileSetupModal } from './PlayerProfileSetupModal';
-import { PlayerProfile } from '../services/playerProfileService';
+import { PlayerProfile } from '../services/types';
 
 export const TestProfileSetup: React.FC = () => {
   const [showModal, setShowModal] = useState(false);

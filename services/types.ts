@@ -1,4 +1,127 @@
-import { TaskCompletionPrompt } from './taskCompletionPromptingService';
+export interface TaskCompletionPrompt {
+  id: string;
+  tasks: DiaryTask[];
+  promptText: string;
+  timestamp: number;
+  conversationId: string;
+  userTier: 'free' | 'pro' | 'vanguard_pro';
+}
+
+export interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  unlockedAt?: string;
+  progress?: number;
+  target?: number;
+  reward?: string;
+}
+
+export interface OnboardingFunnelStats {
+  stepName: string;
+  stepOrder: number;
+  totalUsers: number;
+  completedUsers: number;
+  droppedOffUsers: number;
+  completionRate: number;
+  avgDurationMs: number;
+}
+
+export interface TierConversionStats {
+  fromTier: string;
+  toTier: string;
+  totalAttempts: number;
+  successfulUpgrades: number;
+  conversionRate: number;
+  avgAmount: number;
+}
+
+export interface FeatureUsageStats {
+  featureName: string;
+  featureCategory: string;
+  totalUsers: number;
+  totalUsageCount: number;
+  avgUsagePerUser: number;
+  mostActiveUsers: number;
+}
+
+export interface GameProgress {
+  current_progress_level: number;
+  game_version: string;
+  completed_events: string[];
+  progress_metadata: any;
+  last_progress_update: string;
+  progress_confidence: number;
+}
+
+export interface GameEvent {
+  id: string;
+  game_id: string;
+  game_version: string;
+  event_id: string;
+  event_type: string;
+  description: string;
+  unlocks_progress_level: number;
+  lore_context?: string;
+  difficulty_rating: number;
+}
+
+export interface ProgressHistory {
+  id: string;
+  user_id: string;
+  game_id: string;
+  game_version: string;
+  event_id: string;
+  old_level: number;
+  new_level: number;
+  ai_confidence: number;
+  ai_reasoning: string;
+  ai_evidence: string[];
+  user_feedback: string;
+  created_at: string;
+}
+
+export interface WishlistItem {
+  id: string;
+  gameName: string;
+  releaseDate?: string; // ISO date string
+  platform?: string;
+  genre?: string;
+  description?: string;
+  addedAt: number;
+  gameId: string; // 'everything-else' for wishlist items
+  source?: string; // AI response or user input
+  sourceMessageId?: string; // Link to original message
+  isReleased?: boolean; // Track if game has been released
+  releaseNotificationShown?: boolean; // Track if notification has been shown
+  lastChecked?: number; // Last time release status was checked
+}
+
+// AI detected task interface (moved from unifiedAIService to break circular dependency)
+export interface DetectedTask {
+  title: string;
+  description: string;
+  category: 'quest' | 'boss' | 'exploration' | 'item' | 'character' | 'custom';
+  confidence: number;
+  source: string;
+}
+
+// Diary task interface (moved from otakuDiaryService to break circular dependency)
+export interface DiaryTask {
+  id: string;
+  title: string;
+  description: string;
+  type: 'user_created' | 'ai_suggested';
+  status: 'pending' | 'completed' | 'need_help';
+  category: 'quest' | 'boss' | 'exploration' | 'item' | 'character' | 'custom';
+  createdAt: number;
+  completedAt?: number;
+  gameId: string;
+  source?: string; // AI response or user input
+  priority?: 'low' | 'medium' | 'high';
+  sourceMessageId?: string; // Link to original message/insight
+}
 
 export enum ConnectionStatus {
   DISCONNECTED = 'DISCONNECTED',

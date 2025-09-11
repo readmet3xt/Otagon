@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { taskCompletionPromptingService, TaskCompletionPrompt } from '../taskCompletionPromptingService';
+import { taskCompletionPromptingService } from '../taskCompletionPromptingService';
+import { TaskCompletionPrompt } from '../types';
 import { DiaryTask } from '../otakuDiaryService';
 
 describe('TaskCompletionPromptingService', () => {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { smartNotificationService } from '../services/smartNotificationService';
+// Dynamic import to avoid circular dependency
+// import { smartNotificationService } from '../services/smartNotificationService';
 
 const ScreenLockDebug: React.FC = () => {
   const [screenStatus, setScreenStatus] = useState({
@@ -9,7 +10,8 @@ const ScreenLockDebug: React.FC = () => {
   });
 
   useEffect(() => {
-    const updateStatus = () => {
+    const updateStatus = async () => {
+      const { smartNotificationService } = await import('../services/smartNotificationService');
       setScreenStatus(smartNotificationService.getScreenStatus());
     };
 

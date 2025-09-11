@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { voiceService, VoiceCommand } from '../services/voiceService';
+// Dynamic import to avoid circular dependency
+// import { voiceService, VoiceCommand } from '../services/voiceService';
 import MicIcon from './MicIcon';
 import MicOffIcon from './MicOffIcon';
 import SendIcon from './SendIcon';
@@ -28,9 +29,11 @@ const VoiceChatInput: React.FC<VoiceChatInputProps> = ({
 
   useEffect(() => {
     // Check if voice features are supported
+    const { voiceService } = await import('../services/voiceService');
     setVoiceSupported(voiceService.isSupported());
 
     // Set up voice command callback
+    const { voiceService } = await import('../services/voiceService');
     voiceService.onCommand((command) => {
       setLastVoiceCommand(command);
       setIsListening(false);
@@ -46,12 +49,14 @@ const VoiceChatInput: React.FC<VoiceChatInputProps> = ({
     });
 
     // Set up error callback
+    const { voiceService } = await import('../services/voiceService');
     voiceService.onError((error) => {
       console.error('Voice service error:', error);
       setIsListening(false);
     });
 
     return () => {
+      const { voiceService } = await import('../services/voiceService');
       voiceService.destroy();
     };
   }, [onVoiceCommand, onSendMessage]);
@@ -59,6 +64,7 @@ const VoiceChatInput: React.FC<VoiceChatInputProps> = ({
   useEffect(() => {
     // Update listening state from voice service
     const interval = setInterval(() => {
+      const { voiceService } = await import('../services/voiceService');
       setIsListening(voiceService.getListeningState());
       setIsSpeaking(voiceService.getSpeakingState());
     }, 100);
@@ -96,9 +102,11 @@ const VoiceChatInput: React.FC<VoiceChatInputProps> = ({
 
   const toggleVoiceListening = () => {
     if (isListening) {
+      const { voiceService } = await import('../services/voiceService');
       voiceService.stopListening();
       setIsListening(false);
     } else {
+      const { voiceService } = await import('../services/voiceService');
       if (voiceService.startListening()) {
         setIsListening(true);
       }
@@ -108,10 +116,12 @@ const VoiceChatInput: React.FC<VoiceChatInputProps> = ({
   const handleVoiceCommand = async (command: VoiceCommand) => {
     try {
       // Process the voice command
+      const { voiceService } = await import('../services/voiceService');
       const response = await voiceService.processVoiceCommand(command);
       
       // Speak the response if it should be spoken
       if (response.shouldSpeak) {
+        const { voiceService } = await import('../services/voiceService');
         await voiceService.speak(response.text);
       }
       

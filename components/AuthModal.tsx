@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { authService, AuthState } from '../services/supabase';
-import { performanceService } from '../services/performanceService';
+// Dynamic import to avoid circular dependency
+// import { performanceService } from '../services/performanceService';
 import DiscordIcon from './DiscordIcon';
 
 // Social login icons
@@ -65,14 +66,17 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuccess })
       let result;
       
       if (mode === 'login') {
+        const { performanceService } = await import('../services/performanceService');
         result = await performanceService.measureAsync('auth_login', () => 
           authService.signIn(email, password)
         );
       } else if (mode === 'signup') {
+        const { performanceService } = await import('../services/performanceService');
         result = await performanceService.measureAsync('auth_signup', () => 
           authService.signUp(email, password)
         );
       } else if (mode === 'forgot-password') {
+        const { performanceService } = await import('../services/performanceService');
         result = await performanceService.measureAsync('auth_reset_password', () => 
           authService.resetPassword(email)
         );

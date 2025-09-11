@@ -1,21 +1,6 @@
 import { supabase } from './supabase';
 import { supabaseDataService } from './supabaseDataService';
-
-export interface WishlistItem {
-  id: string;
-  gameName: string;
-  releaseDate?: string; // ISO date string
-  platform?: string;
-  genre?: string;
-  description?: string;
-  addedAt: number;
-  gameId: string; // 'everything-else' for wishlist items
-  source?: string; // AI response or user input
-  sourceMessageId?: string; // Link to original message
-  isReleased?: boolean; // Track if game has been released
-  releaseNotificationShown?: boolean; // Track if notification has been shown
-  lastChecked?: number; // Last time release status was checked
-}
+import { WishlistItem } from './types';
 
 class WishlistService {
   private static instance: WishlistService;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAnalytics } from '../hooks/useAnalytics';
-import { OnboardingFunnelStats, TierConversionStats, FeatureUsageStats } from '../services/analyticsService';
+import { OnboardingFunnelStats, TierConversionStats, FeatureUsageStats } from '../services/types';
 
 const AnalyticsDashboard: React.FC = () => {
   const [onboardingStats, setOnboardingStats] = useState<OnboardingFunnelStats[]>([]);

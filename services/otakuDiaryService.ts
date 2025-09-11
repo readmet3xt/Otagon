@@ -2,24 +2,28 @@ import { supabase } from './supabase';
 import { authService } from './supabase';
 import { supabaseDataService } from './supabaseDataService';
 import { unifiedDataService, STORAGE_KEYS } from './unifiedDataService';
-import { DetectedTask } from './unifiedAIService';
+import { DetectedTask, DiaryTask } from './types';
 import { playerProfileService } from './playerProfileService';
 import { longTermMemoryService } from './longTermMemoryService';
+// Static imports to replace dynamic imports for Firebase hosting compatibility
+import { progressTrackingService } from './progressTrackingService';
+import { taskCompletionPromptingService } from './taskCompletionPromptingService';
 
-export interface DiaryTask {
-  id: string;
-  title: string;
-  description: string;
-  type: 'user_created' | 'ai_suggested';
-  status: 'pending' | 'completed' | 'need_help';
-  category: 'quest' | 'boss' | 'exploration' | 'item' | 'character' | 'custom';
-  createdAt: number;
-  completedAt?: number;
-  gameId: string;
-  source?: string; // AI response or user input
-  priority?: 'low' | 'medium' | 'high';
-  sourceMessageId?: string; // Link to original message/insight
-}
+// Diary task interface (moved to types.ts to break circular dependency)
+// export interface DiaryTask {
+//   id: string;
+//   title: string;
+//   description: string;
+//   type: 'user_created' | 'ai_suggested';
+//   status: 'pending' | 'completed' | 'need_help';
+//   category: 'quest' | 'boss' | 'exploration' | 'item' | 'character' | 'custom';
+//   createdAt: number;
+//   completedAt?: number;
+//   gameId: string;
+//   source?: string; // AI response or user input
+//   priority?: 'low' | 'medium' | 'high';
+//   sourceMessageId?: string; // Link to original message/insight
+// }
 
 export interface DiaryFavorite {
   id: string;
@@ -67,7 +71,10 @@ class OtakuDiaryService {
           const tasks = otakuDiary[key];
           if (Array.isArray(tasks) && tasks.length > 0) {
             this.tasksCache.set(gameId, tasks);
-            console.log(`🔧 Loaded ${tasks.length} tasks for game ${gameId} from ${result.source}`);
+            // Only log in development mode with reduced verbosity
+            if (process.env.NODE_ENV === 'development' && tasks.length > 0) {
+              console.log(`🔧 Loaded ${tasks.length} tasks for ${gameId}`);
+            }
           }
         }
       });
@@ -79,7 +86,10 @@ class OtakuDiaryService {
           const favorites = otakuDiary[key];
           if (Array.isArray(favorites) && favorites.length > 0) {
             this.favoritesCache.set(gameId, favorites);
-            console.log(`🔧 Loaded ${favorites.length} favorites for game ${gameId} from ${result.source}`);
+            // Only log in development mode with reduced verbosity
+            if (process.env.NODE_ENV === 'development' && favorites.length > 0) {
+              console.log(`🔧 Loaded ${favorites.length} favorites for ${gameId}`);
+            }
           }
         }
       });
@@ -91,7 +101,7 @@ class OtakuDiaryService {
   // Load data from localStorage in development mode
   private async loadFromLocalStorage(): Promise<void> {
     try {
-      console.log('🔧 Development mode: Loading Otaku Diary data from localStorage');
+      // Reduced logging for development mode
       
       // Try to load from Supabase first
       await this.loadFromSupabase();
@@ -180,7 +190,7 @@ class OtakuDiaryService {
     gameTasks.push(newTask);
     this.tasksCache.set(task.gameId, gameTasks);
     
-    console.log('🔧 Development mode: Task created:', newTask);
+    // Reduced logging for development mode
     return newTask;
   }
 
@@ -1038,9 +1048,7 @@ class OtakuDiaryService {
   // NEW: Track task completion and update AI context
   private async trackTaskCompletion(gameId: string, task: DiaryTask): Promise<void> {
     try {
-      // Import services dynamically to avoid circular dependencies
-      const { progressTrackingService } = await import('./progressTrackingService');
-      const { taskCompletionPromptingService } = await import('./taskCompletionPromptingService');
+      // Using static imports instead of dynamic imports for Firebase hosting compatibility
       
       // Create completion event data
       const completionEvent = {

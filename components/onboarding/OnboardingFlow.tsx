@@ -98,7 +98,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       <EnhancedCard
         variant="elevated"
         size="lg"
-        className="min-h-[500px]"
+        className="min-h-[400px] sm:min-h-[500px] md:min-h-[600px]"
       >
         <CardContent>
           <div className={cn(

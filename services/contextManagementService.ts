@@ -235,7 +235,7 @@ class ContextManagementService {
           context: {
             ...context,
             lastSaved: Date.now(),
-            version: '2.0' // Version for future migrations
+            version: '2.0' // Version for future updates
           }
         })
         .eq('id', conversationId)

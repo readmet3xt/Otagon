@@ -17,18 +17,25 @@ export interface UserStreak {
   lastInsightDate: string;
 }
 
-export interface Achievement {
+import { supabase } from './supabase';
+import { Achievement } from './types';
+
+export interface DailyGoal {
   id: string;
   title: string;
   description: string;
-  icon: string;
-  unlockedAt?: string;
-  progress?: number;
-  target?: number;
+  target: number;
+  current: number;
+  completed: boolean;
   reward?: string;
 }
 
-
+export interface UserStreak {
+  type: 'daily_login' | 'daily_quest' | 'weekly_goal';
+  count: number;
+  lastAchieved: string;
+  nextMilestone: number;
+}
 
 export class DailyEngagementService {
   private static instance: DailyEngagementService;

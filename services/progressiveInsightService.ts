@@ -29,7 +29,19 @@ class ProgressiveInsightService {
   }
 
   constructor() {
-    this.ai = new GoogleGenAI(import.meta.env.VITE_GEMINI_API_KEY || '');
+    // Don't initialize AI immediately to avoid API key errors during static import
+    // AI will be initialized lazily when first needed
+  }
+
+  private ensureAIInitialized(): void {
+    if (!this.ai) {
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.API_KEY;
+      if (!apiKey) {
+        console.warn('Gemini API Key not found. Progressive insights will be disabled.');
+        return;
+      }
+      this.ai = new GoogleGenAI(apiKey);
+    }
   }
 
   /**
@@ -41,6 +53,14 @@ class ProgressiveInsightService {
     signal?: AbortSignal
   ): Promise<ProgressiveUpdateResult> {
     try {
+      // Ensure AI is initialized before use
+      this.ensureAIInitialized();
+      
+      if (!this.ai) {
+        console.warn('Progressive insights disabled: No AI instance available');
+        return { updatedTabs: {}, relevantTabIds: [] };
+      }
+
       // Determine which tabs are most relevant to the user's query
       const relevantTabIds = this.identifyRelevantTabs(
         context.userQuery,

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { XMarkIcon, ChartBarIcon, ClockIcon, StarIcon } from '@heroicons/react/24/outline';
-import { progressTrackingService, GameProgress, GameEvent, ProgressHistory } from '../services/progressTrackingService';
+import { GameProgress, GameEvent, ProgressHistory } from '../services/types';
+// Dynamic import to avoid circular dependency
+// import { progressTrackingService } from '../services/progressTrackingService';
 import { supabase } from '../services/supabase';
 
 interface GameProgressModalProps {
@@ -46,6 +48,7 @@ export default function GameProgressModal({
       setGameVersions(versions);
 
       // Fetch progress data
+      const { progressTrackingService } = await import('../services/progressTrackingService');
       const progress = await progressTrackingService.getUserGameProgress(userId, gameId, selectedVersion);
       setProgressData(progress);
 

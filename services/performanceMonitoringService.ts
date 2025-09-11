@@ -23,18 +23,18 @@ class PerformanceMonitoringService {
   private static instance: PerformanceMonitoringService;
   private metrics: PerformanceMetrics[] = [];
   private errors: ErrorEvent[] = [];
-  private isInitialized = false;
+  // Removed isInitialized flag for Firebase hosting compatibility
 
   static getInstance(): PerformanceMonitoringService {
     if (!PerformanceMonitoringService.instance) {
       PerformanceMonitoringService.instance = new PerformanceMonitoringService();
+      // Initialize immediately instead of lazy initialization for Firebase hosting compatibility
+      PerformanceMonitoringService.instance.initialize();
     }
     return PerformanceMonitoringService.instance;
   }
 
-  initialize(): void {
-    if (this.isInitialized) return;
-
+  private initialize(): void {
     try {
       // Initialize Web Vitals monitoring
       this.initializeWebVitals();
@@ -45,7 +45,7 @@ class PerformanceMonitoringService {
       // Initialize performance observer
       this.initializePerformanceObserver();
       
-      this.isInitialized = true;
+      // Initialization complete - no need for isInitialized flag
       console.log('🚀 Performance monitoring initialized');
     } catch (error) {
       console.warn('Failed to initialize performance monitoring:', error);

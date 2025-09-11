@@ -1,15 +1,9 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import { Conversation, UserTier, ConnectionStatus } from '../services/types';
 import { useLongPress } from '../hooks/useLongPress';
-// Dynamic import to avoid bundle conflicts
-let wishlistService: any = null;
-const getWishlistService = async () => {
-  if (!wishlistService) {
-    const module = await import('../services/wishlistService');
-    wishlistService = module.wishlistService;
-  }
-  return wishlistService;
-};
+// Static import to replace dynamic import for Firebase hosting compatibility
+// Dynamic import to avoid circular dependency
+// import { wishlistService } from '../services/wishlistService';
 
 interface SubTabsProps {
     activeConversation: Conversation | null;
@@ -78,8 +72,9 @@ const SubTabs: React.FC<SubTabsProps> = ({
         if (shouldShowWishlistTab) {
             const checkNotifications = async () => {
                 try {
-                    const service = await getWishlistService();
-                    const newlyReleased = service.getNewlyReleasedCount();
+                    // Using static import instead of dynamic import for Firebase hosting compatibility
+                    const { wishlistService } = await import('../services/wishlistService');
+                    const newlyReleased = wishlistService.getNewlyReleasedCount();
                     setWishlistNotifications(newlyReleased);
                 } catch (error) {
                     console.error('Failed to check wishlist notifications:', error);

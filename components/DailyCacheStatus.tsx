@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { dailyNewsCacheService } from '../services/dailyNewsCacheService';
+// Dynamic import to avoid circular dependency
+// import { dailyNewsCacheService } from '../services/dailyNewsCacheService';
 
 const DailyCacheStatus: React.FC = () => {
   const [cacheStatus, setCacheStatus] = useState<any>({});
@@ -11,17 +12,20 @@ const DailyCacheStatus: React.FC = () => {
 
   const updateCacheStatus = async () => {
     try {
+      const { dailyNewsCacheService } = await import('../services/dailyNewsCacheService');
       const status = await dailyNewsCacheService.getDetailedCacheStatus();
       setCacheStatus(status);
     } catch (error) {
       console.warn('Failed to get detailed cache status:', error);
       // Fallback to basic status
+      const { dailyNewsCacheService } = await import('../services/dailyNewsCacheService');
       const basicStatus = dailyNewsCacheService.getCacheStatus();
       setCacheStatus(basicStatus);
     }
   };
 
   const clearCache = () => {
+    const { dailyNewsCacheService } = await import('../services/dailyNewsCacheService');
     dailyNewsCacheService.clearCache();
     updateCacheStatus();
   };

@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Logo from './Logo';
 import CheckIcon from './CheckIcon';
 import StarIcon from './StarIcon';
-import { waitlistService } from '../services/waitlistService';
+// Dynamic import to avoid circular dependency
+// import { waitlistService } from '../services/waitlistService';
 import FounderImage from './FounderImage';
 import ContactUsModal from './ContactUsModal';
 
@@ -525,6 +526,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
         setSubmitMessage('');
 
         try {
+            const { waitlistService } = await import('../services/waitlistService');
             const result = await waitlistService.addToWaitlist(email, 'landing_page');
             
             if (result.success) {
@@ -601,9 +603,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                     <div className="absolute inset-0 -z-10 bg-gradient-radial-at-center from-[#E53A3A]/5 to-transparent animate-pulse-glow"></div>
                     
                     {/* Dramatic Glow Rings */}
-                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] sm:w-[500px] sm:h-[500px] md:w-[800px] md:h-[800px] border border-[#E53A3A]/20 rounded-full blur-3xl animate-pulse-glow pointer-events-none"></div>
-                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[200px] h-[200px] sm:w-[400px] sm:h-[400px] md:w-[600px] md:h-[600px] border border-[#FFAB40]/15 rounded-full blur-3xl animate-pulse-glow pointer-events-none"></div>
-                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[150px] h-[150px] sm:w-[300px] sm:h-[300px] md:w-[400px] md:h-[400px] border border-[#E53A3A]/10 rounded-full blur-3xl animate-pulse-glow pointer-events-none"></div>
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[200px] h-[200px] sm:w-[400px] sm:h-[400px] md:w-[600px] md:h-[600px] lg:w-[800px] lg:h-[800px] border border-[#E53A3A]/20 rounded-full blur-3xl animate-pulse-glow pointer-events-none"></div>
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[150px] h-[150px] sm:w-[300px] sm:h-[300px] md:w-[400px] md:h-[400px] lg:w-[600px] lg:h-[600px] border border-[#FFAB40]/15 rounded-full blur-3xl animate-pulse-glow pointer-events-none"></div>
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[100px] h-[100px] sm:w-[200px] sm:h-[200px] md:w-[300px] md:h-[300px] lg:w-[400px] lg:h-[400px] border border-[#E53A3A]/10 rounded-full blur-3xl animate-pulse-glow pointer-events-none"></div>
                     
                     {/* Floating Glow Elements */}
                     <div className="absolute top-1/4 left-1/4 w-16 h-16 sm:w-24 sm:h-24 md:w-32 md:h-32 bg-gradient-to-r from-[#E53A3A]/30 to-[#FFAB40]/30 rounded-full blur-2xl animate-pulse-glow pointer-events-none"></div>

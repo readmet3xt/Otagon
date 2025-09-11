@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PlayerProfile } from '../services/playerProfileService';
+import { PlayerProfile } from '../services/types';
 
 interface PlayerProfileSetupModalProps {
   isOpen: boolean;

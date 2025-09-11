@@ -12,11 +12,11 @@ root.render(
   <App />
 );
 
-// Service Worker Registration for PWA
-if ('serviceWorker' in navigator) {
+// Service Worker Registration for PWA - Only in production
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
     // Use relative path for better compatibility across different deployment scenarios
-    const swPath = import.meta.env.PROD ? './sw.js' : '/sw.js';
+    const swPath = './sw.js';
     navigator.serviceWorker.register(swPath)
       .then((registration) => {
         console.log('✅ Service Worker registered successfully:', registration);
@@ -24,5 +24,15 @@ if ('serviceWorker' in navigator) {
       .catch((error) => {
         console.log('❌ Service Worker registration failed:', error);
       });
+  });
+} else if ('serviceWorker' in navigator && !import.meta.env.PROD) {
+  // Unregister any existing service workers in development mode
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      registrations.forEach((registration) => {
+        registration.unregister();
+        console.log('🧹 Service Worker unregistered for development mode');
+      });
+    });
   });
 }

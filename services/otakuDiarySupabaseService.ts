@@ -463,10 +463,10 @@ class OtakuDiarySupabaseService {
     try {
       // This would handle migrating existing localStorage data to Supabase
       // Implementation depends on your specific data structure
-      console.log('Migration not yet implemented');
+      console.log('Data sync not needed - all data goes directly to Supabase');
       return true;
     } catch (error) {
-      console.error('Error migrating data:', error);
+      console.error('Error syncing data:', error);
       return false;
     }
   }

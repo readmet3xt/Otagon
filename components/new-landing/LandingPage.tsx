@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Logo from './Logo';
 import CheckIcon from './CheckIcon';
 import StarIcon from './StarIcon';
-import { waitlistService } from '../../services/waitlistService';
+// Dynamic import to avoid circular dependency
+// import { waitlistService } from '../../services/waitlistService';
 import FounderImage from './FounderImage';
 import ContactUsModal from './ContactUsModal';
 
@@ -546,6 +547,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
         setSubmitMessage('');
 
         try {
+            const { waitlistService } = await import('../../services/waitlistService');
             const result = await waitlistService.addToWaitlist(email, 'landing_page');
             
             if (result.success) {

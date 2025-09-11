@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { XMarkIcon, TrophyIcon, StarIcon, FireIcon, SparklesIcon } from '@heroicons/react/24/outline';
-import { Achievement } from '../services/dailyEngagementService';
+import { Achievement } from '../services/types';
 
 interface AchievementNotificationProps {
   achievement: Achievement;

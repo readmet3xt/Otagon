@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { proactiveInsightService, ProactiveInsightSuggestion } from '../services/proactiveInsightService';
-import { playerProfileService } from '../services/playerProfileService';
+// Dynamic imports to avoid circular dependencies
+// import { proactiveInsightService, ProactiveInsightSuggestion } from '../services/proactiveInsightService';
+// import { playerProfileService } from '../services/playerProfileService';
 
 interface ProactiveInsightsPanelProps {
     isOpen: boolean;
@@ -24,9 +25,10 @@ export const ProactiveInsightsPanel: React.FC<ProactiveInsightsPanelProps> = ({
         }
     }, [isOpen]);
 
-    const loadInsights = () => {
+    const loadInsights = async () => {
         setIsLoading(true);
         try {
+            const { proactiveInsightService } = await import('../services/proactiveInsightService');
             const allInsights = proactiveInsightService.getProactiveInsights();
             setInsights(allInsights);
         } catch (error) {
