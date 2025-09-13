@@ -797,6 +797,12 @@ const App: React.FC = () => {
         <ErrorBoundary>
           {/* Modals - Outside Router to avoid interference */}
           {console.log('LOGIN PAGE CONTEXT - activeModal:', appState.activeModal, 'onboardingStatus:', onboardingStatus)}
+          
+          {/* Test Modal - Always visible for debugging */}
+          <div className="fixed top-4 right-4 z-[9999] bg-red-500 text-white p-2 rounded">
+            DEBUG: Login Context - Modal: {appState.activeModal || 'none'}
+          </div>
+          
           {appState.activeModal === 'about' && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
               <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
@@ -910,6 +916,12 @@ const App: React.FC = () => {
       <ErrorBoundary>
         {/* Modals - Outside Router to avoid interference */}
         {console.log('LANDING PAGE CONTEXT - activeModal:', appState.activeModal)}
+        
+        {/* Test Modal - Always visible for debugging */}
+        <div className="fixed top-4 left-4 z-[9999] bg-blue-500 text-white p-2 rounded">
+          DEBUG: Landing Context - Modal: {appState.activeModal || 'none'}
+        </div>
+        
         {appState.activeModal === 'about' && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
             <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
