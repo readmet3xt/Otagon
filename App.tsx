@@ -153,7 +153,28 @@ const App: React.FC = () => {
         appView,
         loading: false,
         error: null,
-        initialized: true
+        initialized: true,
+        activeModal: null,
+        isConnectionModalOpen: false,
+        isHandsFreeModalOpen: false,
+        isSettingsModalOpen: false,
+        isCreditModalOpen: false,
+        isOtakuDiaryModalOpen: false,
+        isWishlistModalOpen: false,
+        isCacheDashboardOpen: false,
+        showProfileSetup: false,
+        isHandsFreeMode: false,
+        showUpgradeScreen: false,
+        showDailyCheckin: false,
+        currentAchievement: null,
+        activeConversation: null,
+        activeSubView: 'chat',
+        loadingMessages: [],
+        isCooldownActive: false,
+        isFirstTime: true,
+        contextMenu: null,
+        feedbackModalState: null,
+        confirmationModal: null
       });
 
     } catch (error) {
@@ -770,7 +791,7 @@ const App: React.FC = () => {
       return (
         <ErrorBoundary>
           {/* Modals - Outside Router to avoid interference */}
-          {console.log('Current activeModal:', appState.activeModal)}
+          {console.log('LOGIN PAGE CONTEXT - Current activeModal:', appState.activeModal)}
           {appState.activeModal === 'about' && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
               <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
