@@ -1208,43 +1208,4 @@ const App: React.FC = () => {
   );
 };
 
-export default App;                </button>
-              </header>
-              <main className="flex-1 overflow-y-auto p-8">
-                <RefundPolicyPage />
-              </main>
-              <footer className="flex-shrink-0 p-6 border-t border-[#2E2E2E]/60 flex justify-end">
-                <button onClick={closeModal} className="bg-neutral-600 hover:bg-neutral-700 text-white font-medium py-2 px-6 rounded-md transition-colors">
-                  Back
-                </button>
-              </footer>
-            </div>
-          </div>
-        )}
-        
-        {appState.activeModal === 'contact' && (
-          <ContactUsModal isOpen={true} onClose={closeModal} />
-        )}
-
-        {/* Banners */}
-        {appState.showDailyCheckin && (
-          <DailyCheckinBanner
-            onClose={() => setAppState(prev => ({ ...prev, showDailyCheckin: false }))}
-          />
-        )}
-
-        {appState.currentAchievement && (
-          <AchievementNotification
-            achievement={appState.currentAchievement}
-            onClose={() => setAppState(prev => ({ ...prev, currentAchievement: null }))}
-          />
-        )}
-
-        {/* PWA Install Banner */}
-        <PWAInstallBanner />
-      </div>
-    </ErrorBoundary>
-  );
-};
-
 export default App;
