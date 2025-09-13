@@ -3,6 +3,7 @@ import { Usage, UserTier } from '../services/types';
 import StarIcon from './StarIcon';
 import { TierUpgradeModal } from './TierUpgradeModal';
 import GuestTierSwitcher from './GuestTierSwitcher';
+import { devModeMigrationService, MigrationResult } from '../services/devModeMigrationService';
 // Dynamic import to avoid circular dependency
 // import { profileService } from '../services/profileService';
 
@@ -30,6 +31,14 @@ const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({ usage, onShowUp
     const [isLoadingName, setIsLoadingName] = useState(true);
     const [nameError, setNameError] = useState<string>('');
     
+    // Developer mode management state
+    const [devDataInfo, setDevDataInfo] = useState({ conversations: 0, lastModified: 0, size: 0 });
+    const [isExporting, setIsExporting] = useState(false);
+    const [isImporting, setIsImporting] = useState(false);
+    const [importResult, setImportResult] = useState<MigrationResult | null>(null);
+    const [exportData, setExportData] = useState<string>('');
+    const [showDevManager, setShowDevManager] = useState(false);
+    
     const displayEmail = userEmail || (localStorage.getItem('otakonAuthMethod') !== 'skip' 
       ? `user@${localStorage.getItem('otakonAuthMethod') || 'local'}.com`
       : 'Anonymous User');
@@ -55,6 +64,96 @@ const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({ usage, onShowUp
 
         loadDisplayName();
     }, []);
+
+    // Load developer data info when in developer mode
+    useEffect(() => {
+        if (isDeveloperMode) {
+            updateDevDataInfo();
+        }
+    }, [isDeveloperMode]);
+
+    // Developer mode management functions
+    const updateDevDataInfo = () => {
+        const info = devModeMigrationService.getDeveloperDataInfo();
+        setDevDataInfo(info);
+    };
+
+    const handleExport = async () => {
+        setIsExporting(true);
+        try {
+            const data = devModeMigrationService.exportDeveloperData();
+            setExportData(data);
+            console.log('✅ Developer data exported successfully');
+        } catch (error) {
+            console.error('❌ Failed to export developer data:', error);
+            alert('Failed to export developer data: ' + error);
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
+    const handleImport = async () => {
+        if (!exportData.trim()) {
+            alert('Please paste the exported data first');
+            return;
+        }
+
+        setIsImporting(true);
+        setImportResult(null);
+        
+        try {
+            const result = await devModeMigrationService.importDeveloperData(exportData);
+            setImportResult(result);
+            
+            if (result.success) {
+                console.log('✅ Developer data imported successfully');
+                updateDevDataInfo();
+                setExportData(''); // Clear the input
+            } else {
+                console.error('❌ Import failed:', result.errors);
+            }
+        } catch (error) {
+            console.error('❌ Failed to import developer data:', error);
+            setImportResult({
+                success: false,
+                migratedConversations: 0,
+                errors: [error instanceof Error ? error.message : 'Unknown error'],
+                warnings: []
+            });
+        } finally {
+            setIsImporting(false);
+        }
+    };
+
+    const handleClearDevData = () => {
+        if (confirm('Are you sure you want to clear all developer data? This cannot be undone.')) {
+            devModeMigrationService.clearDeveloperData();
+            updateDevDataInfo();
+            setExportData('');
+            setImportResult(null);
+            console.log('🗑️ Developer data cleared');
+        }
+    };
+
+    const handleSwitchToProduction = () => {
+        if (confirm('Switch to production mode? This will clear all developer data.')) {
+            devModeMigrationService.switchToProductionMode();
+            window.location.reload(); // Reload to switch modes
+        }
+    };
+
+    const formatBytes = (bytes: number): string => {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    };
+
+    const formatDate = (timestamp: number): string => {
+        if (timestamp === 0) return 'Never';
+        return new Date(timestamp).toLocaleString();
+    };
 
     // Handle name save
     const handleSaveName = async () => {
@@ -222,6 +321,128 @@ const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({ usage, onShowUp
                     )}
                 </div>
             </div>
+
+            {/* Developer Mode Management */}
+            {isDeveloperMode && (
+                <div>
+                    <h2 className="text-xl font-bold text-yellow-400 mb-4">Developer Mode Management</h2>
+                    <div className="bg-yellow-900/20 border border-yellow-500/30 p-4 rounded-lg space-y-4">
+                        {/* Developer Data Info */}
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span className="text-gray-400">Conversations:</span>
+                                <span className="text-white ml-2">{devDataInfo.conversations}</span>
+                            </div>
+                            <div>
+                                <span className="text-gray-400">Size:</span>
+                                <span className="text-white ml-2">{formatBytes(devDataInfo.size)}</span>
+                            </div>
+                            <div>
+                                <span className="text-gray-400">Last Modified:</span>
+                                <span className="text-white ml-2">{formatDate(devDataInfo.lastModified)}</span>
+                            </div>
+                            <div>
+                                <span className="text-gray-400">Mode:</span>
+                                <span className="text-green-400 ml-2">Developer</span>
+                            </div>
+                        </div>
+
+                        {/* Export/Import Section */}
+                        <div className="space-y-3">
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={handleExport}
+                                    disabled={isExporting}
+                                    className="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg transition-colors text-sm"
+                                >
+                                    {isExporting ? 'Exporting...' : 'Export Data'}
+                                </button>
+                                <button
+                                    onClick={updateDevDataInfo}
+                                    className="px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors text-sm"
+                                >
+                                    Refresh Info
+                                </button>
+                            </div>
+
+                            {/* Import Section */}
+                            <div className="space-y-2">
+                                <textarea
+                                    value={exportData}
+                                    onChange={(e) => setExportData(e.target.value)}
+                                    placeholder="Paste exported data here to import..."
+                                    className="w-full h-20 p-2 bg-[#1A1A1A] border border-gray-600 rounded-lg text-white text-xs font-mono resize-none"
+                                />
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={handleImport}
+                                        disabled={isImporting || !exportData.trim()}
+                                        className="px-3 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white rounded-lg transition-colors text-sm"
+                                    >
+                                        {isImporting ? 'Importing...' : 'Import Data'}
+                                    </button>
+                                    <button
+                                        onClick={() => setExportData('')}
+                                        className="px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors text-sm"
+                                    >
+                                        Clear
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Import Result */}
+                            {importResult && (
+                                <div className={`p-2 rounded-lg text-xs ${
+                                    importResult.success ? 'bg-green-900/30 border border-green-500/50' : 'bg-red-900/30 border border-red-500/50'
+                                }`}>
+                                    <div className={`font-semibold ${importResult.success ? 'text-green-400' : 'text-red-400'}`}>
+                                        {importResult.success ? '✅ Import Successful' : '❌ Import Failed'}
+                                    </div>
+                                    <div className="text-gray-300">
+                                        Migrated {importResult.migratedConversations} conversations
+                                    </div>
+                                    {importResult.errors.length > 0 && (
+                                        <div className="text-red-400 mt-1">
+                                            <div className="font-semibold">Errors:</div>
+                                            <ul className="list-disc list-inside ml-2">
+                                                {importResult.errors.map((error, index) => (
+                                                    <li key={index}>{error}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                    {importResult.warnings.length > 0 && (
+                                        <div className="text-yellow-400 mt-1">
+                                            <div className="font-semibold">Warnings:</div>
+                                            <ul className="list-disc list-inside ml-2">
+                                                {importResult.warnings.map((warning, index) => (
+                                                    <li key={index}>{warning}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex gap-2 pt-3 border-t border-yellow-500/30">
+                            <button
+                                onClick={handleClearDevData}
+                                className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm"
+                            >
+                                Clear All Data
+                            </button>
+                            <button
+                                onClick={handleSwitchToProduction}
+                                className="px-3 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors text-sm"
+                            >
+                                Switch to Production
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Help & Support */}
             <div>

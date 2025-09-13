@@ -52,6 +52,8 @@ const UpgradeSplashScreen: React.FC<UpgradeSplashScreenProps> = ({ onUpgrade, on
 
     const handleProUpgrade = () => {
         trackTierUpgradeAttempt({
+            id: `upgrade_attempt_${Date.now()}`,
+            userId: 'anonymous',
             fromTier: 'free',
             toTier: 'pro',
             attemptSource: 'splash_screen',
@@ -66,6 +68,8 @@ const UpgradeSplashScreen: React.FC<UpgradeSplashScreenProps> = ({ onUpgrade, on
 
     const handleVanguardUpgrade = () => {
         trackTierUpgradeAttempt({
+            id: `upgrade_attempt_vanguard_${Date.now()}`,
+            userId: 'anonymous',
             fromTier: 'free',
             toTier: 'vanguard_pro',
             attemptSource: 'splash_screen',

@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { User, Session, AuthError } from '@supabase/supabase-js';
-import { AuthService as SecureAuthServiceInterface } from './secureAuthService';
+import { AuthService, AuthState } from './authTypes';
 
 // Environment variables for Supabase
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;

@@ -16,7 +16,6 @@ export { useErrorHandling } from './useErrorHandling';
 export { useChat } from './useChat';
 export { useConnection } from './useConnection';
 export { useTutorial } from './useTutorial';
-export { useAdvancedCache } from './useAdvancedCache';
 export { useAnalytics } from './useAnalytics';
 export { useEnhancedInsights } from './useEnhancedInsights';
 export { useGameAnalytics } from './useGameAnalytics';

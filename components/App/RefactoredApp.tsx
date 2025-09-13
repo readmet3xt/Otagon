@@ -10,6 +10,7 @@ import { useChat } from '../../hooks/useChat';
 import { useConnection } from '../../hooks/useConnection';
 import { useTutorial } from '../../hooks/useTutorial';
 import { canAccessDeveloperFeatures } from '../../config/developer';
+import { ResponsiveContainer } from '../layout/ResponsiveComponents';
 
 // Import components
 import ErrorBoundary from '../ErrorBoundary';
@@ -341,25 +342,26 @@ const RefactoredApp: React.FC = () => {
         {view === 'landing' ? (
           renderSplashScreen()
         ) : (
-          <>
-            {/* Main App View */}
-            <MainViewContainer
-              activeConversation={activeConversation}
-              activeSubView={activeSubView}
-              onSubViewChange={handleSubViewChange}
-              onSendMessage={handleSendMessage}
-              stopMessage={handleStopMessage}
-              isInputDisabled={isCooldownActive}
-              messages={activeConversation?.messages || []}
-              loadingMessages={loadingMessages}
-              onUpgradeClick={handleUpgradeClick}
-              onFeedback={handleFeedback}
-              onRetry={handleRetry}
-              isFirstTime={isFirstTime}
-              onOpenWishlistModal={handleOpenWishlistModal}
-            />
+          <ResponsiveContainer maxWidth="full" className="h-screen">
+            <>
+              {/* Main App View */}
+              <MainViewContainer
+                activeConversation={activeConversation}
+                activeSubView={activeSubView}
+                onSubViewChange={handleSubViewChange}
+                onSendMessage={handleSendMessage}
+                stopMessage={handleStopMessage}
+                isInputDisabled={isCooldownActive}
+                messages={activeConversation?.messages || []}
+                loadingMessages={loadingMessages}
+                onUpgradeClick={handleUpgradeClick}
+                onFeedback={handleFeedback}
+                onRetry={handleRetry}
+                isFirstTime={isFirstTime}
+                onOpenWishlistModal={handleOpenWishlistModal}
+              />
 
-            {/* Modals */}
+              {/* Modals */}
             {isConnectionModalOpen && (
               <ConnectionModal
                 isOpen={isConnectionModalOpen}
@@ -484,8 +486,12 @@ const RefactoredApp: React.FC = () => {
 
             {/* PWA Install Banner */}
             <PWAInstallBanner />
-          </>
+            </>
+          </ResponsiveContainer>
         )}
+
+        {/* Render page modals */}
+        {renderModal()}
       </div>
     </ErrorBoundary>
   );

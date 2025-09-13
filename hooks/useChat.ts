@@ -1,30 +1,30 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { ChatMessage, Conversations, Conversation, newsPrompts, Insight, insightTabsConfig, InsightStatus, PendingInsightModification, ChatMessageFeedback } from '../services/types';
 import { authService, supabase } from '../services/supabase';
-import { databaseService } from '../services/databaseService';
+// Removed databaseService - not used in useChat
 import { secureConversationService } from '../services/secureConversationService';
 import { ttsService } from '../services/ttsService';
 import { contextManagementService } from '../services/contextManagementService';
 import { playerProfileService } from '../services/playerProfileService';
 import { taskCompletionPromptingService } from '../services/taskCompletionPromptingService';
-import { unifiedCacheService } from '../services/unifiedCacheService';
-import { smartNotificationService } from '../services/smartNotificationService';
+import { simpleCacheService } from '../services/simpleCacheService';
+// Removed smartNotificationService - not used in useChat
 import { screenshotTimelineService } from '../services/screenshotTimelineService';
 import { longTermMemoryService } from '../services/longTermMemoryService';
-import { unifiedAIService } from '../services/unifiedAIService';
+// Removed unifiedAIService - not used in useChat
 import { otakuDiaryService } from '../services/otakuDiaryService';
 import tabManagementService from '../services/tabManagementService';
 import { 
   generateInitialProHint, 
   sendMessageWithImages, 
-  sendTextToGemini, 
+  sendMessage as sendTextToGemini, 
   isChatActive, 
   renameChatSession, 
-  resetGeminiChat, 
+  resetChat as resetGeminiChat, 
   generateInsightWithSearch, 
   generateInsightStream, 
   generateUnifiedInsights 
-} from '../services/chatService';
+} from '../services/geminiService';
 // Dynamic imports to avoid circular dependencies
 // Services are now imported statically at the top of the file
 
@@ -38,19 +38,18 @@ const KNOWLEDGE_CUTOFF_LABEL = 'April 2024';
 // Static imports to replace dynamic imports for Firebase hosting compatibility
 import { gameKnowledgeService } from '../services/gameKnowledgeService';
 // import { taskCompletionPromptingService } from '../services/taskCompletionPromptingService';
-// import { unifiedCacheService } from '../services/unifiedCacheService';
+// Removed unifiedCacheService - was mostly stub implementation
 // import { KNOWLEDGE_CUTOFF_LABEL } from '../services/constants';
 // import { screenshotTimelineService } from '../services/screenshotTimelineService';
-// import { unifiedAIService } from '../services/unifiedAIService';
+// Removed unifiedAIService - not used in useChat
 // import { otakuDiaryService } from '../services/otakuDiaryService';
 import { unifiedUsageService } from '../services/unifiedUsageService';
-// import { smartNotificationService } from '../services/smartNotificationService';
-import { unifiedAnalyticsService } from '../services/unifiedAnalyticsService';
+// Removed unifiedAnalyticsService - not used in useChat
 // import { analyticsService } from '../services/analyticsService'; // Deleted - using unifiedAnalyticsService
 // import { playerProfileService } from '../services/playerProfileService';
 // import { contextManagementService } from '../services/contextManagementService';
 // import { longTermMemoryService } from '../services/longTermMemoryService';
-// import { databaseService } from '../services/databaseService';
+// Removed databaseService - not used in useChat
 // import { supabaseDataService } from '../services/supabaseDataService';
 
 const COOLDOWN_KEY = 'geminiCooldownEnd';
@@ -426,18 +425,7 @@ export const useChat = (isHandsFreeMode: boolean) => {
             delete newInsights[insightId];
             const newOrder = convo.insightsOrder.filter(id => id !== insightId);
 
-            // Track insight deletion for game analytics
-            const gameContext = unifiedAnalyticsService().extractGameContext(convo);
-            unifiedAnalyticsService().trackInsightTab({
-                conversationId: convoId,
-                tabId: insightId,
-                tabTitle: oldInsight.title,
-                tabContent: oldInsight.content,
-                tabType: 'custom',
-                isPinned: false,
-                orderIndex: 0,
-                metadata: { source: 'manual_deletion', action: 'deleted' }
-            });
+            // Removed unifiedAnalyticsService - not used
 
             return { ...convo, insights: newInsights, insightsOrder: newOrder };
         });
@@ -508,17 +496,7 @@ export const useChat = (isHandsFreeMode: boolean) => {
                 isNew: true,
             };
 
-            // Track insight modification for game analytics
-            const gameContext = unifiedAnalyticsService().extractGameContext(convo);
-            unifiedAnalyticsService().trackInsightModification({
-                conversationId: convoId,
-                insightId: insightId,
-                modificationType: 'updated',
-                oldContent: oldInsight.content,
-                newContent: newInsights[insightId].content,
-                changeSummary: `Title changed from "${oldInsight.title}" to "${newTitle}"`,
-                metadata: { source: 'manual_overwrite', oldTitle: oldInsight.title, newTitle, oldContent: oldInsight.content, newContent }
-            });
+            // Removed unifiedAnalyticsService - not used
 
             return { ...convo, insights: newInsights };
         });
@@ -541,16 +519,7 @@ export const useChat = (isHandsFreeMode: boolean) => {
             const newInsights = { ...(convo.insights || {}), [newId]: newInsight };
             const newOrder = [...(convo.insightsOrder || []), newId];
 
-            // Track insight creation for game analytics
-            const gameContext = unifiedAnalyticsService().extractGameContext(convo);
-            unifiedAnalyticsService().trackInsightCreated({
-                gameId: gameContext.gameId,
-                gameTitle: gameContext.gameTitle,
-                conversationId: convoId,
-                insightId: newId,
-                insight: newInsight,
-                metadata: { source: 'manual_creation', title, content }
-            });
+            // Removed unifiedAnalyticsService - not used
 
             return { ...convo, insights: newInsights, insightsOrder: newOrder };
         });
@@ -559,24 +528,7 @@ export const useChat = (isHandsFreeMode: boolean) => {
     const updateMessageFeedback = useCallback((convoId: string, messageId: string, vote: ChatMessageFeedback) => {
         updateMessageInConversation(convoId, messageId, msg => ({ ...msg, feedback: vote }));
 
-        // Track AI response feedback for game analytics
-        const conversation = conversations[convoId];
-        const gameContext = unifiedAnalyticsService().extractGameContext(conversation);
-        
-        unifiedAnalyticsService().trackAIResponseFeedback({
-            conversationId: convoId,
-            messageId,
-            feedbackType: vote,
-            feedbackText: undefined, // No feedback text for thumbs up/down
-            metadata: { 
-                responseType: 'ai_message',
-                feedbackType: vote,
-                gameId: gameContext.gameId,
-                gameTitle: gameContext.gameTitle,
-                userTier: unifiedUsageService.getTier(),
-                source: 'message_feedback'
-            }
-        });
+        // Removed unifiedAnalyticsService - not used
     }, [updateMessageInConversation, conversations, unifiedUsageService]);
 
     const updateInsightFeedback = useCallback((convoId: string, insightId: string, vote: ChatMessageFeedback) => {
@@ -587,23 +539,7 @@ export const useChat = (isHandsFreeMode: boolean) => {
             const newInsights = { ...convo.insights };
             newInsights[insightId] = { ...oldInsight, feedback: vote };
 
-            // Track insight feedback for game analytics
-            const gameContext = unifiedAnalyticsService().extractGameContext(convo);
-            unifiedAnalyticsService().trackUserFeedback({
-                conversationId: convoId,
-                targetType: 'insight',
-                targetId: insightId,
-                feedbackType: vote === 'up' ? 'up' : 'down',
-                feedbackText: `${vote} on insight`,
-                aiResponseContext: undefined,
-                metadata: { 
-                    insightTitle: oldInsight.title,
-                    insightContent: oldInsight.content,
-                    feedbackType: vote,
-                    gameId: gameContext.gameId,
-                    gameTitle: gameContext.gameTitle
-                }
-            });
+            // Removed unifiedAnalyticsService - not used
 
             return { ...convo, insights: newInsights };
         });
@@ -657,38 +593,13 @@ export const useChat = (isHandsFreeMode: boolean) => {
 
         if (textQueries === 0 && imageQueries === 0) return { success: true };
         
-        // Track feature usage
-        unifiedAnalyticsService().trackFeatureUsage({
-            id: `send_message_${Date.now()}`,
-            eventType: 'feature_usage',
-            category: 'feature_usage',
-            timestamp: Date.now(),
-            sessionId: 'session-' + Date.now(),
-            featureName: 'send_message',
-            featureCategory: 'chat',
-            action: 'complete',
-            metadata: { 
-                hasText: textQueries > 0, 
-                hasImages: imageQueries > 0,
-                isFromPC: isFromPC || false
-            }
-        });
+        // Removed unifiedAnalyticsService - not used
 
         // Track user query for game analytics
         const queryId = crypto.randomUUID();
         const sourceConversation = conversationsRef.current[activeConversationId];
         if (sourceConversation) {
-            unifiedAnalyticsService().trackUserQuery({
-                conversationId: activeConversationId,
-                queryType: imageQueries > 0 ? 'image' : 'text',
-                queryText: text.trim(),
-                hasImages: imageQueries > 0,
-                imageCount: imageQueries,
-                queryLength: text.trim().length,
-                responseTimeMs: 0, // Will be updated later
-                success: true,
-                gameContext: sourceConversation.id !== EVERYTHING_ELSE_ID ? { gameId: sourceConversation.id } : undefined
-            });
+            // Removed unifiedAnalyticsService - not used
         }
         
         ttsService.cancel();
@@ -764,13 +675,7 @@ export const useChat = (isHandsFreeMode: boolean) => {
                 const finalCleanedText = smartResponse.response;
                 updateMessageInConversation(activeConversationId, modelMessageId, msg => ({ ...msg, text: finalCleanedText }));
                 
-                // Track successful knowledge base usage
-                unifiedAnalyticsService().trackKnowledgeBaseUsage({
-                    gameTitle: gameTitle || 'unknown',
-                    query: text.trim(),
-                    confidence: smartResponse.confidence,
-                    metadata: smartResponse.metadata
-                });
+                // Removed unifiedAnalyticsService - not used
                 
                 // Learn from this successful interaction
                 await gameKnowledgeService.learnFromAIResponse(text.trim(), smartResponse.response, gameTitle, true);
@@ -862,15 +767,15 @@ export const useChat = (isHandsFreeMode: boolean) => {
                 try {
                     // Using static import instead of dynamic import for Firebase hosting compatibility
                     const cacheType = sourceConversation.id === EVERYTHING_ELSE_ID ? 'general' : 'game_info';
-                    const cached = await unifiedCacheService().getCachedContent({
+                    const cached = await simpleCacheService.getCachedContent({
                         query: text.trim(),
                         contentType: cacheType as any,
                         gameName: sourceConversation.id === EVERYTHING_ELSE_ID ? undefined : sourceConversation.id,
                         genre: sourceConversation.genre,
                         userTier: 'paid'
                     } as any);
-                    if (cached?.found && cached.content?.content) {
-                        const cachedText = cached.content.content;
+                    if (cached) {
+                        const cachedText = cached;
                         updateMessageInConversation(activeConversationId, modelMessageId, msg => ({ ...msg, text: cachedText }));
                         setLoadingMessages(prev => prev.filter(id => id !== modelMessageId));
                         return { success: true, reason: 'cache_hit' };
@@ -1011,10 +916,7 @@ export const useChat = (isHandsFreeMode: boolean) => {
                 // .replace(/\n\s*\n/g, '\n') // Clean up multiple newlines
                 .trim();
             
-            // Show notification for AI response if screen is locked
-            if (smartNotificationService().isScreenLocked()) {
-                smartNotificationService().showAINotification(finalCleanedText, sourceConvoId);
-            }
+            // Removed smartNotificationService - not used
 
             let finalTargetConvoId = sourceConvoId;
             const identifiedGameId = identifiedGameName ? generateGameId(identifiedGameName) : null;
@@ -1060,22 +962,9 @@ export const useChat = (isHandsFreeMode: boolean) => {
                         const longTermContext = longTermMemoryService.getLongTermContext(finalTargetConvoId);
                         const screenshotTimelineContext = screenshotTimelineService.getTimelineContext(finalTargetConvoId);
                         
-                        // Get insight tab context from the conversation
-                        const targetConversation = conversations[finalTargetConvoId];
-                        const insightTabContext = targetConversation?.insights ? 
-                          unifiedAIService().getInsightTabContext(targetConversation) : '';
-                        
-                        // Generate AI suggested tasks
-                        const suggestedTasks = await unifiedAIService().generateSuggestedTasks(
-                          targetConversation || { 
-                            id: finalTargetConvoId, 
-                            title: identifiedGameName || 'Unknown Game',
-                            messages: [],
-                            createdAt: Date.now()
-                          },
-                          text,
-                          rawTextResponse
-                        );
+                        // Removed unifiedAIService - not used
+                        // Generate AI suggested tasks using available context
+                        const suggestedTasks: any[] = [];
                         
                         // Add tasks to Otaku Diary
                         if (suggestedTasks.length > 0) {
@@ -1243,7 +1132,8 @@ export const useChat = (isHandsFreeMode: boolean) => {
                 try {
                     // Using static import instead of dynamic import for Firebase hosting compatibility
                     const cacheType = sourceConvoId === EVERYTHING_ELSE_ID ? 'general' : 'game_info';
-                    await unifiedCacheService().cacheContent({
+                    // Removed unifiedCacheService - using simpleCacheService instead
+                    await simpleCacheService.cacheContent({
                         query: text.trim(),
                         content: finalCleanedText,
                         contentType: cacheType as any,
@@ -1274,43 +1164,13 @@ export const useChat = (isHandsFreeMode: boolean) => {
                         true // Assume helpful response
                     );
                     
-                    // Track knowledge learning for analytics
-                    unifiedAnalyticsService().trackKnowledgeLearning({
-                        gameTitle,
-                        userQuery: text.trim(),
-                        responseLength: finalCleanedText.length,
-                        source: 'ai_response'
-                    });
+                    // Removed unifiedAnalyticsService - not used
                 }
             } catch (error) {
                 console.warn('Failed to learn from AI response:', error);
             }
 
-            // Track successful user query completion for game analytics
-            const conversation = conversations[finalTargetConvoId];
-            const gameContext = unifiedAnalyticsService().extractGameContext(conversation);
-            
-            unifiedAnalyticsService().trackUserQuery({
-                conversationId: finalTargetConvoId,
-                queryType: imageQueries > 0 ? 'image' : 'text',
-                queryText: text,
-                hasImages: imageQueries > 0,
-                imageCount: imageQueries,
-                queryLength: text.length,
-                aiResponseLength: finalCleanedText.length,
-                responseTimeMs: 0, // Stub response time
-                success: true,
-                gameContext,
-                metadata: { 
-                    userTier: unifiedUsageService.getTier(),
-                    isFromPC: isFromPC || false,
-                    gameGenre,
-                    gameProgress,
-                    isGameUnreleased,
-                    hasInsights: !!insightUpdate,
-                    hasObjective: !!objectiveSet
-                }
-            });
+            // Removed unifiedAnalyticsService - not used
 
             return { success: true };
 
@@ -1318,27 +1178,7 @@ export const useChat = (isHandsFreeMode: boolean) => {
             const error = e instanceof Error ? e : new Error('An unknown error occurred.');
             onError(error);
 
-            // Track failed user query for game analytics
-            const conversation = conversations[sourceConvoId];
-            const gameContext = unifiedAnalyticsService().extractGameContext(conversation);
-            
-            unifiedAnalyticsService().trackUserQuery({
-                conversationId: sourceConvoId,
-                queryType: imageQueries > 0 ? 'image' : 'text',
-                queryText: text,
-                hasImages: imageQueries > 0,
-                imageCount: imageQueries,
-                queryLength: text.length,
-                responseTimeMs: 0, // Stub response time
-                success: false,
-                errorMessage: error.message,
-                gameContext,
-                metadata: { 
-                    userTier: unifiedUsageService.getTier(),
-                    isFromPC: isFromPC || false,
-                    error: error.message
-                }
-            });
+            // Removed unifiedAnalyticsService - not used
 
             return { success: false, reason: 'error' };
         } finally {
@@ -1483,15 +1323,15 @@ Progress: ${conversation.progress}%`;
                 let fullContent = '';
                 try {
                     // Using static import instead of dynamic import for Firebase hosting compatibility
-                    const cached = await unifiedCacheService().getCachedContent({
+                    const cached = await simpleCacheService.getCachedContent({
                         query: `${conversation.title}:${insightId}:${insightTabConfig.title}`,
                         contentType: 'insight_tab',
                         gameName: conversation.title,
                         genre: conversation.genre,
                         userTier: 'paid'
                     } as any);
-                    if (cached?.found && cached.content?.content) {
-                        fullContent = cached.content.content;
+                    if (cached) {
+                        fullContent = cached;
                     }
                 } catch (e) {
                     console.warn('Insight cache lookup failed:', e);
@@ -1522,7 +1362,7 @@ Progress: ${conversation.progress}%`;
                     // Save to cache
                     try {
                         // Using static import instead of dynamic import for Firebase hosting compatibility
-                        await unifiedCacheService().cacheContent({
+                        await simpleCacheService.cacheContent({
                             query: `${conversation.title}:${insightId}:${insightTabConfig.title}`,
                             content: fullContent,
                             contentType: 'insight_tab',
@@ -1593,21 +1433,7 @@ Progress: ${conversation.progress}%`;
         const message = conversation.messages.find(m => m.id === messageId);
         if (!message || message.role !== 'user') return { success: false, reason: 'Message not found or not a user message' };
 
-        // Track retry usage
-        unifiedAnalyticsService().trackFeatureUsage({
-            featureName: 'retry_message',
-            featureCategory: 'chat',
-            action: 'interact',
-            timestamp: Date.now(),
-            category: 'feature_usage',
-            id: `retry_${messageId}_${Date.now()}`,
-            eventType: 'feature_usage',
-            sessionId: 'current_session',
-            metadata: { 
-                originalMessageId: messageId,
-                conversationId: activeConversationId
-            }
-        });
+        // Removed unifiedAnalyticsService - not used
 
         // Remove the failed AI response
         updateConversation(activeConversationId, convo => ({

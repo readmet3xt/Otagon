@@ -12,7 +12,12 @@ const ScreenLockDebug: React.FC = () => {
   useEffect(() => {
     const updateStatus = async () => {
       const { smartNotificationService } = await import('../services/smartNotificationService');
-      setScreenStatus(smartNotificationService().getScreenStatus());
+      const status = smartNotificationService.getScreenStatus();
+      setScreenStatus({
+        locked: status.status === 'locked',
+        lastActivity: status.lastActivity,
+        timeSinceLastActivity: Date.now() - status.lastActivity
+      });
     };
 
     // Update status every second

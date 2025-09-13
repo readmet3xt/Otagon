@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-// Dynamic import to avoid circular dependency
-// import { unifiedCacheService, CachePerformanceMetrics } from '../services/unifiedCacheService';
-import { useAdvancedCache } from '../hooks/useAdvancedCache';
+// Restored unifiedCacheService for advanced caching
+import { unifiedCacheService } from '../services/unifiedCacheService';
 
 interface CachePerformanceDashboardProps {
   isOpen: boolean;
@@ -33,36 +32,38 @@ export default function CachePerformanceDashboard({ isOpen, onClose }: CachePerf
     strategies: [] as string[]
   });
 
-  // Example cache usage for demonstration
-  const userPrefsCache = useAdvancedCache({
-    key: 'user_preferences_demo',
-    strategy: 'user_preferences',
-    fallbackValue: { theme: 'dark', language: 'en' }
-  });
-
-  const conversationsCache = useAdvancedCache({
-    key: 'conversations_demo',
-    strategy: 'conversations',
-    fallbackValue: [],
-    autoRefresh: true
-  });
-
-  const suggestionsCache = useAdvancedCache({
-    key: 'suggestions_demo',
-    strategy: 'suggestions',
-    fallbackValue: [],
-    autoRefresh: true
+  // Simple cache usage for demonstration
+  const [cacheData, setCacheData] = useState({
+    userPrefs: null as any,
+    conversations: null as any,
+    suggestions: null as any
   });
 
   // ===== METRICS UPDATES =====
 
-    const updateMetrics = useCallback(async () => {
-    const { unifiedCacheService } = await import('../services/unifiedCacheService');
-    const newMetrics = unifiedCacheService().getPerformanceMetrics();
-    const newCacheInfo = unifiedCacheService().getCacheInfo();
-    
-    setMetrics(newMetrics);
-    setCacheInfo(newCacheInfo);
+  const updateMetrics = useCallback(async () => {
+    // Using restored unifiedCacheService
+    try {
+      const newMetrics = unifiedCacheService().getPerformanceMetrics();
+      const newCacheInfo = unifiedCacheService().getCacheInfo();
+      
+      setMetrics(newMetrics);
+      setCacheInfo(newCacheInfo);
+      
+      // Load some example cache data
+      const userPrefs = await unifiedCacheService().get('user_preferences_demo', 'user_preferences');
+      const conversations = await unifiedCacheService().get('conversations_demo', 'conversations');
+      const suggestions = await unifiedCacheService().get('suggestions_demo', 'suggestions');
+      
+      setCacheData({
+        userPrefs: userPrefs || null,
+        conversations: conversations || null,
+        suggestions: suggestions || null
+      });
+      
+    } catch (error) {
+      console.error('Error updating cache metrics:', error);
+    }
   }, []);
 
   useEffect(() => {
@@ -78,7 +79,6 @@ export default function CachePerformanceDashboard({ isOpen, onClose }: CachePerf
 
   const clearAllCache = async () => {
     try {
-      const { unifiedCacheService } = await import('../services/unifiedCacheService');
       await unifiedCacheService().clear();
       updateMetrics();
       console.log('🗑️ All cache cleared');
@@ -89,7 +89,6 @@ export default function CachePerformanceDashboard({ isOpen, onClose }: CachePerf
 
   const clearStrategyCache = async (strategy: string) => {
     try {
-      const { unifiedCacheService } = await import('../services/unifiedCacheService');
       await unifiedCacheService().clearStrategy(strategy);
       updateMetrics();
       console.log(`🗑️ Cache cleared for strategy: ${strategy}`);
@@ -100,7 +99,6 @@ export default function CachePerformanceDashboard({ isOpen, onClose }: CachePerf
 
   const triggerPrediction = async () => {
     try {
-      const { unifiedCacheService } = await import('../services/unifiedCacheService');
       await unifiedCacheService().predictAndPrecache();
       console.log('🔮 Predictive caching triggered');
     } catch (error) {
@@ -396,12 +394,12 @@ export default function CachePerformanceDashboard({ isOpen, onClose }: CachePerf
                     <div>
                       <p className="font-medium">User Preferences</p>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {userPrefsCache.lastUpdated ? `Last updated: ${userPrefsCache.lastUpdated.toLocaleTimeString()}` : 'Not cached'}
+                        {cacheData.userPrefs ? 'Cached' : 'Not cached'}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-gray-600 dark:text-gray-400">Strategy</p>
-                      <p className="font-medium">user_preferences</p>
+                      <p className="font-medium">simple_cache</p>
                     </div>
                   </div>
 
@@ -409,12 +407,12 @@ export default function CachePerformanceDashboard({ isOpen, onClose }: CachePerf
                     <div>
                       <p className="font-medium">Conversations</p>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {conversationsCache.lastUpdated ? `Last updated: ${conversationsCache.lastUpdated.toLocaleTimeString()}` : 'Not cached'}
+                        {cacheData.conversations ? 'Cached' : 'Not cached'}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-gray-600 dark:text-gray-400">Strategy</p>
-                      <p className="font-medium">conversations</p>
+                      <p className="font-medium">simple_cache</p>
                     </div>
                   </div>
 
@@ -422,12 +420,12 @@ export default function CachePerformanceDashboard({ isOpen, onClose }: CachePerf
                     <div>
                       <p className="font-medium">Suggestions</p>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {suggestionsCache.lastUpdated ? `Last updated: ${suggestionsCache.lastUpdated.toLocaleTimeString()}` : 'Not cached'}
+                        {cacheData.suggestions ? 'Cached' : 'Not cached'}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-gray-600 dark:text-gray-400">Strategy</p>
-                      <p className="font-medium">suggestions</p>
+                      <p className="font-medium">simple_cache</p>
                     </div>
                   </div>
                 </div>

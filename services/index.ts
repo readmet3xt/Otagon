@@ -17,7 +17,7 @@ export { databaseService } from './databaseService';
 export { offlineStorageService } from './offlineStorageService';
 
 // Cache Services
-export { unifiedCacheService, UnifiedCacheService } from './unifiedCacheService';
+export { unifiedCacheService } from './unifiedCacheService';
 
 // AI Services
 export { unifiedAIService, UnifiedAIService } from './unifiedAIService';

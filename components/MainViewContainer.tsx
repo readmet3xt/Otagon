@@ -8,6 +8,8 @@ import ChatMessage from './ChatMessage';
 import SuggestedPrompts from './SuggestedPrompts';
 import ActionButtons from './ActionButtons';
 import { useState } from 'react';
+import { useResponsive } from '../utils/responsive';
+import { UniversalResponsiveContainer, UniversalResponsiveFlex, UniversalResponsiveText } from './layout/UniversalResponsiveLayout';
 import OtakuDiaryTab from './OtakuDiaryTab';
 import WishlistTab from './WishlistTab';
 
@@ -51,6 +53,7 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
   isFirstTime,
   onOpenWishlistModal,
 }) => {
+  const { isMobile, isTablet, isLaptop, isDesktop, isUltrawide, deviceType } = useResponsive();
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -175,15 +178,19 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
     
     if (viewId === 'chat') {
       return (
-        <div
-          key="chat-view"
-          className="flex-shrink-0 w-full h-full overflow-y-auto px-3 sm:px-4 md:px-6 lg:px-8 pt-4 sm:pt-6 md:pt-8 pb-20 sm:pb-24"
-          ref={chatContainerRef}
-          aria-live="polite"
-          aria-atomic="false"
-          role="log"
+        <UniversalResponsiveContainer
+          maxWidth="full"
+          padding="md"
+          className="flex-shrink-0 w-full h-full overflow-y-auto pt-4 sm:pt-6 md:pt-8 pb-20 sm:pb-24"
         >
-          {messages.length === 0 ? (
+          <div
+            ref={chatContainerRef}
+            aria-live="polite"
+            aria-atomic="false"
+            role="log"
+            className="w-full"
+          >
+            {messages.length === 0 ? (
             <div className="flex-1 flex flex-col justify-center items-center h-full">
               {loadingMessages.length === 0 && (
                 <SuggestedPrompts onPromptClick={onSendMessage} isInputDisabled={isInputDisabled} isFirstTime={isFirstTime} />
@@ -215,7 +222,8 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
             </div>
           )}
           
-        </div>
+          </div>
+        </UniversalResponsiveContainer>
       );
     }
     

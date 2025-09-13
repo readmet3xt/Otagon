@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-// Dynamic imports to avoid circular dependencies
+// Restored unifiedAIService for enhanced insights
 import { unifiedAIService } from '../services/unifiedAIService';
 import { playerProfileService } from '../services/playerProfileService';
 import { PlayerProfile, GameContext, EnhancedInsightTab } from '../services/types';

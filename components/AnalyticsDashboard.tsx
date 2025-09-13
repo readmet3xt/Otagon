@@ -1,6 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useAnalytics } from '../hooks/useAnalytics';
-import { OnboardingFunnelStats, FeatureUsageStats } from '../services/unifiedAnalyticsService';
+
+// Simple types (was from unifiedAnalyticsService)
+interface OnboardingFunnelStats {
+  stepName: string;
+  stepOrder: number;
+  completionRate: number;
+  averageTimeToComplete: number;
+  totalUsers: number;
+  skippedUsers: number;
+}
+
+interface FeatureUsageStats {
+  featureName: string;
+  totalUsage: number;
+  uniqueUsers: number;
+  averageUsagePerUser: number;
+  mostActiveUsers: number;
+}
 
 interface TierConversionStats {
   tier: string;

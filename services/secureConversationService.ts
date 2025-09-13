@@ -1,5 +1,7 @@
 import { supabase } from './supabase';
-import { authService } from './secureAuthService';
+import { authService } from './supabase';
+import { Conversation as UseChatConversation, Conversations as UseChatConversations } from './types';
+import { devModeMigrationService } from './devModeMigrationService';
 
 // ========================================
 // 🛡️ SECURE CONVERSATION SERVICE
@@ -279,38 +281,54 @@ class SecureConversationService implements ConversationService {
     isPinned: boolean = false
   ): Promise<ConversationResult> {
     try {
+      // Ensure developer mode is properly initialized
+      if (!devModeMigrationService.isDeveloperMode()) {
+        await devModeMigrationService.switchToDeveloperMode();
+      }
+
       // Get existing developer data
       const devData = localStorage.getItem('otakon_dev_data');
-      const parsedData = devData ? JSON.parse(devData) : { conversations: {} };
+      const parsedData = devData ? JSON.parse(devData) : { conversations: {}, conversationsOrder: [] };
 
-      // Create conversation object
-      const conversation: Conversation = {
+      // Convert insights array to insights object (useChat format)
+      const insightsObject: Record<string, any> = {};
+      insights.forEach((insight, index) => {
+        insightsObject[`insight_${index}`] = insight;
+      });
+
+      // Create conversation object using useChat schema
+      const conversation: UseChatConversation = {
         id: conversationId,
         title,
         messages,
-        insights,
-        context,
+        createdAt: Date.now(),
+        progress: context.progress,
+        inventory: context.inventory,
+        lastTrailerTimestamp: context.lastTrailerTimestamp,
+        lastInteractionTimestamp: context.lastInteractionTimestamp,
+        genre: context.genre,
+        insights: insightsObject,
+        insightsOrder: Object.keys(insightsObject),
+        isPinned,
+        activeObjective: context.activeObjective,
+        // Legacy properties for compatibility
+        gameId: gameId,
         game_id: gameId,
-        is_pinned: isPinned,
-        version: 1,
-        checksum: this.generateChecksum(messages, insights, context),
-        last_modified: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        lastModified: Date.now(),
+        context,
+        version: 1
       };
 
       // Update conversations
       parsedData.conversations[conversationId] = conversation;
       
-      // Update active conversation if it's the first one
-      if (!parsedData.activeConversation) {
-        parsedData.activeConversation = conversationId;
-      }
-
       // Update conversations order
       if (!parsedData.conversationsOrder.includes(conversationId)) {
         parsedData.conversationsOrder.unshift(conversationId);
       }
+
+      // Update last sync timestamp
+      parsedData.lastSync = Date.now();
 
       // Save to localStorage
       localStorage.setItem('otakon_dev_data', JSON.stringify(parsedData));
@@ -319,7 +337,7 @@ class SecureConversationService implements ConversationService {
 
       return {
         success: true,
-        conversation
+        conversation: conversation as any // Type assertion for compatibility
       };
 
     } catch (error) {
@@ -397,16 +415,27 @@ class SecureConversationService implements ConversationService {
 
   private async loadConversationsDeveloperMode(): Promise<ConversationResult> {
     try {
+      // Ensure developer mode is properly initialized
+      if (!devModeMigrationService.isDeveloperMode()) {
+        await devModeMigrationService.switchToDeveloperMode();
+      }
+
       const devData = localStorage.getItem('otakon_dev_data');
-      const parsedData = devData ? JSON.parse(devData) : { conversations: {} };
+      const parsedData = devData ? JSON.parse(devData) : { conversations: {}, conversationsOrder: [] };
+
+      // Ensure we have the conversationsOrder array
+      if (!parsedData.conversationsOrder) {
+        parsedData.conversationsOrder = Object.keys(parsedData.conversations);
+      }
 
       this.log('Conversations loaded from developer mode', { 
-        count: Object.keys(parsedData.conversations).length 
+        count: Object.keys(parsedData.conversations).length,
+        order: parsedData.conversationsOrder.length
       });
 
       return {
         success: true,
-        conversations: parsedData.conversations
+        conversations: parsedData.conversations as any // Type assertion for compatibility
       };
 
     } catch (error) {

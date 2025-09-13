@@ -10,12 +10,18 @@ import { breakpoints } from './designTokens';
 // ===== BREAKPOINT UTILITIES =====
 
 export const breakpointValues = {
-  xs: 475,
-  sm: 640,
-  md: 768,
-  lg: 1024,
-  xl: 1280,
-  '2xl': 1536,
+  // Mobile devices
+  xs: 320,    // iPhone 12 mini, small phones
+  sm: 375,    // iPhone 12/13/14, standard phones
+  md: 414,    // iPhone 12/13/14 Pro Max, large phones
+  lg: 768,    // iPad, small tablets
+  xl: 1024,   // iPad Pro, tablets
+  '2xl': 1280, // Small laptops
+  '3xl': 1440, // Standard laptops
+  '4xl': 1680, // Large laptops
+  '5xl': 1920, // Desktop monitors
+  '6xl': 2560, // 2K monitors
+  '7xl': 3840, // 4K monitors
 } as const;
 
 export type Breakpoint = keyof typeof breakpointValues;
@@ -29,6 +35,11 @@ export const mediaQueries = {
   lg: `(min-width: ${breakpointValues.lg}px)`,
   xl: `(min-width: ${breakpointValues.xl}px)`,
   '2xl': `(min-width: ${breakpointValues['2xl']}px)`,
+  '3xl': `(min-width: ${breakpointValues['3xl']}px)`,
+  '4xl': `(min-width: ${breakpointValues['4xl']}px)`,
+  '5xl': `(min-width: ${breakpointValues['5xl']}px)`,
+  '6xl': `(min-width: ${breakpointValues['6xl']}px)`,
+  '7xl': `(min-width: ${breakpointValues['7xl']}px)`,
   
   // Max-width queries
   xsMax: `(max-width: ${breakpointValues.xs - 1}px)`,
@@ -37,13 +48,26 @@ export const mediaQueries = {
   lgMax: `(max-width: ${breakpointValues.lg - 1}px)`,
   xlMax: `(max-width: ${breakpointValues.xl - 1}px)`,
   '2xlMax': `(max-width: ${breakpointValues['2xl'] - 1}px)`,
+  '3xlMax': `(max-width: ${breakpointValues['3xl'] - 1}px)`,
+  '4xlMax': `(max-width: ${breakpointValues['4xl'] - 1}px)`,
+  '5xlMax': `(max-width: ${breakpointValues['5xl'] - 1}px)`,
+  '6xlMax': `(max-width: ${breakpointValues['6xl'] - 1}px)`,
+  '7xlMax': `(max-width: ${breakpointValues['7xl'] - 1}px)`,
   
-  // Range queries
-  xsToSm: `(min-width: ${breakpointValues.xs}px) and (max-width: ${breakpointValues.sm - 1}px)`,
-  smToMd: `(min-width: ${breakpointValues.sm}px) and (max-width: ${breakpointValues.md - 1}px)`,
-  mdToLg: `(min-width: ${breakpointValues.md}px) and (max-width: ${breakpointValues.lg - 1}px)`,
-  lgToXl: `(min-width: ${breakpointValues.lg}px) and (max-width: ${breakpointValues.xl - 1}px)`,
-  xlTo2xl: `(min-width: ${breakpointValues.xl}px) and (max-width: ${breakpointValues['2xl'] - 1}px)`,
+  // Range queries for specific device categories
+  mobile: `(min-width: ${breakpointValues.xs}px) and (max-width: ${breakpointValues.md - 1}px)`,
+  tablet: `(min-width: ${breakpointValues.lg}px) and (max-width: ${breakpointValues.xl - 1}px)`,
+  laptop: `(min-width: ${breakpointValues['2xl']}px) and (max-width: ${breakpointValues['4xl'] - 1}px)`,
+  desktop: `(min-width: ${breakpointValues['5xl']}px) and (max-width: ${breakpointValues['6xl'] - 1}px)`,
+  ultrawide: `(min-width: ${breakpointValues['7xl']}px)`,
+  
+  // Orientation queries
+  portrait: '(orientation: portrait)',
+  landscape: '(orientation: landscape)',
+  
+  // Touch device queries
+  touch: '(hover: none) and (pointer: coarse)',
+  noTouch: '(hover: hover) and (pointer: fine)',
 } as const;
 
 // ===== RESPONSIVE UTILITIES =====
@@ -278,14 +302,25 @@ export const useResponsive = () => {
       isLg: false,
       isXl: false,
       is2xl: false,
+      is3xl: false,
+      is4xl: false,
+      is5xl: false,
+      is6xl: false,
+      is7xl: false,
       isMobile: false,
       isTablet: false,
+      isLaptop: false,
       isDesktop: false,
+      isUltrawide: false,
+      isTouch: false,
+      isPortrait: false,
       currentBreakpoint: 'xs' as Breakpoint,
+      deviceType: 'mobile' as 'mobile' | 'tablet' | 'laptop' | 'desktop' | 'ultrawide',
     };
   }
 
   const width = window.innerWidth;
+  const height = window.innerHeight;
   
   return {
     isXs: width >= breakpointValues.xs,
@@ -294,12 +329,25 @@ export const useResponsive = () => {
     isLg: width >= breakpointValues.lg,
     isXl: width >= breakpointValues.xl,
     is2xl: width >= breakpointValues['2xl'],
-    isMobile: width < breakpointValues.md,
-    isTablet: width >= breakpointValues.md && width < breakpointValues.lg,
-    isDesktop: width >= breakpointValues.lg,
+    is3xl: width >= breakpointValues['3xl'],
+    is4xl: width >= breakpointValues['4xl'],
+    is5xl: width >= breakpointValues['5xl'],
+    is6xl: width >= breakpointValues['6xl'],
+    is7xl: width >= breakpointValues['7xl'],
+    isMobile: width < breakpointValues.lg,
+    isTablet: width >= breakpointValues.lg && width < breakpointValues['2xl'],
+    isLaptop: width >= breakpointValues['2xl'] && width < breakpointValues['5xl'],
+    isDesktop: width >= breakpointValues['5xl'] && width < breakpointValues['7xl'],
+    isUltrawide: width >= breakpointValues['7xl'],
+    isTouch: window.matchMedia('(hover: none) and (pointer: coarse)').matches,
+    isPortrait: height > width,
     currentBreakpoint: Object.entries(breakpointValues)
       .reverse()
       .find(([, value]) => width >= value)?.[0] as Breakpoint || 'xs',
+    deviceType: width < breakpointValues.lg ? 'mobile' :
+                width < breakpointValues['2xl'] ? 'tablet' :
+                width < breakpointValues['5xl'] ? 'laptop' :
+                width < breakpointValues['7xl'] ? 'desktop' : 'ultrawide',
   };
 };
 

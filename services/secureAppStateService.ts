@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { authService } from './secureAuthService';
+import { authService } from './supabase';
 
 // ========================================
 // 🛡️ SECURE APP STATE SERVICE

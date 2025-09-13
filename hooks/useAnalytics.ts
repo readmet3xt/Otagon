@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { unifiedAnalyticsService, FeatureUsageEvent } from '../services/unifiedAnalyticsService';
-import { OnboardingStep, TierUpgradeAttempt } from '../services/types';
+// Restored unifiedAnalyticsService for comprehensive analytics
+import { unifiedAnalyticsService, FeatureUsageEvent, TierUpgradeAttempt } from '../services/unifiedAnalyticsService';
+import { OnboardingStep } from '../services/types';
 import { authService } from '../services/supabase';
 
 /**
@@ -62,7 +63,7 @@ export const useAnalytics = () => {
       metadata
     });
     
-    unifiedAnalyticsService().startOnboardingStep(stepName, stepOrder, metadata);
+    unifiedAnalyticsService().trackOnboardingStep(stepName, stepOrder, metadata);
   }, []);
 
   const completeOnboardingStep = useCallback((
