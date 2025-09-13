@@ -128,9 +128,9 @@ class DatabaseService {
             }
 
             const { data, error } = await supabase
-                .from('player_profiles')
+                .from('users')
                 .select('*')
-                .eq('user_id', user.id)
+                .eq('auth_user_id', user.id)
                 .single();
 
             if (error) {
@@ -169,7 +169,7 @@ class DatabaseService {
             }
 
             const { error } = await supabase
-                .from('game_contexts')
+                .from('games')
                 .upsert({
                     user_id: user.id,
                     game_id: gameId,
@@ -209,7 +209,7 @@ class DatabaseService {
             }
 
             const { data, error } = await supabase
-                .from('game_contexts')
+                .from('games')
                 .select('*')
                 .eq('user_id', user.id)
                 .eq('game_id', gameId)
@@ -245,7 +245,7 @@ class DatabaseService {
     async storeEnhancedInsight(insight: DatabaseEnhancedInsight): Promise<boolean> {
         try {
             const { error } = await supabase
-                .from('enhanced_insights')
+                .from('app_level')
                 .upsert({
                     conversation_id: insight.conversation_id,
                     user_id: insight.user_id,
@@ -282,7 +282,7 @@ class DatabaseService {
     async storeProactiveInsight(insight: DatabaseProactiveInsight): Promise<boolean> {
         try {
             const { error } = await supabase
-                .from('proactive_insights')
+                .from('app_level')
                 .insert({
                     user_id: insight.user_id,
                     trigger_id: insight.trigger_id,
@@ -320,7 +320,7 @@ class DatabaseService {
             }
 
             const { data, error } = await supabase
-                .from('proactive_insights')
+                .from('app_level')
                 .select('*')
                 .eq('user_id', user.id)
                 .order('created_at', { ascending: false });
@@ -343,7 +343,7 @@ class DatabaseService {
     async markProactiveInsightAsRead(insightId: string): Promise<boolean> {
         try {
             const { error } = await supabase
-                .from('proactive_insights')
+                .from('app_level')
                 .update({ is_read: true })
                 .eq('id', insightId);
 
@@ -365,7 +365,7 @@ class DatabaseService {
     async deleteProactiveInsight(insightId: string): Promise<boolean> {
         try {
             const { error } = await supabase
-                .from('proactive_insights')
+                .from('app_level')
                 .delete()
                 .eq('id', insightId);
 
@@ -393,7 +393,7 @@ class DatabaseService {
             }
 
             const { data, error } = await supabase
-                .from('enhanced_insights')
+                .from('app_level')
                 .select('*')
                 .eq('conversation_id', conversationId)
                 .eq('user_id', user.id)
@@ -431,7 +431,7 @@ class DatabaseService {
             }
 
             const { error } = await supabase
-                .from('enhanced_insights')
+                .from('app_level')
                 .update(updateData)
                 .eq('id', insightId);
 
@@ -499,7 +499,7 @@ class DatabaseService {
 
             // Clean up old enhanced insights (older than 90 days)
             const { error: insightsError } = await supabase
-                .from('enhanced_insights')
+                .from('app_level')
                 .delete()
                 .lt('created_at', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString());
 
@@ -522,7 +522,7 @@ class DatabaseService {
     async checkHealth(): Promise<boolean> {
         try {
             const { data, error } = await supabase
-                .from('player_profiles')
+                .from('users')
                 .select('count')
                 .limit(1);
 

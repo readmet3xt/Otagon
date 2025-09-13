@@ -368,7 +368,7 @@ class APICostService {
 
             // Check if user is admin
             const { data: profile } = await supabase
-                .from('user_profiles')
+                .from('users')
                 .select('is_admin')
                 .eq('user_id', user.id)
                 .single();
@@ -378,7 +378,7 @@ class APICostService {
             }
 
             const { data: records, error } = await supabase
-                .from('api_cost_tracking')
+                .from('app_level')
                 .select('*')
                 .order('timestamp', { ascending: false });
 
@@ -412,7 +412,7 @@ class APICostService {
 
             // Check if user is admin
             const { data: profile } = await supabase
-                .from('user_profiles')
+                .from('users')
                 .select('is_admin')
                 .eq('user_id', user.id)
                 .single();
@@ -425,7 +425,7 @@ class APICostService {
             cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
 
             const { error } = await supabase
-                .from('api_cost_tracking')
+                .from('app_level')
                 .delete()
                 .lt('timestamp', cutoffDate.toISOString());
 
@@ -451,7 +451,7 @@ class APICostService {
 
             // Check if user is admin
             const { data: profile } = await supabase
-                .from('user_profiles')
+                .from('users')
                 .select('is_admin')
                 .eq('user_id', user.id)
                 .single();
@@ -462,7 +462,7 @@ class APICostService {
 
             // Clear Supabase data
             const { error } = await supabase
-                .from('api_cost_tracking')
+                .from('app_level')
                 .delete()
                 .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
 

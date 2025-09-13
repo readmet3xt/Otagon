@@ -122,29 +122,40 @@ class OtakuDiarySupabaseService {
       const userId = await this.getCurrentUserId();
       if (!userId) return null;
 
-      const { data, error } = await supabase
-        .from('diary_tasks')
-        .insert({
-          user_id: userId,
-          game_id: task.gameId,
-          title: task.title,
-          description: task.description,
-          type: task.type,
-          status: task.status,
-          category: task.category,
-          priority: task.priority,
-          source: task.source,
-          source_message_id: task.sourceMessageId
-        })
-        .select('*')
+      const diaryTask: DiaryTask = {
+        ...task,
+        id: `diary_task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        createdAt: Date.now()
+      };
+
+      // Get current user data
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('app_state')
+        .eq('auth_user_id', userId)
         .single();
 
-      if (error) {
-        console.error('Error creating task:', error);
-        return null;
-      }
+      if (userError) throw userError;
 
-      return this.mapDatabaseTaskToDiaryTask(data);
+      // Update app_state with new diary task
+      const currentAppState = userData.app_state || {};
+      const currentDiaryTasks = currentAppState.diaryTasks || [];
+      
+      const updatedDiaryTasks = [...currentDiaryTasks, diaryTask];
+      const updatedAppState = {
+        ...currentAppState,
+        diaryTasks: updatedDiaryTasks
+      };
+
+      // Update user's app_state
+      const { error } = await supabase
+        .from('users')
+        .update({ app_state: updatedAppState })
+        .eq('auth_user_id', userId);
+
+      if (error) throw error;
+
+      return diaryTask;
     } catch (error) {
       console.error('Error creating task:', error);
       return null;
@@ -156,29 +167,45 @@ class OtakuDiarySupabaseService {
       const userId = await this.getCurrentUserId();
       if (!userId) return null;
 
-      const updateData: any = {};
-      if (updates.title) updateData.title = updates.title;
-      if (updates.description) updateData.description = updates.description;
-      if (updates.status) updateData.status = updates.status;
-      if (updates.category) updateData.category = updates.category;
-      if (updates.priority) updateData.priority = updates.priority;
-      if (updates.status === 'completed') updateData.completed_at = new Date().toISOString();
-
-      const { data, error } = await supabase
-        .from('diary_tasks')
-        .update(updateData)
-        .eq('id', taskId)
-        .eq('user_id', userId)
-        .eq('game_id', gameId)
-        .select('*')
+      // Get current user data
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('app_state')
+        .eq('auth_user_id', userId)
         .single();
 
-      if (error) {
-        console.error('Error updating task:', error);
-        return null;
-      }
+      if (userError) throw userError;
 
-      return this.mapDatabaseTaskToDiaryTask(data);
+      // Update app_state with modified diary task
+      const currentAppState = userData.app_state || {};
+      const currentDiaryTasks = currentAppState.diaryTasks || [];
+      
+      const taskIndex = currentDiaryTasks.findIndex((task: DiaryTask) => task.id === taskId);
+      if (taskIndex === -1) return null;
+
+      const updatedTask = {
+        ...currentDiaryTasks[taskIndex],
+        ...updates,
+        updatedAt: new Date().toISOString()
+      };
+
+      const updatedDiaryTasks = [...currentDiaryTasks];
+      updatedDiaryTasks[taskIndex] = updatedTask;
+      
+      const updatedAppState = {
+        ...currentAppState,
+        diaryTasks: updatedDiaryTasks
+      };
+
+      // Update user's app_state
+      const { error } = await supabase
+        .from('users')
+        .update({ app_state: updatedAppState })
+        .eq('auth_user_id', userId);
+
+      if (error) throw error;
+
+      return updatedTask;
     } catch (error) {
       console.error('Error updating task:', error);
       return null;
@@ -190,17 +217,33 @@ class OtakuDiarySupabaseService {
       const userId = await this.getCurrentUserId();
       if (!userId) return false;
 
-      const { error } = await supabase
-        .from('diary_tasks')
-        .delete()
-        .eq('id', taskId)
-        .eq('user_id', userId)
-        .eq('game_id', gameId);
+      // Get current user data
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('app_state')
+        .eq('auth_user_id', userId)
+        .single();
 
-      if (error) {
-        console.error('Error deleting task:', error);
-        return false;
-      }
+      if (userError) throw userError;
+
+      // Update app_state by removing the task
+      const currentAppState = userData.app_state || {};
+      const currentDiaryTasks = currentAppState.diaryTasks || [];
+      
+      const updatedDiaryTasks = currentDiaryTasks.filter((task: DiaryTask) => task.id !== taskId);
+      
+      const updatedAppState = {
+        ...currentAppState,
+        diaryTasks: updatedDiaryTasks
+      };
+
+      // Update user's app_state
+      const { error } = await supabase
+        .from('users')
+        .update({ app_state: updatedAppState })
+        .eq('auth_user_id', userId);
+
+      if (error) throw error;
 
       return true;
     } catch (error) {
@@ -214,19 +257,23 @@ class OtakuDiarySupabaseService {
       const userId = await this.getCurrentUserId();
       if (!userId) return [];
 
-      const { data, error } = await supabase
-        .from('diary_tasks')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('game_id', gameId)
-        .order('created_at', { ascending: false });
+      // Get current user data
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('app_state')
+        .eq('auth_user_id', userId)
+        .single();
 
-      if (error) {
-        console.error('Error getting tasks:', error);
-        return [];
-      }
+      if (error) throw error;
 
-      return data.map(this.mapDatabaseTaskToDiaryTask);
+      // Extract diary tasks from app_state
+      const currentAppState = userData.app_state || {};
+      const allDiaryTasks = currentAppState.diaryTasks || [];
+      
+      // Filter tasks for the specific game
+      const gameTasks = allDiaryTasks.filter((task: DiaryTask) => task.gameId === gameId);
+
+      return gameTasks;
     } catch (error) {
       console.error('Error getting tasks:', error);
       return [];
@@ -238,34 +285,35 @@ class OtakuDiarySupabaseService {
       const userId = await this.getCurrentUserId();
       if (!userId) return null;
 
-      const { data, error } = await supabase
-        .rpc('get_game_progress_summary', {
-          p_user_id: userId,
-          p_game_id: gameId
-        });
+      // Get current user data for diary tasks
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('app_state')
+        .eq('auth_user_id', userId)
+        .single();
 
-      if (error) {
-        console.error('Error getting progress summary:', error);
-        return null;
-      }
+      if (userError) throw userError;
 
-      if (data && data.length > 0) {
-        const summary = data[0];
-        return {
-          totalTasks: summary.total_tasks || 0,
-          completedTasks: summary.completed_tasks || 0,
-          pendingTasks: summary.pending_tasks || 0,
-          needHelpTasks: summary.need_help_tasks || 0,
-          completionPercentage: summary.completion_percentage || 0
-        };
-      }
+      // Extract diary tasks from app_state
+      const currentAppState = userData.app_state || {};
+      const allDiaryTasks = currentAppState.diaryTasks || [];
+      
+      // Filter tasks for the specific game
+      const gameTasks = allDiaryTasks.filter((task: DiaryTask) => task.gameId === gameId);
+
+      // Calculate summary
+      const totalTasks = gameTasks.length;
+      const completedTasks = gameTasks.filter(task => task.status === 'completed').length;
+      const pendingTasks = gameTasks.filter(task => task.status === 'pending').length;
+      const needHelpTasks = gameTasks.filter(task => task.status === 'need_help').length;
+      const completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
       return {
-        totalTasks: 0,
-        completedTasks: 0,
-        pendingTasks: 0,
-        needHelpTasks: 0,
-        completionPercentage: 0
+        totalTasks,
+        completedTasks,
+        pendingTasks,
+        needHelpTasks,
+        completionPercentage
       };
     } catch (error) {
       console.error('Error getting progress summary:', error);
@@ -282,26 +330,49 @@ class OtakuDiarySupabaseService {
       const userId = await this.getCurrentUserId();
       if (!userId) return null;
 
-      const { data, error } = await supabase
-        .from('diary_favorites')
-        .insert({
-          user_id: userId,
-          game_id: favorite.gameId,
-          content: favorite.content,
-          type: favorite.type,
-          context: favorite.context,
-          source_message_id: favorite.sourceMessageId,
-          source_insight_id: favorite.sourceInsightId
-        })
-        .select('*')
+      const diaryFavorite: DiaryFavorite = {
+        ...favorite,
+        id: `diary_favorite_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        createdAt: Date.now()
+      };
+
+      // Get current user data
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('app_state')
+        .eq('auth_user_id', userId)
         .single();
 
-      if (error) {
-        console.error('Error adding favorite:', error);
-        return null;
+      if (userError) throw userError;
+
+      // Update app_state with new diary favorite
+      const currentAppState = userData.app_state || {};
+      const currentDiaryFavorites = currentAppState.diaryFavorites || [];
+      
+      // Check if favorite already exists
+      const existingFavorite = currentDiaryFavorites.find((f: DiaryFavorite) => 
+        f.gameId === favorite.gameId && f.content === favorite.content
+      );
+      
+      if (existingFavorite) {
+        throw new Error('Favorite already exists');
       }
 
-      return this.mapDatabaseFavoriteToDiaryFavorite(data);
+      const updatedDiaryFavorites = [...currentDiaryFavorites, diaryFavorite];
+      const updatedAppState = {
+        ...currentAppState,
+        diaryFavorites: updatedDiaryFavorites
+      };
+
+      // Update user's app_state
+      const { error } = await supabase
+        .from('users')
+        .update({ app_state: updatedAppState })
+        .eq('auth_user_id', userId);
+
+      if (error) throw error;
+
+      return diaryFavorite;
     } catch (error) {
       console.error('Error adding favorite:', error);
       return null;
@@ -313,17 +384,33 @@ class OtakuDiarySupabaseService {
       const userId = await this.getCurrentUserId();
       if (!userId) return false;
 
-      const { error } = await supabase
-        .from('diary_favorites')
-        .delete()
-        .eq('id', favoriteId)
-        .eq('user_id', userId)
-        .eq('game_id', gameId);
+      // Get current user data
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('app_state')
+        .eq('auth_user_id', userId)
+        .single();
 
-      if (error) {
-        console.error('Error removing favorite:', error);
-        return false;
-      }
+      if (userError) throw userError;
+
+      // Update app_state by removing the favorite
+      const currentAppState = userData.app_state || {};
+      const currentDiaryFavorites = currentAppState.diaryFavorites || [];
+      
+      const updatedDiaryFavorites = currentDiaryFavorites.filter((favorite: DiaryFavorite) => favorite.id !== favoriteId);
+      
+      const updatedAppState = {
+        ...currentAppState,
+        diaryFavorites: updatedDiaryFavorites
+      };
+
+      // Update user's app_state
+      const { error } = await supabase
+        .from('users')
+        .update({ app_state: updatedAppState })
+        .eq('auth_user_id', userId);
+
+      if (error) throw error;
 
       return true;
     } catch (error) {
@@ -337,19 +424,23 @@ class OtakuDiarySupabaseService {
       const userId = await this.getCurrentUserId();
       if (!userId) return [];
 
-      const { data, error } = await supabase
-        .from('diary_favorites')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('game_id', gameId)
-        .order('created_at', { ascending: false });
+      // Get current user data
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('app_state')
+        .eq('auth_user_id', userId)
+        .single();
 
-      if (error) {
-        console.error('Error getting favorites:', error);
-        return [];
-      }
+      if (error) throw error;
 
-      return data.map(this.mapDatabaseFavoriteToDiaryFavorite);
+      // Extract diary favorites from app_state
+      const currentAppState = userData.app_state || {};
+      const allDiaryFavorites = currentAppState.diaryFavorites || [];
+      
+      // Filter favorites for the specific game
+      const gameFavorites = allDiaryFavorites.filter((favorite: DiaryFavorite) => favorite.gameId === gameId);
+
+      return gameFavorites;
     } catch (error) {
       console.error('Error getting favorites:', error);
       return [];
@@ -361,22 +452,23 @@ class OtakuDiarySupabaseService {
       const userId = await this.getCurrentUserId();
       if (!userId) return false;
 
-      const field = type === 'message' ? 'source_message_id' : 'source_insight_id';
+      // Get current user data
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('app_state')
+        .eq('auth_user_id', userId)
+        .single();
+
+      if (error) return false;
+
+      const currentAppState = userData.app_state || {};
+      const allDiaryFavorites = currentAppState.diaryFavorites || [];
       
-      const { data, error } = await supabase
-        .from('diary_favorites')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('game_id', gameId)
-        .eq(field, sourceId)
-        .limit(1);
-
-      if (error) {
-        console.error('Error checking favorite status:', error);
-        return false;
-      }
-
-      return data && data.length > 0;
+      return allDiaryFavorites.some((favorite: DiaryFavorite) => 
+        favorite.gameId === gameId && 
+        ((type === 'message' && favorite.sourceMessageId === sourceId) ||
+         (type === 'insight' && favorite.sourceInsightId === sourceId))
+      );
     } catch (error) {
       console.error('Error checking favorite status:', error);
       return false;
@@ -392,22 +484,34 @@ class OtakuDiarySupabaseService {
       const userId = await this.getCurrentUserId();
       if (!userId) return false;
 
-      const { error } = await supabase
-        .from('game_progress')
-        .insert({
-          user_id: userId,
-          game_id: gameId,
-          session_date: progress.sessionDate,
-          duration: progress.duration,
-          objectives_completed: progress.objectivesCompleted,
-          discoveries: progress.discoveries,
-          notes: progress.notes
-        });
+      // Get current game data
+      const { data: gameData, error: gameError } = await supabase
+        .from('games')
+        .select('session_data')
+        .eq('id', gameId)
+        .eq('user_id', userId)
+        .single();
 
-      if (error) {
-        console.error('Error adding game progress:', error);
-        return false;
-      }
+      if (gameError) throw gameError;
+
+      // Update session_data with new progress entry
+      const currentSessionData = gameData.session_data || {};
+      const currentProgress = currentSessionData.progress || [];
+      
+      const updatedProgress = [...currentProgress, progress];
+      const updatedSessionData = {
+        ...currentSessionData,
+        progress: updatedProgress
+      };
+
+      // Update game's session_data
+      const { error } = await supabase
+        .from('games')
+        .update({ session_data: updatedSessionData })
+        .eq('id', gameId)
+        .eq('user_id', userId);
+
+      if (error) throw error;
 
       return true;
     } catch (error) {

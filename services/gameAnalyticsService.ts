@@ -7,11 +7,6 @@ export interface GameActivity {
   activityType?: string; // Legacy property
   gameId?: string; // Legacy property
   gameTitle?: string; // Legacy property
-  conversationId?: string; // Legacy property
-  pillId?: string; // For pill-related activities
-  insightId?: string; // For insight-related activities
-  oldValue?: any; // For tracking changes
-  newValue?: any; // For tracking changes
   timestamp: number;
   metadata?: Record<string, any>;
 }
@@ -40,7 +35,6 @@ export interface UserFeedback {
   targetType?: string; // Legacy property
   targetId?: string; // Legacy property
   feedbackText?: string; // Legacy property
-  metadata?: Record<string, any>;
 }
 
 export interface ApiCall {
@@ -54,7 +48,6 @@ export interface ApiCall {
   timestamp: number;
   requestSizeBytes?: number; // Legacy property
   responseSizeBytes?: number; // Legacy property
-  responseTimeMs?: number; // Legacy property
 }
 
 export interface UserQuery {
@@ -117,14 +110,8 @@ class GameAnalyticsService {
   }
 
   // Additional missing methods
-  trackAIResponseFeedback(feedback: Omit<UserFeedback, 'id' | 'timestamp'>): void;
-  trackAIResponseFeedback(messageId: string, feedbackType: string, vote: string, aiResponseContext: any, metadata: any): void;
-  trackAIResponseFeedback(feedbackOrMessageId: Omit<UserFeedback, 'id' | 'timestamp'> | string, feedbackType?: string, vote?: string, aiResponseContext?: any, metadata?: any): void {
-    if (typeof feedbackOrMessageId === 'string') {
-      console.log('GameAnalyticsService.trackAIResponseFeedback (stub):', feedbackOrMessageId, feedbackType, vote, aiResponseContext, metadata);
-    } else {
-      console.log('GameAnalyticsService.trackAIResponseFeedback (stub):', feedbackOrMessageId);
-    }
+  trackAIResponseFeedback(feedback: Omit<UserFeedback, 'id' | 'timestamp'>): void {
+    console.log('GameAnalyticsService.trackAIResponseFeedback (stub):', feedback);
   }
 
   trackGameActivity(activity: Omit<GameActivity, 'id' | 'timestamp'>): void {
@@ -147,40 +134,21 @@ class GameAnalyticsService {
   }
 
   // Additional missing methods
-  trackPillCreated(pill: any): void;
-  trackPillCreated(pill: any, gameTitle: string, conversationId: string, pillContent: string, metadata: any): void;
-  trackPillCreated(pill: any, gameTitle?: string, conversationId?: string, pillContent?: string, metadata?: any): void {
-    if (gameTitle) {
-      console.log('GameAnalyticsService.trackPillCreated (stub):', pill, gameTitle, conversationId, pillContent, metadata);
-    } else {
-      console.log('GameAnalyticsService.trackPillCreated (stub):', pill);
-    }
+  trackPillCreated(pill: any): void {
+    console.log('GameAnalyticsService.trackPillCreated (stub):', pill);
   }
 
-  trackInsightCreated(insight: any): void;
-  trackInsightCreated(insight: any, gameTitle: string, conversationId: string, insightContent: string, metadata: any): void;
-  trackInsightCreated(insight: any, gameTitle?: string, conversationId?: string, insightContent?: string, metadata?: any): void {
-    if (gameTitle) {
-      console.log('GameAnalyticsService.trackInsightCreated (stub):', insight, gameTitle, conversationId, insightContent, metadata);
-    } else {
-      console.log('GameAnalyticsService.trackInsightCreated (stub):', insight);
-    }
+  trackInsightCreated(insight: any): void {
+    console.log('GameAnalyticsService.trackInsightCreated (stub):', insight);
   }
 
-  trackInsightTab(tab: any, action: string): void;
-  trackInsightTab(tab: any, action: string, tabId: string, tabTitle: string, tabType: string, metadata: any): void;
-  trackInsightTab(tab: any, action: string, tabId?: string, tabTitle?: string, tabType?: string, metadata?: any): void {
-    if (tabId) {
-      console.log('GameAnalyticsService.trackInsightTab (stub):', tab, action, tabId, tabTitle, tabType, metadata);
-    } else {
-      console.log('GameAnalyticsService.trackInsightTab (stub):', tab, action);
-    }
+  trackInsightTab(tab: any, action: string): void {
+    console.log('GameAnalyticsService.trackInsightTab (stub):', tab, action);
   }
 
   trackInsightTabCreated(tab: any): void {
     console.log('GameAnalyticsService.trackInsightTabCreated (stub):', tab);
   }
-
 }
 
 export const gameAnalyticsService = GameAnalyticsService.getInstance();

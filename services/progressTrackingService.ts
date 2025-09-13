@@ -94,41 +94,58 @@ export class ProgressTrackingService {
     }
   }
 
-  // Get available events for a game with versioning
+  // Get available events for a game with versioning (using games.session_data)
   async getAvailableEvents(
     gameId: string, 
     currentLevel: number, 
     gameVersion: string = 'base_game'
   ): Promise<GameEvent[]> {
-    const { data } = await supabase
-      .from('game_progress_events')
-      .select('*')
-      .eq('game_id', gameId)
-      .eq('game_version', gameVersion)
-      .lte('unlocks_progress_level', currentLevel + 2) // Show next 2 levels
-      .order('unlocks_progress_level', { ascending: true });
+    const { data: gameData, error } = await supabase
+      .from('games')
+      .select('session_data')
+      .eq('id', gameId)
+      .single();
+
+    if (error) throw error;
+
+    const sessionData = gameData.session_data || {};
+    const progressEvents = sessionData.progressEvents || [];
     
-    return data || [];
+    // Filter events for current level + next 2 levels
+    const relevantEvents = progressEvents.filter((event: any) => 
+      event.game_version === gameVersion && 
+      event.unlocks_progress_level <= currentLevel + 2
+    );
+    
+    return relevantEvents.sort((a: any, b: any) => a.unlocks_progress_level - b.unlocks_progress_level);
   }
 
-  // Get progress history with versioning
+  // Get progress history with versioning (using games.session_data)
   async getProgressHistory(
     userId: string, 
     gameId: string, 
     gameVersion: string = 'base_game'
   ): Promise<ProgressHistory[]> {
-    const { data } = await supabase
-      .from('progress_history')
-      .select(`
-        *,
-        game_progress_events!inner(description, event_type, lore_context)
-      `)
+    const { data: gameData, error } = await supabase
+      .from('games')
+      .select('session_data')
+      .eq('id', gameId)
       .eq('user_id', userId)
-      .eq('game_id', gameId)
-      .eq('game_version', gameVersion)
-      .order('created_at', { ascending: false });
+      .single();
+
+    if (error) throw error;
+
+    const sessionData = gameData.session_data || {};
+    const progressHistory = sessionData.progressHistory || [];
     
-    return data || [];
+    // Filter by game version and sort by created_at
+    const relevantHistory = progressHistory.filter((history: any) => 
+      history.game_version === gameVersion
+    );
+    
+    return relevantHistory.sort((a: any, b: any) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
   }
 
   // Get or create progress event for any game
@@ -140,56 +157,96 @@ export class ProgressTrackingService {
     gameVersion: string = 'base_game'
   ): Promise<string> {
     
-    // First, try to find an existing event
-    const { data: existingEvent } = await supabase
-      .from('game_progress_events')
-      .select('event_id')
-      .eq('game_id', gameId)
-      .eq('game_version', gameVersion)
-      .eq('event_type', eventType)
-      .eq('unlocks_progress_level', progressLevel)
+    // Get game data
+    const { data: gameData, error: gameError } = await supabase
+      .from('games')
+      .select('session_data')
+      .eq('id', gameId)
       .single();
+
+    if (gameError) throw gameError;
+
+    const sessionData = gameData.session_data || {};
+    const progressEvents = sessionData.progressEvents || [];
+    
+    // First, try to find an existing event
+    const existingEvent = progressEvents.find((event: any) => 
+      event.game_version === gameVersion &&
+      event.event_type === eventType &&
+      event.unlocks_progress_level === progressLevel
+    );
     
     if (existingEvent) {
       return existingEvent.event_id;
     }
     
     // If no existing event, try to find a universal event
-    const { data: universalEvent } = await supabase
-      .from('game_progress_events')
-      .select('event_id')
-      .eq('game_id', '*')
-      .eq('event_type', eventType)
-      .eq('unlocks_progress_level', progressLevel)
-      .single();
+    const universalEvent = progressEvents.find((event: any) => 
+      event.game_id === '*' &&
+      event.event_type === eventType
+    );
     
     if (universalEvent) {
       // Use universal event as template, create game-specific version
-      const { data: newEvent } = await supabase.rpc('create_dynamic_game_event', {
-        p_game_id: gameId,
-        p_event_type: eventType,
-        p_description: description,
-        p_progress_level: progressLevel,
-        p_game_version: gameVersion,
-        p_lore_context: `Game-specific ${eventType} event`,
-        p_difficulty: 3
-      });
+      const newEventId = `event_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const newEvent = {
+        event_id: newEventId,
+        game_id: gameId,
+        game_version: gameVersion,
+        event_type: eventType,
+        description: description,
+        unlocks_progress_level: progressLevel,
+        lore_context: `Game-specific ${eventType} event`,
+        difficulty: 3,
+        created_at: new Date().toISOString()
+      };
       
-      return newEvent?.event_id || universalEvent.event_id;
+      // Add to progress events
+      const updatedProgressEvents = [...progressEvents, newEvent];
+      const updatedSessionData = {
+        ...sessionData,
+        progressEvents: updatedProgressEvents
+      };
+      
+      // Update games table
+      await supabase
+        .from('games')
+        .update({ session_data: updatedSessionData })
+        .eq('id', gameId);
+      
+      return newEventId;
     }
     
     // If no universal event, create a completely new one
-    const { data: newEvent } = await supabase.rpc('create_dynamic_game_event', {
-      p_game_id: gameId,
-      p_event_type: eventType,
-      p_description: description,
-      p_progress_level: progressLevel,
-      p_game_version: gameVersion,
-      p_lore_context: `Custom ${eventType} event for ${gameId}`,
-      p_difficulty: 3
-    });
+    const newEventId = `event_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const newEvent = {
+      event_id: newEventId,
+      game_id: gameId,
+      game_version: gameVersion,
+      event_type: eventType,
+      description: description,
+      unlocks_progress_level: progressLevel,
+      lore_context: `Custom ${eventType} event for ${gameId}`,
+      difficulty: 3,
+      created_at: new Date().toISOString()
+    };
     
-    return newEvent?.event_id || 'unknown_event';
+    // Add to progress events
+    const updatedProgressEvents = [...progressEvents, newEvent];
+    const updatedSessionData = {
+      ...sessionData,
+      progressEvents: updatedProgressEvents
+    };
+    
+    // Update games table
+    const { error: updateError } = await supabase
+      .from('games')
+      .update({ session_data: updatedSessionData })
+      .eq('id', gameId);
+    
+    if (updateError) throw updateError;
+    
+    return newEventId;
   }
 
   // Update progress for any game (with dynamic event creation)

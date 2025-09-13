@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { unifiedAnalyticsService } from '../services/unifiedAnalyticsService';
-import { OnboardingStep, TierUpgradeAttempt, FeatureUsageEvent } from '../services/types';
+import { unifiedAnalyticsService, FeatureUsageEvent } from '../services/unifiedAnalyticsService';
+import { OnboardingStep, TierUpgradeAttempt } from '../services/types';
 import { authService } from '../services/supabase';
 
 /**
@@ -135,8 +135,14 @@ export const useAnalytics = () => {
     metadata?: Record<string, any>
   ) => {
     trackFeatureUsage({
+      id: `button_${buttonName}_${Date.now()}`,
+      eventType: 'feature_usage',
+      category: 'feature_usage' as const,
+      timestamp: Date.now(),
+      sessionId: 'session-' + Date.now(),
       featureName: `button_${buttonName}`,
-      featureCategory: 'other',
+      featureCategory: 'other' as const,
+      action: 'click' as const,
       metadata: { component, action: 'click', ...metadata }
     });
   }, [trackFeatureUsage]);
@@ -146,8 +152,14 @@ export const useAnalytics = () => {
     metadata?: Record<string, any>
   ) => {
     trackFeatureUsage({
+      id: `page_${pageName}_${Date.now()}`,
+      eventType: 'feature_usage',
+      category: 'feature_usage' as const,
+      timestamp: Date.now(),
+      sessionId: 'session-' + Date.now(),
       featureName: `page_${pageName}`,
-      featureCategory: 'other',
+      featureCategory: 'other' as const,
+      action: 'view' as const,
       metadata: { action: 'view', ...metadata }
     });
   }, [trackFeatureUsage]);
@@ -158,8 +170,14 @@ export const useAnalytics = () => {
     metadata?: Record<string, any>
   ) => {
     trackFeatureUsage({
+      id: `form_${formName}_${Date.now()}`,
+      eventType: 'feature_usage',
+      category: 'feature_usage' as const,
+      timestamp: Date.now(),
+      sessionId: 'session-' + Date.now(),
       featureName: `form_${formName}`,
-      featureCategory: 'other',
+      featureCategory: 'other' as const,
+      action: 'complete' as const,
       metadata: { action: 'submit', success, ...metadata }
     });
   }, [trackFeatureUsage]);
@@ -171,8 +189,14 @@ export const useAnalytics = () => {
     metadata?: Record<string, any>
   ) => {
     trackFeatureUsage({
+      id: `error_${errorType}_${Date.now()}`,
+      eventType: 'feature_usage',
+      category: 'feature_usage' as const,
+      timestamp: Date.now(),
+      sessionId: 'session-' + Date.now(),
       featureName: `error_${errorType}`,
-      featureCategory: 'other',
+      featureCategory: 'other' as const,
+      action: 'interact' as const,
       metadata: { 
         component, 
         errorMessage, 
@@ -202,7 +226,7 @@ export const useAnalytics = () => {
     startDate?: Date,
     endDate?: Date
   ) => {
-    return unifiedAnalyticsService().getFeatureUsageStats(startDate, endDate);
+    return unifiedAnalyticsService().getFeatureUsageStats(undefined, startDate, endDate);
   }, []);
 
   return {

@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useAnalytics } from '../hooks/useAnalytics';
-import { OnboardingFunnelStats, TierConversionStats, FeatureUsageStats } from '../services/types';
+import { OnboardingFunnelStats, FeatureUsageStats } from '../services/unifiedAnalyticsService';
+
+interface TierConversionStats {
+  tier: string;
+  conversions: number;
+  revenue: number;
+  conversionRate: number;
+  fromTier: string;
+  toTier: string;
+  totalAttempts: number;
+  successfulUpgrades: number;
+  avgAmount: number;
+}
 
 const AnalyticsDashboard: React.FC = () => {
   const [onboardingStats, setOnboardingStats] = useState<OnboardingFunnelStats[]>([]);
@@ -114,7 +126,7 @@ const AnalyticsDashboard: React.FC = () => {
                         </div>
                         <div>
                           <p className="text-neutral-400">Avg Duration</p>
-                          <p className="text-white font-semibold">{formatDuration(step.avgDurationMs)}</p>
+                          <p className="text-white font-semibold">{formatDuration(step.averageTimeToComplete)}</p>
                         </div>
                         <div>
                           <p className="text-neutral-400">Total Users</p>
@@ -122,7 +134,7 @@ const AnalyticsDashboard: React.FC = () => {
                         </div>
                         <div>
                           <p className="text-neutral-400">Drop-offs</p>
-                          <p className="text-red-400 font-semibold">{step.droppedOffUsers}</p>
+                          <p className="text-red-400 font-semibold">{step.skippedUsers}</p>
                         </div>
                       </div>
                       
@@ -197,25 +209,25 @@ const AnalyticsDashboard: React.FC = () => {
               {featureStats.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {featureStats.map((feature, index) => (
-                    <div key={`${feature.featureName}-${feature.featureCategory}`} className="bg-[#1C1C1C] rounded-lg p-4">
+                    <div key={`${feature.featureName}-${index}`} className="bg-[#1C1C1C] rounded-lg p-4">
                       <div className="flex justify-between items-start mb-3">
                         <div>
                           <h3 className="font-medium text-white capitalize">{feature.featureName.replace(/_/g, ' ')}</h3>
-                          <p className="text-sm text-neutral-400 capitalize">{feature.featureCategory.replace(/_/g, ' ')}</p>
+                          <p className="text-sm text-neutral-400 capitalize">feature</p>
                         </div>
                         <span className="text-xs px-2 py-1 bg-[#424242] rounded text-neutral-300">
-                          {feature.totalUsers} users
+                          {feature.uniqueUsers} users
                         </span>
                       </div>
                       
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span className="text-neutral-400">Total Usage:</span>
-                          <span className="text-white font-semibold">{feature.totalUsageCount}</span>
+                          <span className="text-white font-semibold">{feature.totalUsage}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-neutral-400">Avg per User:</span>
-                          <span className="text-white font-semibold">{feature.avgUsagePerUser.toFixed(1)}</span>
+                          <span className="text-white font-semibold">{feature.averageUsagePerUser.toFixed(1)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-neutral-400">Power Users:</span>

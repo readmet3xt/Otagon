@@ -280,7 +280,7 @@ export class UnifiedAnalyticsService extends BaseService {
     });
   }
 
-  async completeOnboardingStep(stepName: string, stepOrder: number, completionTime?: number, metadata?: Record<string, any>): Promise<void> {
+  async completeOnboardingStep(stepName: string, stepOrder: number, metadata?: Record<string, any>): Promise<void> {
     await this.trackEvent({
       eventType: 'onboarding_step_completed',
       category: 'onboarding',
@@ -289,7 +289,6 @@ export class UnifiedAnalyticsService extends BaseService {
         ...metadata,
         stepName,
         stepOrder,
-        completionTime,
         stepEndTime: Date.now()
       }
     });
@@ -312,19 +311,38 @@ export class UnifiedAnalyticsService extends BaseService {
 
   // ===== FEATURE USAGE ANALYTICS =====
 
-  async trackFeatureUsage(featureName: string, action?: FeatureUsageEvent['action'], metadata?: Record<string, any>): Promise<void> {
-    await this.trackEvent({
-      eventType: 'feature_usage',
-      category: 'feature_usage',
-      timestamp: Date.now(),
-      metadata: {
-        ...metadata,
-        featureName,
-        featureCategory: this.categorizeFeature(featureName),
-        action,
-        usageTime: Date.now()
-      }
-    });
+  async trackFeatureUsage(featureName: string, action: FeatureUsageEvent['action'], metadata?: Record<string, any>): Promise<void>;
+  async trackFeatureUsage(event: FeatureUsageEvent): Promise<void>;
+  async trackFeatureUsage(featureNameOrEvent: string | FeatureUsageEvent, action?: FeatureUsageEvent['action'], metadata?: Record<string, any>): Promise<void> {
+    if (typeof featureNameOrEvent === 'string') {
+      // Called with separate parameters
+      await this.trackEvent({
+        eventType: 'feature_usage',
+        category: 'feature_usage',
+        timestamp: Date.now(),
+        metadata: {
+          ...metadata,
+          featureName: featureNameOrEvent,
+          featureCategory: this.categorizeFeature(featureNameOrEvent),
+          action: action!,
+          usageTime: Date.now()
+        }
+      });
+    } else {
+      // Called with FeatureUsageEvent object
+      await this.trackEvent({
+        eventType: 'feature_usage',
+        category: 'feature_usage',
+        timestamp: featureNameOrEvent.timestamp,
+        metadata: {
+          ...featureNameOrEvent.metadata,
+          featureName: featureNameOrEvent.featureName,
+          featureCategory: featureNameOrEvent.featureCategory || this.categorizeFeature(featureNameOrEvent.featureName),
+          action: featureNameOrEvent.action,
+          usageTime: featureNameOrEvent.timestamp
+        }
+      });
+    }
   }
 
   async trackFeatureView(featureName: string, metadata?: Record<string, any>): Promise<void> {
@@ -533,7 +551,7 @@ export class UnifiedAnalyticsService extends BaseService {
     }
   }
 
-  async getFeatureUsageStats(featureName?: string): Promise<FeatureUsageStats[]> {
+  async getFeatureUsageStats(featureName?: string, startDate?: Date, endDate?: Date): Promise<FeatureUsageStats[]> {
     try {
       const featureEvents = this.events.filter(event => 
         event.category === 'feature_usage' && 
@@ -897,23 +915,30 @@ export class UnifiedAnalyticsService extends BaseService {
 
   // ===== MISSING ANALYTICS METHODS =====
   
-  trackOnboardingDropOff(step: any): void {
+  trackOnboardingDropOff(stepName: string, stepOrder: number, reason: string, metadata?: Record<string, any>): void {
     this.trackEvent({
       eventType: 'onboarding_drop_off',
       category: 'onboarding',
       timestamp: Date.now(),
-      metadata: { step }
+      metadata: { 
+        stepName,
+        stepOrder,
+        reason,
+        ...metadata 
+      }
     });
   }
 
-
-  stopFeatureTimer(featureName: string): void {
+  stopFeatureTimer(featureName: string, metadata?: Record<string, any>): void {
     // Simple implementation - just track that feature timer was stopped
     this.trackEvent({
       eventType: 'feature_timer_stopped',
       category: 'feature_usage',
       timestamp: Date.now(),
-      metadata: { featureName }
+      metadata: { 
+        featureName,
+        ...metadata 
+      }
     });
   }
 

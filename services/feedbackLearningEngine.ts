@@ -45,10 +45,17 @@ export class FeedbackLearningEngine {
         return;
       }
 
-      // Store feedback in system_new table with version context
-      const { error } = await supabase.from('system_new').insert({
-        system_data: systemData
-      });
+      // Store feedback in app_level table with version context
+      const { error } = await supabase
+        .from('app_level')
+        .upsert({
+          key: 'system_feedback_data',
+          value: systemData,
+          description: 'System feedback data for learning',
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'key'
+        });
 
       if (error) {
         console.error('🧠 Feedback Learning: Error storing feedback:', error);
@@ -66,14 +73,37 @@ export class FeedbackLearningEngine {
         user_feedback: feedback,
         feedback_timestamp: new Date().toISOString()
       })) {
-        // Update progress history with feedback
-        await supabase
-          .from('progress_history')
-          .update({
-            user_feedback: feedback,
-            feedback_timestamp: new Date().toISOString()
-          })
-          .eq('id', historyId);
+        // Update progress history with feedback (using games.session_data)
+        const { data: gameData, error: gameError } = await supabase
+          .from('games')
+          .select('session_data')
+          .eq('id', historyId.split('_')[0]) // Extract game ID from history ID
+          .single();
+
+        if (!gameError) {
+          const sessionData = gameData.session_data || {};
+          const progressHistory = sessionData.progressHistory || [];
+          
+          // Find and update the specific history entry
+          const historyIndex = progressHistory.findIndex((h: any) => h.id === historyId);
+          if (historyIndex !== -1) {
+            progressHistory[historyIndex] = {
+              ...progressHistory[historyIndex],
+              user_feedback: feedback,
+              feedback_timestamp: new Date().toISOString()
+            };
+            
+            const updatedSessionData = {
+              ...sessionData,
+              progressHistory: progressHistory
+            };
+            
+            await supabase
+              .from('games')
+              .update({ session_data: updatedSessionData })
+              .eq('id', historyId.split('_')[0]);
+          }
+        }
       }
 
       console.log('🧠 Feedback Learning: Feedback tracking completed successfully');
@@ -91,29 +121,44 @@ export class FeedbackLearningEngine {
   ): Promise<void> {
     
     try {
-      const { data: historyEntry } = await supabase
-        .from('progress_history')
-        .select('*')
-        .eq('id', historyId)
+      // Get history entry from games.session_data
+      const gameId = historyId.split('_')[0];
+      const { data: gameData, error: gameError } = await supabase
+        .from('games')
+        .select('session_data')
+        .eq('id', gameId)
         .single();
 
+      if (gameError || !gameData) return;
+
+      const sessionData = gameData.session_data || {};
+      const progressHistory = sessionData.progressHistory || [];
+      
+      const historyEntry = progressHistory.find((h: any) => h.id === historyId);
       if (!historyEntry) return;
 
       // Store rejection analysis for prompt improvement with version context
-      const { error } = await supabase.from('system_new').insert({
-        system_data: {
-          category: 'ai_improvement',
-          event_type: 'progress_detection_failure',
-          event_id: historyEntry.event_id,
-          game_id: historyEntry.game_id,
-          game_version: gameVersion,
-          ai_confidence: historyEntry.ai_confidence,
-          ai_reasoning: historyEntry.ai_reasoning,
-          user_reason: userReason,
-          failure_pattern: 'false_positive',
-          timestamp: new Date().toISOString()
-        }
-      });
+      const { error } = await supabase
+        .from('app_level')
+        .upsert({
+          key: 'rejection_analysis_data',
+          value: {
+            category: 'ai_improvement',
+            event_type: 'progress_detection_failure',
+            event_id: historyEntry.event_id,
+            game_id: historyEntry.game_id,
+            game_version: gameVersion,
+            ai_confidence: historyEntry.ai_confidence,
+            ai_reasoning: historyEntry.ai_reasoning,
+            user_reason: userReason,
+            failure_pattern: 'false_positive',
+            timestamp: new Date().toISOString()
+          },
+          description: 'Rejection analysis data for AI improvement',
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'key'
+        });
 
       if (error) {
         console.error('Error storing rejection analysis:', error);
@@ -131,14 +176,18 @@ export class FeedbackLearningEngine {
   ): Promise<string[]> {
     
     try {
-      const { data: rejections } = await supabase
-        .from('system_new')
-        .select('system_data')
-        .eq('system_data->category', 'ai_improvement')
-        .eq('system_data->event_type', 'progress_detection_failure')
-        .eq('system_data->game_id', gameId)
-        .eq('system_data->game_version', gameVersion)
-        .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()); // Last 7 days
+      const { data: rejectionData, error } = await supabase
+        .from('app_level')
+        .select('value')
+        .eq('key', 'rejection_analysis_data')
+        .single();
+
+      if (error) {
+        console.error('Error fetching rejection data:', error);
+        return [];
+      }
+
+      const rejections = rejectionData?.value ? [rejectionData.value] : [];
 
       const improvements: string[] = [];
       
@@ -220,20 +269,24 @@ export class FeedbackLearningEngine {
   }> {
     
     try {
-      let query = supabase
-        .from('system_new')
-        .select('*')
-        .eq('system_data->category', 'progress_feedback');
+      const { data: feedbackData, error } = await supabase
+        .from('app_level')
+        .select('value')
+        .eq('key', 'system_feedback_data')
+        .single();
 
-      if (gameId) {
-        query = query.eq('system_data->game_id', gameId);
+      if (error) {
+        console.error('Error fetching feedback data:', error);
+        return {
+          totalFeedback: 0,
+          confirmations: 0,
+          rejections: 0,
+          averageConfidence: 0,
+          improvementTrend: 'stable'
+        };
       }
 
-      if (gameVersion) {
-        query = query.eq('system_data->game_version', gameVersion);
-      }
-
-      const { data: feedback } = await query;
+      const feedback = feedbackData?.value || {};
 
       if (!feedback) {
         return {
@@ -286,16 +339,24 @@ export class FeedbackLearningEngine {
   async revertProgressUpdate(historyId: string): Promise<boolean> {
     
     try {
-      const { data: historyEntry } = await supabase
-        .from('progress_history')
-        .select('*')
-        .eq('id', historyId)
+      // Get history entry from games.session_data
+      const gameId = historyId.split('_')[0];
+      const { data: gameData, error: gameError } = await supabase
+        .from('games')
+        .select('session_data')
+        .eq('id', gameId)
         .single();
 
+      if (gameError || !gameData) return false;
+
+      const sessionData = gameData.session_data || {};
+      const progressHistory = sessionData.progressHistory || [];
+      
+      const historyEntry = progressHistory.find((h: any) => h.id === historyId);
       if (!historyEntry) return false;
 
       // Revert the game progress
-      const { error: gameError } = await supabase
+      const { error: revertError } = await supabase
         .from('games')
         .update({
           current_progress_level: historyEntry.old_level,
@@ -305,23 +366,34 @@ export class FeedbackLearningEngine {
         .eq('user_id', historyEntry.user_id)
         .eq('game_id', historyEntry.game_id);
 
-      if (gameError) {
-        console.error('Error reverting game progress:', gameError);
+      if (revertError) {
+        console.error('Error reverting game progress:', revertError);
         return false;
       }
 
       // Mark the history entry as reverted
-      const { error: historyError } = await supabase
-        .from('progress_history')
-        .update({
+      const historyIndex = progressHistory.findIndex((h: any) => h.id === historyId);
+      if (historyIndex !== -1) {
+        progressHistory[historyIndex] = {
+          ...progressHistory[historyIndex],
           user_feedback: 'reverted',
           feedback_timestamp: new Date().toISOString()
-        })
-        .eq('id', historyId);
-
-      if (historyError) {
-        console.error('Error updating history entry:', historyError);
-        return false;
+        };
+        
+        const updatedSessionData = {
+          ...sessionData,
+          progressHistory: progressHistory
+        };
+        
+        const { error: historyError } = await supabase
+          .from('games')
+          .update({ session_data: updatedSessionData })
+          .eq('id', gameId);
+        
+        if (historyError) {
+          console.error('Error updating history entry:', historyError);
+          return false;
+        }
       }
 
       return true;

@@ -16,7 +16,6 @@ export interface AuthState {
   session: Session | null
   loading: boolean
   error: string | null
-  isAuthenticated?: boolean
 }
 
 export interface AuthService {
@@ -29,6 +28,9 @@ export interface AuthService {
   signOut(): Promise<{ success: boolean; error?: string }>
   signInWithDeveloperMode(password: string): Promise<{ success: boolean; error?: string }>
   handleOAuthCallback(): Promise<boolean>
+  resetPassword(email: string): Promise<{ success: boolean; error?: string }>
+  signInWithGoogle(): Promise<{ success: boolean; error?: string }>
+  signInWithDiscord(): Promise<{ success: boolean; error?: string }>
 }
 
 class SecureAuthService implements AuthService {
@@ -513,8 +515,6 @@ class SecureAuthService implements AuthService {
     console.log('SecureAuthService.signInWithDiscord (stub)');
     return { success: false, error: 'Discord sign-in not implemented' };
   }
-
-
 }
 
 export const authService = SecureAuthService.getInstance();

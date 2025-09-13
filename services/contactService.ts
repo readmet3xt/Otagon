@@ -42,20 +42,27 @@ export class ContactService {
         source: 'landing_page'
       };
 
-      // Store contact submission in new consolidated system table
+      // Store contact submission in app_level table
       const { error } = await supabase
-        .from('system_new')
-        .insert({
-          category: 'contact_submissions',
-          event_type: 'contact_form',
-          data: {
-            name: submission.name,
-            email: submission.email,
-            subject: submission.subject,
-            message: submission.message,
-            timestamp: new Date().toISOString(),
-            status: 'pending'
-          }
+        .from('app_level')
+        .upsert({
+          key: 'contact_submissions',
+          value: {
+            category: 'contact_submissions',
+            event_type: 'contact_form',
+            data: {
+              name: submission.name,
+              email: submission.email,
+              subject: submission.subject,
+              message: submission.message,
+              timestamp: new Date().toISOString(),
+              status: 'pending'
+            }
+          },
+          description: 'Contact form submissions',
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'key'
         });
 
       if (error) {
@@ -81,30 +88,18 @@ export class ContactService {
       }
 
       const { data, error } = await supabase
-        .from('system_new')
-        .select('*')
-        .eq('category', 'contact_submissions')
-        .eq('event_type', 'contact_form')
-        .order('created_at', { ascending: false });
+        .from('app_level')
+        .select('value')
+        .eq('key', 'contact_submissions')
+        .single();
 
       if (error) {
-        console.error('Error fetching user contact submissions:', error);
+        console.error('Error fetching contact submissions:', error);
         return { error: 'Failed to fetch contact submissions' };
       }
 
       // Transform data back to ContactFormSubmission format
-      const submissions = data?.map(item => ({
-        id: item.id,
-        user_id: user.id,
-        name: item.data.name,
-        email: item.data.email,
-        subject: item.data.subject,
-        message: item.data.message,
-        status: item.data.status,
-        priority: item.data.priority || 'medium',
-        created_at: item.created_at,
-        updated_at: item.updated_at
-      })) || [];
+      const submissions = data?.value?.data ? [data.value.data] : [];
 
       return { data: submissions };
     } catch (error) {
@@ -118,21 +113,36 @@ export class ContactService {
    */
   async updateContactStatus(id: string, status: ContactFormSubmission['status'], priority?: ContactFormSubmission['priority']): Promise<{ success: boolean; error?: string }> {
     try {
-      const updates: any = {
+      // Update contact submission in app_level table
+      const { data: currentData, error: fetchError } = await supabase
+        .from('app_level')
+        .select('value')
+        .eq('key', 'contact_submissions')
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching contact submission:', fetchError);
+        return { success: false, error: 'Failed to fetch contact submission' };
+      }
+
+      // Update the submission data
+      const updatedValue = {
+        ...currentData.value,
         data: {
-          status,
+          ...currentData.value.data,
+          status: status,
+          priority: priority || currentData.value.data.priority,
           updated_at: new Date().toISOString()
         }
       };
 
-      if (priority) {
-        updates.data.priority = priority;
-      }
-
       const { error } = await supabase
-        .from('system_new')
-        .update(updates)
-        .eq('id', id);
+        .from('app_level')
+        .update({ 
+          value: updatedValue,
+          updated_at: new Date().toISOString()
+        })
+        .eq('key', 'contact_submissions');
 
       if (error) {
         console.error('Error updating contact status:', error);
@@ -152,10 +162,9 @@ export class ContactService {
   async getContactSubmission(id: string): Promise<{ data?: ContactFormSubmission; error?: string }> {
     try {
       const { data, error } = await supabase
-        .from('system_new')
-        .select('*')
-        .eq('id', id)
-        .eq('category', 'contact_submissions')
+        .from('app_level')
+        .select('value')
+        .eq('key', 'contact_submissions')
         .single();
 
       if (error) {
@@ -165,16 +174,16 @@ export class ContactService {
 
       // Transform data back to ContactFormSubmission format
       const submission: ContactFormSubmission = {
-        id: data.id,
-        user_id: data.user_id || 'unknown',
-        name: data.data.name,
-        email: data.data.email,
-        subject: data.data.subject,
-        message: data.data.message,
-        status: data.data.status,
-        priority: data.data.priority || 'medium',
-        created_at: data.created_at,
-        updated_at: data.updated_at
+        id: (data as any).id,
+        user_id: (data as any).user_id || 'unknown',
+        name: (data as any).data.name,
+        email: (data as any).data.email,
+        subject: (data as any).data.subject,
+        message: (data as any).data.message,
+        status: (data as any).data.status,
+        priority: (data as any).data.priority || 'medium',
+        created_at: (data as any).created_at,
+        updated_at: (data as any).updated_at
       };
 
       return { data: submission };
@@ -208,34 +217,24 @@ export class ContactService {
   async getContactStatistics(): Promise<{ data?: any; error?: string }> {
     try {
       const { data, error } = await supabase
-        .from('contact_submissions')
-        .select('status, priority, created_at')
-        .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()); // Last 30 days
+        .from('app_level')
+        .select('value')
+        .eq('key', 'contact_submissions')
+        .single();
 
       if (error) {
         console.error('Error fetching contact statistics:', error);
         return { error: 'Failed to fetch contact statistics' };
       }
 
-      // Process statistics
+      // Process statistics from stored data
+      const contactData = data?.value?.data || {};
       const stats = {
-        total: data.length,
-        byStatus: {} as Record<string, number>,
-        byPriority: {} as Record<string, number>,
-        byDate: {} as Record<string, number>
+        total: 1,
+        byStatus: { [contactData.status || 'pending']: 1 },
+        byPriority: { [contactData.priority || 'medium']: 1 },
+        byDate: { [contactData.timestamp?.split('T')[0] || new Date().toISOString().split('T')[0]]: 1 }
       };
-
-      data.forEach(submission => {
-        // Count by status
-        stats.byStatus[submission.status] = (stats.byStatus[submission.status] || 0) + 1;
-        
-        // Count by priority
-        stats.byPriority[submission.priority] = (stats.byPriority[submission.priority] || 0) + 1;
-        
-        // Count by date
-        const date = new Date(submission.created_at).toDateString();
-        stats.byDate[date] = (stats.byDate[date] || 0) + 1;
-      });
 
       return { data: stats };
     } catch (error) {

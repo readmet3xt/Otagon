@@ -139,14 +139,12 @@ export const useEnhancedInsights = (
                 genre, 
                 progress, 
                 userTier,
-                Promise.resolve(resolvedProfile), // Add profile parameter
-                await gameContext, // Await gameContext
-                (error) => console.error('Insight generation error:', error)
+                Promise.resolve(resolvedProfile)
             );
             
             // Update insights with generated content
             const updatedInsights: Record<string, EnhancedInsight> = {};
-            results.forEach(result => {
+            Object.values(results).forEach(result => {
                 updatedInsights[result.tabId] = {
                     ...result,
                     status: 'loaded'
@@ -213,17 +211,13 @@ export const useEnhancedInsights = (
                 genre, 
                 progress, 
                 conversationId,
-                insightTabs,
                 userTier,
-                Promise.resolve(resolvedProfile), // Add profile parameter
-                (error) => console.error('Insight update error:', error),
-                insights, // Pass existing insights for context from Pro calls
-                aiResponseContext // Pass AI response context for intelligent tab selection
+                Promise.resolve(resolvedProfile)
             );
             
             // Update insights with new content
             const updatedInsights: Record<string, EnhancedInsight> = {};
-            results.forEach(result => {
+            Object.values(results).forEach(result => {
                 updatedInsights[result.tabId] = {
                     ...result,
                     status: 'loaded'
@@ -293,14 +287,12 @@ export const useEnhancedInsights = (
                 genre, 
                 progress, 
                 conversationId,
-                [tabToRetry], // Only retry this specific tab
                 userTier,
-                Promise.resolve(resolvedProfile), // Add profile parameter
-                (error) => console.error('Insight retry error:', error)
+                Promise.resolve(resolvedProfile)
             );
             
-            if (results.length > 0) {
-                const result = results[0];
+            if (Object.keys(results).length > 0) {
+                const result = Object.values(results)[0];
                 setInsights(prev => ({
                     ...prev,
                     [insightId]: {

@@ -409,14 +409,19 @@ export class GameKnowledgeService {
   async getPlayerProgress(userId: string, gameId: string): Promise<PlayerProgress | null> {
     try {
       const { data, error } = await supabase
-        .from('player_progress')
-        .select('*')
+        .from('games')
+        .select('session_data')
         .eq('user_id', userId)
-        .eq('game_id', gameId)
+        .eq('id', gameId)
         .single();
 
       if (error && error.code !== 'PGRST116') throw error;
-      return data || null;
+      
+      // Extract player progress from session_data
+      const sessionData = data?.session_data || {};
+      const playerProgress = sessionData.playerProgress;
+      
+      return playerProgress || null;
     } catch (error) {
       console.error('Error getting player progress:', error);
       return null;
@@ -429,13 +434,22 @@ export class GameKnowledgeService {
   async getUserProgress(userId: string): Promise<PlayerProgress[]> {
     try {
       const { data, error } = await supabase
-        .from('player_progress')
-        .select('*')
-        .eq('user_id', userId)
-        .order('updated_at', { ascending: false });
+        .from('games')
+        .select('session_data')
+        .eq('user_id', userId);
 
       if (error) throw error;
-      return data || [];
+      
+      // Extract player progress from all games' session_data
+      const allProgress: PlayerProgress[] = [];
+      data?.forEach(game => {
+        const sessionData = game.session_data || {};
+        if (sessionData.playerProgress) {
+          allProgress.push(sessionData.playerProgress);
+        }
+      });
+      
+      return allProgress;
     } catch (error) {
       console.error('Error getting user progress:', error);
       return [];
@@ -447,18 +461,60 @@ export class GameKnowledgeService {
    */
   async updateProgress(progressId: string, updates: Partial<PlayerProgress>): Promise<PlayerProgress> {
     try {
-      const { data, error } = await supabase
-        .from('player_progress')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', progressId)
-        .select()
+      // Find the game that contains this progress
+      const { data: games, error: gamesError } = await supabase
+        .from('games')
+        .select('id, session_data')
+        .not('session_data', 'is', null);
+
+      if (gamesError) throw gamesError;
+
+      let targetGameId: string | null = null;
+      let currentProgress: PlayerProgress | null = null;
+
+      // Find the game containing this progress
+      for (const game of games || []) {
+        const sessionData = game.session_data || {};
+        if (sessionData.playerProgress && sessionData.playerProgress.id === progressId) {
+          targetGameId = game.id;
+          currentProgress = sessionData.playerProgress;
+          break;
+        }
+      }
+
+      if (!targetGameId || !currentProgress) {
+        throw new Error('Progress not found');
+      }
+
+      // Update the progress
+      const updatedProgress = {
+        ...currentProgress,
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
+
+      // Update the game's session_data
+      const { data: gameData, error: gameError } = await supabase
+        .from('games')
+        .select('session_data')
+        .eq('id', targetGameId)
         .single();
 
-      if (error) throw error;
-      return data;
+      if (gameError) throw gameError;
+
+      const updatedSessionData = {
+        ...gameData.session_data,
+        playerProgress: updatedProgress
+      };
+
+      const { error: updateError } = await supabase
+        .from('games')
+        .update({ session_data: updatedSessionData })
+        .eq('id', targetGameId);
+
+      if (updateError) throw updateError;
+
+      return updatedProgress;
     } catch (error) {
       console.error('Error updating progress:', error);
       throw error;
@@ -478,19 +534,44 @@ export class GameKnowledgeService {
       const userId = authState.user?.id;
       if (!userId) throw new Error('User not authenticated');
 
-      const { data, error } = await supabase
-        .from('game_solutions')
-        .insert([{
-          ...solutionData,
-          author_id: userId,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }])
-        .select()
+      const solution: GameSolution = {
+        ...solutionData,
+        id: `solution_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        author_id: userId,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as GameSolution;
+
+      // Get current game data
+      const { data: gameData, error: gameError } = await supabase
+        .from('games')
+        .select('game_data')
+        .eq('id', solutionData.game_id)
+        .eq('user_id', userId)
         .single();
 
+      if (gameError) throw gameError;
+
+      // Update game_data with new solution
+      const currentGameData = gameData.game_data || {};
+      const currentSolutions = currentGameData.solutions || [];
+      
+      const updatedSolutions = [...currentSolutions, solution];
+      const updatedGameData = {
+        ...currentGameData,
+        solutions: updatedSolutions
+      };
+
+      // Update game's game_data
+      const { error } = await supabase
+        .from('games')
+        .update({ game_data: updatedGameData })
+        .eq('id', solutionData.game_id)
+        .eq('user_id', userId);
+
       if (error) throw error;
-      return data;
+
+      return solution;
     } catch (error) {
       console.error('Error adding solution:', error);
       throw error;
@@ -507,27 +588,51 @@ export class GameKnowledgeService {
     spoilerLevel?: string;
   }): Promise<GameSolution[]> {
     try {
-      let query = supabase.from('game_solutions').select('*');
+      if (!filters.gameId) return [];
 
-      if (filters.gameId) {
-        query = query.eq('game_id', filters.gameId);
-      }
-      if (filters.objectiveId) {
-        query = query.eq('objective_id', filters.objectiveId);
-      }
-      if (filters.solutionType) {
-        query = query.eq('solution_type', filters.solutionType);
-      }
-      if (filters.spoilerLevel) {
-        query = query.eq('spoiler_level', filters.spoilerLevel);
-      }
-
-      const { data, error } = await query
-        .order('success_rate', { ascending: false })
-        .order('upvotes', { ascending: false });
+      // Get game data
+      const { data: gameData, error } = await supabase
+        .from('games')
+        .select('game_data')
+        .eq('id', filters.gameId)
+        .single();
 
       if (error) throw error;
-      return data || [];
+
+      // Extract solutions from game_data
+      const currentGameData = gameData.game_data || {};
+      const allSolutions = currentGameData.solutions || [];
+      
+      // Apply filters
+      let filteredSolutions = allSolutions;
+      
+      if (filters.objectiveId) {
+        filteredSolutions = filteredSolutions.filter((solution: GameSolution) => 
+          solution.objective_id === filters.objectiveId
+        );
+      }
+      
+      if (filters.solutionType) {
+        filteredSolutions = filteredSolutions.filter((solution: GameSolution) => 
+          solution.solution_type === filters.solutionType
+        );
+      }
+      
+      if (filters.spoilerLevel) {
+        filteredSolutions = filteredSolutions.filter((solution: GameSolution) => 
+          solution.spoiler_level === filters.spoilerLevel
+        );
+      }
+
+      // Sort by success rate and upvotes
+      filteredSolutions.sort((a: GameSolution, b: GameSolution) => {
+        if (a.success_rate !== b.success_rate) {
+          return (b.success_rate || 0) - (a.success_rate || 0);
+        }
+        return (b.upvotes || 0) - (a.upvotes || 0);
+      });
+
+      return filteredSolutions;
     } catch (error) {
       console.error('Error getting solutions:', error);
       return [];
@@ -539,17 +644,72 @@ export class GameKnowledgeService {
    */
   async voteOnSolution(solutionId: string, isUpvote: boolean): Promise<void> {
     try {
-      // Get current counts first
-      const currentUpvotes = await this.getSolutionUpvotes(solutionId);
-      const currentDownvotes = await this.getSolutionDownvotes(solutionId);
+      // Find the game that contains this solution
+      const { data: games, error: gamesError } = await supabase
+        .from('games')
+        .select('id, game_data')
+        .not('game_data', 'is', null);
+
+      if (gamesError) throw gamesError;
+
+      let targetGameId: string | null = null;
+      let currentSolution: GameSolution | null = null;
+
+      // Find the game containing this solution
+      for (const game of games || []) {
+        const gameData = game.game_data || {};
+        const solutions = gameData.solutions || [];
+        const solution = solutions.find((s: GameSolution) => s.id === solutionId);
+        if (solution) {
+          targetGameId = game.id;
+          currentSolution = solution;
+          break;
+        }
+      }
+
+      if (!targetGameId || !currentSolution) {
+        throw new Error('Solution not found');
+      }
+
+      // Update the solution votes
+      const updatedSolution = {
+        ...currentSolution,
+        upvotes: (currentSolution.upvotes || 0) + (isUpvote ? 1 : 0),
+        downvotes: (currentSolution.downvotes || 0) + (isUpvote ? 0 : 1),
+        updated_at: new Date().toISOString()
+      };
+
+      // Get current game data
+      const { data: gameData, error: gameError } = await supabase
+        .from('games')
+        .select('game_data')
+        .eq('id', targetGameId)
+        .single();
+
+      if (gameError) throw gameError;
+
+      // Update the solutions array
+      const currentGameData = gameData.game_data || {};
+      const currentSolutions = currentGameData.solutions || [];
+      const solutionIndex = currentSolutions.findIndex((s: GameSolution) => s.id === solutionId);
       
+      if (solutionIndex === -1) {
+        throw new Error('Solution not found in game data');
+      }
+
+      const updatedSolutions = [...currentSolutions];
+      updatedSolutions[solutionIndex] = updatedSolution;
+
+      const updatedGameData = {
+        ...currentGameData,
+        solutions: updatedSolutions
+      };
+
+      // Update the game's game_data
       const { error } = await supabase
-        .from('game_solutions')
-        .update({
-          upvotes: currentUpvotes + (isUpvote ? 1 : 0),
-          downvotes: currentDownvotes + (isUpvote ? 0 : 1),
-        })
-        .eq('id', solutionId);
+        .from('games')
+        .update({ game_data: updatedGameData })
+        .eq('id', targetGameId);
 
       if (error) throw error;
     } catch (error) {
@@ -560,14 +720,25 @@ export class GameKnowledgeService {
 
   private async getSolutionUpvotes(solutionId: string): Promise<number> {
     try {
-      const { data, error } = await supabase
-        .from('game_solutions')
-        .select('upvotes')
-        .eq('id', solutionId)
-        .single();
-      
-      if (error) return 0;
-      return data?.upvotes || 0;
+      // Find the game that contains this solution
+      const { data: games, error: gamesError } = await supabase
+        .from('games')
+        .select('game_data')
+        .not('game_data', 'is', null);
+
+      if (gamesError) throw gamesError;
+
+      // Find the solution and return its upvotes
+      for (const game of games || []) {
+        const gameData = game.game_data || {};
+        const solutions = gameData.solutions || [];
+        const solution = solutions.find((s: GameSolution) => s.id === solutionId);
+        if (solution) {
+          return solution.upvotes || 0;
+        }
+      }
+
+      return 0;
     } catch (error) {
       return 0;
     }
@@ -575,14 +746,25 @@ export class GameKnowledgeService {
 
   private async getSolutionDownvotes(solutionId: string): Promise<number> {
     try {
-      const { data, error } = await supabase
-        .from('game_solutions')
-        .select('downvotes')
-        .eq('id', solutionId)
-        .single();
-      
-      if (error) return 0;
-      return data?.downvotes || 0;
+      // Find the game that contains this solution
+      const { data: games, error: gamesError } = await supabase
+        .from('games')
+        .select('game_data')
+        .not('game_data', 'is', null);
+
+      if (gamesError) throw gamesError;
+
+      // Find the solution and return its downvotes
+      for (const game of games || []) {
+        const gameData = game.game_data || {};
+        const solutions = gameData.solutions || [];
+        const solution = solutions.find((s: GameSolution) => s.id === solutionId);
+        if (solution) {
+          return solution.downvotes || 0;
+        }
+      }
+
+      return 0;
     } catch (error) {
       return 0;
     }
@@ -590,14 +772,25 @@ export class GameKnowledgeService {
 
   private async getQueryMappingUsageCount(mappingId: string): Promise<number> {
     try {
-      const { data, error } = await supabase
-        .from('query_knowledge_map')
-        .select('usage_count')
-        .eq('id', mappingId)
-        .single();
-      
-      if (error) return 0;
-      return data?.usage_count || 0;
+      // Find the game that contains this query mapping
+      const { data: games, error: gamesError } = await supabase
+        .from('games')
+        .select('game_data')
+        .not('game_data', 'is', null);
+
+      if (gamesError) throw gamesError;
+
+      // Find the query mapping and return its usage count
+      for (const game of games || []) {
+        const gameData = game.game_data || {};
+        const queryKnowledgeMap = gameData.queryKnowledgeMap || [];
+        const mapping = queryKnowledgeMap.find((m: any) => m.id === mappingId);
+        if (mapping) {
+          return mapping.usage_count || 0;
+        }
+      }
+
+      return 0;
     } catch (error) {
       return 0;
     }
@@ -605,21 +798,32 @@ export class GameKnowledgeService {
 
   private async calculateNewSuccessRate(mappingId: string, wasSuccessful: boolean): Promise<number> {
     try {
-      const { data, error } = await supabase
-        .from('query_knowledge_map')
-        .select('usage_count, success_rate')
-        .eq('id', mappingId)
-        .single();
-      
-      if (error) return 0;
-      const currentUsage = data?.usage_count || 0;
-      const currentRate = data?.success_rate || 0;
-      
-      if (currentUsage === 0) {
-        return wasSuccessful ? 1 : 0;
+      // Find the game that contains this query mapping
+      const { data: games, error: gamesError } = await supabase
+        .from('games')
+        .select('game_data')
+        .not('game_data', 'is', null);
+
+      if (gamesError) throw gamesError;
+
+      // Find the query mapping and calculate new success rate
+      for (const game of games || []) {
+        const gameData = game.game_data || {};
+        const queryKnowledgeMap = gameData.queryKnowledgeMap || [];
+        const mapping = queryKnowledgeMap.find((m: any) => m.id === mappingId);
+        if (mapping) {
+          const currentUsage = mapping.usage_count || 0;
+          const currentRate = mapping.success_rate || 0;
+          
+          if (currentUsage === 0) {
+            return wasSuccessful ? 1 : 0;
+          }
+          
+          return (currentRate * currentUsage + (wasSuccessful ? 1 : 0)) / (currentUsage + 1);
+        }
       }
-      
-      return (currentRate * currentUsage + (wasSuccessful ? 1 : 0)) / (currentUsage + 1);
+
+      return wasSuccessful ? 1 : 0;
     } catch (error) {
       return 0;
     }
@@ -634,45 +838,73 @@ export class GameKnowledgeService {
    */
   async addKnowledgePattern(patternData: Partial<KnowledgePattern>): Promise<KnowledgePattern> {
     try {
+      if (!patternData.game_id) throw new Error('Game ID is required');
+
+      // Get current game data
+      const { data: gameData, error: gameError } = await supabase
+        .from('games')
+        .select('game_data')
+        .eq('id', patternData.game_id)
+        .single();
+
+      if (gameError) throw gameError;
+
+      // Update game_data with new knowledge pattern
+      const currentGameData = gameData.game_data || {};
+      const currentKnowledgePatterns = currentGameData.knowledgePatterns || [];
+      
       // Check if pattern already exists
-      const existingPattern = await this.getKnowledgePattern(
-        patternData.game_id!,
-        patternData.pattern_key!
+      const existingPatternIndex = currentKnowledgePatterns.findIndex((p: KnowledgePattern) => 
+        p.pattern_key === patternData.pattern_key
       );
 
-      if (existingPattern) {
-        // Update existing pattern
-        const { data, error } = await supabase
-          .from('knowledge_patterns')
-          .update({
-            ...patternData,
-            occurrence_count: (existingPattern.occurrence_count || 0) + 1,
-            last_occurrence: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', existingPattern.id)
-          .select()
-          .single();
+      let updatedPattern: KnowledgePattern;
 
-        if (error) throw error;
-        return data;
+      if (existingPatternIndex !== -1) {
+        // Update existing pattern
+        const existingPattern = currentKnowledgePatterns[existingPatternIndex];
+        updatedPattern = {
+          ...existingPattern,
+          ...patternData,
+          occurrence_count: (existingPattern.occurrence_count || 0) + 1,
+          last_occurrence: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as KnowledgePattern;
       } else {
         // Create new pattern
-        const { data, error } = await supabase
-          .from('knowledge_patterns')
-          .insert([{
-            ...patternData,
-            occurrence_count: 1,
-            last_occurrence: new Date().toISOString(),
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }])
-          .select()
-          .single();
-
-        if (error) throw error;
-        return data;
+        updatedPattern = {
+          ...patternData,
+          id: `pattern_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          occurrence_count: 1,
+          first_occurrence: new Date().toISOString(),
+          last_occurrence: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as KnowledgePattern;
       }
+
+      // Update the patterns array
+      const updatedKnowledgePatterns = [...currentKnowledgePatterns];
+      if (existingPatternIndex !== -1) {
+        updatedKnowledgePatterns[existingPatternIndex] = updatedPattern;
+      } else {
+        updatedKnowledgePatterns.push(updatedPattern);
+      }
+
+      const updatedGameData = {
+        ...currentGameData,
+        knowledgePatterns: updatedKnowledgePatterns
+      };
+
+      // Update game's game_data
+      const { error } = await supabase
+        .from('games')
+        .update({ game_data: updatedGameData })
+        .eq('id', patternData.game_id);
+
+      if (error) throw error;
+
+      return updatedPattern;
     } catch (error) {
       console.error('Error adding knowledge pattern:', error);
       throw error;
@@ -684,15 +916,25 @@ export class GameKnowledgeService {
    */
   async getKnowledgePattern(gameId: string, patternKey: string): Promise<KnowledgePattern | null> {
     try {
-      const { data, error } = await supabase
-        .from('knowledge_patterns')
-        .select('*')
-        .eq('game_id', gameId)
-        .eq('pattern_key', patternKey)
+      // Get game data
+      const { data: gameData, error } = await supabase
+        .from('games')
+        .select('game_data')
+        .eq('id', gameId)
         .single();
 
-      if (error && error.code !== 'PGRST116') throw error;
-      return data || null;
+      if (error) throw error;
+
+      // Extract knowledge patterns from game_data
+      const currentGameData = gameData.game_data || {};
+      const knowledgePatterns = currentGameData.knowledgePatterns || [];
+      
+      // Find the specific pattern
+      const pattern = knowledgePatterns.find((p: KnowledgePattern) => 
+        p.pattern_key === patternKey
+      );
+
+      return pattern || null;
     } catch (error) {
       console.error('Error getting knowledge pattern:', error);
       return null;
@@ -708,17 +950,45 @@ export class GameKnowledgeService {
    */
   async addQueryMapping(mappingData: Partial<QueryKnowledgeMap>): Promise<QueryKnowledgeMap> {
     try {
-      const { data, error } = await supabase
-        .from('query_knowledge_map')
-        .insert([{
-          ...mappingData,
-          created_at: new Date().toISOString(),
-        }])
-        .select()
+      if (!mappingData.game_id) throw new Error('Game ID is required');
+
+      // Get current game data
+      const { data: gameData, error: gameError } = await supabase
+        .from('games')
+        .select('game_data')
+        .eq('id', mappingData.game_id)
         .single();
 
+      if (gameError) throw gameError;
+
+      // Update game_data with new query mapping
+      const currentGameData = gameData.game_data || {};
+      const currentQueryKnowledgeMap = currentGameData.queryKnowledgeMap || [];
+      
+      const newMapping: QueryKnowledgeMap = {
+        ...mappingData,
+        id: `mapping_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        usage_count: 0,
+        success_rate: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as QueryKnowledgeMap;
+
+      const updatedQueryKnowledgeMap = [...currentQueryKnowledgeMap, newMapping];
+      const updatedGameData = {
+        ...currentGameData,
+        queryKnowledgeMap: updatedQueryKnowledgeMap
+      };
+
+      // Update game's game_data
+      const { error } = await supabase
+        .from('games')
+        .update({ game_data: updatedGameData })
+        .eq('id', mappingData.game_id);
+
       if (error) throw error;
-      return data;
+
+      return newMapping;
     } catch (error) {
       console.error('Error adding query mapping:', error);
       throw error;
@@ -750,14 +1020,73 @@ export class GameKnowledgeService {
    */
   async updateQueryMappingUsage(mappingId: string, wasSuccessful: boolean): Promise<void> {
     try {
+      // Find the game that contains this query mapping
+      const { data: games, error: gamesError } = await supabase
+        .from('games')
+        .select('id, game_data')
+        .not('game_data', 'is', null);
+
+      if (gamesError) throw gamesError;
+
+      let targetGameId: string | null = null;
+      let currentMapping: any = null;
+
+      // Find the game containing this mapping
+      for (const game of games || []) {
+        const gameData = game.game_data || {};
+        const queryKnowledgeMap = gameData.queryKnowledgeMap || [];
+        const mapping = queryKnowledgeMap.find((m: any) => m.id === mappingId);
+        if (mapping) {
+          targetGameId = game.id;
+          currentMapping = mapping;
+          break;
+        }
+      }
+
+      if (!targetGameId || !currentMapping) {
+        throw new Error('Query mapping not found');
+      }
+
+      // Update the mapping
+      const updatedMapping = {
+        ...currentMapping,
+        usage_count: (currentMapping.usage_count || 0) + 1,
+        success_rate: await this.calculateNewSuccessRate(mappingId, wasSuccessful),
+        last_used: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      // Get current game data
+      const { data: gameData, error: gameError } = await supabase
+        .from('games')
+        .select('game_data')
+        .eq('id', targetGameId)
+        .single();
+
+      if (gameError) throw gameError;
+
+      // Update the query knowledge map array
+      const currentGameData = gameData.game_data || {};
+      const currentQueryKnowledgeMap = currentGameData.queryKnowledgeMap || [];
+      const mappingIndex = currentQueryKnowledgeMap.findIndex((m: any) => m.id === mappingId);
+      
+      if (mappingIndex === -1) {
+        throw new Error('Query mapping not found in game data');
+      }
+
+      const updatedQueryKnowledgeMap = [...currentQueryKnowledgeMap];
+      updatedQueryKnowledgeMap[mappingIndex] = updatedMapping;
+
+      const updatedGameData = {
+        ...currentGameData,
+        queryKnowledgeMap: updatedQueryKnowledgeMap
+      };
+
+      // Update the game's game_data
       const { error } = await supabase
-        .from('query_knowledge_map')
-        .update({
-          usage_count: (await this.getQueryMappingUsageCount(mappingId)) + 1,
-          success_rate: await this.calculateNewSuccessRate(mappingId, wasSuccessful),
-          last_used: new Date().toISOString(),
-        })
-        .eq('id', mappingId);
+        .from('games')
+        .update({ game_data: updatedGameData })
+        .eq('id', targetGameId);
 
       if (error) throw error;
     } catch (error) {
@@ -944,19 +1273,60 @@ export class GameKnowledgeService {
    */
   async cleanupKnowledgeBase(): Promise<void> {
     try {
-      // Remove old patterns with low frequency
-      await supabase
-        .from('knowledge_patterns')
-        .delete()
-        .lt('frequency_score', 0.1)
-        .lt('last_occurrence', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
+      // Get all games with knowledge data
+      const { data: games, error: gamesError } = await supabase
+        .from('games')
+        .select('id, game_data')
+        .not('game_data', 'is', null);
 
-      // Remove low-confidence query mappings
-      await supabase
-        .from('query_knowledge_map')
-        .delete()
-        .lt('confidence_score', 0.3)
-        .lt('usage_count', 5);
+      if (gamesError) throw gamesError;
+
+      const cutoffDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+      // Clean up each game's knowledge data
+      for (const game of games || []) {
+        const gameData = game.game_data || {};
+        let needsUpdate = false;
+        let updatedGameData = { ...gameData };
+
+        // Clean up knowledge patterns
+        if (gameData.knowledgePatterns) {
+          const originalPatterns = gameData.knowledgePatterns || [];
+          const cleanedPatterns = originalPatterns.filter((pattern: any) => {
+            const hasLowFrequency = (pattern.frequency_score || 0) < 0.1;
+            const isOld = pattern.last_occurrence && pattern.last_occurrence < cutoffDate;
+            return !(hasLowFrequency && isOld);
+          });
+
+          if (cleanedPatterns.length !== originalPatterns.length) {
+            updatedGameData.knowledgePatterns = cleanedPatterns;
+            needsUpdate = true;
+          }
+        }
+
+        // Clean up query knowledge mappings
+        if (gameData.queryKnowledgeMap) {
+          const originalMappings = gameData.queryKnowledgeMap || [];
+          const cleanedMappings = originalMappings.filter((mapping: any) => {
+            const hasLowConfidence = (mapping.confidence_score || 0) < 0.3;
+            const hasLowUsage = (mapping.usage_count || 0) < 5;
+            return !(hasLowConfidence && hasLowUsage);
+          });
+
+          if (cleanedMappings.length !== originalMappings.length) {
+            updatedGameData.queryKnowledgeMap = cleanedMappings;
+            needsUpdate = true;
+          }
+        }
+
+        // Update the game if changes were made
+        if (needsUpdate) {
+          await supabase
+            .from('games')
+            .update({ game_data: updatedGameData })
+            .eq('id', game.id);
+        }
+      }
 
       console.log('Knowledge base cleanup completed');
     } catch (error) {

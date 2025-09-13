@@ -223,9 +223,7 @@ const App: React.FC = () => {
   // Debug modal state changes
   useEffect(() => {
     console.log('Modal state changed:', appState.activeModal);
-    console.log('App view:', appState.appView);
-    console.log('User state:', appState.userState);
-  }, [appState.activeModal, appState.appView, appState.userState]);
+  }, [appState.activeModal]);
 
   // Handle onboarding status updates
   const handleOnboardingUpdate = useCallback(async (status: string) => {
@@ -406,10 +404,7 @@ const App: React.FC = () => {
   } = useModals({
     setContextMenu: (menu: any) => setAppState(prev => ({ ...prev, contextMenu: menu })),
     setFeedbackModalState: (state: any) => setAppState(prev => ({ ...prev, feedbackModalState: state })),
-    setActiveModal: (modal: any) => {
-      console.log('Setting active modal to:', modal);
-      setAppState(prev => ({ ...prev, activeModal: modal }));
-    },
+    setActiveModal: (modal: any) => setAppState(prev => ({ ...prev, activeModal: modal })),
   });
 
   // Handle ESC key to close modal
@@ -422,8 +417,12 @@ const App: React.FC = () => {
 
     if (appState.activeModal) {
       document.addEventListener('keydown', handleEscKey);
-      // Prevent body scroll when modal is open
-      document.body.style.overflow = 'hidden';
+      // Only prevent body scroll if modal is actually rendered
+      // This prevents scroll lock when modal state is set but modal isn't visible
+      const modalElement = document.querySelector('[data-modal="true"]');
+      if (modalElement) {
+        document.body.style.overflow = 'hidden';
+      }
     }
 
     return () => {
@@ -620,22 +619,68 @@ const App: React.FC = () => {
     switch (onboardingStatus) {
       case 'login':
         return (
-          <LoginSplashScreen
-            onComplete={() => {
-              console.log('Login completed, refreshing app state');
-              // After login, refresh the app state to determine correct onboarding status
-              handleAuthStateChange();
-            }}
-            onOpenPrivacy={() => openModal('privacy')}
-            onOpenTerms={() => openModal('terms')}
-            onOpenAbout={() => openModal('about')}
-            onOpenRefund={() => openModal('refund')}
-            onOpenContact={() => openModal('contact')}
-            onBackToLanding={() => {
-              console.log('Back to landing clicked');
-              handleOnboardingUpdate('complete');
-            }}
-          />
+          <>
+            <LoginSplashScreen
+              onComplete={() => {
+                console.log('Login completed, refreshing app state');
+                // After login, refresh the app state to determine correct onboarding status
+                handleAuthStateChange();
+              }}
+              onOpenPrivacy={() => openModal('privacy')}
+              onOpenTerms={() => openModal('terms')}
+              onBackToLanding={() => {
+                console.log('Back to landing clicked');
+                handleOnboardingUpdate('complete');
+              }}
+            />
+            
+            {/* Modals for login page */}
+            {appState.activeModal === 'privacy' && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal} data-modal="true">
+                <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+                  <header className="flex-shrink-0 p-6 border-b border-[#2E2E2E]/60 flex items-center justify-between">
+                    <h2 className="text-2xl font-bold text-[#F5F5F5]">Privacy Policy</h2>
+                    <button onClick={closeModal} className="text-[#6E6E6E] hover:text-[#F5F5F5] transition-colors">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                  </header>
+                  <main className="flex-1 overflow-y-auto p-8 min-h-0">
+                    <PrivacyPolicyPage />
+                  </main>
+                  <footer className="flex-shrink-0 p-6 border-t border-[#2E2E2E]/60 flex justify-end">
+                    <button onClick={closeModal} className="bg-neutral-600 hover:bg-neutral-700 text-white font-medium py-2 px-6 rounded-md transition-colors">
+                      Back
+                    </button>
+                  </footer>
+                </div>
+              </div>
+            )}
+            
+            {appState.activeModal === 'terms' && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal} data-modal="true">
+                <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+                  <header className="flex-shrink-0 p-6 border-b border-[#2E2E2E]/60 flex items-center justify-between">
+                    <h2 className="text-2xl font-bold text-[#F5F5F5]">Terms of Service</h2>
+                    <button onClick={closeModal} className="text-[#6E6E6E] hover:text-[#F5F5F5] transition-colors">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                  </header>
+                  <main className="flex-1 overflow-y-auto p-8 min-h-0">
+                    <div className="text-white">
+                      <h3 className="text-xl font-bold mb-4">Terms of Service</h3>
+                      <p>This is a test to see if the modal renders.</p>
+                      <TermsOfServicePage />
+                    </div>
+                  </main>
+                  <footer className="flex-shrink-0 p-6 border-t border-[#2E2E2E]/60 flex justify-end">
+                    <button onClick={closeModal} className="bg-neutral-600 hover:bg-neutral-700 text-white font-medium py-2 px-6 rounded-md transition-colors">
+                      Back
+                    </button>
+                  </footer>
+                </div>
+              </div>
+            )}
+          </>
         );
       case 'initial':
         return (
@@ -688,12 +733,12 @@ const App: React.FC = () => {
     if (appState.appView?.onboardingStatus === 'complete') {
       return (
         <ErrorBoundary>
-          {/* Modals for landing page */}
+          {/* Global Modals - rendered regardless of context */}
           {appState.activeModal === 'about' && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal} data-modal="true">
               <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
                 <header className="flex-shrink-0 p-6 border-b border-[#2E2E2E]/60 flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-[#F5F5F5]">About Otakon</h2>
+                  <h2 className="text-2xl font-bold text-[#F5F5F5]">About Otagon</h2>
                   <button onClick={closeModal} className="text-[#6E6E6E] hover:text-[#F5F5F5] transition-colors">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                   </button>
@@ -711,7 +756,7 @@ const App: React.FC = () => {
           )}
           
           {appState.activeModal === 'privacy' && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal} data-modal="true">
               <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
                 <header className="flex-shrink-0 p-6 border-b border-[#2E2E2E]/60 flex items-center justify-between">
                   <h2 className="text-2xl font-bold text-[#F5F5F5]">Privacy Policy</h2>
@@ -732,7 +777,7 @@ const App: React.FC = () => {
           )}
           
           {appState.activeModal === 'refund' && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal} data-modal="true">
               <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
                 <header className="flex-shrink-0 p-6 border-b border-[#2E2E2E]/60 flex items-center justify-between">
                   <h2 className="text-2xl font-bold text-[#F5F5F5]">Refund Policy</h2>
@@ -753,7 +798,7 @@ const App: React.FC = () => {
           )}
           
           {appState.activeModal === 'terms' && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal} data-modal="true">
               <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
                 <header className="flex-shrink-0 p-6 border-b border-[#2E2E2E]/60 flex items-center justify-between">
                   <h2 className="text-2xl font-bold text-[#F5F5F5]">Terms of Service</h2>
@@ -762,7 +807,11 @@ const App: React.FC = () => {
                   </button>
                 </header>
                 <main className="flex-1 overflow-y-auto p-8 min-h-0">
-                  <TermsOfServicePage />
+                  <div className="text-white">
+                    <h3 className="text-xl font-bold mb-4">Terms of Service</h3>
+                    <p>This is a test to see if the modal renders.</p>
+                    <TermsOfServicePage />
+                  </div>
                 </main>
                 <footer className="flex-shrink-0 p-6 border-t border-[#2E2E2E]/60 flex justify-end">
                   <button onClick={closeModal} className="bg-neutral-600 hover:bg-neutral-700 text-white font-medium py-2 px-6 rounded-md transition-colors">
@@ -776,7 +825,8 @@ const App: React.FC = () => {
           {appState.activeModal === 'contact' && (
             <ContactUsModal isOpen={true} onClose={closeModal} />
           )}
-          
+
+          {/* Landing Page Content */}
           <Router>
             <Routes>
               <Route 
@@ -807,95 +857,6 @@ const App: React.FC = () => {
     // Show splash screen based on onboarding status
     return (
       <ErrorBoundary>
-        {/* Modals for splash screens */}
-        {appState.activeModal === 'about' && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
-            <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-              <header className="flex-shrink-0 p-6 border-b border-[#2E2E2E]/60 flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-[#F5F5F5]">About Otakon</h2>
-                <button onClick={closeModal} className="text-[#6E6E6E] hover:text-[#F5F5F5] transition-colors">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-              </header>
-              <main className="flex-1 overflow-y-auto p-8 min-h-0">
-                <AboutPage />
-              </main>
-              <footer className="flex-shrink-0 p-6 border-t border-[#2E2E2E]/60 flex justify-end">
-                <button onClick={closeModal} className="bg-neutral-600 hover:bg-neutral-700 text-white font-medium py-2 px-6 rounded-md transition-colors">
-                  Back
-                </button>
-              </footer>
-            </div>
-          </div>
-        )}
-        
-        {appState.activeModal === 'privacy' && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
-            <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-              <header className="flex-shrink-0 p-6 border-b border-[#2E2E2E]/60 flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-[#F5F5F5]">Privacy Policy</h2>
-                <button onClick={closeModal} className="text-[#6E6E6E] hover:text-[#F5F5F5] transition-colors">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-              </header>
-              <main className="flex-1 overflow-y-auto p-8 min-h-0">
-                <PrivacyPolicyPage />
-              </main>
-              <footer className="flex-shrink-0 p-6 border-t border-[#2E2E2E]/60 flex justify-end">
-                <button onClick={closeModal} className="bg-neutral-600 hover:bg-neutral-700 text-white font-medium py-2 px-6 rounded-md transition-colors">
-                  Back
-                </button>
-              </footer>
-            </div>
-          </div>
-        )}
-        
-        {appState.activeModal === 'refund' && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
-            <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-              <header className="flex-shrink-0 p-6 border-b border-[#2E2E2E]/60 flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-[#F5F5F5]">Refund Policy</h2>
-                <button onClick={closeModal} className="text-[#6E6E6E] hover:text-[#F5F5F5] transition-colors">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-              </header>
-              <main className="flex-1 overflow-y-auto p-8 min-h-0">
-                <RefundPolicyPage />
-              </main>
-              <footer className="flex-shrink-0 p-6 border-t border-[#2E2E2E]/60 flex justify-end">
-                <button onClick={closeModal} className="bg-neutral-600 hover:bg-neutral-700 text-white font-medium py-2 px-6 rounded-md transition-colors">
-                  Back
-                </button>
-              </footer>
-            </div>
-          </div>
-        )}
-        
-        {appState.activeModal === 'terms' && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
-            <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-              <header className="flex-shrink-0 p-6 border-b border-[#2E2E2E]/60 flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-[#F5F5F5]">Terms of Service</h2>
-                <button onClick={closeModal} className="text-[#6E6E6E] hover:text-[#F5F5F5] transition-colors">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-              </header>
-              <main className="flex-1 overflow-y-auto p-8 min-h-0">
-                <TermsOfServicePage />
-              </main>
-              <footer className="flex-shrink-0 p-6 border-t border-[#2E2E2E]/60 flex justify-end">
-                <button onClick={closeModal} className="bg-neutral-600 hover:bg-neutral-700 text-white font-medium py-2 px-6 rounded-md transition-colors">
-                  Back
-                </button>
-              </footer>
-            </div>
-          </div>
-        )}
-        
-        {appState.activeModal === 'contact' && (
-          <ContactUsModal isOpen={true} onClose={closeModal} />
-        )}
-        
         {renderSplashScreen()}
       </ErrorBoundary>
     );
@@ -910,18 +871,11 @@ const App: React.FC = () => {
       return (
         <ErrorBoundary>
           {/* Modals - Outside Router to avoid interference */}
-          {console.log('LOGIN PAGE CONTEXT - activeModal:', appState.activeModal, 'onboardingStatus:', onboardingStatus)}
-          
-          {/* Test Modal - Always visible for debugging */}
-          <div className="fixed top-4 right-4 z-[9999] bg-red-500 text-white p-2 rounded">
-            DEBUG: Login Context - Modal: {appState.activeModal || 'none'}
-          </div>
-          
           {appState.activeModal === 'about' && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
               <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
                 <header className="flex-shrink-0 p-6 border-b border-[#2E2E2E]/60 flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-[#F5F5F5]">About Otakon</h2>
+                  <h2 className="text-2xl font-bold text-[#F5F5F5]">About Otagon</h2>
                   <button onClick={closeModal} className="text-[#6E6E6E] hover:text-[#F5F5F5] transition-colors">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                   </button>
@@ -981,7 +935,7 @@ const App: React.FC = () => {
           )}
           
           {appState.activeModal === 'terms' && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal} data-modal="true">
               <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
                 <header className="flex-shrink-0 p-6 border-b border-[#2E2E2E]/60 flex items-center justify-between">
                   <h2 className="text-2xl font-bold text-[#F5F5F5]">Terms of Service</h2>
@@ -990,7 +944,11 @@ const App: React.FC = () => {
                   </button>
                 </header>
                 <main className="flex-1 overflow-y-auto p-8 min-h-0">
-                  <TermsOfServicePage />
+                  <div className="text-white">
+                    <h3 className="text-xl font-bold mb-4">Terms of Service</h3>
+                    <p>This is a test to see if the modal renders.</p>
+                    <TermsOfServicePage />
+                  </div>
                 </main>
                 <footer className="flex-shrink-0 p-6 border-t border-[#2E2E2E]/60 flex justify-end">
                   <button onClick={closeModal} className="bg-neutral-600 hover:bg-neutral-700 text-white font-medium py-2 px-6 rounded-md transition-colors">
@@ -1013,9 +971,6 @@ const App: React.FC = () => {
             }}
             onOpenPrivacy={() => openModal('privacy')}
             onOpenTerms={() => openModal('terms')}
-            onOpenAbout={() => openModal('about')}
-            onOpenRefund={() => openModal('refund')}
-            onOpenContact={() => openModal('contact')}
             onBackToLanding={() => {
               console.log('Back to landing clicked');
               handleOnboardingUpdate('complete');
@@ -1029,13 +984,6 @@ const App: React.FC = () => {
     return (
       <ErrorBoundary>
         {/* Modals - Outside Router to avoid interference */}
-        {console.log('LANDING PAGE CONTEXT - activeModal:', appState.activeModal)}
-        
-        {/* Test Modal - Always visible for debugging */}
-        <div className="fixed top-4 left-4 z-[9999] bg-blue-500 text-white p-2 rounded">
-          DEBUG: Landing Context - Modal: {appState.activeModal || 'none'}
-        </div>
-        
         {appState.activeModal === 'about' && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
             <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
@@ -1100,16 +1048,20 @@ const App: React.FC = () => {
         )}
         
         {appState.activeModal === 'terms' && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
-            <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal} data-modal="true">
+            <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
               <header className="flex-shrink-0 p-6 border-b border-[#2E2E2E]/60 flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-[#F5F5F5]">Terms of Service</h2>
                 <button onClick={closeModal} className="text-[#6E6E6E] hover:text-[#F5F5F5] transition-colors">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
               </header>
-              <main className="flex-1 overflow-y-auto p-8 min-h-0">
-                <TermsOfServicePage />
+              <main className="flex-1 overflow-y-auto p-8">
+                <div className="text-white">
+                  <h3 className="text-xl font-bold mb-4">Terms of Service</h3>
+                  <p>This is a test to see if the modal renders.</p>
+                  <TermsOfServicePage />
+                </div>
               </main>
               <footer className="flex-shrink-0 p-6 border-t border-[#2E2E2E]/60 flex justify-end">
                 <button onClick={closeModal} className="bg-neutral-600 hover:bg-neutral-700 text-white font-medium py-2 px-6 rounded-md transition-colors">
@@ -1350,6 +1302,31 @@ const App: React.FC = () => {
               </header>
               <main className="flex-1 overflow-y-auto p-8">
                 <RefundPolicyPage />
+              </main>
+              <footer className="flex-shrink-0 p-6 border-t border-[#2E2E2E]/60 flex justify-end">
+                <button onClick={closeModal} className="bg-neutral-600 hover:bg-neutral-700 text-white font-medium py-2 px-6 rounded-md transition-colors">
+                  Back
+                </button>
+              </footer>
+            </div>
+          </div>
+        )}
+        
+        {appState.activeModal === 'terms' && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal} data-modal="true">
+            <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+              <header className="flex-shrink-0 p-6 border-b border-[#2E2E2E]/60 flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-[#F5F5F5]">Terms of Service</h2>
+                <button onClick={closeModal} className="text-[#6E6E6E] hover:text-[#F5F5F5] transition-colors">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+              </header>
+              <main className="flex-1 overflow-y-auto p-8">
+                <div className="text-white">
+                  <h3 className="text-xl font-bold mb-4">Terms of Service</h3>
+                  <p>This is a test to see if the modal renders.</p>
+                  <TermsOfServicePage />
+                </div>
               </main>
               <footer className="flex-shrink-0 p-6 border-t border-[#2E2E2E]/60 flex justify-end">
                 <button onClick={closeModal} className="bg-neutral-600 hover:bg-neutral-700 text-white font-medium py-2 px-6 rounded-md transition-colors">

@@ -15,7 +15,7 @@ export type FeedbackModalState = {
   type?: 'message' | 'insight';
 };
 
-export type ActiveModal = 'about' | 'privacy' | 'refund' | 'contact' | null;
+export type ActiveModal = 'about' | 'privacy' | 'refund' | 'contact' | 'terms' | null;
 
 export type OnboardingStatus = 'login' | 'initial' | 'features' | 'pro-features' | 'how-to-use' | 'tier-splash' | 'complete';
 

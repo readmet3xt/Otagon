@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { User, Session, AuthError } from '@supabase/supabase-js';
+import { AuthService as SecureAuthServiceInterface } from './secureAuthService';
 
 // Environment variables for Supabase
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -40,12 +41,17 @@ export interface AuthState {
 
 export interface AuthService {
   getCurrentState(): AuthState
+  getCurrentUserId(): string | null
+  getAuthState(): AuthState
   subscribe(callback: (state: AuthState) => void): () => void
   signIn(email: string, password: string): Promise<{ success: boolean; error?: string }>
   signUp(email: string, password: string): Promise<{ success: boolean; error?: string }>
   signOut(): Promise<{ success: boolean; error?: string }>
   signInWithDeveloperMode(password: string): Promise<{ success: boolean; error?: string }>
   handleOAuthCallback(): Promise<boolean>
+  resetPassword(email: string): Promise<{ success: boolean; error?: string }>
+  signInWithGoogle(): Promise<{ success: boolean; error?: string }>
+  signInWithDiscord(): Promise<{ success: boolean; error?: string }>
 }
 
 class SecureAuthService implements AuthService {
@@ -492,6 +498,77 @@ class SecureAuthService implements AuthService {
     }
   }
 
+  getCurrentUserId(): string | null {
+    return this.authState.user?.id || null;
+  }
+
+  getAuthState(): AuthState {
+    return this.authState;
+  }
+
+  async resetPassword(email: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      this.log('Resetting password for email', email);
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      if (error) {
+        this.error('Password reset failed', error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      this.error('Password reset error', error);
+      return { success: false, error: 'An unexpected error occurred' };
+    }
+  }
+
+  async signInWithGoogle(): Promise<{ success: boolean; error?: string }> {
+    try {
+      this.log('Signing in with Google');
+      
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+
+      if (error) {
+        this.error('Google sign-in failed', error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      this.error('Google sign-in error', error);
+      return { success: false, error: 'An unexpected error occurred' };
+    }
+  }
+
+  async signInWithDiscord(): Promise<{ success: boolean; error?: string }> {
+    try {
+      this.log('Signing in with Discord');
+      
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'discord',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+
+      if (error) {
+        this.error('Discord sign-in failed', error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      this.error('Discord sign-in error', error);
+      return { success: false, error: 'An unexpected error occurred' };
+    }
+  }
+
   private updateAuthState(updates: Partial<AuthState>): void {
     this.authState = { ...this.authState, ...updates };
     this.subscribers.forEach(callback => callback(this.authState));
@@ -508,4 +585,4 @@ class SecureAuthService implements AuthService {
   }
 }
 
-export const authService = SecureAuthService.getInstance();
+export const authService: AuthService = SecureAuthService.getInstance();

@@ -12,8 +12,8 @@ interface CachePerformanceMetrics {
   hitRate: number;
   missRate: number;
   averageResponseTime: number;
-  memoryUsage: number;
-  storageUsage: number;
+  memoryUsage?: number;
+  storageUsage?: number;
   lastUpdated: Date;
 }
 

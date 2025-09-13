@@ -24,7 +24,7 @@ export class WaitlistService {
     try {
       // Check if email already exists
       const { data: existing, error: checkError } = await supabase
-        .from('waitlist')
+        .from('waitlist_entries')
         .select('email')
         .eq('email', email)
         .maybeSingle();
@@ -35,12 +35,12 @@ export class WaitlistService {
       }
 
       if (existing) {
-        return { success: false, error: 'Email already registered for waitlist' };
+        return { success: false, error: 'Email already registered for waitlist_entries' };
       }
 
-      // Insert into waitlist view (redirects to base table via INSTEAD OF trigger)
+      // Insert into waitlist_entries table
       const { error } = await supabase
-        .from('waitlist')
+        .from('waitlist_entries')
         .insert({
           email,
           source,
@@ -48,31 +48,24 @@ export class WaitlistService {
         });
 
       if (error) {
-        console.error('Error adding to waitlist:', error);
-        // Graceful fallback: log analytics + send welcome email, report success to UI
-        try {
+        console.error('Error adding to waitlist_entries:', error);
+        // Return actual error instead of fake success
+        return { success: false, error: `Failed to add to waitlist_entries: ${error.message}` };
+      }
+
+      // Log successful signup (only if user is authenticated)
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
           await supabase
             .from('analytics')
             .insert({
-              category: 'waitlist',
-              event_type: 'signup_fallback',
-              event_data: { email, source, reason: error.message }
+              event_type: 'waitlist_entries_signup_success',
+              event_data: { email, source }
             });
-        } catch {}
-        try {
-          await supabase.functions.invoke('send-welcome-email', { body: { email } });
-        } catch {}
-        // Considered successful for UX; admin write can be fixed server-side later
-        return { success: true };
-      }
-
-      // Fire-and-forget welcome email via Edge Function (best-effort)
-      try {
-        await supabase.functions.invoke('send-welcome-email', {
-          body: { email }
-        });
-      } catch (e) {
-        console.warn('Non-blocking: failed to invoke send-welcome-email function:', e);
+        }
+      } catch (analyticsError) {
+        console.warn('Failed to log analytics:', analyticsError);
       }
 
       return { success: true };
@@ -85,27 +78,27 @@ export class WaitlistService {
   async getWaitlistStatus(email: string): Promise<{ status?: string; error?: string }> {
     try {
       const { data, error } = await supabase
-        .from('waitlist')
+        .from('waitlist_entries')
         .select('status, created_at')
         .eq('email', email)
         .single();
 
       if (error) {
-        return { error: 'Email not found in waitlist' };
+        return { error: 'Email not found in waitlist_entries' };
       }
 
       return { status: data.status };
     } catch (error) {
-      console.error('Error checking waitlist status:', error);
-      return { error: 'Failed to check waitlist status' };
+      console.error('Error checking waitlist_entries status:', error);
+      return { error: 'Failed to check waitlist_entries status' };
     }
   }
 
-  // Get waitlist count (for display purposes)
+  // Get waitlist_entries count (for display purposes)
   async getWaitlistCount(): Promise<{ count?: number; error?: string }> {
     try {
       const { count, error } = await supabase
-        .from('waitlist')
+        .from('waitlist_entries')
         .select('*', { count: 'exact', head: true });
 
       if (error) {
@@ -114,10 +107,10 @@ export class WaitlistService {
 
       return { count: count || 0 };
     } catch (error) {
-      console.error('Error getting waitlist count:', error);
+      console.error('Error getting waitlist_entries count:', error);
       return { error: 'Failed to get count' };
     }
   }
 }
 
-export const waitlistService = WaitlistService.getInstance();
+export const waitlist_entriesService = WaitlistService.getInstance();

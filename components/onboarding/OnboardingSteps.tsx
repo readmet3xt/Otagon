@@ -131,7 +131,7 @@ export const FeaturesTourStep: React.FC = () => (
         Explore Key Features
       </h4>
       <p className="text-[#A3A3A3]">
-        Discover the powerful features that make Otakon your ultimate otaku companion.
+        Discover the powerful features that make Otagon your ultimate otaku companion.
       </p>
     </div>
 
@@ -188,7 +188,7 @@ export const PlatformSetupStep: React.FC = () => (
         Choose Your Platform
       </h4>
       <p className="text-[#A3A3A3]">
-        Otakon works great on all devices. Choose your preferred platform for the best experience.
+        Otagon works great on all devices. Choose your preferred platform for the best experience.
       </p>
     </div>
 
@@ -251,7 +251,7 @@ export const CompletionStep: React.FC = () => (
         <ul className="space-y-2 text-[#A3A3A3]">
           <li className="flex items-center gap-2">
             <div className="w-2 h-2 bg-[#FFAB40] rounded-full"></div>
-            Start chatting with Otakon AI about your favorite series
+            Start chatting with Otagon AI about your favorite series
           </li>
           <li className="flex items-center gap-2">
             <div className="w-2 h-2 bg-[#FFAB40] rounded-full"></div>

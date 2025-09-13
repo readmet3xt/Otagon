@@ -148,7 +148,7 @@ const ConnectionModal: React.FC<ConnectionModalProps> = ({
               
               <button
                 onClick={() => {
-                  const downloadUrl = 'https://github.com/readmet3xt/readmet3xt.github.io/releases/tag/Otakon-connector';
+                  const downloadUrl = 'https://github.com/readmet3xt/readmet3xt.github.io/releases/tag/Otagon-connector';
                   window.open(downloadUrl, '_blank');
                 }}
                 className="w-full bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white px-6 py-3 rounded-xl font-medium hover:from-[#D42A2A] hover:to-[#C87A1A] transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#E53A3A]/25"

@@ -11,7 +11,7 @@ const slides = [
   {
     icon: <ScreenshotIcon className="w-24 h-24 text-[#FF4D4D]" />,
     title: "Instant Context from Any Screenshot",
-    description: "Upload a screenshot from any game. Otakon instantly identifies the game, your location, and what's happening. Get answers, not spoilers."
+    description: "Upload a screenshot from any game. Otagon instantly identifies the game, your location, and what's happening. Get answers, not spoilers."
   },
   {
     icon: <HintIcon className="w-24 h-24 text-[#FF4D4D]" />,
@@ -21,7 +21,7 @@ const slides = [
   {
     icon: <BookmarkIcon className="w-24 h-24 text-[#FF4D4D]" />,
     title: "Automatic Progress Tracking",
-    description: "Otakon automatically organizes your chats by game and tracks your main story progress. Easily see how far you've come and pick up right where you left off."
+    description: "Otagon automatically organizes your chats by game and tracks your main story progress. Easily see how far you've come and pick up right where you left off."
   },
   {
     icon: <DesktopIcon className="w-24 h-24 text-[#FF4D4D]" />,
@@ -143,7 +143,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
                   <div className="text-center pb-2">
                       <button
                         onClick={() => {
-                          const downloadUrl = 'https://github.com/readmet3xt/readmet3xt.github.io/releases/tag/Otakon-connector';
+                          const downloadUrl = 'https://github.com/readmet3xt/readmet3xt.github.io/releases/tag/Otagon-connector';
                           window.open(downloadUrl, '_blank');
                         }}
                         className="text-sm sm:text-base font-medium text-[#FF4D4D] hover:text-[#FF4D4D] hover:underline transition-all duration-300 hover:scale-105"

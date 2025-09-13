@@ -3,7 +3,7 @@ import Logo from './Logo';
 import CheckIcon from './CheckIcon';
 import StarIcon from './StarIcon';
 // Dynamic import to avoid circular dependency
-// import { waitlistService } from '../services/waitlistService';
+// import { waitlistService } from '../../services/waitlistService';
 import FounderImage from './FounderImage';
 import ContactUsModal from './ContactUsModal';
 
@@ -446,7 +446,7 @@ const FounderSection = () => (
                 </h2>
                 <p className="text-lg md:text-xl text-neutral-300 max-w-3xl mx-auto leading-relaxed">
                     Meet Amaan, a passionate gamer from Hyderabad who spent his early days printing cheat codes at internet cafes. 
-                    Having graduated from Service Design at the Royal College of Art in London in 2021, he's building the future of gaming assistance.
+                    Now studying Service Design at the Royal College of Art in London, he's building the future of gaming assistance.
                 </p>
             </div>
             
@@ -454,7 +454,7 @@ const FounderSection = () => (
             <div className="text-center animate-fade-slide-up">
                 {/* Founder Image - Centered */}
                 <div className="flex justify-center mb-8">
-                    <FounderImage size="xl" showBadge={false} showStatus={false} />
+                    <FounderImage className="w-32 h-32" />
                 </div>
                 
                 {/* Decorative Gradient Line */}
@@ -529,7 +529,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
     const [email, setEmail] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitMessage, setSubmitMessage] = useState('');
-    const [showContactModal, setShowContactModal] = useState(false);
 
     // Handle direct URL navigation on component mount
     useEffect(() => {
@@ -549,7 +548,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
         setSubmitMessage('');
 
         try {
-            const { waitlist_entriesService: waitlistService } = await import('../services/waitlistService');
+            const { waitlist_entriesService: waitlistService } = await import('../../services/waitlistService');
             const result = await waitlistService.addToWaitlist(email, 'landing_page');
             
             if (result.success) {
@@ -918,33 +917,29 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                         {/* Footer Links - Above logo on mobile, right side on desktop */}
                         <div className="flex items-center gap-6 text-sm font-medium text-neutral-400 order-1 md:order-2">
                            <a href="#pricing" onClick={handleScrollTo('pricing')} className="hover:text-white transition-colors">Pricing</a>
-                           <button type="button" onClick={onOpenAbout} className="hover:text-white transition-colors">About</button>
+                           <a href="/about" onClick={(e) => { e.preventDefault(); onDirectNavigation('/about'); }} className="hover:text-white transition-colors">About</a>
                            <button type="button" onClick={onOpenTerms} className="hover:text-white transition-colors">Terms</button>
-                           <button type="button" onClick={onOpenPrivacy} className="hover:text-white transition-colors">Privacy</button>
-                           <button type="button" onClick={onOpenRefund} className="hover:text-white transition-colors">Refund Policy</button>
-                           <button type="button" onClick={() => setShowContactModal(true)} className="hover:text-white transition-colors">Contact Us</button>
+                           <a href="/privacy" onClick={(e) => { e.preventDefault(); onDirectNavigation('/privacy'); }} className="hover:text-white transition-colors">Privacy</a>
+                           <a href="/refund" onClick={(e) => { e.preventDefault(); onDirectNavigation('/refund'); }} className="hover:text-white transition-colors">Refund Policy</a>
+                           <a href="/contact" onClick={(e) => { e.preventDefault(); onDirectNavigation('/contact'); }} className="hover:text-white transition-colors">Contact Us</a>
                         </div>
                         
                         {/* Logo and Branding - Centered on mobile, left side on desktop */}
                         <div className="flex flex-col items-center md:items-start text-center md:text-left order-2 md:order-1">
-                            <button 
-                                onClick={onGetStarted}
-                                className="flex items-center gap-2 cursor-pointer hover:scale-105 transition-transform duration-300"
-                            >
-                                <Logo className="h-8 w-8" />
+                            <div className="flex items-center gap-0">
+                                <button 
+                                    onClick={onGetStarted}
+                                    className="cursor-pointer hover:scale-105 transition-transform duration-300"
+                                >
+                                    <Logo className="h-8 w-8" />
+                                </button>
                                 <span className="text-xl font-bold">Otagon</span>
-                            </button>
+                            </div>
                              <p className="text-neutral-400 mt-2 text-sm">&copy; {new Date().getFullYear()} Otagon. All rights reserved.</p>
                         </div>
                     </div>
                 </div>
             </footer>
-            
-            {/* Contact Us Modal */}
-            <ContactUsModal 
-                isOpen={showContactModal} 
-                onClose={() => setShowContactModal(false)} 
-            />
         </div>
     );
 };

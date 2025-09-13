@@ -33,14 +33,14 @@ export const useGameAnalytics = () => {
     pillContent: any,
     metadata?: Record<string, any>
   ) => {
-    return gameAnalyticsService.trackPillCreated(
+    return gameAnalyticsService.trackPillCreated({
       gameId,
       gameTitle,
       conversationId,
       pillId,
       pillContent,
       metadata
-    );
+    });
   }, []);
 
   const trackPillDeleted = useCallback((
@@ -56,10 +56,11 @@ export const useGameAnalytics = () => {
       activityType: 'pill_deleted',
       gameId,
       gameTitle,
-      conversationId,
-      pillId,
-      oldValue: oldPillContent,
-      metadata
+      metadata: {
+        ...metadata,
+        pillId,
+        oldPillContent
+      }
     });
   }, []);
 
@@ -77,11 +78,12 @@ export const useGameAnalytics = () => {
       activityType: 'pill_modified',
       gameId,
       gameTitle,
-      conversationId,
-      pillId,
-      oldValue: oldPillContent,
-      newValue: newPillContent,
-      metadata
+      metadata: {
+        ...metadata,
+        pillId,
+        oldPillContent,
+        newPillContent
+      }
     });
   }, []);
 
@@ -95,14 +97,14 @@ export const useGameAnalytics = () => {
     insightContent: any,
     metadata?: Record<string, any>
   ) => {
-    return gameAnalyticsService.trackInsightCreated(
+    return gameAnalyticsService.trackInsightCreated({
       gameId,
       gameTitle,
       conversationId,
       insightId,
       insightContent,
       metadata
-    );
+    });
   }, []);
 
   const trackInsightDeleted = useCallback((
@@ -118,10 +120,11 @@ export const useGameAnalytics = () => {
       activityType: 'insight_deleted',
       gameId,
       gameTitle,
-      conversationId,
-      insightId,
-      oldValue: oldInsightContent,
-      metadata
+      metadata: {
+        ...metadata,
+        insightId,
+        oldInsightContent
+      }
     });
   }, []);
 
@@ -139,11 +142,12 @@ export const useGameAnalytics = () => {
       activityType: 'insight_modified',
       gameId,
       gameTitle,
-      conversationId,
-      insightId,
-      oldValue: oldInsightContent,
-      newValue: newInsightContent,
-      metadata
+      metadata: {
+        ...metadata,
+        insightId,
+        oldInsightContent,
+        newInsightContent
+      }
     });
   }, []);
 
@@ -161,13 +165,13 @@ export const useGameAnalytics = () => {
     tabType: InsightTab['tabType'],
     metadata?: Record<string, any>
   ) => {
-    return gameAnalyticsService.trackInsightTabCreated(
+    return gameAnalyticsService.trackInsightTabCreated({
       conversationId,
       tabId,
       tabTitle,
       tabType,
       metadata
-    );
+    });
   }, []);
 
   const trackInsightModification = useCallback((
@@ -192,14 +196,12 @@ export const useGameAnalytics = () => {
     aiResponseContext?: Record<string, any>,
     metadata?: Record<string, any>
   ) => {
-    return gameAnalyticsService.trackAIResponseFeedback(
+    return gameAnalyticsService.trackAIResponseFeedback({
+      type: 'positive',
       conversationId,
-      messageId,
       feedbackType,
-      feedbackText,
-      aiResponseContext,
-      metadata
-    );
+      feedbackText
+    });
   }, []);
 
   const trackInsightFeedback = useCallback((
@@ -210,13 +212,12 @@ export const useGameAnalytics = () => {
     metadata?: Record<string, any>
   ) => {
     return gameAnalyticsService.trackUserFeedback({
-      type: 'neutral',
+      type: 'positive',
       conversationId,
       targetType: 'insight',
       targetId: insightId,
       feedbackType,
-      feedbackText,
-      metadata
+      feedbackText
     });
   }, []);
 
@@ -245,14 +246,16 @@ export const useGameAnalytics = () => {
     apiCallTimers.current.delete(endpoint);
 
     const apiCall: ApiCall = {
+      id: crypto.randomUUID(),
+      endpoint: endpoint,
+      method: method,
+      status: success ? 200 : 500,
+      timestamp: Date.now(),
       apiEndpoint: endpoint,
       apiMethod: method,
       requestSizeBytes: requestSize,
       responseSizeBytes: responseSize,
-      responseTimeMs,
-      success,
-      errorMessage,
-      requestMetadata: metadata
+      duration: responseTimeMs
     };
 
     gameAnalyticsService.trackApiCall(apiCall);
@@ -309,10 +312,11 @@ export const useGameAnalytics = () => {
       activityType: 'game_progress_updated',
       gameId,
       gameTitle,
-      conversationId,
-      oldValue: oldProgress,
-      newValue: newProgress,
-      metadata
+      metadata: {
+        ...metadata,
+        oldProgress,
+        newProgress
+      }
     });
   }, []);
 
@@ -329,10 +333,11 @@ export const useGameAnalytics = () => {
       activityType: 'inventory_changed',
       gameId,
       gameTitle,
-      conversationId,
-      oldValue: oldInventory,
-      newValue: newInventory,
-      metadata
+      metadata: {
+        ...metadata,
+        oldInventory,
+        newInventory
+      }
     });
   }, []);
 
@@ -348,9 +353,10 @@ export const useGameAnalytics = () => {
       activityType: 'objective_set',
       gameId,
       gameTitle,
-      conversationId,
-      newValue: objective,
-      metadata
+      metadata: {
+        ...metadata,
+        objective
+      }
     });
   }, []);
 

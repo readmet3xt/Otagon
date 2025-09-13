@@ -1461,7 +1461,7 @@ ${completedTasksContext}
   }
 
   // NEW: Get insight tab context to prevent repetition
-  private getInsightTabContext(conversation: Conversation): string {
+  public getInsightTabContext(conversation: Conversation): string {
     if (!conversation.insights || Object.keys(conversation.insights).length === 0) {
       return '';
     }
@@ -1534,7 +1534,7 @@ When generating new insights, avoid duplicating content from these existing tabs
   }
 
   // NEW: Generate AI suggested tasks based on conversation context
-  private async generateSuggestedTasks(
+  public async generateSuggestedTasks(
     conversation: Conversation,
     userQuery: string,
     aiResponse: string,

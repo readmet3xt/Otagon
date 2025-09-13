@@ -4,10 +4,6 @@
 import { CachePerformanceMetrics } from './types';
 
 export interface CacheInfo {
-  totalItems: number;
-  hitRate: number;
-  missRate: number;
-  lastUpdated: string;
   memorySize: number;
   storageSize: number;
   strategies: string[];
@@ -33,10 +29,6 @@ class UnifiedCacheService {
   getCacheInfo(): CacheInfo {
     console.log('UnifiedCacheService.getCacheInfo (stub)');
     return {
-      totalItems: 0,
-      hitRate: 0.8,
-      missRate: 0.2,
-      lastUpdated: new Date().toISOString(),
       memorySize: 0,
       storageSize: 0,
       strategies: []
@@ -73,8 +65,30 @@ class UnifiedCacheService {
       averageResponseTime: 100,
       totalRequests: 0,
       memoryUsage: 0,
+      storageUsage: 0,
       lastUpdated: new Date()
     };
+  }
+
+  // Additional missing methods for useChat.ts compatibility
+  async getCachedContent(params: {
+    query: string;
+    contentType: string;
+    gameName?: string;
+    genre?: string;
+  }): Promise<any> {
+    console.log('UnifiedCacheService.getCachedContent (stub):', params);
+    return null;
+  }
+
+  async cacheContent(params: {
+    query: string;
+    content: string;
+    contentType: string;
+    gameName?: string;
+    genre?: string;
+  }): Promise<void> {
+    console.log('UnifiedCacheService.cacheContent (stub):', params);
   }
 }
 

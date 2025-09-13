@@ -154,7 +154,6 @@ export interface CacheStrategy {
   ttl?: number;
   priority?: number;
   maxSize?: number;
-  invalidationRules?: any[];
 }
 
 export interface CachePerformanceMetrics {
@@ -164,10 +163,8 @@ export interface CachePerformanceMetrics {
   totalRequests: number;
   memoryUsage?: number;
   storageUsage?: number;
-  lastUpdated?: Date;
+  lastUpdated: Date;
 }
-
-// Diary task interface (moved from otakuDiaryService to break circular dependency)
 export interface DiaryTask {
   id: string;
   title: string;
@@ -289,15 +286,12 @@ export type Conversation = {
   insightsOrder?: string[];
   isPinned?: boolean;
   activeObjective?: { description: string; isCompleted: boolean; } | null;
-  lastModified?: number; // Legacy property
-  gameId?: string; // Legacy property
-  game_id?: string; // Legacy property
-  context?: Record<string, any>; // Legacy property
-  version?: number; // Legacy property
-  checksum?: string; // Legacy property
-  last_modified?: string; // Legacy property
-  created_at?: string; // Legacy property
-  updated_at?: string; // Legacy property
+  // Legacy properties for backward compatibility
+  gameId?: string;
+  game_id?: string;
+  lastModified?: number;
+  context?: any;
+  version?: number;
 };
 
 export type Conversations = Record<string, Conversation>;
@@ -636,7 +630,6 @@ export interface CacheStrategy {
   ttl?: number;
   priority?: number;
   maxSize?: number;
-  invalidationRules?: any[];
 }
 
 export interface CachePerformanceMetrics {
@@ -646,5 +639,4 @@ export interface CachePerformanceMetrics {
   totalRequests: number;
   memoryUsage?: number;
   storageUsage?: number;
-  lastUpdated?: Date;
 }

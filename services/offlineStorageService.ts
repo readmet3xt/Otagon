@@ -181,7 +181,16 @@ class IndexedDBOfflineStorage implements OfflineStorageService {
     
     return {
       conversations,
-              usage: usage || { textQueries: 0, imageQueries: 0, insights: 0, tier: 'free', textCount: 0, imageCount: 0, textLimit: 55, imageLimit: 25 },
+              usage: usage || { 
+                tier: 'free', 
+                textQueries: 0,
+                imageQueries: 0,
+                insights: 0,
+                textCount: 0, 
+                imageCount: 0, 
+                textLimit: 55, 
+                imageLimit: 25 
+              },
       lastSync: Date.now(),
       offline: true
     };

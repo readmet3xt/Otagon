@@ -46,7 +46,7 @@ const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, onOpe
         const unsubscribe = authService.subscribe((authState) => {
             if (authState.error && !authState.loading) {
                 console.error('Authentication error detected:', authState.error);
-                setErrorMessage(authState.error.message || 'Authentication failed. Please try again.');
+                setErrorMessage(authState.error || 'Authentication failed. Please try again.');
                 // Reset button animations on error
                 setButtonAnimations({ google: false, discord: false, email: false });
             }
@@ -119,7 +119,7 @@ const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, onOpe
             }
         } catch (error) {
             console.error('Auth error:', error);
-            trackOnboardingDropOff('login', 1, 'auth_error', { error: error instanceof Error ? error.message : String(error) });
+            trackOnboardingDropOff('login', 1, 'auth_error', { error: String(error) });
             setButtonAnimations(prev => ({ ...prev, [method]: false }));
         }
     };
@@ -138,12 +138,12 @@ const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, onOpe
                 completeOnboardingStep('login', 1, { method: 'email', success: true });
                 onComplete();
             } else {
-                setErrorMessage(result.error?.message || 'Sign in failed. Please check your credentials.');
-                trackOnboardingDropOff('login', 1, 'email_signin_failed', { error: result.error?.message });
+                setErrorMessage(result.error || 'Sign in failed. Please check your credentials.');
+                trackOnboardingDropOff('login', 1, 'email_signin_failed', { error: result.error });
             }
         } catch (error) {
             setErrorMessage('An unexpected error occurred. Please try again.');
-            trackOnboardingDropOff('login', 1, 'email_signin_error', { error: error instanceof Error ? error.message : String(error) });
+            trackOnboardingDropOff('login', 1, 'email_signin_error', { error: String(error) });
         } finally {
             setIsLoading(false);
         }
@@ -175,7 +175,7 @@ const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, onOpe
                     setSuccessMessage('');
                 }, 3000);
             } else {
-                setErrorMessage(result.error?.message || 'Sign up failed. Please try again.');
+                setErrorMessage(result.error || 'Sign up failed. Please try again.');
             }
         } catch (error) {
             setErrorMessage('An unexpected error occurred. Please try again.');
@@ -200,7 +200,7 @@ const LoginSplashScreen: React.FC<LoginSplashScreenProps> = ({ onComplete, onOpe
                     setSuccessMessage('');
                 }, 3000);
             } else {
-                setErrorMessage(result.error?.message || 'Failed to send reset email. Please try again.');
+                setErrorMessage(result.error || 'Failed to send reset email. Please try again.');
             }
         } catch (error) {
             setErrorMessage('An unexpected error occurred. Please try again.');

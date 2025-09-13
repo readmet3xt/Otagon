@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { ChatMessage, Conversations, Conversation, newsPrompts, Insight, insightTabsConfig, InsightStatus, PendingInsightModification, ChatMessageFeedback } from '../services/types';
 import { authService, supabase } from '../services/supabase';
 import { databaseService } from '../services/databaseService';
-import { atomicConversationService } from '../services/atomicConversationService_BACKUP';
+import { secureConversationService } from '../services/secureConversationService';
 import { ttsService } from '../services/ttsService';
 import { contextManagementService } from '../services/contextManagementService';
 import { playerProfileService } from '../services/playerProfileService';
@@ -13,7 +13,7 @@ import { screenshotTimelineService } from '../services/screenshotTimelineService
 import { longTermMemoryService } from '../services/longTermMemoryService';
 import { unifiedAIService } from '../services/unifiedAIService';
 import { otakuDiaryService } from '../services/otakuDiaryService';
-import { TabManagementService } from '../services/tabManagementService';
+import tabManagementService from '../services/tabManagementService';
 import { 
   generateInitialProHint, 
   sendMessageWithImages, 
@@ -144,32 +144,60 @@ export const useChat = (isHandsFreeMode: boolean) => {
         saveTimeoutRef.current = setTimeout(async () => {
             isSavingRef.current = true;
             try {
-                await atomicConversationService.saveConversations(conversations, {
-                    notifyUser: true,
-                    retryOnFailure: true
-                });
+                // Save each conversation individually
+                for (const [conversationId, conversation] of Object.entries(conversations)) {
+                    await secureConversationService.saveConversation(
+                        conversationId,
+                        conversation.title,
+                        conversation.messages,
+                        conversation.insights ? Object.values(conversation.insights) : [],
+                        { 
+                            progress: conversation.progress,
+                            genre: conversation.genre,
+                            inventory: conversation.inventory,
+                            activeObjective: conversation.activeObjective,
+                            lastTrailerTimestamp: conversation.lastTrailerTimestamp,
+                            lastInteractionTimestamp: conversation.lastInteractionTimestamp,
+                            isPinned: conversation.isPinned
+                        }
+                    );
+                }
             } catch (error) {
                 console.error('Failed to save conversations:', error);
             } finally {
                 isSavingRef.current = false;
             }
         }, 500); // 500ms debounce
-    }, [atomicConversationService]);
+    }, [secureConversationService]);
 
     // Legacy functions for backward compatibility (deprecated)
-    const saveConversationsToSupabase = useCallback(async () => {
-        console.warn('saveConversationsToSupabase is deprecated. Use atomicConversationService instead.');
+    const saveConversationToSupabase = useCallback(async () => {
+        console.warn('saveConversationToSupabase is deprecated. Use secureConversationService instead.');
         try {
-            await atomicConversationService.saveConversations(conversations, {
-                notifyUser: false,
-                retryOnFailure: true
-            });
+            // Save each conversation individually
+            for (const [conversationId, conversation] of Object.entries(conversations)) {
+                await secureConversationService.saveConversation(
+                    conversationId,
+                    conversation.title,
+                    conversation.messages,
+                    conversation.insights ? Object.values(conversation.insights) : [],
+                    { 
+                        progress: conversation.progress,
+                        genre: conversation.genre,
+                        inventory: conversation.inventory,
+                        activeObjective: conversation.activeObjective,
+                        lastTrailerTimestamp: conversation.lastTrailerTimestamp,
+                        lastInteractionTimestamp: conversation.lastInteractionTimestamp,
+                        isPinned: conversation.isPinned
+                    }
+                );
+            }
         } catch (error) {
             console.warn('Failed to save conversations to Supabase:', error);
         }
-    }, [conversations, atomicConversationService]);
+    }, [conversations, secureConversationService]);
     
-    const saveConversationsToLocalStorage = useCallback(() => {
+    const saveConversationToLocalStorage = useCallback(() => {
         try {
             // Save conversations to localStorage for persistence in developer mode
             const conversationsToSave = {
@@ -198,20 +226,34 @@ export const useChat = (isHandsFreeMode: boolean) => {
         
         const loadConversations = async () => {
             try {
-                const result = await atomicConversationService.loadConversations();
+                const result = await secureConversationService.loadConversations();
                 
-                if (isMounted) {
+                if (isMounted && result.success && result.conversations) {
+                    const conversations = result.conversations as any; // Type cast to handle interface mismatch
+                    const order = Object.keys(conversations).sort(sortConversations(conversations));
+                    const activeId = order.length > 0 ? order[0] : EVERYTHING_ELSE_ID;
+                    
                     setChatState({
-                        conversations: result.conversations,
-                        order: result.order,
-                        activeId: result.activeId
+                        conversations: conversations as any, // Type cast to handle interface mismatch
+                        order,
+                        activeId
                     });
                     
-                    if (result.conflictsDetected) {
-                        console.warn('Conflicts detected during conversation loading');
-                    }
-                    
-                    console.log(`💾 Conversations loaded from ${result.source}`);
+                    console.log(`💾 Conversations loaded successfully`);
+                } else if (isMounted) {
+                    // Fallback to default state
+                    setChatState({
+                        conversations: {
+                            [EVERYTHING_ELSE_ID]: {
+                                id: EVERYTHING_ELSE_ID,
+                                title: 'Everything else',
+                                messages: [],
+                                createdAt: Date.now(),
+                            }
+                        },
+                        order: [EVERYTHING_ELSE_ID],
+                        activeId: EVERYTHING_ELSE_ID
+                    });
                 }
             } catch (error) {
                 console.error('Failed to load conversations:', error);
@@ -239,7 +281,7 @@ export const useChat = (isHandsFreeMode: boolean) => {
         return () => {
             isMounted = false;
         };
-    }, [atomicConversationService]);
+    }, [secureConversationService]);
 
 
     // Use debounced save instead of the old timeout approach
@@ -260,10 +302,9 @@ export const useChat = (isHandsFreeMode: boolean) => {
                 controller.abort();
             });
             
-            // Clean up atomic service
-            atomicConversationService.cleanup();
+            // Clean up service (no cleanup method available)
         };
-    }, [atomicConversationService]);
+    }, [secureConversationService]);
 
     useEffect(() => {
         const cooldownEnd = localStorage.getItem(COOLDOWN_KEY);
@@ -342,8 +383,8 @@ export const useChat = (isHandsFreeMode: boolean) => {
                 tabType: 'custom',
                 isPinned: false,
                 orderIndex: 0,
-                metadata: { source: 'manual_deletion' }
-            }, 'deleted');
+                metadata: { source: 'manual_deletion', action: 'deleted' }
+            });
 
             return { ...convo, insights: newInsights, insightsOrder: newOrder };
         });
@@ -449,14 +490,14 @@ export const useChat = (isHandsFreeMode: boolean) => {
 
             // Track insight creation for game analytics
             const gameContext = unifiedAnalyticsService().extractGameContext(convo);
-            unifiedAnalyticsService().trackInsightCreated(
-                gameContext.gameId,
-                gameContext.gameTitle,
-                convoId,
-                newId,
-                newInsight,
-                { source: 'manual_creation', title, content }
-            );
+            unifiedAnalyticsService().trackInsightCreated({
+                gameId: gameContext.gameId,
+                gameTitle: gameContext.gameTitle,
+                conversationId: convoId,
+                insightId: newId,
+                insight: newInsight,
+                metadata: { source: 'manual_creation', title, content }
+            });
 
             return { ...convo, insights: newInsights, insightsOrder: newOrder };
         });
@@ -469,22 +510,20 @@ export const useChat = (isHandsFreeMode: boolean) => {
         const conversation = conversations[convoId];
         const gameContext = unifiedAnalyticsService().extractGameContext(conversation);
         
-        unifiedAnalyticsService().trackAIResponseFeedback(
-            convoId,
+        unifiedAnalyticsService().trackAIResponseFeedback({
+            conversationId: convoId,
             messageId,
-            vote,
-            undefined, // No feedback text for thumbs up/down
-            { 
+            feedbackType: vote,
+            feedbackText: undefined, // No feedback text for thumbs up/down
+            metadata: { 
                 responseType: 'ai_message',
                 feedbackType: vote,
                 gameId: gameContext.gameId,
-                gameTitle: gameContext.gameTitle
-            },
-            { 
+                gameTitle: gameContext.gameTitle,
                 userTier: unifiedUsageService.getTier(),
                 source: 'message_feedback'
             }
-        );
+        });
     }, [updateMessageInConversation, conversations, unifiedUsageService]);
 
     const updateInsightFeedback = useCallback((convoId: string, insightId: string, vote: ChatMessageFeedback) => {
@@ -567,8 +606,14 @@ export const useChat = (isHandsFreeMode: boolean) => {
         
         // Track feature usage
         unifiedAnalyticsService().trackFeatureUsage({
+            id: `send_message_${Date.now()}`,
+            eventType: 'feature_usage',
+            category: 'feature_usage',
+            timestamp: Date.now(),
+            sessionId: 'session-' + Date.now(),
             featureName: 'send_message',
             featureCategory: 'chat',
+            action: 'complete',
             metadata: { 
                 hasText: textQueries > 0, 
                 hasImages: imageQueries > 0,
@@ -635,12 +680,19 @@ export const useChat = (isHandsFreeMode: boolean) => {
         
         if (!sourceConversation) return { success: false, reason: 'conversation_not_found' };
 
-        const history = sourceConversation.messages || [];
+        const history = { 
+            messages: (sourceConversation.messages || []).map(msg => ({
+                id: msg.id,
+                content: msg.text,
+                role: (msg.role === 'model' ? 'assistant' : msg.role) as 'user' | 'assistant',
+                timestamp: Date.now()
+            }))
+        };
         const isProUser = (await unifiedUsageService.getTier()) !== 'free';
         
-        const onError = (error: string) => {
+        const onError = (error: Error) => {
             setLoadingMessages(prev => prev.filter(id => id !== modelMessageId));
-            updateMessageInConversation(activeConversationId, modelMessageId, msg => ({ ...msg, text: `Error: ${error}`}));
+            updateMessageInConversation(activeConversationId, modelMessageId, msg => ({ ...msg, text: `Error: ${error.message}`}));
         };
 
         try {
@@ -660,12 +712,12 @@ export const useChat = (isHandsFreeMode: boolean) => {
                 updateMessageInConversation(activeConversationId, modelMessageId, msg => ({ ...msg, text: finalCleanedText }));
                 
                 // Track successful knowledge base usage
-                unifiedAnalyticsService().trackKnowledgeBaseUsage(
-                    gameTitle || 'unknown',
-                    text.trim(),
-                    smartResponse.confidence,
-                    smartResponse.metadata
-                );
+                unifiedAnalyticsService().trackKnowledgeBaseUsage({
+                    gameTitle: gameTitle || 'unknown',
+                    query: text.trim(),
+                    confidence: smartResponse.confidence,
+                    metadata: smartResponse.metadata
+                });
                 
                 // Learn from this successful interaction
                 await gameKnowledgeService.learnFromAIResponse(text.trim(), smartResponse.response, gameTitle, true);
@@ -757,7 +809,7 @@ export const useChat = (isHandsFreeMode: boolean) => {
                 try {
                     // Using static import instead of dynamic import for Firebase hosting compatibility
                     const cacheType = sourceConversation.id === EVERYTHING_ELSE_ID ? 'general' : 'game_info';
-                    const cached = await unifiedCacheService.getCachedContent({
+                    const cached = await unifiedCacheService().getCachedContent({
                         query: text.trim(),
                         contentType: cacheType as any,
                         gameName: sourceConversation.id === EVERYTHING_ELSE_ID ? undefined : sourceConversation.id,
@@ -800,13 +852,13 @@ export const useChat = (isHandsFreeMode: boolean) => {
                 }
             };
 
-            const onStreamingError = (error: string) => {
+            const onStreamingError = (error: Error) => {
                 hasError = true;
-                if (error === 'QUOTA_EXCEEDED') {
+                if (error.message === 'QUOTA_EXCEEDED') {
                     handleQuotaError(modelMessageId);
                 } else {
-                    updateMessageInConversation(activeConversationId, modelMessageId, msg => ({ ...msg, text: error }));
-                    if (isHandsFreeMode) ttsService.speak(error).catch(() => {});
+                    updateMessageInConversation(activeConversationId, modelMessageId, msg => ({ ...msg, text: error.message }));
+                    if (isHandsFreeMode) ttsService.speak(error.message).catch(() => {});
                 }
                 setLoadingMessages(prev => prev.filter(id => id !== modelMessageId));
             };
@@ -907,8 +959,8 @@ export const useChat = (isHandsFreeMode: boolean) => {
                 .trim();
             
             // Show notification for AI response if screen is locked
-            if (smartNotificationService.isScreenLocked()) {
-                smartNotificationService.showAINotification(finalCleanedText, sourceConvoId);
+            if (smartNotificationService().isScreenLocked()) {
+                smartNotificationService().showAINotification(finalCleanedText, sourceConvoId);
             }
 
             let finalTargetConvoId = sourceConvoId;
@@ -962,7 +1014,12 @@ export const useChat = (isHandsFreeMode: boolean) => {
                         
                         // Generate AI suggested tasks
                         const suggestedTasks = await unifiedAIService().generateSuggestedTasks(
-                          targetConversation || { id: finalTargetConvoId, title: identifiedGameName || 'Unknown Game' },
+                          targetConversation || { 
+                            id: finalTargetConvoId, 
+                            title: identifiedGameName || 'Unknown Game',
+                            messages: [],
+                            createdAt: Date.now()
+                          },
                           text,
                           rawTextResponse
                         );
@@ -1133,13 +1190,14 @@ export const useChat = (isHandsFreeMode: boolean) => {
                 try {
                     // Using static import instead of dynamic import for Firebase hosting compatibility
                     const cacheType = sourceConvoId === EVERYTHING_ELSE_ID ? 'general' : 'game_info';
-                    await unifiedCacheService.cacheContent({
+                    await unifiedCacheService().cacheContent({
                         query: text.trim(),
+                        content: finalCleanedText,
                         contentType: cacheType as any,
                         gameName: sourceConvoId === EVERYTHING_ELSE_ID ? undefined : sourceConvoId,
                         genre: gameGenre || sourceConversation.genre,
                         userTier: 'paid'
-                    } as any, finalCleanedText, { model: 'gemini-2.5-flash', tokens: 0, cost: 0 });
+                    } as any);
                 } catch (e) {
                     console.warn('Universal cache save failed:', e);
                 }
@@ -1164,12 +1222,12 @@ export const useChat = (isHandsFreeMode: boolean) => {
                     );
                     
                     // Track knowledge learning for analytics
-                    unifiedAnalyticsService().trackKnowledgeLearning(
+                    unifiedAnalyticsService().trackKnowledgeLearning({
                         gameTitle,
-                        text.trim(),
-                        finalCleanedText.length,
-                        'ai_response'
-                    );
+                        userQuery: text.trim(),
+                        responseLength: finalCleanedText.length,
+                        source: 'ai_response'
+                    });
                 }
             } catch (error) {
                 console.warn('Failed to learn from AI response:', error);
@@ -1204,8 +1262,8 @@ export const useChat = (isHandsFreeMode: boolean) => {
             return { success: true };
 
         } catch(e) {
-            const message = e instanceof Error ? e.message : 'An unknown error occurred.';
-            onError(message);
+            const error = e instanceof Error ? e : new Error('An unknown error occurred.');
+            onError(error);
 
             // Track failed user query for game analytics
             const conversation = conversations[sourceConvoId];
@@ -1220,12 +1278,12 @@ export const useChat = (isHandsFreeMode: boolean) => {
                 queryLength: text.length,
                 responseTimeMs: 0, // Stub response time
                 success: false,
-                errorMessage: message,
+                errorMessage: error.message,
                 gameContext,
                 metadata: { 
                     userTier: unifiedUsageService.getTier(),
                     isFromPC: isFromPC || false,
-                    error: message
+                    error: error.message
                 }
             });
 
@@ -1272,11 +1330,15 @@ export const useChat = (isHandsFreeMode: boolean) => {
             };
             
             // Save the reset state atomically
-            await atomicConversationService.saveConversations(defaultConversations, {
-                forceOverwrite: true,
-                notifyUser: true,
-                retryOnFailure: true
-            });
+            for (const [conversationId, conversation] of Object.entries(defaultConversations)) {
+                await secureConversationService.saveConversation(
+                    conversationId,
+                    conversation.title,
+                    conversation.messages,
+                    [],
+                    {}
+                );
+            }
             
             // Update local state
             setChatState({
@@ -1305,7 +1367,7 @@ export const useChat = (isHandsFreeMode: boolean) => {
             });
             setLoadingMessages([]);
         }
-    }, [atomicConversationService]);
+    }, [secureConversationService]);
     
     const switchConversation = useCallback((id: string) => {
         ttsService.cancel();
@@ -1368,7 +1430,7 @@ Progress: ${conversation.progress}%`;
                 let fullContent = '';
                 try {
                     // Using static import instead of dynamic import for Firebase hosting compatibility
-                    const cached = await unifiedCacheService.getCachedContent({
+                    const cached = await unifiedCacheService().getCachedContent({
                         query: `${conversation.title}:${insightId}:${insightTabConfig.title}`,
                         contentType: 'insight_tab',
                         gameName: conversation.title,
@@ -1383,21 +1445,38 @@ Progress: ${conversation.progress}%`;
                 }
 
                 if (!fullContent) {
+                    const prompt = `${insightTabConfig.instruction || ''} for ${conversation.title}`;
                     fullContent = await generateInsightWithSearch(
                         prompt,
-                        'flash', // Use Flash for cost optimization
-                        controller.signal
+                        conversation,
+                        controller.signal,
+                        (chunk) => {
+                            if (controller.signal.aborted) return;
+                            fullContent += chunk;
+                            updateConversation(conversationId, convo => ({
+                                ...convo,
+                                insights: { ...convo.insights!, [insightId]: { ...convo.insights![insightId], content: fullContent, status: 'streaming' } }
+                            }), true);
+                        },
+                        (error) => {
+                            console.error(`Error generating insight ${insightId}:`, error);
+                            updateConversation(conversationId, convo => ({
+                                ...convo,
+                                insights: { ...convo.insights!, [insightId]: { ...convo.insights![insightId], content: `Error: ${error.message}`, status: 'error' } }
+                            }));
+                        }
                     );
                     // Save to cache
                     try {
                         // Using static import instead of dynamic import for Firebase hosting compatibility
-                        await unifiedCacheService.cacheContent({
+                        await unifiedCacheService().cacheContent({
                             query: `${conversation.title}:${insightId}:${insightTabConfig.title}`,
+                            content: fullContent,
                             contentType: 'insight_tab',
                             gameName: conversation.title,
                             genre: conversation.genre,
                             userTier: 'paid'
-                        } as any, fullContent, { model: 'gemini-2.5-flash', tokens: 0, cost: 0 });
+                        } as any);
                     } catch (e) {
                         console.warn('Insight cache save failed:', e);
                     }
@@ -1410,12 +1489,11 @@ Progress: ${conversation.progress}%`;
             } else {
                 // Use the streaming function for non-search insights
                 let fullContent = '';
+                const prompt = `${insightTabConfig.instruction || ''} for ${conversation.title}`;
                 await generateInsightStream(
-                    conversation.title,
-                    conversation.genre,
-                    conversation.progress,
-                    insightTabConfig.instruction || '',
-                    insightTabConfig.title,
+                    prompt,
+                    conversation,
+                    controller.signal,
                     (chunk) => {
                         if (controller.signal.aborted) return;
                         fullContent += chunk;
@@ -1428,10 +1506,9 @@ Progress: ${conversation.progress}%`;
                         console.error(`Error streaming insight ${insightId}:`, error);
                         updateConversation(conversationId, convo => ({
                             ...convo,
-                            insights: { ...convo.insights!, [insightId]: { ...convo.insights![insightId], content: `Error: ${error}`, status: 'error' } }
+                            insights: { ...convo.insights!, [insightId]: { ...convo.insights![insightId], content: `Error: ${error.message}`, status: 'error' } }
                         }));
-                    },
-                    controller.signal
+                    }
                 );
 
                 if (controller.signal.aborted) return;
@@ -1467,6 +1544,12 @@ Progress: ${conversation.progress}%`;
         unifiedAnalyticsService().trackFeatureUsage({
             featureName: 'retry_message',
             featureCategory: 'chat',
+            action: 'interact',
+            timestamp: Date.now(),
+            category: 'feature_usage',
+            id: `retry_${messageId}_${Date.now()}`,
+            eventType: 'feature_usage',
+            sessionId: 'current_session',
             metadata: { 
                 originalMessageId: messageId,
                 conversationId: activeConversationId
@@ -1516,12 +1599,11 @@ Progress: ${conversation.progress}%`;
             
             // Generate all insights in one API call using the unified service
             const result = await generateUnifiedInsights(
-                gameName,
-                genre,
-                progress,
                 `Generate comprehensive insights for ${gameName} at ${progress}% progress`,
-                (error) => console.error('Unified insight generation error:', error),
-                new AbortController().signal
+                { title: gameName, genre, progress },
+                new AbortController().signal,
+                (chunk) => console.log('Insight chunk:', chunk),
+                (error) => console.error('Unified insight generation error:', error)
             );
             
             if (result && result.insights) {
@@ -1966,7 +2048,7 @@ Progress: ${conversation.progress}%`;
         switchConversation,
         fetchInsightContent,
         markInsightAsRead,
-        saveConversationsToLocalStorage,
+        saveConversationToLocalStorage,
         pinConversation,
         deleteConversation,
         deleteInsight,

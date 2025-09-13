@@ -5,6 +5,8 @@ export interface SmartNotificationService {
   getScreenStatus(): any;
   showNotification(message: string, type: string): void;
   clearNotifications(): void;
+  isScreenLocked(): boolean;
+  showAINotification(message: string, conversationId: string): void;
 }
 
 class SmartNotificationServiceImpl implements SmartNotificationService {
@@ -33,6 +35,16 @@ class SmartNotificationServiceImpl implements SmartNotificationService {
 
   clearNotifications(): void {
     console.log('SmartNotificationService.clearNotifications (stub)');
+  }
+
+  // Additional missing methods for useChat.ts compatibility
+  isScreenLocked(): boolean {
+    console.log('SmartNotificationService.isScreenLocked (stub)');
+    return false;
+  }
+
+  showAINotification(message: string, conversationId: string): void {
+    console.log('SmartNotificationService.showAINotification (stub):', message, conversationId);
   }
 }
 

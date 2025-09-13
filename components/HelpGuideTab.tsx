@@ -78,7 +78,7 @@ const HelpGuideTab: React.FC = () => {
             </HelpSection>
             
             <HelpSection title="Frequently Asked Questions (FAQs)">
-                <h3 className="text-lg font-semibold text-white !mb-1">How does Otakon avoid spoilers?</h3>
+                <h3 className="text-lg font-semibold text-white !mb-1">How does Otagon avoid spoilers?</h3>
                 <p>Our AI is given strict instructions to only use information relevant to your current in-game progress, which it estimates from your screenshot and conversation history. It's designed to give you a nudge, not the entire solution.</p>
                 
                 <h3 className="text-lg font-semibold text-white !mt-4 !mb-1">What happens when I run out of credits?</h3>

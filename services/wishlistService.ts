@@ -46,40 +46,51 @@ class WishlistService {
       
       if (!user) throw new Error('User not authenticated');
 
-      // Add to Supabase (you'll need to create a wishlist table)
-      const { data: newItem, error } = await supabase
-        .from('wishlist')
-        .insert({
-          user_id: user.id,
-          game_name: item.gameName,
-          release_date: item.releaseDate,
-          platform: item.platform,
-          genre: item.genre,
-          description: item.description,
-          game_id: item.gameId,
-          source: item.source,
-          source_message_id: item.sourceMessageId
-        })
-        .select()
+      // Create wishlist item
+      const wishlistItem: WishlistItem = {
+        ...item,
+        id: `wishlist_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        addedAt: Date.now()
+      };
+
+      // Get current user data
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('app_state')
+        .eq('auth_user_id', user.id)
         .single();
+
+      if (userError) throw userError;
+
+      // Update app_state with new wishlist item
+      const currentAppState = userData.app_state || {};
+      const currentWishlist = currentAppState.wishlist || [];
+      
+      // Check if item already exists
+      const existingItem = currentWishlist.find((w: WishlistItem) => 
+        w.gameName.toLowerCase() === item.gameName.toLowerCase()
+      );
+      
+      if (existingItem) {
+        throw new Error('Game already in wishlist');
+      }
+
+      const updatedWishlist = [...currentWishlist, wishlistItem];
+      const updatedAppState = {
+        ...currentAppState,
+        wishlist: updatedWishlist
+      };
+
+      // Update user's app_state
+      const { error } = await supabase
+        .from('users')
+        .update({ app_state: updatedAppState })
+        .eq('auth_user_id', user.id);
 
       if (error) throw error;
 
-      const wishlistItem: WishlistItem = {
-        id: newItem.id,
-        gameName: newItem.game_name,
-        releaseDate: newItem.release_date,
-        platform: newItem.platform,
-        genre: newItem.genre,
-        description: newItem.description,
-        addedAt: new Date(newItem.created_at).getTime(),
-        gameId: newItem.game_id,
-        source: newItem.source,
-        sourceMessageId: newItem.source_message_id
-      };
-
       // Update cache
-      this.wishlistCache.push(wishlistItem);
+      this.wishlistCache = updatedWishlist;
       this.updateLocalStorage();
 
       return wishlistItem;
@@ -117,17 +128,35 @@ class WishlistService {
       
       if (!user) throw new Error('User not authenticated');
 
-      // Remove from Supabase
+      // Get current user data
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('app_state')
+        .eq('auth_user_id', user.id)
+        .single();
+
+      if (userError) throw userError;
+
+      // Update app_state by removing the item
+      const currentAppState = userData.app_state || {};
+      const currentWishlist = currentAppState.wishlist || [];
+      const updatedWishlist = currentWishlist.filter((item: WishlistItem) => item.id !== itemId);
+      
+      const updatedAppState = {
+        ...currentAppState,
+        wishlist: updatedWishlist
+      };
+
+      // Update user's app_state
       const { error } = await supabase
-        .from('wishlist')
-        .delete()
-        .eq('id', itemId)
-        .eq('user_id', user.id);
+        .from('users')
+        .update({ app_state: updatedAppState })
+        .eq('auth_user_id', user.id);
 
       if (error) throw error;
 
-      // Remove from cache
-      this.wishlistCache = this.wishlistCache.filter(item => item.id !== itemId);
+      // Update cache
+      this.wishlistCache = updatedWishlist;
       this.updateLocalStorage();
 
       return true;
@@ -164,28 +193,21 @@ class WishlistService {
       
       if (!user) return [];
 
-      // Get from Supabase
-      const { data: wishlistData, error } = await supabase
-        .from('wishlist')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      // Get from Supabase users table
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('app_state')
+        .eq('auth_user_id', user.id)
+        .single();
 
       if (error) throw error;
 
+      // Extract wishlist from app_state
+      const currentAppState = userData.app_state || {};
+      const wishlistData = currentAppState.wishlist || [];
+
       // Update cache
-      this.wishlistCache = wishlistData.map(item => ({
-        id: item.id,
-        gameName: item.game_name,
-        releaseDate: item.release_date,
-        platform: item.platform,
-        genre: item.genre,
-        description: item.description,
-        addedAt: new Date(item.created_at).getTime(),
-        gameId: item.game_id,
-        source: item.source,
-        sourceMessageId: item.source_message_id
-      }));
+      this.wishlistCache = wishlistData;
 
       return this.wishlistCache;
     } catch (error) {
@@ -209,16 +231,21 @@ class WishlistService {
       
       if (!user) return false;
 
-      // Check in Supabase
-      const { data, error } = await supabase
-        .from('wishlist')
-        .select('id')
-        .eq('user_id', user.id)
-        .ilike('game_name', gameName)
+      // Get wishlist from users table
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('app_state')
+        .eq('auth_user_id', user.id)
         .single();
 
       if (error) return false;
-      return !!data;
+
+      const currentAppState = userData.app_state || {};
+      const wishlistData = currentAppState.wishlist || [];
+      
+      return wishlistData.some((item: WishlistItem) => 
+        item.gameName.toLowerCase() === gameName.toLowerCase()
+      );
     } catch (error) {
       console.error('Failed to check wishlist status:', error);
       return false;
@@ -287,11 +314,29 @@ class WishlistService {
       
       if (!user) return;
 
-      // Clear from Supabase
-      await supabase
-        .from('wishlist')
-        .delete()
-        .eq('user_id', user.id);
+      // Get current user data
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('app_state')
+        .eq('auth_user_id', user.id)
+        .single();
+
+      if (userError) throw userError;
+
+      // Update app_state to clear wishlist
+      const currentAppState = userData.app_state || {};
+      const updatedAppState = {
+        ...currentAppState,
+        wishlist: []
+      };
+
+      // Update user's app_state
+      const { error } = await supabase
+        .from('users')
+        .update({ app_state: updatedAppState })
+        .eq('auth_user_id', user.id);
+
+      if (error) throw error;
 
       // Clear cache
       this.wishlistCache = [];
@@ -346,16 +391,44 @@ class WishlistService {
       
       if (!user) return;
 
-      // Update in Supabase
-      await supabase
-        .from('wishlist')
-        .update({ 
-          is_released: isReleased,
-          release_notification_shown: false,
-          last_checked: new Date().toISOString()
-        })
-        .eq('id', itemId)
-        .eq('user_id', user.id);
+      // Get current user data
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('app_state')
+        .eq('auth_user_id', user.id)
+        .single();
+
+      if (userError) throw userError;
+
+      // Update app_state with modified wishlist item
+      const currentAppState = userData.app_state || {};
+      const currentWishlist = currentAppState.wishlist || [];
+      
+      const itemIndex = currentWishlist.findIndex((item: WishlistItem) => item.id === itemId);
+      if (itemIndex === -1) return;
+
+      const updatedItem = {
+        ...currentWishlist[itemIndex],
+        isReleased,
+        releaseNotificationShown: false,
+        lastChecked: Date.now()
+      };
+
+      const updatedWishlist = [...currentWishlist];
+      updatedWishlist[itemIndex] = updatedItem;
+      
+      const updatedAppState = {
+        ...currentAppState,
+        wishlist: updatedWishlist
+      };
+
+      // Update user's app_state
+      const { error } = await supabase
+        .from('users')
+        .update({ app_state: updatedAppState })
+        .eq('auth_user_id', user.id);
+
+      if (error) throw error;
 
       // Update cache
       const item = this.wishlistCache.find(i => i.id === itemId);
@@ -385,12 +458,42 @@ class WishlistService {
       
       if (!user) return;
 
-      // Update in Supabase
-      await supabase
-        .from('wishlist')
-        .update({ release_notification_shown: true })
-        .eq('id', itemId)
-        .eq('user_id', user.id);
+      // Get current user data
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('app_state')
+        .eq('auth_user_id', user.id)
+        .single();
+
+      if (userError) throw userError;
+
+      // Update app_state with modified wishlist item
+      const currentAppState = userData.app_state || {};
+      const currentWishlist = currentAppState.wishlist || [];
+      
+      const itemIndex = currentWishlist.findIndex((item: WishlistItem) => item.id === itemId);
+      if (itemIndex === -1) return;
+
+      const updatedItem = {
+        ...currentWishlist[itemIndex],
+        releaseNotificationShown: true
+      };
+
+      const updatedWishlist = [...currentWishlist];
+      updatedWishlist[itemIndex] = updatedItem;
+      
+      const updatedAppState = {
+        ...currentAppState,
+        wishlist: updatedWishlist
+      };
+
+      // Update user's app_state
+      const { error } = await supabase
+        .from('users')
+        .update({ app_state: updatedAppState })
+        .eq('auth_user_id', user.id);
+
+      if (error) throw error;
 
       // Update cache
       const item = this.wishlistCache.find(i => i.id === itemId);

@@ -163,7 +163,7 @@ const UserPreferencesTab: React.FC<UserPreferencesTabProps> = ({ onPreferencesUp
 
       <div className="text-center mb-8">
         <h2 className="text-2xl font-bold text-white mb-2">AI Personalization</h2>
-        <p className="text-neutral-400">Customize how Otakon AI interacts with you based on your gaming preferences.</p>
+        <p className="text-neutral-400">Customize how Otagon AI interacts with you based on your gaming preferences.</p>
       </div>
 
       {/* Game Genre & Skill Level */}
@@ -382,7 +382,7 @@ const UserPreferencesTab: React.FC<UserPreferencesTabProps> = ({ onPreferencesUp
         </div>
         
         <p className="text-xs text-neutral-500 mt-3">
-          These preferences help Otakon AI provide personalized assistance tailored to your gaming style and preferences.
+          These preferences help Otagon AI provide personalized assistance tailored to your gaming style and preferences.
         </p>
       </div>
     </div>

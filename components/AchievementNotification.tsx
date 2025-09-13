@@ -31,7 +31,7 @@ const AchievementNotification: React.FC<AchievementNotificationProps> = ({
     // Default share behavior
     if (navigator.share) {
       navigator.share({
-        title: `I just unlocked "${achievement.title}" on Otakon!`,
+        title: `I just unlocked "${achievement.title}" on Otagon!`,
         text: `Check out my gaming achievement: ${achievement.description}`,
         url: window.location.href
       });

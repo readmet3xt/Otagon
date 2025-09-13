@@ -319,9 +319,9 @@ class OtakuDiaryService extends BaseService {
       
       if (!user) throw new Error('User not authenticated');
 
-      // Create task in new consolidated tasks table
+      // Create task in existing tasks table
       const { data: newTask, error } = await supabase
-        .from('tasks_new')
+        .from('tasks')
         .insert({
           user_id: user.id,
           game_id: task.gameId,
@@ -369,7 +369,7 @@ class OtakuDiaryService extends BaseService {
       if (!user) throw new Error('User not authenticated');
 
       const { data, error } = await supabase
-        .from('tasks_new')
+        .from('tasks')
         .update(updates)
         .eq('id', taskId)
         .eq('game_id', gameId)
@@ -404,7 +404,7 @@ class OtakuDiaryService extends BaseService {
       if (!user) throw new Error('User not authenticated');
 
       const { error } = await supabase
-        .from('tasks_new')
+        .from('tasks')
         .delete()
         .eq('id', taskId)
         .eq('game_id', gameId);
@@ -437,7 +437,7 @@ class OtakuDiaryService extends BaseService {
 
       // Get tasks from new consolidated tasks table
       const { data: tasksData, error } = await supabase
-        .from('tasks_new')
+        .from('tasks')
         .select('*')
         .eq('user_id', user.id)
         .eq('game_id', gameId);
@@ -498,18 +498,40 @@ class OtakuDiaryService extends BaseService {
       
       if (!user) throw new Error('User not authenticated');
 
-      // Add favorite by updating the insight's is_favorite flag
-      const { data: updatedInsight, error } = await supabase
-        .from('insights_new')
-        .update({ is_favorite: true })
-        .eq('id', favorite.sourceInsightId || favorite.sourceMessageId)
-        .eq('user_id', user.id)
-        .select()
+      // Add favorite by updating user's app_state
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('app_state')
+        .eq('auth_user_id', user.id)
         .single();
 
-      if (error) throw error;
+      if (userError) throw userError;
 
-      const diaryFavorite = this.mapSupabaseInsightToDiaryFavorite(updatedInsight);
+      const currentAppState = userData.app_state || {};
+      const currentFavorites = currentAppState.diaryFavorites || [];
+      
+      const diaryFavorite: DiaryFavorite = {
+        id: `favorite_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        gameId: favorite.gameId,
+        content: favorite.content,
+        type: favorite.type,
+        sourceInsightId: favorite.sourceInsightId || favorite.sourceMessageId,
+        sourceMessageId: favorite.sourceMessageId,
+        createdAt: Date.now()
+      };
+
+      const updatedFavorites = [...currentFavorites, diaryFavorite];
+      const updatedAppState = {
+        ...currentAppState,
+        diaryFavorites: updatedFavorites
+      };
+
+      const { error } = await supabase
+        .from('users')
+        .update({ app_state: updatedAppState })
+        .eq('auth_user_id', user.id);
+
+      if (error) throw error;
       
       // Update local cache
       const gameFavorites = this.favoritesCache.get(favorite.gameId) || [];
@@ -535,12 +557,28 @@ class OtakuDiaryService extends BaseService {
       
       if (!user) throw new Error('User not authenticated');
 
-      // Remove favorite by updating the insight's is_favorite flag
+      // Remove favorite by updating user's app_state
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('app_state')
+        .eq('auth_user_id', user.id)
+        .single();
+
+      if (userError) throw userError;
+
+      const currentAppState = userData.app_state || {};
+      const currentFavorites = currentAppState.diaryFavorites || [];
+      
+      const updatedFavorites = currentFavorites.filter(fav => fav.id !== favoriteId);
+      const updatedAppState = {
+        ...currentAppState,
+        diaryFavorites: updatedFavorites
+      };
+
       const { error } = await supabase
-        .from('insights_new')
-        .update({ is_favorite: false })
-        .eq('id', favoriteId)
-        .eq('user_id', user.id);
+        .from('users')
+        .update({ app_state: updatedAppState })
+        .eq('auth_user_id', user.id);
 
       if (error) throw error;
 
@@ -568,22 +606,26 @@ class OtakuDiaryService extends BaseService {
       
       if (!user) return [];
 
-      // Get favorites from new consolidated insights table
-      const { data: favoritesData, error } = await supabase
-        .from('insights_new')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('game_id', gameId)
-        .eq('is_favorite', true);
+      // Get favorites from user's app_state
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('app_state')
+        .eq('auth_user_id', user.id)
+        .single();
 
       if (error) throw error;
 
+      const currentAppState = userData.app_state || {};
+      const allFavorites = currentAppState.diaryFavorites || [];
+      
+      // Filter by gameId
+      const gameFavorites = allFavorites.filter(fav => fav.gameId === gameId);
+      
       // Update local cache
-      const diaryFavorites = favoritesData.map(insight => this.mapSupabaseInsightToDiaryFavorite(insight));
-      this.favoritesCache.set(gameId, diaryFavorites);
+      this.favoritesCache.set(gameId, gameFavorites);
 
       // Return in chronological order (newest first)
-      return diaryFavorites.sort((a, b) => b.createdAt - a.createdAt);
+      return gameFavorites.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     } catch (error) {
       console.error('Failed to get favorites:', error);
       // Fallback to local cache
@@ -606,16 +648,24 @@ class OtakuDiaryService extends BaseService {
       
       if (!user) return false;
 
-      // Check if insight is favorited in new consolidated insights table
-      const { data: insight, error } = await supabase
-        .from('insights_new')
-        .select('is_favorite')
-        .eq('id', sourceId)
-        .eq('user_id', user.id)
+      // Check if insight is favorited in user's app_state
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('app_state')
+        .eq('auth_user_id', user.id)
         .single();
 
       if (error) return false;
-      return insight?.is_favorite || false;
+
+      const currentAppState = userData.app_state || {};
+      const allFavorites = currentAppState.diaryFavorites || [];
+      
+      // Check if sourceId exists in favorites
+      const isFavorited = allFavorites.some(fav => 
+        fav.sourceInsightId === sourceId || fav.sourceMessageId === sourceId
+      );
+
+      return isFavorited;
     } catch (error) {
       console.error('Failed to check favorite status:', error);
       // Fallback to local cache
@@ -675,7 +725,7 @@ class OtakuDiaryService extends BaseService {
       if (!user) throw new Error('User not authenticated');
 
       const { error } = await supabase
-        .from('tasks_new')
+        .from('tasks')
         .update({ 
           status: 'completed',
           completed_at: new Date().toISOString()
@@ -720,7 +770,7 @@ class OtakuDiaryService extends BaseService {
       if (!user) throw new Error('User not authenticated');
 
       const { error } = await supabase
-        .from('tasks_new')
+        .from('tasks')
         .update({ status: 'need_help' })
         .eq('id', taskId)
         .eq('game_id', gameId);
@@ -758,7 +808,7 @@ class OtakuDiaryService extends BaseService {
       if (!user) throw new Error('User not authenticated');
 
       const { error } = await supabase
-        .from('tasks_new')
+        .from('tasks')
         .update({ 
           type: 'user_created',
           metadata: { type: 'user_created' }
@@ -811,17 +861,34 @@ class OtakuDiaryService extends BaseService {
 
       // Clear tasks for this game
       await supabase
-        .from('tasks_new')
+        .from('tasks')
         .delete()
         .eq('user_id', user.id)
         .eq('game_id', gameId);
 
-      // Clear favorites for this game (set is_favorite = false)
-      await supabase
-        .from('insights_new')
-        .update({ is_favorite: false })
-        .eq('user_id', user.id)
-        .eq('game_id', gameId);
+      // Clear favorites for this game from user's app_state
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('app_state')
+        .eq('auth_user_id', user.id)
+        .single();
+
+      if (!userError) {
+        const currentAppState = userData.app_state || {};
+        const currentFavorites = currentAppState.diaryFavorites || [];
+        
+        // Filter out favorites for this game
+        const updatedFavorites = currentFavorites.filter(fav => fav.gameId !== gameId);
+        const updatedAppState = {
+          ...currentAppState,
+          diaryFavorites: updatedFavorites
+        };
+
+        await supabase
+          .from('users')
+          .update({ app_state: updatedAppState })
+          .eq('auth_user_id', user.id);
+      }
 
       // Clear local cache
       this.tasksCache.delete(gameId);
@@ -838,7 +905,7 @@ class OtakuDiaryService extends BaseService {
 
       // Get unique game IDs from tasks table
       const { data: tasksData, error } = await supabase
-        .from('tasks_new')
+        .from('tasks')
         .select('game_id')
         .eq('user_id', user.id);
 

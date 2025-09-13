@@ -232,30 +232,27 @@ export function useAdvancedCache<T = any>(options: UseAdvancedCacheOptions<T>): 
     const defaultConfigs: Record<string, CacheStrategy> = {
       user_preferences: {
         name: 'user_preferences',
-        description: 'User preference cache',
+        description: 'User preference settings cache',
+        enabled: true,
         priority: 1,
         ttl: 24 * 60 * 60 * 1000,
-        maxSize: 10 * 1024 * 1024,
-        enabled: true,
-        invalidationRules: []
+        maxSize: 10 * 1024 * 1024
       },
       conversations: {
         name: 'conversations',
-        description: 'Conversation cache',
+        description: 'Conversation data cache',
+        enabled: true,
         priority: 2,
         ttl: 6 * 60 * 60 * 1000,
-        maxSize: 50 * 1024 * 1024,
-        enabled: true,
-        invalidationRules: []
+        maxSize: 50 * 1024 * 1024
       },
       suggestions: {
         name: 'suggestions',
-        description: 'Suggestion cache',
+        description: 'AI suggestions cache',
+        enabled: true,
         priority: 3,
         ttl: 2 * 60 * 60 * 1000,
-        maxSize: 20 * 1024 * 1024,
-        enabled: true,
-        invalidationRules: []
+        maxSize: 20 * 1024 * 1024
       }
     };
 

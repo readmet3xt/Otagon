@@ -54,7 +54,7 @@ const FounderProfile: React.FC<FounderProfileProps> = ({
         A passionate gamer and AI enthusiast who envisioned a future where every player 
         has an intelligent companion to enhance their gaming experience. With years of 
         experience in both gaming and artificial intelligence, our founder has created 
-        Otakon to bridge the gap between human creativity and AI assistance.
+        Otagon to bridge the gap between human creativity and AI assistance.
       </p>
     </div>
   );

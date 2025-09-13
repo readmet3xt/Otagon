@@ -104,4 +104,3 @@ export async function generateUnifiedInsights(
   console.log('generateUnifiedInsights (stub):', prompt);
   return { insights: [] };
 }
-

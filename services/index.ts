@@ -75,7 +75,7 @@ export { contactService } from './contactService';
 // Utility Services
 export { requestBatchingService } from './requestBatchingService';
 export { TabManagementService } from './tabManagementService';
-export { waitlistService } from './waitlistService';
+export { waitlist_entriesService as waitlistService } from './waitlistService';
 
 // Storage - removed redundant storage service
 

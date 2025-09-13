@@ -73,21 +73,39 @@ class AIContextService {
       const userId = await this.getCurrentUserId();
       if (!userId) return false;
 
-      const { data, error } = await supabase
-        .from('ai_context')
-        .upsert({
-          user_id: userId,
-          context_type: contextType,
+      // Get current user data
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('app_state')
+        .eq('auth_user_id', userId)
+        .single();
+
+      if (userError) throw userError;
+
+      // Update app_state with AI context
+      const currentAppState = userData.app_state || {};
+      const currentAIContext = currentAppState.aiContext || {};
+      
+      const updatedAIContext = {
+        ...currentAIContext,
+        [contextType]: {
           context_data: contextData,
           updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'user_id,context_type'
-        });
+        }
+      };
 
-      if (error) {
-        console.error('Error storing user context:', error);
-        return false;
-      }
+      const updatedAppState = {
+        ...currentAppState,
+        aiContext: updatedAIContext
+      };
+
+      // Update user's app_state
+      const { error } = await supabase
+        .from('users')
+        .update({ app_state: updatedAppState })
+        .eq('auth_user_id', userId);
+
+      if (error) throw error;
 
       // Update cache
       this.updateContextCache(userId, contextType, contextData);
@@ -108,28 +126,47 @@ class AIContextService {
       const cached = this.userContextCache.get(userId);
       if (cached && !contextType) return cached;
 
-      let query = supabase
-        .from('ai_context')
-        .select('*')
-        .eq('user_id', userId);
+      // Get current user data
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('app_state')
+        .eq('auth_user_id', userId)
+        .single();
 
+      if (error) throw error;
+
+      // Extract AI context from app_state
+      const currentAppState = userData.app_state || {};
+      const aiContext = currentAppState.aiContext || {};
+      
+      let contexts: AIContext[] = [];
+      
       if (contextType) {
-        query = query.eq('context_type', contextType);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error getting user context:', error);
-        return [];
+        // Return specific context type
+        if (aiContext[contextType]) {
+          contexts = [{
+            user_id: userId,
+            context_type: contextType,
+            context_data: aiContext[contextType].context_data,
+            updated_at: aiContext[contextType].updated_at
+          }];
+        }
+      } else {
+        // Return all context types
+        contexts = Object.entries(aiContext).map(([type, data]) => ({
+          user_id: userId,
+          context_type: type as AIContext['context_type'],
+          context_data: (data as any).context_data,
+          updated_at: (data as any).updated_at
+        }));
       }
 
       // Update cache
       if (!contextType) {
-        this.userContextCache.set(userId, data || []);
+        this.userContextCache.set(userId, contexts);
       }
 
-      return data || [];
+      return contexts;
     } catch (error) {
       console.error('Error in getUserContext:', error);
       return [];
@@ -139,14 +176,41 @@ class AIContextService {
   // Store AI feedback for learning
   async storeAIFeedback(feedback: Omit<AIFeedback, 'id' | 'created_at'>): Promise<boolean> {
     try {
-      const { data, error } = await supabase
-        .from('ai_feedback')
-        .insert(feedback);
+      const userId = await this.getCurrentUserId();
+      if (!userId) return false;
 
-      if (error) {
-        console.error('Error storing AI feedback:', error);
-        return false;
-      }
+      // Get current user data
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('feedback_data')
+        .eq('auth_user_id', userId)
+        .single();
+
+      if (userError) throw userError;
+
+      // Update feedback_data with new feedback
+      const currentFeedbackData = userData.feedback_data || {};
+      const currentFeedback = currentFeedbackData.aiFeedback || [];
+      
+      const newFeedback = {
+        ...feedback,
+        id: `feedback_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        created_at: new Date().toISOString()
+      };
+
+      const updatedFeedback = [...currentFeedback, newFeedback];
+      const updatedFeedbackData = {
+        ...currentFeedbackData,
+        aiFeedback: updatedFeedback
+      };
+
+      // Update user's feedback_data
+      const { error } = await supabase
+        .from('users')
+        .update({ feedback_data: updatedFeedbackData })
+        .eq('auth_user_id', userId);
+
+      if (error) throw error;
 
       // Trigger learning analysis
       await this.analyzeFeedbackForLearning(feedback);
@@ -177,14 +241,38 @@ class AIContextService {
         metadata
       };
 
-      const { error } = await supabase
-        .from('user_behavior')
-        .insert(behavior);
+      // Get current user data
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('behavior_data')
+        .eq('auth_user_id', userId)
+        .single();
 
-      if (error) {
-        console.error('Error tracking user behavior:', error);
-        return false;
-      }
+      if (userError) throw userError;
+
+      // Update behavior_data with new behavior entry
+      const currentBehaviorData = userData.behavior_data || {};
+      const currentBehavior = currentBehaviorData.userBehavior || [];
+      
+      const newBehaviorEntry = {
+        ...behavior,
+        id: `behavior_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: new Date().toISOString()
+      };
+
+      const updatedBehavior = [...currentBehavior, newBehaviorEntry];
+      const updatedBehaviorData = {
+        ...currentBehaviorData,
+        userBehavior: updatedBehavior
+      };
+
+      // Update user's behavior_data
+      const { error } = await supabase
+        .from('users')
+        .update({ behavior_data: updatedBehaviorData })
+        .eq('auth_user_id', userId);
+
+      if (error) throw error;
 
       return true;
     } catch (error) {
@@ -201,19 +289,19 @@ class AIContextService {
         return this.globalLearningCache;
       }
 
+      // Get learning patterns from app_level table
       const { data, error } = await supabase
-        .from('ai_learning')
-        .select('*')
-        .order('confidence_score', { ascending: false })
-        .order('usage_count', { ascending: false });
+        .from('app_level')
+        .select('value')
+        .eq('key', 'ai_learning_patterns')
+        .single();
 
-      if (error) {
-        console.error('Error getting global learning patterns:', error);
-        return [];
-      }
-
+      if (error && error.code !== 'PGRST116') throw error;
+      
+      const learningPatterns = data?.value || [];
+      
       // Update cache
-      this.globalLearningCache = data || [];
+      this.globalLearningCache = learningPatterns;
       return this.globalLearningCache;
     } catch (error) {
       console.error('Error in getGlobalLearningPatterns:', error);
@@ -388,20 +476,37 @@ class AIContextService {
   // Get user behavior summary
   private async getUserBehaviorSummary(userId: string): Promise<Record<string, any> | null> {
     try {
-      const { data, error } = await supabase
-        .from('user_behavior')
-        .select('action_type, action_data, timestamp')
-        .eq('user_id', userId)
-        .gte('timestamp', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()) // Last 30 days
-        .order('timestamp', { ascending: false });
+      // Get current user data
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('behavior_data')
+        .eq('auth_user_id', userId)
+        .single();
 
-      if (error || !data) return null;
+      if (error) throw error;
+
+      // Extract user behavior from behavior_data
+      const currentBehaviorData = userData.behavior_data || {};
+      const userBehavior = currentBehaviorData.userBehavior || [];
+      
+      // Filter for last 30 days
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const recentBehavior = userBehavior.filter((behavior: any) => 
+        behavior.timestamp >= thirtyDaysAgo
+      );
+
+      // Sort by timestamp descending
+      recentBehavior.sort((a: any, b: any) => 
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+
+      if (!recentBehavior.length) return null;
 
       // Analyze behavior patterns
       const behaviorSummary = {
-        total_actions: data.length,
+        total_actions: recentBehavior.length,
         action_frequency: {} as Record<string, number>,
-        recent_actions: data.slice(0, 10).map(b => ({
+        recent_actions: recentBehavior.slice(0, 10).map((b: any) => ({
           type: b.action_type,
           data: b.action_data,
           timestamp: b.timestamp
@@ -409,7 +514,7 @@ class AIContextService {
       };
 
       // Count action frequencies
-      data.forEach(behavior => {
+      recentBehavior.forEach((behavior: any) => {
         behaviorSummary.action_frequency[behavior.action_type] = 
           (behaviorSummary.action_frequency[behavior.action_type] || 0) + 1;
       });
@@ -601,38 +706,66 @@ class AIContextService {
     confidence_score: number;
   }): Promise<void> {
     try {
-      // Check if pattern already exists
-      const { data: existing } = await supabase
-        .from('ai_learning')
-        .select('*')
-        .eq('learning_type', pattern.learning_type)
-        .eq('pattern_data', pattern.pattern_data)
+      // Get learning patterns from app_level table
+      const { data: appLevelData, error: appLevelError } = await supabase
+        .from('app_level')
+        .select('value')
+        .eq('key', 'ai_learning_patterns')
         .single();
 
-      if (existing) {
-        // Update existing pattern
-        const newConfidence = (existing.confidence_score + pattern.confidence_score) / 2;
-        const newUsageCount = existing.usage_count + 1;
+      if (appLevelError && appLevelError.code !== 'PGRST116') throw appLevelError;
 
-        await supabase
-          .from('ai_learning')
-          .update({
-            confidence_score: newConfidence,
-            usage_count: newUsageCount,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existing.id);
+      const currentPatterns = appLevelData?.value || [];
+      
+      // Check if pattern already exists
+      const existingPatternIndex = currentPatterns.findIndex((p: any) => 
+        p.learning_type === pattern.learning_type && 
+        JSON.stringify(p.pattern_data) === JSON.stringify(pattern.pattern_data)
+      );
+
+      let updatedPatterns: any[];
+
+      if (existingPatternIndex !== -1) {
+        // Update existing pattern
+        const existingPattern = currentPatterns[existingPatternIndex];
+        const newConfidence = (existingPattern.confidence_score + pattern.confidence_score) / 2;
+        const newUsageCount = existingPattern.usage_count + 1;
+
+        updatedPatterns = [...currentPatterns];
+        updatedPatterns[existingPatternIndex] = {
+          ...existingPattern,
+          confidence_score: newConfidence,
+          usage_count: newUsageCount,
+          updated_at: new Date().toISOString()
+        };
       } else {
         // Create new pattern
-        await supabase
-          .from('ai_learning')
-          .insert({
-            learning_type: pattern.learning_type,
-            pattern_data: pattern.pattern_data,
-            confidence_score: pattern.confidence_score,
-            usage_count: 1
-          });
+        const newPattern = {
+          id: `learning_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          learning_type: pattern.learning_type,
+          pattern_data: pattern.pattern_data,
+          confidence_score: pattern.confidence_score,
+          usage_count: 1,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+
+        updatedPatterns = [...currentPatterns, newPattern];
       }
+
+      // Update app_level table
+      const { error: updateError } = await supabase
+        .from('app_level')
+        .upsert({
+          key: 'ai_learning_patterns',
+          value: updatedPatterns,
+          description: 'AI learning patterns for global knowledge',
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'key'
+        });
+
+      if (updateError) throw updateError;
 
       // Clear cache to refresh data
       this.globalLearningCache = [];

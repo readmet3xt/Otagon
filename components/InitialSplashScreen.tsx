@@ -11,7 +11,7 @@ interface InitialSplashScreenProps {
 const InitialSplashScreen: React.FC<InitialSplashScreenProps> = ({ onComplete }) => {
   const handleDownloadPCClient = () => {
     // Download PC Client from GitHub releases
-    const downloadUrl = 'https://github.com/readmet3xt/readmet3xt.github.io/releases/tag/Otakon-connector';
+    const downloadUrl = 'https://github.com/readmet3xt/readmet3xt.github.io/releases/tag/Otagon-connector';
     window.open(downloadUrl, '_blank');
   };
 

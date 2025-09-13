@@ -138,7 +138,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuccess })
           </h2>
           <p className="text-[#A3A3A3]">
             {mode === 'login' && 'Sign in to continue your gaming journey'}
-            {mode === 'signup' && 'Join Otakon and get started'}
+            {mode === 'signup' && 'Join Otagon and get started'}
             {mode === 'forgot-password' && 'Enter your email to reset your password'}
           </p>
         </div>

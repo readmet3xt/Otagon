@@ -321,7 +321,7 @@ const RefactoredApp: React.FC = () => {
       case 'refund':
         return <RefundPolicyPage />;
       case 'contact':
-        return <ContactUsModal isOpen={isConnectionModalOpen} onClose={closeModal} />;
+        return <ContactUsModal isOpen={true} onClose={closeModal} />;
       default:
         return null;
     }

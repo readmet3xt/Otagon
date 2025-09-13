@@ -22,7 +22,7 @@ interface VoiceChatInputProps {
 const VoiceChatInput: React.FC<VoiceChatInputProps> = ({
   onSendMessage,
   onVoiceCommand,
-  placeholder = "Ask Otakon AI anything...",
+  placeholder = "Ask Otagon AI anything...",
   disabled = false,
   className = ""
 }) => {

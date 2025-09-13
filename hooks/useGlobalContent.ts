@@ -49,7 +49,7 @@ export const useGlobalContent = <T = any>(options: GlobalContentOptions): Global
       const cachedContent = await globalContentCache.getCachedContent(contentType);
       
       if (cachedContent) {
-        setContent(cachedContent);
+        setContent(cachedContent as T);
         setLastUpdated(new Date());
         setExpiresAt(new Date(Date.now() + 24 * 60 * 60 * 1000)); // 24 hours from now
         setUsageCount(0); // Will be updated by the cache service

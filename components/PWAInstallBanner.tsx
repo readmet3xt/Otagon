@@ -153,7 +153,7 @@ const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({ className = "" }) =
             </div>
             
             <div className="flex-1 min-w-0">
-              <h3 className="text-white font-semibold text-sm">Install Otakon AI</h3>
+              <h3 className="text-white font-semibold text-sm">Install Otagon AI</h3>
               <p className="text-neutral-400 text-xs mt-1">
                 Get the full mobile experience with voice commands and offline access
               </p>

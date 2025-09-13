@@ -88,7 +88,16 @@ const getUsage = async (): Promise<Usage> => {
         const imageCount = supabaseUsage.imageCount || 0;
         const { text: textLimit, image: imageLimit } = LIMITS[tier];
         
-        return { textQueries: 0, imageQueries: 0, insights: 0, textCount, imageCount, textLimit, imageLimit, tier };
+        return { 
+          textQueries: 0, // Not available in UserUsageData
+          imageQueries: 0, // Not available in UserUsageData
+          insights: 0, // Not available in UserUsageData
+          textCount, 
+          imageCount, 
+          textLimit, 
+          imageLimit, 
+          tier 
+        };
     } catch (error) {
         console.warn('Supabase usage fetch failed, using localStorage fallback:', error);
         // Fallback to localStorage
@@ -97,7 +106,16 @@ const getUsage = async (): Promise<Usage> => {
         const imageCount = parseInt(localStorage.getItem(IMAGE_COUNT_KEY) || '0', 10);
         const { text: textLimit, image: imageLimit } = LIMITS[tier];
         
-        return { textQueries: 0, imageQueries: 0, insights: 0, textCount, imageCount, textLimit, imageLimit, tier };
+        return { 
+          textQueries: parseInt(localStorage.getItem('textQueries') || '0', 10),
+          imageQueries: parseInt(localStorage.getItem('imageQueries') || '0', 10),
+          insights: parseInt(localStorage.getItem('insights') || '0', 10),
+          textCount, 
+          imageCount, 
+          textLimit, 
+          imageLimit, 
+          tier 
+        };
     }
 };
 

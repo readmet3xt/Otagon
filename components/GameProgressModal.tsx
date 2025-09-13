@@ -38,14 +38,23 @@ export default function GameProgressModal({
   const fetchGameData = async () => {
     setIsLoading(true);
     try {
-      // Get available versions for this game
-      const { data: versionData } = await supabase
-        .from('game_progress_events')
-        .select('game_version')
-        .eq('game_id', gameId)
-        .order('game_version');
+      // Get available versions for this game from games.session_data
+      const { data: gameData, error } = await supabase
+        .from('games')
+        .select('session_data')
+        .eq('id', gameId)
+        .single();
       
-      const versions = [...new Set(versionData?.map(v => v.game_version) || ['base_game'])];
+      if (error) {
+        console.error('Error fetching game data:', error);
+        setGameVersions(['base_game']);
+        return;
+      }
+
+      const sessionData = gameData.session_data || {};
+      const progressEvents = sessionData.progressEvents || [];
+      
+      const versions = [...new Set(progressEvents.map((event: any) => event.game_version) || ['base_game'])].filter((v): v is string => typeof v === 'string');
       setGameVersions(versions);
 
       // Fetch progress data
