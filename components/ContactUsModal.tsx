@@ -99,7 +99,7 @@ const ContactUsModal: React.FC<ContactUsModalProps> = ({ isOpen, onClose }) => {
         }
       }}
     >
-      <div className="relative w-full max-w-2xl bg-gradient-to-br from-[#1C1C1C] to-[#0A0A0A] rounded-2xl border border-[#424242]/40 shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-2xl bg-gradient-to-br from-[#1C1C1C] to-[#0A0A0A] rounded-2xl border border-[#424242]/40 shadow-2xl flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="relative p-6 border-b border-[#424242]/40">
           <div className="absolute inset-0 bg-gradient-to-r from-[#E53A3A]/10 to-[#D98C1F]/10 rounded-t-2xl"></div>
@@ -120,21 +120,21 @@ const ContactUsModal: React.FC<ContactUsModalProps> = ({ isOpen, onClose }) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex items-center space-x-3 text-[#CFCFCF]">
               <EnvelopeIcon className="w-5 h-5 text-[#FF4D4D]" />
-              <span>support@otakon.app</span>
+              <span>support@otagon.app</span>
             </div>
             <div className="flex items-center space-x-3 text-[#CFCFCF]">
               <PhoneIcon className="w-5 h-5 text-[#FFAB40]" />
-              <span>+1 (555) 123-4567</span>
+              <span>+91 8121602314</span>
             </div>
             <div className="flex items-center space-x-3 text-[#CFCFCF]">
               <MapPinIcon className="w-5 h-5 text-[#5CBB7B]" />
-              <span>San Francisco, CA</span>
+              <span>Hyderabad, India</span>
             </div>
           </div>
         </div>
 
         {/* Contact Form */}
-        <div className="p-6">
+        <div className="flex-1 overflow-y-auto p-6 min-h-0">
           {submitStatus === 'success' ? (
             <div className="text-center py-8">
               <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">

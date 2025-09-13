@@ -11,7 +11,6 @@ import MainViewContainer from './components/MainViewContainer';
 import AboutPage from './components/AboutPage';
 import PrivacyPolicyPage from './components/PrivacyPolicyPage';
 import RefundPolicyPage from './components/RefundPolicyPage';
-import TermsOfServicePage from './components/TermsOfServicePage';
 import ContactUsModal from './components/ContactUsModal';
 import OnboardingFlow from './components/onboarding/OnboardingFlow';
 import LoginSplashScreen from './components/LoginSplashScreen';
@@ -69,7 +68,7 @@ interface AppState {
   loading: boolean;
   error: string | null;
   initialized: boolean;
-  activeModal: 'about' | 'privacy' | 'refund' | 'contact' | 'terms' | null;
+  activeModal: 'about' | 'privacy' | 'refund' | 'contact' | null;
   
   // Modal states
   isConnectionModalOpen: boolean;
@@ -345,7 +344,7 @@ const App: React.FC = () => {
     canMakeQuery,
     recordQuery,
   } = useUsageTracking({ 
-    usage: { textQueries: 0, imageQueries: 0, insights: 0, textCount: 0, imageCount: 0, textLimit: 55, imageLimit: 25, tier: 'free' }, 
+    usage: { textQueries: 0, imageQueries: 0, insights: 0 }, 
     setUsage: () => {} 
   });
 
@@ -560,7 +559,7 @@ const App: React.FC = () => {
   if (appState.loading || !appState.initialized) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <LoadingSpinner size="xl" />
+        <LoadingSpinner size="large" />
       </div>
     );
   }
@@ -592,7 +591,7 @@ const App: React.FC = () => {
               handleAuthStateChange();
             }}
             onOpenPrivacy={() => openModal('privacy')}
-            onOpenTerms={() => openModal('terms')}
+            onOpenTerms={() => openModal('about')}
             onBackToLanding={() => {
               console.log('Back to landing clicked');
               handleOnboardingUpdate('complete');
@@ -663,7 +662,7 @@ const App: React.FC = () => {
           {/* Modals for landing page */}
           {appState.activeModal === 'about' && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
-              <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+              <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
                 <header className="flex-shrink-0 p-6 border-b border-[#2E2E2E]/60 flex items-center justify-between">
                   <h2 className="text-2xl font-bold text-[#F5F5F5]">About Otakon</h2>
                   <button onClick={closeModal} className="text-[#6E6E6E] hover:text-[#F5F5F5] transition-colors">
@@ -684,7 +683,7 @@ const App: React.FC = () => {
           
           {appState.activeModal === 'privacy' && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
-              <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+              <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
                 <header className="flex-shrink-0 p-6 border-b border-[#2E2E2E]/60 flex items-center justify-between">
                   <h2 className="text-2xl font-bold text-[#F5F5F5]">Privacy Policy</h2>
                   <button onClick={closeModal} className="text-[#6E6E6E] hover:text-[#F5F5F5] transition-colors">
@@ -705,7 +704,7 @@ const App: React.FC = () => {
           
           {appState.activeModal === 'refund' && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
-              <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+              <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
                 <header className="flex-shrink-0 p-6 border-b border-[#2E2E2E]/60 flex items-center justify-between">
                   <h2 className="text-2xl font-bold text-[#F5F5F5]">Refund Policy</h2>
                   <button onClick={closeModal} className="text-[#6E6E6E] hover:text-[#F5F5F5] transition-colors">
@@ -726,27 +725,6 @@ const App: React.FC = () => {
           
           {appState.activeModal === 'contact' && (
             <ContactUsModal isOpen={true} onClose={closeModal} />
-          )}
-          
-          {appState.activeModal === 'terms' && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
-              <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-                <header className="flex-shrink-0 p-6 border-b border-[#2E2E2E]/60 flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-[#F5F5F5]">Terms of Service</h2>
-                  <button onClick={closeModal} className="text-[#6E6E6E] hover:text-[#F5F5F5] transition-colors">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                  </button>
-                </header>
-                <main className="flex-1 overflow-y-auto p-8 min-h-0">
-                  <TermsOfServicePage />
-                </main>
-                <footer className="flex-shrink-0 p-6 border-t border-[#2E2E2E]/60 flex justify-end">
-                  <button onClick={closeModal} className="bg-neutral-600 hover:bg-neutral-700 text-white font-medium py-2 px-6 rounded-md transition-colors">
-                    Back
-                  </button>
-                </footer>
-              </div>
-            </div>
           )}
           
           <Router>
@@ -795,7 +773,7 @@ const App: React.FC = () => {
           {console.log('Current activeModal:', appState.activeModal)}
           {appState.activeModal === 'about' && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
-              <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+              <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
                 <header className="flex-shrink-0 p-6 border-b border-[#2E2E2E]/60 flex items-center justify-between">
                   <h2 className="text-2xl font-bold text-[#F5F5F5]">About Otakon</h2>
                   <button onClick={closeModal} className="text-[#6E6E6E] hover:text-[#F5F5F5] transition-colors">
@@ -816,7 +794,7 @@ const App: React.FC = () => {
           
           {appState.activeModal === 'privacy' && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
-              <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+              <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
                 <header className="flex-shrink-0 p-6 border-b border-[#2E2E2E]/60 flex items-center justify-between">
                   <h2 className="text-2xl font-bold text-[#F5F5F5]">Privacy Policy</h2>
                   <button onClick={closeModal} className="text-[#6E6E6E] hover:text-[#F5F5F5] transition-colors">
@@ -837,7 +815,7 @@ const App: React.FC = () => {
           
           {appState.activeModal === 'refund' && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
-              <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+              <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
                 <header className="flex-shrink-0 p-6 border-b border-[#2E2E2E]/60 flex items-center justify-between">
                   <h2 className="text-2xl font-bold text-[#F5F5F5]">Refund Policy</h2>
                   <button onClick={closeModal} className="text-[#6E6E6E] hover:text-[#F5F5F5] transition-colors">
@@ -860,27 +838,6 @@ const App: React.FC = () => {
             <ContactUsModal isOpen={true} onClose={closeModal} />
           )}
           
-          {appState.activeModal === 'terms' && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
-              <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-                <header className="flex-shrink-0 p-6 border-b border-[#2E2E2E]/60 flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-[#F5F5F5]">Terms of Service</h2>
-                  <button onClick={closeModal} className="text-[#6E6E6E] hover:text-[#F5F5F5] transition-colors">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                  </button>
-                </header>
-                <main className="flex-1 overflow-y-auto p-8 min-h-0">
-                  <TermsOfServicePage />
-                </main>
-                <footer className="flex-shrink-0 p-6 border-t border-[#2E2E2E]/60 flex justify-end">
-                  <button onClick={closeModal} className="bg-neutral-600 hover:bg-neutral-700 text-white font-medium py-2 px-6 rounded-md transition-colors">
-                    Back
-                  </button>
-                </footer>
-              </div>
-            </div>
-          )}
-          
           <LoginSplashScreen
             onComplete={() => {
               console.log('Login completed, refreshing app state');
@@ -888,7 +845,7 @@ const App: React.FC = () => {
               handleAuthStateChange();
             }}
             onOpenPrivacy={() => openModal('privacy')}
-            onOpenTerms={() => openModal('terms')}
+            onOpenTerms={() => openModal('about')}
             onBackToLanding={() => {
               console.log('Back to landing clicked');
               handleOnboardingUpdate('complete');
@@ -1044,13 +1001,13 @@ const App: React.FC = () => {
           <SettingsModal
             isOpen={appState.isSettingsModalOpen}
             onClose={() => setAppState(prev => ({ ...prev, isSettingsModalOpen: false }))}
-            usage={{ textQueries: 0, imageQueries: 0, insights: 0, textCount: 0, imageCount: 0, textLimit: 55, imageLimit: 25, tier: 'free' }}
+            usage={{ textQueries: 0, imageQueries: 0, insights: 0 }}
             onShowUpgrade={handleUpgrade}
             onShowVanguardUpgrade={handleUpgradeToVanguard}
             onLogout={handleLogoutOnly}
             onResetApp={handleResetApp}
             onShowHowToUse={() => handleOnboardingUpdate('how-to-use')}
-            userEmail={appState.userState?.email || ''}
+            userEmail={appState.userState?.user?.email || ''}
             onClearFirstRunCache={() => {}}
             refreshUsage={refreshUsage}
           />
@@ -1059,7 +1016,7 @@ const App: React.FC = () => {
         {appState.isCreditModalOpen && (
           <CreditModal
             onClose={() => setAppState(prev => ({ ...prev, isCreditModalOpen: false }))}
-            usage={{ textQueries: 0, imageQueries: 0, insights: 0, textCount: 0, imageCount: 0, textLimit: 55, imageLimit: 25, tier: 'free' }}
+            usage={{ textQueries: 0, imageQueries: 0, insights: 0 }}
             onUpgrade={handleUpgrade}
           />
         )}
@@ -1189,27 +1146,6 @@ const App: React.FC = () => {
         
         {appState.activeModal === 'contact' && (
           <ContactUsModal isOpen={true} onClose={closeModal} />
-        )}
-        
-        {appState.activeModal === 'terms' && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
-            <div className="bg-[#1C1C1C] border border-[#424242] rounded-2xl shadow-2xl w-full max-w-4xl m-4 relative max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-              <header className="flex-shrink-0 p-6 border-b border-[#2E2E2E]/60 flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-[#F5F5F5]">Terms of Service</h2>
-                <button onClick={closeModal} className="text-[#6E6E6E] hover:text-[#F5F5F5] transition-colors">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-              </header>
-              <main className="flex-1 overflow-y-auto p-8 min-h-0">
-                <TermsOfServicePage />
-              </main>
-              <footer className="flex-shrink-0 p-6 border-t border-[#2E2E2E]/60 flex justify-end">
-                <button onClick={closeModal} className="bg-neutral-600 hover:bg-neutral-700 text-white font-medium py-2 px-6 rounded-md transition-colors">
-                  Back
-                </button>
-              </footer>
-            </div>
-          </div>
         )}
 
         {/* Banners */}
