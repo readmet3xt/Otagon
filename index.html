@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="format-detection" content="telephone=no" />
+    
+    <!-- Primary Meta Tags -->
+    <title>Otagon AI - Your Gaming Companion | Get Spoiler-Free Gaming Hints & Help</title>
+    <meta name="title" content="Otagon AI - Your Gaming Companion | Get Spoiler-Free Gaming Hints & Help" />
+    <meta name="description" content="Get instant, spoiler-free gaming hints and help with AI-powered assistance. Never get stuck in games again with Otagon's intelligent gaming companion." />
+    <meta name="keywords" content="gaming hints, game help, AI gaming assistant, spoiler-free gaming, gaming companion, game walkthrough, gaming tips, AI gaming, gaming support" />
+    <meta name="author" content="Otagon AI" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://otakon.app/" />
+    <meta property="og:title" content="Otagon AI - Your Gaming Companion | Get Spoiler-Free Gaming Hints & Help" />
+    <meta property="og:description" content="Get instant, spoiler-free gaming hints and help with AI-powered assistance. Never get stuck in games again with Otagon's intelligent gaming companion." />
+    <meta property="og:image" content="https://otakon.app/images/landing/app-mockup.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="Otagon AI" />
+    <meta property="og:locale" content="en_US" />
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://otakon.app/" />
+    <meta property="twitter:title" content="Otagon AI - Your Gaming Companion | Get Spoiler-Free Gaming Hints & Help" />
+    <meta property="twitter:description" content="Get instant, spoiler-free gaming hints and help with AI-powered assistance. Never get stuck in games again with Otagon's intelligent gaming companion." />
+    <meta property="twitter:image" content="https://otakon.app/images/landing/app-mockup.png" />
+    
+    <!-- Additional SEO Meta Tags -->
+    <meta name="application-name" content="Otagon AI" />
+    <meta name="apple-mobile-web-app-title" content="Otagon AI" />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://otakon.app/" />
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#E53A3A"/>
+    <meta name="msapplication-TileColor" content="#E53A3A" />
+    <meta name="msapplication-navbutton-color" content="#E53A3A" />
+    
+    <!-- Preconnect for Performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Otagon AI",
+      "applicationCategory": "GameApplication",
+      "operatingSystem": "Web Browser, iOS, Android",
+      "description": "AI-powered gaming companion that provides spoiler-free hints and help",
+      "url": "https://otakon.app",
+      "author": {
+        "@type": "Organization",
+        "name": "Otagon AI"
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "1250"
+      },
+      "featureList": [
+        "AI-powered gaming hints",
+        "Spoiler-free assistance",
+        "Voice commands",
+        "Real-time gaming help",
+        "Multi-platform support"
+      ]
+    }
+    </script>
+    
+    <!-- Tailwind CSS is now imported via Vite in development -->
+    <!-- This ensures proper HMR and CSS loading -->
+    
+    <style>
+      /* Critical CSS for initial render */
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background-color: #000000;
+      }
+
+      /* Mobile-first touch optimizations */
+      * {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+      }
+
+      /* Allow text selection for chat messages */
+      .chat-message, .prose, p, span {
+        -webkit-user-select: text;
+        -khtml-user-select: text;
+        -moz-user-select: text;
+        -ms-user-select: text;
+        user-select: text;
+      }
+
+      /* Touch-friendly button interactions */
+      button, .btn, [role="button"] {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        min-height: 44px;
+        min-width: 44px;
+      }
+
+      /* Mobile scrollbar optimization */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 3px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.5);
+      }
+
+      /* Mobile-safe area handling */
+      @supports (padding: max(0px)) {
+        body {
+          padding-left: max(0px, env(safe-area-inset-left));
+          padding-right: max(0px, env(safe-area-inset-right));
+          padding-top: max(0px, env(safe-area-inset-top));
+          padding-bottom: max(0px, env(safe-area-inset-bottom));
+        }
+      }
+
+      /* Mobile performance optimizations */
+      .mobile-optimized {
+        will-change: transform;
+        backface-visibility: hidden;
+        transform: translateZ(0);
+      }
+
+      /* Mobile gesture support */
+      .swipeable {
+        touch-action: pan-x pan-y;
+      }
+
+      /* Mobile input optimization */
+      input, textarea, select {
+        font-size: 16px; /* Prevents zoom on iOS */
+        -webkit-appearance: none;
+        border-radius: 0;
+      }
+
+      /* Mobile modal optimization */
+      .modal-mobile {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 9999;
+        overflow: hidden;
+      }
+
+      /* Mobile navigation optimization */
+      .nav-mobile {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        background: rgba(0, 0, 0, 0.95);
+        backdrop-filter: blur(20px);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+
+      /* Mobile chat optimization */
+      .chat-container-mobile {
+        padding-bottom: 80px; /* Space for mobile nav */
+      }
+
+      /* Mobile progress tracking optimization */
+      .progress-mobile {
+        touch-action: pan-x;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* Mobile settings optimization */
+      .settings-mobile {
+        max-height: calc(100vh - 120px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* Mobile splash screen optimization */
+      .splash-mobile {
+        min-height: 100vh;
+        min-height: 100dvh; /* Dynamic viewport height */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+
+      /* Mobile loading optimization */
+      .loading-mobile {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 200px;
+      }
+
+      /* Mobile error handling optimization */
+      .error-mobile {
+        padding: 20px;
+        text-align: center;
+        color: #ff6b6b;
+      }
+
+      /* Mobile success optimization */
+      .success-mobile {
+        padding: 20px;
+        text-align: center;
+        color: #51cf66;
+      }
+
+      /* Mobile info optimization */
+      .info-mobile {
+        padding: 20px;
+        text-align: center;
+        color: #74c0fc;
+      }
+
+      /* Mobile warning optimization */
+      .warning-mobile {
+        padding: 20px;
+        text-align: center;
+        color: #ffd43b;
+      }
+
+      /* Mobile dark mode optimization */
+      @media (prefers-color-scheme: dark) {
+        body {
+          background-color: #000000;
+          color: #ffffff;
+        }
+      }
+
+      /* Mobile light mode optimization */
+      @media (prefers-color-scheme: light) {
+        body {
+          background-color: #ffffff;
+          color: #000000;
+        }
+      }
+
+      /* Mobile high contrast mode optimization */
+      @media (prefers-contrast: high) {
+        button, .btn {
+          border: 2px solid currentColor;
+        }
+      }
+
+      /* Mobile reduced motion optimization */
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+
+      /* Mobile landscape optimization */
+      @media (orientation: landscape) and (max-height: 500px) {
+        .header-mobile {
+          padding: 8px 16px;
+        }
+        
+        .chat-container-mobile {
+          padding-bottom: 60px;
+        }
+      }
+
+      /* Mobile portrait optimization */
+      @media (orientation: portrait) and (max-width: 768px) {
+        .container-mobile {
+          padding: 16px;
+        }
+        
+        .text-mobile {
+          font-size: 16px;
+          line-height: 1.5;
+        }
+      }
+
+      /* Mobile ultra-wide optimization */
+      @media (min-width: 1200px) {
+        .container-mobile {
+          max-width: 1200px;
+          margin: 0 auto;
+        }
+      }
+
+      /* Mobile ultra-narrow optimization */
+      @media (max-width: 320px) {
+        .container-mobile {
+          padding: 12px;
+        }
+        
+        .text-mobile {
+          font-size: 14px;
+        }
+      }
+    </style>
+    
+    <!-- Crypto polyfill for older browsers -->
+    <script>
+      if (!crypto.randomUUID) {
+        crypto.randomUUID = function() {
+          return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+          });
+        };
+      }
+    </script>
+    
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4482938310886744"
+         crossorigin="anonymous"></script>
+  </head>
+  <body class="bg-black">
+    <div id="root"></div>
+    
+    <!-- Development: Vite will handle the entry point -->
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

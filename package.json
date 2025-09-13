@@ -1,0 +1,61 @@
+{
+  "name": "otagon",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "analyze": "node scripts/analyze-bundle.cjs",
+    "analyze:build": "npm run build && npm run analyze",
+    "optimize": "npm run analyze:build",
+    "performance:check": "npm run analyze",
+    "bundle:size": "npm run analyze",
+    "optimize:images": "node scripts/optimize-images.cjs",
+    "optimize:all": "npm run optimize:images && npm run analyze:build",
+    "deploy:firebase": "node scripts/firebase-deploy.js",
+    "deploy": "npm run build && npm run deploy:firebase"
+  },
+  "dependencies": {
+    "@google/genai": "^1.12.0",
+    "@heroicons/react": "^2.2.0",
+    "@lottiefiles/dotlottie-react": "^0.15.1",
+    "@supabase/supabase-js": "^2.55.0",
+    "clsx": "^2.1.1",
+    "lottie-react": "^2.4.1",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-markdown": "^9.0.1",
+    "react-router-dom": "^7.9.1",
+    "remark-gfm": "^4.0.0",
+    "tailwind-merge": "^3.3.1",
+    "web-vitals": "^3.5.2"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.7.0",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^22.14.0",
+    "@types/react-dom": "^19.1.9",
+    "@types/react-router-dom": "^5.3.3",
+    "@vitejs/plugin-react": "^5.0.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/ui": "^3.2.4",
+    "autoprefixer": "^10.4.21",
+    "jsdom": "^26.1.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
+    "terser": "^5.44.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0",
+    "vitest": "^3.2.4"
+  },
+  "overrides": {
+    "debug": "3.2.7"
+  }
+}

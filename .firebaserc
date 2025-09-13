@@ -1,0 +1,10 @@
+{
+  "projects": {
+    "default": "otakon-production",
+    "staging": "otagon-9e123",
+    "otagon-0509": "otagon-9e123",
+    "otagon-0509-real": "otagon-0509"
+  },
+  "targets": {},
+  "etags": {}
+}

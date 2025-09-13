@@ -1,0 +1,228 @@
+{
+  "timestamp": "2025-09-12T10:33:42.332Z",
+  "bundleInfo": {
+    "totalSize": 2166496,
+    "fileCount": 21,
+    "largestFiles": [
+      {
+        "path": "assets/vendor-ui-CuQFruUP.js",
+        "size": 527719,
+        "sizeFormatted": "515.35 KB"
+      },
+      {
+        "path": "assets/app-services-DKjOTBB1.js",
+        "size": 264879,
+        "sizeFormatted": "258.67 KB"
+      },
+      {
+        "path": "assets/vendor-ai-7J4LelS0.js",
+        "size": 231248,
+        "sizeFormatted": "225.83 KB"
+      },
+      {
+        "path": "assets/app-components-BHwqb5F-.js",
+        "size": 182159,
+        "sizeFormatted": "177.89 KB"
+      },
+      {
+        "path": "assets/vendor-react-dom-gHWwUqtj.js",
+        "size": 173727,
+        "sizeFormatted": "169.66 KB"
+      },
+      {
+        "path": "assets/vendor-misc-CpD40AO2.js",
+        "size": 163600,
+        "sizeFormatted": "159.77 KB"
+      },
+      {
+        "path": "assets/app-modals-BcWo6ReQ.js",
+        "size": 142021,
+        "sizeFormatted": "138.69 KB"
+      },
+      {
+        "path": "assets/vendor-supabase-2vvxAEl0.js",
+        "size": 123949,
+        "sizeFormatted": "121.04 KB"
+      },
+      {
+        "path": "assets/main-CoCrh2Jw.js",
+        "size": 103275,
+        "sizeFormatted": "100.85 KB"
+      },
+      {
+        "path": "assets/app-ai-services-B1aptAQZ.js",
+        "size": 95708,
+        "sizeFormatted": "93.46 KB"
+      }
+    ],
+    "fileTypes": {
+      ".md": 6298,
+      ".js": 2126317,
+      ".css": 15683,
+      ".html": 13331,
+      ".json": 2145,
+      ".xml": 2722
+    },
+    "totalGzipped": 0,
+    "totalSizeFormatted": "2.07 MB"
+  },
+  "dependencyInfo": {
+    "packages": {
+      "@google/genai": {
+        "version": "^1.12.0",
+        "size": 102400,
+        "category": "other"
+      },
+      "@heroicons/react": {
+        "version": "^2.2.0",
+        "size": 102400,
+        "category": "framework"
+      },
+      "@lottiefiles/dotlottie-react": {
+        "version": "^0.15.1",
+        "size": 102400,
+        "category": "framework"
+      },
+      "@supabase/supabase-js": {
+        "version": "^2.55.0",
+        "size": 204800,
+        "category": "database"
+      },
+      "@tailwindcss/postcss": {
+        "version": "^4.1.13",
+        "size": 102400,
+        "category": "other"
+      },
+      "clsx": {
+        "version": "^2.1.1",
+        "size": 102400,
+        "category": "other"
+      },
+      "lottie-react": {
+        "version": "^2.4.1",
+        "size": 102400,
+        "category": "framework"
+      },
+      "react": {
+        "version": "^19.1.1",
+        "size": 43008,
+        "category": "framework"
+      },
+      "react-dom": {
+        "version": "^19.1.1",
+        "size": 122880,
+        "category": "framework"
+      },
+      "react-markdown": {
+        "version": "^9.0.1",
+        "size": 102400,
+        "category": "framework"
+      },
+      "remark-gfm": {
+        "version": "^4.0.0",
+        "size": 102400,
+        "category": "other"
+      },
+      "tailwind-merge": {
+        "version": "^3.3.1",
+        "size": 102400,
+        "category": "other"
+      },
+      "web-vitals": {
+        "version": "^3.5.2",
+        "size": 102400,
+        "category": "other"
+      },
+      "@testing-library/jest-dom": {
+        "version": "^6.7.0",
+        "size": 102400,
+        "category": "testing"
+      },
+      "@testing-library/react": {
+        "version": "^16.3.0",
+        "size": 102400,
+        "category": "framework"
+      },
+      "@testing-library/user-event": {
+        "version": "^14.6.1",
+        "size": 102400,
+        "category": "testing"
+      },
+      "@types/node": {
+        "version": "^22.14.0",
+        "size": 102400,
+        "category": "other"
+      },
+      "@types/react-dom": {
+        "version": "^19.1.9",
+        "size": 102400,
+        "category": "framework"
+      },
+      "@vitejs/plugin-react": {
+        "version": "^5.0.0",
+        "size": 102400,
+        "category": "framework"
+      },
+      "@vitest/coverage-v8": {
+        "version": "^3.2.4",
+        "size": 102400,
+        "category": "testing"
+      },
+      "@vitest/ui": {
+        "version": "^3.2.4",
+        "size": 102400,
+        "category": "ui"
+      },
+      "autoprefixer": {
+        "version": "^10.4.21",
+        "size": 102400,
+        "category": "other"
+      },
+      "jsdom": {
+        "version": "^26.1.0",
+        "size": 102400,
+        "category": "other"
+      },
+      "postcss": {
+        "version": "^8.5.6",
+        "size": 102400,
+        "category": "other"
+      },
+      "tailwindcss": {
+        "version": "^4.1.13",
+        "size": 51200,
+        "category": "other"
+      },
+      "typescript": {
+        "version": "~5.8.2",
+        "size": 102400,
+        "category": "other"
+      },
+      "vite": {
+        "version": "^6.2.0",
+        "size": 102400,
+        "category": "other"
+      },
+      "vitest": {
+        "version": "^3.2.4",
+        "size": 102400,
+        "category": "testing"
+      }
+    },
+    "duplicates": [],
+    "unused": [],
+    "suggestions": []
+  },
+  "suggestions": [
+    {
+      "type": "large_files",
+      "priority": "medium",
+      "message": "Found 9 large files that could be optimized.",
+      "actions": [
+        "Compress images and assets",
+        "Consider lazy loading for large components",
+        "Split large files into smaller chunks"
+      ]
+    }
+  ]
+}

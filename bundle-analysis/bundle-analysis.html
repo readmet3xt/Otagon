@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Otakon Bundle Analysis</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; text-align: center; margin-bottom: 30px; }
+        .section { margin-bottom: 30px; padding: 20px; border: 1px solid #e0e0e0; border-radius: 6px; }
+        .metric { display: inline-block; margin: 10px; padding: 15px; background: #f8f9fa; border-radius: 6px; text-align: center; }
+        .metric-value { font-size: 24px; font-weight: bold; color: #007bff; }
+        .metric-label { color: #666; font-size: 14px; }
+        .suggestion { padding: 15px; margin: 10px 0; border-left: 4px solid #007bff; background: #f8f9fa; }
+        .priority-high { border-left-color: #dc3545; }
+        .priority-medium { border-left-color: #ffc107; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e0e0e0; }
+        th { background: #f8f9fa; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Otakon Bundle Analysis Report</h1>
+        
+        <div class="section">
+            <h2>📊 Bundle Overview</h2>
+            <div class="metric">
+                <div class="metric-value">2.07 MB</div>
+                <div class="metric-label">Total Size</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">21</div>
+                <div class="metric-label">File Count</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>📁 Largest Files</h2>
+            <table>
+                <thead>
+                    <tr><th>File</th><th>Size</th></tr>
+                </thead>
+                <tbody>
+                    
+                        <tr><td>assets/vendor-ui-CuQFruUP.js</td><td>515.35 KB</td></tr>
+                    
+                        <tr><td>assets/app-services-DKjOTBB1.js</td><td>258.67 KB</td></tr>
+                    
+                        <tr><td>assets/vendor-ai-7J4LelS0.js</td><td>225.83 KB</td></tr>
+                    
+                        <tr><td>assets/app-components-BHwqb5F-.js</td><td>177.89 KB</td></tr>
+                    
+                        <tr><td>assets/vendor-react-dom-gHWwUqtj.js</td><td>169.66 KB</td></tr>
+                    
+                        <tr><td>assets/vendor-misc-CpD40AO2.js</td><td>159.77 KB</td></tr>
+                    
+                        <tr><td>assets/app-modals-BcWo6ReQ.js</td><td>138.69 KB</td></tr>
+                    
+                        <tr><td>assets/vendor-supabase-2vvxAEl0.js</td><td>121.04 KB</td></tr>
+                    
+                        <tr><td>assets/main-CoCrh2Jw.js</td><td>100.85 KB</td></tr>
+                    
+                        <tr><td>assets/app-ai-services-B1aptAQZ.js</td><td>93.46 KB</td></tr>
+                    
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="section">
+            <h2>💡 Optimization Suggestions</h2>
+            
+                <div class="suggestion priority-medium">
+                    <h3>Found 9 large files that could be optimized.</h3>
+                    <ul>
+                        <li>Compress images and assets</li><li>Consider lazy loading for large components</li><li>Split large files into smaller chunks</li>
+                    </ul>
+                </div>
+            
+        </div>
+    </div>
+</body>
+</html>
