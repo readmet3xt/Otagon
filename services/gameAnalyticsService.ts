@@ -409,13 +409,13 @@ class GameAnalyticsService {
 
       if (error) {
         console.error('Error getting global API usage stats:', error);
-        return [];
-      }
+    return [];
+  }
 
       return data || [];
     } catch (error) {
       console.error('Error in getGlobalApiUsageStats:', error);
-      return [];
+    return [];
     }
   }
 
@@ -435,13 +435,13 @@ class GameAnalyticsService {
 
       if (error) {
         console.error('Error getting tier usage comparison:', error);
-        return [];
-      }
+    return [];
+  }
 
       return data || [];
     } catch (error) {
       console.error('Error in getTierUsageComparison:', error);
-      return [];
+    return [];
     }
   }
 
