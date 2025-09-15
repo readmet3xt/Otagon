@@ -244,16 +244,24 @@ class SecureAppStateService implements AppStateService {
         // Get the current tier from localStorage (set by DevTierSwitcher)
         const currentTier = (localStorage.getItem('otakonUserTier') as UserTier) || 'free';
         
-        // Get usage limits based on current tier
+        // Get usage data from unifiedUsageService (this correctly calculates tier-based limits)
         const { unifiedUsageService } = await import('./unifiedUsageService');
         const usageData = await unifiedUsageService.getUsage();
+        
+        console.log('🔧 [AppStateService] Usage data from unifiedUsageService:', {
+          tier: usageData.tier,
+          textLimit: usageData.textLimit,
+          imageLimit: usageData.imageLimit,
+          textCount: usageData.textCount,
+          imageCount: usageData.imageCount
+        });
         
         // Transform usage data to match expected format
         const transformedUsage = {
           textCount: usageData.textCount,
           imageCount: usageData.imageCount,
-          textLimit: usageData.textLimit,
-          imageLimit: usageData.imageLimit,
+          textLimit: usageData.textLimit, // ✅ This is now tier-based from unifiedUsageService
+          imageLimit: usageData.imageLimit, // ✅ This is now tier-based from unifiedUsageService
           totalRequests: (usageData as any).textQueries + (usageData as any).imageQueries,
           lastReset: Date.now() // Use current time as last reset
         };
