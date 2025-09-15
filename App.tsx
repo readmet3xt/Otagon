@@ -28,6 +28,9 @@ import { usageService } from './services/usageService';
 import { enhancedInsightService } from './services/enhancedInsightService';
 import { profileAwareInsightService } from './services/profileAwareInsightService';
 import { advancedCacheService } from './services/advancedCacheService';
+import { tierService } from './services/tierService';
+import TrialButton from './components/TrialButton';
+import FreeTrialModal from './components/FreeTrialModal';
 import { feedbackAnalyticsService } from './services/feedbackAnalyticsService';
 import { structuredResponseService } from './services/structuredResponseService';
 import { useChat } from './hooks/useChat';
@@ -42,6 +45,7 @@ import ConversationTabs from './components/ConversationTabs';
 import ChatInput from './components/ChatInput';
 import Logo from './components/Logo';
 import SettingsIcon from './components/SettingsIcon';
+import StarIcon from './components/StarIcon';
 import LogoutIcon from './components/LogoutIcon';
 import TrashIcon from './components/TrashIcon';
 import AdBanner from './components/AdBanner';
@@ -121,6 +125,8 @@ interface AppState {
   isWishlistModalOpen: boolean;
   isCacheDashboardOpen: boolean;
   showProfileSetup: boolean;
+  isFreeTrialModalOpen: boolean;
+  isTierUpgradeModalOpen: boolean;
   
   // Feature states
   isHandsFreeMode: boolean;
@@ -142,6 +148,12 @@ interface AppState {
   contextMenu: any | null;
   feedbackModalState: any | null;
   confirmationModal: any | null;
+  
+  // Trial system
+  trialEligibility: {
+    isEligible: boolean;
+    hasUsedTrial: boolean;
+  } | null;
 }
 
 const App: React.FC = () => {
@@ -162,6 +174,8 @@ const App: React.FC = () => {
     isWishlistModalOpen: false,
     isCacheDashboardOpen: false,
     showProfileSetup: false,
+    isFreeTrialModalOpen: false,
+    isTierUpgradeModalOpen: false,
     
     // Feature states
     isHandsFreeMode: false,
@@ -182,7 +196,10 @@ const App: React.FC = () => {
     // Context menu and feedback
     contextMenu: null,
     feedbackModalState: null,
-    confirmationModal: null
+    confirmationModal: null,
+    
+    // Trial system
+    trialEligibility: null
   });
   const [isOAuthCallback, setIsOAuthCallback] = useState(false);
   
@@ -441,6 +458,54 @@ const App: React.FC = () => {
   useEffect(() => {
     (window as any).debugLocalStorage = debugLocalStorage;
   }, [debugLocalStorage]);
+
+  // Check trial eligibility when user state changes
+  const checkTrialEligibility = useCallback(async () => {
+    if (!appState.userState?.authUserId) return;
+
+    try {
+      const isEligible = await tierService.isEligibleForTrial(appState.userState.authUserId);
+      const { data: user } = await supabaseDataService.supabase
+        .from('users')
+        .select('has_used_trial')
+        .eq('auth_user_id', appState.userState.authUserId)
+        .single();
+
+      setAppState(prev => ({
+        ...prev,
+        trialEligibility: {
+          isEligible,
+          hasUsedTrial: user?.has_used_trial || false
+        }
+      }));
+    } catch (error) {
+      console.error('Error checking trial eligibility:', error);
+    }
+  }, [appState.userState?.authUserId]);
+
+  useEffect(() => {
+    checkTrialEligibility();
+  }, [checkTrialEligibility]);
+
+  // Handle starting free trial
+  const handleStartFreeTrial = useCallback(async () => {
+    if (!appState.userState?.authUserId) return;
+
+    try {
+      const success = await tierService.startFreeTrial(appState.userState.authUserId);
+      if (success) {
+        // Refresh user state to get updated tier
+        await refreshUserState();
+        // Recheck trial eligibility
+        await checkTrialEligibility();
+        console.log('✅ Free trial started successfully');
+      } else {
+        console.error('❌ Failed to start free trial');
+      }
+    } catch (error) {
+      console.error('Error starting free trial:', error);
+    }
+  }, [appState.userState?.authUserId]);
 
   // Handle onboarding status updates
   const handleOnboardingUpdate = useCallback(async (status: string) => {
@@ -998,7 +1063,14 @@ const App: React.FC = () => {
               onOpenTerms={() => openModal('terms')}
               onBackToLanding={() => {
                 console.log('Back to landing clicked');
-                handleOnboardingUpdate('complete');
+                // Properly navigate back to landing page
+                setAppState(prev => ({
+                  ...prev,
+                  appView: {
+                    view: 'landing',
+                    onboardingStatus: 'complete' // Landing page only shows when onboarding is complete
+                  }
+                }));
               }}
             />
             
@@ -1446,6 +1518,7 @@ const App: React.FC = () => {
                         <span className="hidden sm:inline font-medium">Connect PC</span>
                       </button>
                       
+                      
                       {/* Settings Button */}
                       <button
                         type="button"
@@ -1459,8 +1532,16 @@ const App: React.FC = () => {
                                 {
                                   label: 'Settings',
                                   icon: SettingsIcon,
-                                  action: () => setAppState(prev => ({ ...prev, isSettingsModalOpen: true }))
+                                  action: () => setAppState(prev => ({ ...prev, isSettingsModalOpen: true }))                                                                                                           
                                 },
+                                // Trial button - only for free users, not in dev mode
+                                ...(appState.userState?.tier === 'free' && 
+                                    !appState.userState?.isDeveloper && 
+                                    appState.trialEligibility?.isEligible ? [{
+                                  label: 'Start 14-Day Free Trial',
+                                  icon: StarIcon,
+                                  action: () => setAppState(prev => ({ ...prev, isFreeTrialModalOpen: true }))
+                                }] : []),
                                 {
                                   label: 'Sign Out',
                                   icon: LogoutIcon,
@@ -1635,6 +1716,15 @@ const App: React.FC = () => {
               userEmail={appState.userState?.email || ''}
               onClearFirstRunCache={() => {}}
               refreshUsage={refreshUsage}
+            />
+          )}
+
+          {appState.isFreeTrialModalOpen && (
+            <FreeTrialModal
+              isOpen={appState.isFreeTrialModalOpen}
+              onClose={() => setAppState(prev => ({ ...prev, isFreeTrialModalOpen: false }))}
+              onStartTrial={handleStartFreeTrial}
+              isLoading={false}
             />
           )}
 

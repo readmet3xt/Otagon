@@ -7,13 +7,15 @@ This document defines the core system architecture, user flows, and behavioral p
 
 ## 🔄 User Flow Architecture
 
-### 1. Landing → Login → Splash Screens → Chat Flow
+### 1. Landing → Login → Chat Flow (First-Time Users)
+### 2. Landing → Login → Chat Flow (Returning Users)
 
 #### **Phase 1: Landing Page**
 - **Purpose**: Initial app entry point
 - **Behavior**: 
   - Shows app branding and value proposition
   - "Get Started" button triggers login flow
+  - **Back Button**: Returns to landing page (proper navigation)
 - **Next**: Login Screen
 
 #### **Phase 2: Login Screen** 
@@ -22,19 +24,20 @@ This document defines the core system architecture, user flows, and behavioral p
   - Shows login options (Google, Discord, Email)
   - **Developer Mode**: Password `zircon123` enables dev mode
   - **Dev Mode Detection**: `localStorage.getItem('otakon_developer_mode') === 'true'`
+  - **Back Button**: Returns to landing page (fixed navigation bug)
 - **Developer Mode Login Flow**:
   1. User enters password `zircon123`
   2. System creates mock user with fixed UUID: `00000000-0000-0000-0000-000000000001`
   3. Sets developer flags in localStorage: `otakon_developer_mode: 'true'`
   4. Initializes developer data structure in localStorage
   5. Bypasses all Supabase authentication calls
-- **Next**: Splash Screen Sequence
+- **Next**: Chat Interface (for returning users) OR Splash Screens (for first-time users)
 
-#### **Phase 3: Splash Screen Sequence**
+#### **Phase 3: Splash Screen Sequence (First-Time Users Only)**
 - **Order**: `initial` → `features` → `pro-features` → `complete`
 - **Behavior**:
-  - **New Users**: Must complete all splash screens
-  - **Returning Users**: Skip splash screens if `hasSeenSplashScreens: true`
+  - **First-Time Users**: Must complete all splash screens
+  - **Returning Users**: Skip splash screens entirely, go straight to chat
   - **Developer Mode**: Can skip splash screens after first run
 - **Next**: Chat Interface
 
@@ -207,15 +210,107 @@ async getTrialStatus(userId: string): Promise<TrialStatus>
 
 ---
 
+## 📊 Comprehensive User Behavior Tracking
+
+### **Navigation Behaviors**
+1. **Landing Page Navigation**:
+   - "Get Started" → Login Screen
+   - Back button → Stays on landing page
+   - Modal links → Open respective modals (About, Privacy, Terms, etc.)
+
+2. **Login Screen Navigation**:
+   - Back button → Returns to Landing Page ✅ (Fixed)
+   - Successful login → Chat Interface (returning users) OR Splash Screens (first-time)
+   - Developer mode login → Chat Interface (bypasses splash screens)
+
+3. **Splash Screen Navigation** (First-Time Users Only):
+   - Initial → Features → Pro-Features → Complete
+   - Skip options available on each screen
+   - Back button behavior varies by screen
+
+4. **Chat Interface Navigation**:
+   - Settings button → Opens settings modal
+   - Context menu → Shows tier switcher (dev mode) or trial options (free users)
+   - Back button → Not applicable (main interface)
+
+### **Authentication Behaviors**
+1. **Developer Mode**:
+   - Password: `zircon123`
+   - Mock user ID: `00000000-0000-0000-0000-000000000001`
+   - localStorage flags: `otakon_developer_mode: 'true'`
+   - Bypasses all Supabase calls
+   - Tier switching available in settings
+
+2. **Regular Authentication**:
+   - Google OAuth → Supabase authentication
+   - Discord OAuth → Supabase authentication  
+   - Email/Password → Supabase authentication
+   - Session persistence across browser refreshes
+
+### **User State Behaviors**
+1. **First-Time Users**:
+   - Must complete splash screen sequence
+   - Welcome message shown after onboarding
+   - Profile setup required
+
+2. **Returning Users**:
+   - Skip splash screens entirely
+   - Go directly to chat interface
+   - Welcome message based on session state
+
+3. **Developer Mode Users**:
+   - All onboarding steps marked as complete
+   - Tier switching available
+   - Trial options hidden
+   - localStorage-based data management
+
+### **UI Component Behaviors**
+1. **Settings Modal**:
+   - Tier switcher (dev mode): Cycles through free → pro → vanguard → free
+   - Trial button (free users): "Start 14-Day Free Trial"
+   - Sign out option: Clears session and returns to login
+
+2. **Chat Interface**:
+   - Welcome message: System-styled, gaming-focused
+   - Suggested prompts: Left-aligned, 4 prompts maximum
+   - Image upload: Tier-based limits (Free: 1, Pro/Vanguard: 5)
+   - Credit indicator: Shows usage counts
+
+3. **Trial System**:
+   - Eligibility: Free users who haven't used trial
+   - Duration: 14 days
+   - Features: Full Pro tier access
+   - Expiration: Automatic tier reset
+
+### **Error Handling Behaviors**
+1. **Authentication Errors**:
+   - Display user-friendly error messages
+   - Reset button animations
+   - Allow retry attempts
+
+2. **Network Errors**:
+   - Supabase call failures → localStorage fallback (dev mode)
+   - Analytics failures → Silent fail, continue operation
+   - Conversation save failures → Retry mechanism
+
+3. **Validation Errors**:
+   - Form validation → Real-time feedback
+   - Image upload limits → Clear error messages
+   - Usage limit exceeded → Upgrade prompts
+
+---
+
 ## ⚠️ Change Control Protocol
 
 ### **Protected Features**:
-1. **User Flow**: Landing → Login → Splash → Chat
-2. **Developer Mode**: localStorage-based data handling
-3. **Tier System**: Free → Pro → Vanguard cycling
-4. **Supabase Prevention**: Dev mode skips all Supabase calls
-5. **Chat Interface**: Welcome message + suggested prompts layout
-6. **14-Day Trial System**: One-time trial eligibility and expiration logic
+1. **User Flow**: Landing → Login → Chat (returning users) OR Landing → Login → Splash → Chat (first-time users)
+2. **Navigation**: Back button on login screen returns to landing page
+3. **Developer Mode**: localStorage-based data handling
+4. **Tier System**: Free → Pro → Vanguard cycling
+5. **Supabase Prevention**: Dev mode skips all Supabase calls
+6. **Chat Interface**: Welcome message + suggested prompts layout
+7. **14-Day Trial System**: One-time trial eligibility and expiration logic
+8. **Splash Screens**: Only for first-time users, returning users skip entirely
 
 ### **Change Approval Required For**:
 - Modifying user flow sequence
@@ -226,6 +321,8 @@ async getTrialStatus(userId: string): Promise<TrialStatus>
 - Modifying localStorage key names
 - Modifying trial eligibility logic or duration
 - Changing trial button placement or behavior
+- Modifying navigation behavior (back buttons, routing)
+- Changing splash screen logic or requirements
 
 ### **Approval Process**:
 1. **Identify**: What feature is being changed
@@ -238,7 +335,8 @@ async getTrialStatus(userId: string): Promise<TrialStatus>
 ## 📊 Current Implementation Status
 
 ### ✅ **Completed Features**:
-- [x] Landing → Login → Splash → Chat flow
+- [x] Landing → Login → Chat flow (returning users)
+- [x] Landing → Login → Splash → Chat flow (first-time users)
 - [x] Developer mode authentication
 - [x] Supabase call prevention in dev mode
 - [x] Tier switcher with persistence
@@ -251,6 +349,8 @@ async getTrialStatus(userId: string): Promise<TrialStatus>
 - [x] Trial eligibility tracking
 - [x] Trial button hidden in developer mode
 - [x] Payment-ready CTAs
+- [x] **Navigation bug fix**: Back button on login screen returns to landing page
+- [x] **Splash screen logic**: Only shows for first-time users
 
 ### 🔄 **Active Monitoring**:
 - Developer mode localStorage consistency
@@ -261,6 +361,9 @@ async getTrialStatus(userId: string): Promise<TrialStatus>
 - Trial expiration automation
 - Trial button visibility in dev mode
 - Payment CTA functionality
+- **Navigation flow integrity**: Back button behavior
+- **User state management**: First-time vs returning user detection
+- **Splash screen logic**: Proper skipping for returning users
 
 ---
 
@@ -277,4 +380,5 @@ async getTrialStatus(userId: string): Promise<TrialStatus>
 ---
 
 *Last Updated: January 15, 2025*
-*Version: 1.2*
+*Version: 1.3*
+*Updated: Fixed navigation bug, added comprehensive behavior tracking, clarified user flow patterns*
