@@ -1486,19 +1486,28 @@ const App: React.FC = () => {
                     <div className="flex items-center gap-2">
                       {/* Credit Indicator */}
                       {appState.userState?.usage && (
-                        <CreditIndicator
-                          usage={{
-                            textQueries: appState.userState.usage.textCount,
-                            imageQueries: appState.userState.usage.imageCount,
-                            insights: 0,
-                            textCount: appState.userState.usage.textCount,
-                            imageCount: appState.userState.usage.imageCount,
+                        <>
+                          {console.log('🔧 [App] CreditIndicator usage data:', {
+                            tier: appState.userState.tier,
                             textLimit: appState.userState.usage.textLimit,
                             imageLimit: appState.userState.usage.imageLimit,
-                            tier: appState.userState.tier
-                          }}
-                          onClick={() => setAppState(prev => ({ ...prev, isCreditModalOpen: true }))}
-                        />
+                            textCount: appState.userState.usage.textCount,
+                            imageCount: appState.userState.usage.imageCount
+                          })}
+                          <CreditIndicator
+                            usage={{
+                              textQueries: appState.userState.usage.textCount,
+                              imageQueries: appState.userState.usage.imageCount,
+                              insights: 0,
+                              textCount: appState.userState.usage.textCount,
+                              imageCount: appState.userState.usage.imageCount,
+                              textLimit: appState.userState.usage.textLimit,
+                              imageLimit: appState.userState.usage.imageLimit,
+                              tier: appState.userState.tier
+                            }}
+                            onClick={() => setAppState(prev => ({ ...prev, isCreditModalOpen: true }))}
+                          />
+                        </>
                       )}
                       
                       {/* Hands-Free Toggle */}
@@ -1568,8 +1577,8 @@ const App: React.FC = () => {
                 </div>
               </header>
 
-              {/* Ad Banner for free users and developer mode */}
-              {(appState.userState?.tier === 'free' || appState.userState?.isDeveloper) && (
+              {/* Ad Banner for free users only - developer mode users on pro/vanguard should not see ads */}
+              {appState.userState?.tier === 'free' && (
                 <div className="px-3 sm:px-4 md:px-6 py-2">
                   <AdBanner />
                 </div>
