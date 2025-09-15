@@ -1715,7 +1715,11 @@ const App: React.FC = () => {
               onShowHowToUse={() => handleOnboardingUpdate('how-to-use')}
               userEmail={appState.userState?.email || ''}
               onClearFirstRunCache={() => {}}
-              refreshUsage={refreshUsage}
+              refreshUsage={async () => {
+                // Refresh app state when tier changes in developer mode
+                console.log('🔄 Refreshing app state after tier change...');
+                await handleAuthStateChange();
+              }}
             />
           )}
 

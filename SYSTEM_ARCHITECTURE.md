@@ -420,6 +420,7 @@ Before implementing any change, verify:
 | 2025-01-15 | Navigation Fix | Fixed back button on login screen to return to landing page | High | ✅ User |
 | 2025-01-15 | Documentation | Added comprehensive behavior tracking system | Medium | ✅ User |
 | 2025-01-15 | User Flow | Clarified splash screen logic for first-time vs returning users | High | ✅ User |
+| 2025-01-15 | Tier System Fix | Fixed developer mode tier switching persistence issue | High | ✅ User |
 
 ### **Current Behavior State**
 - **Navigation**: ✅ Landing ↔ Login ↔ Chat flow working correctly
@@ -428,7 +429,28 @@ Before implementing any change, verify:
 - **UI Components**: ✅ Settings modal, chat interface, trial system stable
 - **Error Handling**: ✅ All error patterns documented and working
 - **Data Storage**: ✅ localStorage and Supabase patterns stable
-- **Tier System**: ✅ Free → Pro → Vanguard cycling working
+- **Tier System**: ✅ Free → Pro → Vanguard cycling working correctly
+- **Developer Mode Tier Switching**: ✅ Tier changes persist after settings modal close
+
+### **Technical Fix Details**
+
+#### **Tier Switching Persistence Fix (2025-01-15)**
+**Problem**: Developer mode tier switching was not persisting after settings modal close. Tier would revert to previous state.
+
+**Root Cause**: Missing `refreshUsage` callback in SettingsModal props in App.tsx. The DevTierSwitcher was calling `onSwitch()` → `onTierChanged()` → `refreshUsage()`, but the SettingsModal wasn't receiving the `refreshUsage` prop, so app state never refreshed.
+
+**Solution**: Added `refreshUsage` prop to SettingsModal in App.tsx that calls `handleAuthStateChange()` to refresh the entire app state when tier changes.
+
+**Code Changes**:
+```typescript
+// App.tsx - SettingsModal props
+refreshUsage={async () => {
+  console.log('🔄 Refreshing app state after tier change...');
+  await handleAuthStateChange();
+}}
+```
+
+**Impact**: Tier switching now works correctly in developer mode with proper persistence.
 
 ### **Pending Behavior Reviews**
 *No pending reviews - all behaviors are approved and stable*
@@ -436,5 +458,5 @@ Before implementing any change, verify:
 ---
 
 *Last Updated: January 15, 2025*
-*Version: 1.4*
-*Updated: Added behavior change detection system, change log, and validation protocols*
+*Version: 1.5*
+*Updated: Fixed developer mode tier switching persistence, added technical fix documentation*
