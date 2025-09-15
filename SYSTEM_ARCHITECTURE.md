@@ -736,6 +736,137 @@ Before deploying to production, verify:
 
 ---
 
+## 🎯 **WELCOME MESSAGE MANAGEMENT SYSTEM**
+
+### **Overview**
+The welcome message system provides first-time users with an introduction to Otakon's capabilities. The system has been designed to prevent duplication and ensure messages appear only in the appropriate conversation tab.
+
+### **System Components**
+
+#### **Primary Welcome Message Logic (App.tsx)**
+- **Location**: `App.tsx` lines 970-1031
+- **Trigger**: useEffect with dependencies `[appState.userState?.isAuthenticated, appState.appView?.onboardingStatus, conversations]`
+- **Purpose**: Shows welcome message to authenticated users who have completed onboarding
+
+#### **Session-Based Deduplication**
+- **Session Key**: `otakon_welcome_shown_session` in sessionStorage
+- **Purpose**: Prevents multiple welcome messages in the same browser session
+- **Implementation**: Checked before showing welcome message, set to `true` after showing
+
+#### **Tab Targeting**
+- **Target Tab**: Always `'everything-else'` conversation
+- **Implementation**: `addSystemMessage('...', 'everything-else')`
+- **Purpose**: Ensures welcome message appears in the general conversation, not game-specific tabs
+
+#### **Existing Message Check**
+- **Logic**: Checks if `conversations['everything-else']` already has messages
+- **Behavior**: Skips welcome message if conversation already has content
+- **Purpose**: Prevents welcome message from appearing after user has already started chatting
+
+### **Welcome Message Conditions**
+
+#### **Required Conditions (All Must Be True)**
+1. **User Authentication**: `appState.userState?.isAuthenticated === true`
+2. **Onboarding Complete**: `appState.appView?.onboardingStatus === 'complete'`
+3. **Session Check**: `sessionStorage.getItem('otakon_welcome_shown_session') !== 'true'`
+4. **Supabase Check**: `supabaseDataService.shouldShowWelcomeMessage() === true`
+5. **Profile Setup**: User has completed profile setup
+6. **Empty Conversation**: `conversations['everything-else']` has no existing messages
+
+#### **Message Content**
+```
+"Welcome to Otakon! I'm here to help you with your anime and gaming needs. Feel free to ask me anything!"
+```
+
+### **SupabaseDataService Integration**
+
+#### **shouldShowWelcomeMessage() Method**
+- **Session Caching**: Uses `otakon_welcome_status_determined` in sessionStorage
+- **Developer Mode**: Falls back to localStorage-based logic when not authenticated
+- **Database Integration**: Calls Supabase RPC `should_show_welcome_message`
+- **Error Handling**: Graceful fallback to localStorage in dev mode
+
+#### **updateWelcomeMessageShown() Method**
+- **Purpose**: Marks welcome message as shown in database
+- **Parameter**: `'first_time'` message type
+- **Error Handling**: Continues execution even if Supabase call fails
+
+### **Developer Mode Behavior**
+
+#### **Authentication Bypass**
+- **Behavior**: Uses localStorage fallback when not authenticated
+- **Session Management**: Still uses sessionStorage for deduplication
+- **Consistency**: Maintains same welcome message logic as authenticated users
+
+#### **LocalStorage Integration**
+- **Profile Setup**: Checks `localStorage.getItem('otakon_profile_setup_completed')`
+- **Welcome Status**: Uses `shouldShowLocalStorageWelcome()` method
+- **Persistence**: Welcome message status persists across browser sessions
+
+### **Error Handling & Fallbacks**
+
+#### **Network Failures**
+- **Supabase Errors**: Graceful fallback to localStorage-based logic
+- **Session Storage**: Continues to work even if database is unavailable
+- **User Experience**: No interruption to user flow
+
+#### **State Management**
+- **Conversation State**: Safely handles undefined conversation objects
+- **Message Addition**: Checks for `addSystemMessage` function availability
+- **Session Storage**: Handles sessionStorage unavailability gracefully
+
+### **Testing Requirements**
+
+#### **Functional Testing**
+- [ ] Welcome message shows only once per session
+- [ ] Welcome message appears only in "everything-else" tab
+- [ ] Welcome message doesn't show if conversation has existing messages
+- [ ] Welcome message doesn't show in game-specific tabs
+- [ ] Session deduplication works across tab switches
+- [ ] Developer mode behavior matches authenticated user behavior
+
+#### **Edge Case Testing**
+- [ ] Welcome message behavior with multiple browser tabs
+- [ ] Welcome message behavior after page refresh
+- [ ] Welcome message behavior with cleared sessionStorage
+- [ ] Welcome message behavior with network failures
+- [ ] Welcome message behavior with incomplete profile setup
+
+#### **Integration Testing**
+- [ ] Welcome message integrates with onboarding flow
+- [ ] Welcome message integrates with authentication flow
+- [ ] Welcome message integrates with conversation management
+- [ ] Welcome message integrates with SupabaseDataService
+
+### **Performance Considerations**
+
+#### **Optimization Features**
+- **Session Caching**: Prevents repeated Supabase calls
+- **Conditional Execution**: Only runs when necessary conditions are met
+- **Dependency Management**: Minimal useEffect dependencies to prevent unnecessary re-runs
+- **Early Returns**: Multiple early return conditions to avoid unnecessary processing
+
+#### **Memory Management**
+- **Session Storage**: Lightweight session-based tracking
+- **No Memory Leaks**: Proper cleanup of session storage on session end
+- **Efficient Checks**: Quick boolean checks before expensive operations
+
+### **Future Considerations**
+
+#### **Potential Enhancements**
+- **Personalization**: Include user's first name in welcome message
+- **Context Awareness**: Show different welcome messages based on user's previous activity
+- **A/B Testing**: Support for different welcome message variants
+- **Analytics**: Track welcome message effectiveness and user engagement
+
+#### **Maintenance Notes**
+- **Code Location**: All welcome message logic centralized in App.tsx
+- **Dependencies**: Minimal external dependencies for easy maintenance
+- **Testing**: Comprehensive test coverage for all scenarios
+- **Documentation**: Clear documentation for future developers
+
+---
+
 *Last Updated: January 15, 2025*
-*Version: 1.7*
-*Updated: Enhanced authentication architecture with unified OAuth handling, comprehensive error recovery, and automatic session refresh*
+*Version: 1.8*
+*Updated: Added comprehensive welcome message management system documentation with deduplication logic and testing requirements*

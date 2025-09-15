@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { unifiedOAuthService } from './services/unifiedOAuthService';
 import { sessionRefreshService } from './services/sessionRefreshService';
+import { authService } from './services/supabase';
 import { secureAppStateService } from './services/secureAppStateService';
 import { secureConversationService } from './services/atomicConversationService';
 import { UserState, AppView } from './services/secureAppStateService';
@@ -973,21 +974,45 @@ const App: React.FC = () => {
         if (appState.userState?.isAuthenticated && appState.appView?.onboardingStatus === 'complete') {
           console.log('🔧 [App] Checking welcome message for authenticated user...');
           
+          // Check if we've already shown welcome message in this session
+          const sessionKey = 'otakon_welcome_shown_session';
+          const hasShownWelcomeThisSession = sessionStorage.getItem(sessionKey) === 'true';
+          
+          if (hasShownWelcomeThisSession) {
+            console.log('🔧 [App] Welcome message already shown this session, skipping...');
+            return;
+          }
+          
           const shouldShow = await supabaseDataService.shouldShowWelcomeMessage();
           const hasCompletedProfileSetup = await supabaseDataService.getUserAppState().then(state => state.appSettings?.profileSetupCompleted) || localStorage.getItem('otakon_profile_setup_completed') === 'true';
           
           console.log('🔧 [App] Welcome message check:', { shouldShow, hasCompletedProfileSetup });
           
           if (shouldShow && hasCompletedProfileSetup) {
+            // Check if there are already messages in the everything-else conversation
+            const everythingElseConversation = conversations?.['everything-else'];
+            const hasExistingMessages = everythingElseConversation?.messages && everythingElseConversation.messages.length > 0;
+            
+            if (hasExistingMessages) {
+              console.log('🔧 [App] Welcome message not shown - conversation already has messages');
+              // Still mark as shown to prevent future attempts
+              sessionStorage.setItem(sessionKey, 'true');
+              return;
+            }
+            
             console.log('🔧 [App] Showing welcome message to user...');
             
-            // Add system message for welcome
+            // Add system message for welcome - always in everything-else tab
             if (addSystemMessage) {
-              addSystemMessage('Welcome to Otakon! I\'m here to help you with your anime and gaming needs. Feel free to ask me anything!');
+              addSystemMessage('Welcome to Otakon! I\'m here to help you with your anime and gaming needs. Feel free to ask me anything!', 'everything-else');
             }
             
             // Mark welcome message as shown
             await supabaseDataService.updateWelcomeMessageShown('first_time');
+            
+            // Mark as shown in this session to prevent duplicates
+            sessionStorage.setItem(sessionKey, 'true');
+            
             console.log('✅ Welcome message tracking updated via Supabase service');
           } else {
             console.log('❌ Welcome message not shown - conditions not met:', {
@@ -1003,7 +1028,7 @@ const App: React.FC = () => {
     
     // Execute the welcome message check
     checkWelcomeMessage();
-  }, [appState.userState?.isAuthenticated, appState.appView?.onboardingStatus, addSystemMessage]);
+  }, [appState.userState?.isAuthenticated, appState.appView?.onboardingStatus, conversations]);
 
   // Handle window focus/blur for session management
   useEffect(() => {
