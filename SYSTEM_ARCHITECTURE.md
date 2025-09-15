@@ -15,7 +15,14 @@ This document defines the core system architecture, user flows, and behavioral p
 - **Behavior**: 
   - Shows app branding and value proposition
   - "Get Started" button triggers login flow
+  - **Waitlist System**: Email collection for early access
   - **Back Button**: Returns to landing page (proper navigation)
+- **Waitlist Functionality**:
+  - **Email Collection**: Users can enter email to join waitlist
+  - **Duplicate Prevention**: System checks for existing emails
+  - **Database Storage**: Emails stored in `waitlist` table
+  - **User Feedback**: Success/error messages displayed
+  - **Source Tracking**: Records signup source as 'landing_page'
 - **Next**: Login Screen
 
 #### **Phase 2: Login Screen** 
@@ -210,6 +217,54 @@ async getTrialStatus(userId: string): Promise<TrialStatus>
 
 ---
 
+## 📧 Waitlist System Architecture
+
+### **Core Principle**: 
+Collect user emails for early access notification while preventing duplicates and providing clear user feedback.
+
+### **Database Schema**
+```sql
+CREATE TABLE IF NOT EXISTS public.waitlist (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    email TEXT NOT NULL UNIQUE,
+    source TEXT DEFAULT 'landing_page',
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'invited', 'registered')),
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+### **WaitlistService Integration**
+```typescript
+// Core waitlist methods
+async addToWaitlist(email: string, source: string = 'landing_page'): Promise<{ success: boolean; error?: string }>
+async getWaitlistStatus(email: string): Promise<{ status?: string; error?: string }>
+async getWaitlistCount(): Promise<{ count?: number; error?: string }>
+```
+
+### **User Experience Flow**
+1. **Email Entry**: User enters email in landing page form
+2. **Duplicate Check**: System checks if email already exists
+3. **Database Storage**: Email stored in `waitlist` table with source tracking
+4. **User Feedback**: Success message displayed, form cleared
+5. **Error Handling**: Clear error messages for failures
+6. **Analytics**: Successful signups logged to analytics (if user authenticated)
+
+### **Error Handling Patterns**
+- **Duplicate Email**: "Email already registered for waitlist"
+- **Database Error**: "Failed to add to waitlist: [specific error]"
+- **Network Error**: "An unexpected error occurred. Please try again."
+- **Validation Error**: Form validation prevents invalid emails
+
+### **Security & Privacy**
+- **RLS Policies**: Anonymous users can insert, authenticated users can view own entries
+- **Email Validation**: Client-side and server-side email format validation
+- **Source Tracking**: Records where user signed up (landing_page, etc.)
+- **Status Management**: Tracks invitation and registration status
+
+---
+
 ## 📊 Comprehensive User Behavior Tracking
 
 ### **Navigation Behaviors**
@@ -349,6 +404,7 @@ async getTrialStatus(userId: string): Promise<TrialStatus>
 - [x] Trial eligibility tracking
 - [x] Trial button hidden in developer mode
 - [x] Payment-ready CTAs
+- [x] **Waitlist system**: Email collection with duplicate prevention and error handling
 - [x] **Navigation bug fix**: Back button on login screen returns to landing page
 - [x] **Splash screen logic**: Only shows for first-time users
 
@@ -427,12 +483,15 @@ Before implementing any change, verify:
 | 2025-01-15 | Auth Architecture | Implemented unified OAuth callback handling to prevent race conditions | High | ✅ User |
 | 2025-01-15 | Error Recovery | Added comprehensive error recovery system for authentication | High | ✅ User |
 | 2025-01-15 | Session Management | Implemented automatic session refresh to prevent unexpected logouts | High | ✅ User |
+| 2025-01-15 | Critical Bug Fix | Fixed missing authService import causing app crash | Critical | ✅ User |
+| 2025-01-15 | Feature Addition | Implemented waitlist system with email collection and duplicate prevention | Medium | ✅ User |
 
 ### **Current Behavior State**
 - **Navigation**: ✅ Landing ↔ Login ↔ Chat flow working correctly
 - **Authentication**: ✅ Dev mode and regular auth flows stable with enhanced error handling
 - **User States**: ✅ First-time vs returning user detection working
 - **UI Components**: ✅ Settings modal, chat interface, trial system stable
+- **Waitlist System**: ✅ Email collection, duplicate prevention, and error handling working correctly
 - **Error Handling**: ✅ All error patterns documented and working with comprehensive recovery
 - **Data Storage**: ✅ localStorage and Supabase patterns stable
 - **Tier System**: ✅ Free → Pro → Vanguard cycling working correctly
@@ -539,6 +598,25 @@ draggable={!isChatTab && userTier !== 'free'}
 ```
 
 **Impact**: All premium features properly gated by tier, consistent behavior across developer mode and authenticated accounts.
+
+#### **Critical Import Fix (2025-01-15)**
+**Problem**: App.tsx was throwing `ReferenceError: authService is not defined` at line 854, causing the entire app to crash on load.
+
+**Root Cause**: When implementing the new authentication services (`unifiedOAuthService`, `sessionRefreshService`), the existing `authService` import was accidentally removed from App.tsx, but the code still referenced it for auth state subscriptions.
+
+**Solution**: Re-added the missing import: `import { authService } from './services/supabase';`
+
+**Code Changes**:
+```typescript
+// App.tsx - Fixed imports
+import { authService } from './services/supabase';
+import { unifiedOAuthService } from './services/unifiedOAuthService';
+import { sessionRefreshService } from './services/sessionRefreshService';
+```
+
+**Impact**: App now loads correctly without crashing, all authentication services work together properly.
+
+**Lesson Learned**: This error occurred because changes were made to SYSTEM_ARCHITECTURE.md without proper approval process. Future changes must follow the established change control protocol.
 
 ---
 
