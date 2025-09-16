@@ -153,9 +153,9 @@ const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({ className = "" }) =
             </div>
             
             <div className="flex-1 min-w-0">
-              <h3 className="text-white font-semibold text-sm">Install Otagon AI</h3>
+              <h3 className="text-white font-semibold text-sm">Install Otagon - Gaming AI Assistant</h3>
               <p className="text-neutral-400 text-xs mt-1">
-                Get the full mobile experience with Gaming AI assistant and offline access
+                Get the full mobile experience with screenshot analysis and spoiler-free wiki
               </p>
             </div>
             
@@ -193,25 +193,25 @@ const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({ className = "" }) =
           <div className="max-w-md mx-auto">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-gradient-to-r from-[#FFAB40] to-[#E53A3A] rounded-lg flex items-center justify-center">
-                <StarIcon className="w-5 h-5 text-white" />
+                <img src="/images/Dragon Circle Logo Design.png" alt="Otagon Logo" className="w-8 h-8 rounded" />
               </div>
               <div>
-                <h3 className="text-white font-semibold text-sm">🎮 Gaming AI Assistant</h3>
-                <p className="text-neutral-400 text-xs">Screenshot download, offline access, and more!</p>
+                <h3 className="text-white font-semibold text-sm">Otagon - Gaming AI Assistant</h3>
+                <p className="text-neutral-400 text-xs">Screenshot analysis, spoiler-free wiki, and more!</p>
               </div>
             </div>
             
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div className="bg-[#2E2E2E] p-3 rounded-lg">
                 <div className="text-[#FFAB40] text-lg mb-1">📸</div>
-                <div className="text-white text-xs font-medium">Screenshot Download</div>
-                <div className="text-neutral-400 text-xs">Save game screenshots</div>
+                <div className="text-white text-xs font-medium">Screenshot Analysis</div>
+                <div className="text-neutral-400 text-xs">Analyze and save game screenshots</div>
               </div>
               
               <div className="bg-[#2E2E2E] p-3 rounded-lg">
-                <div className="text-[#FFAB40] text-lg mb-1">📱</div>
-                <div className="text-white text-xs font-medium">Offline Access</div>
-                <div className="text-neutral-400 text-xs">Use without internet</div>
+                <div className="text-[#FFAB40] text-lg mb-1">📚</div>
+                <div className="text-white text-xs font-medium">Spoiler-free Wiki</div>
+                <div className="text-neutral-400 text-xs">Get help and lore without breaking immersion</div>
               </div>
             </div>
             
