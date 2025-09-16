@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { authService } from './supabase';
 import { UserTier } from './types';
+import { isDeveloperMode } from '../utils';
 
 // ========================================
 // 🛡️ SECURE APP STATE SERVICE
@@ -140,14 +141,14 @@ class SecureAppStateService implements AppStateService {
       .from('users')
       .select(key)
       .eq('auth_user_id', authState.user.id)
-      .eq('deleted_at', null)
+      .is('deleted_at', null)
       .single();
 
     if (error) {
       throw new Error(`Failed to get ${key}: ${error.message}`);
     }
 
-    return data[key];
+    return key === '*' ? data : data[key];
   }
 
   private async setSupabaseData(key: string, data: any): Promise<void> {
@@ -170,7 +171,7 @@ class SecureAppStateService implements AppStateService {
         updated_by: authState.user.id
       })
       .eq('auth_user_id', authState.user.id)
-      .eq('deleted_at', null);
+      .is('deleted_at', null);
 
     if (error) {
       throw new Error(`Failed to update ${key}: ${error.message}`);
@@ -183,7 +184,7 @@ class SecureAppStateService implements AppStateService {
   async getUserState(): Promise<UserState> {
     try {
       // Check cache first, but not for developer mode
-      const isDevMode = localStorage.getItem('otakon_developer_mode') === 'true';
+      const isDevMode = isDeveloperMode();
       const cached = this.getCachedData<UserState>('userState');
       if (cached && !isDevMode) {
         return cached;
@@ -216,7 +217,9 @@ class SecureAppStateService implements AppStateService {
         };
       }
 
-      // Check if developer mode (using isDevMode from line 183)
+      // Check if developer mode (using isDevMode from line 187)
+      // IMPORTANT: Only treat as developer mode if user is NOT authenticated via OAuth
+      // This prevents authenticated users from being treated as developers
       if (isDevMode) {
         console.log('🔧 [AppStateService] Developer mode detected in getUserState');
         

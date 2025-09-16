@@ -94,7 +94,7 @@ const TierSplashScreen: React.FC<TierSplashScreenProps> = ({
               </h3>
               <div className="text-right">
                 <div className="text-4xl font-bold text-white">$20.00</div>
-                <div className="text-base text-neutral-300">/month</div>
+                <div className="text-base text-neutral-300">/year</div>
               </div>
             </div>
             

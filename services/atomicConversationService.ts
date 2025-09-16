@@ -545,7 +545,7 @@ class SecureConversationService implements ConversationService {
             .select('*')
             .eq('id', conversationId)
             .eq('user_id', authState.user!.id)
-            .eq('deleted_at', null)
+            .is('deleted_at', null)
             .single();
           return result;
         },
@@ -635,7 +635,7 @@ class SecureConversationService implements ConversationService {
             })
             .eq('id', conversationId)
             .eq('user_id', authState.user!.id)
-            .eq('deleted_at', null)
+            .is('deleted_at', null)
             .select()
             .single();
           return result;
@@ -731,7 +731,7 @@ class SecureConversationService implements ConversationService {
             })
             .eq('id', conversationId)
             .eq('user_id', authState.user!.id)
-            .eq('deleted_at', null)
+            .is('deleted_at', null)
             .select()
             .single();
           return result;

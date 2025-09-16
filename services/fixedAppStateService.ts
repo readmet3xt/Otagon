@@ -137,7 +137,7 @@ class SecureAppStateService implements AppStateService {
       .from('users')
       .select(key)
       .eq('auth_user_id', authState.user.id)
-      .eq('deleted_at', null)
+      .is('deleted_at', null)
       .single();
 
     if (error) {
@@ -167,7 +167,7 @@ class SecureAppStateService implements AppStateService {
         updated_by: authState.user.id
       })
       .eq('auth_user_id', authState.user.id)
-      .eq('deleted_at', null);
+      .is('deleted_at', null);
 
     if (error) {
       throw new Error(`Failed to update ${key}: ${error.message}`);

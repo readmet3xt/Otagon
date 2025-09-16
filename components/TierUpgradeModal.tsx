@@ -220,7 +220,7 @@ export const TierUpgradeModal: React.FC<TierUpgradeModalProps> = ({
                         <div className="flex flex-col items-center">
                           <span>{tierKey === 'pro' ? 'Upgrade to Pro' : 'Upgrade to Vanguard Pro'}</span>
                           <span className="text-sm font-normal opacity-90">
-                            {tierKey === 'pro' ? '$3.99/month' : '$20.00/month'}
+                            {tierKey === 'pro' ? '$3.99/month' : '$20.00/year'}
                           </span>
                         </div>
                       )}

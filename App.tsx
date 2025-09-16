@@ -397,6 +397,12 @@ const App: React.FC = () => {
           wasAuthenticated: appState.userState?.isAuthenticated,
           isAuthenticated: userState.isAuthenticated
         });
+        
+        // Reset OAuth callback flag when auth state change is complete
+        if (userState.isAuthenticated && isOAuthCallback) {
+          console.log('🔧 [App] Auth state change complete, resetting OAuth callback flag');
+          setIsOAuthCallback(false);
+        }
       }
       
       // Determine app view
@@ -866,11 +872,14 @@ const App: React.FC = () => {
 
       console.log('🔐 [App] OAuth callback detected, processing...');
       
+      // Set OAuth callback flag immediately to prevent landing page flash
+      setIsOAuthCallback(true);
+      
       try {
         const result = await unifiedOAuthService.handleOAuthCallback({
           onSuccess: (user, session) => {
             console.log('🔐 [App] OAuth callback successful, user:', user);
-            setIsOAuthCallback(true);
+            // Keep OAuth callback flag true until auth state is fully processed
             // The auth state change will be handled by the auth service subscription
           },
           onError: (error) => {
@@ -1075,7 +1084,7 @@ const App: React.FC = () => {
   // Render loading state
   if (appState.loading || !appState.initialized) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-[#000000] flex items-center justify-center">
         <LoadingSpinner size="xl" />
       </div>
     );
@@ -1084,7 +1093,7 @@ const App: React.FC = () => {
   // Render error state
   if (appState.error) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#000000] flex items-center justify-center p-4">
         <ErrorMessage 
           message={appState.error}
           onRetry={handleErrorRecovery}
@@ -1281,6 +1290,15 @@ const App: React.FC = () => {
   }
   
   if (appState.appView?.view === 'landing') {
+    // If we're processing an OAuth callback, show loading instead of landing page
+    if (isOAuthCallback) {
+      return (
+        <div className="min-h-screen bg-[#000000] flex items-center justify-center">
+          <LoadingSpinner size="xl" />
+        </div>
+      );
+    }
+    
     // If onboarding is complete, show the actual landing page
     if (appState.appView?.onboardingStatus === 'complete') {
       return (

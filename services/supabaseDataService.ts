@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { userCreationService } from './userCreationService';
 
 export interface UserUsageData {
   tier: string;
@@ -77,7 +78,18 @@ class SupabaseDataService {
       
       if (error || !userData) {
         console.warn('User not found in users table:', error);
-        this.userId = null;
+        
+        // Try to create the user record manually
+        console.log('🔐 [SupabaseDataService] Attempting to create user record...');
+        const createResult = await userCreationService.ensureUserRecord(user.id, user.email || '');
+        
+        if (createResult.success && createResult.userId) {
+          console.log('🔐 [SupabaseDataService] User record created successfully:', createResult.userId);
+          this.userId = createResult.userId;
+        } else {
+          console.error('🔐 [SupabaseDataService] Failed to create user record:', createResult.error);
+          this.userId = null;
+        }
       } else {
         this.userId = userData.id;
       }

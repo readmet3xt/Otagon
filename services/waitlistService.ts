@@ -24,7 +24,7 @@ export class WaitlistService {
     try {
       // Check if email already exists
       const { data: existing, error: checkError } = await supabase
-        .from('waitlist_entries')
+        .from('waitlist')
         .select('email')
         .eq('email', email)
         .maybeSingle();
@@ -35,12 +35,12 @@ export class WaitlistService {
       }
 
       if (existing) {
-        return { success: false, error: 'Email already registered for waitlist_entries' };
+        return { success: false, error: 'Email already registered for waitlist' };
       }
 
-      // Insert into waitlist_entries table
+      // Insert into waitlist table
       const { error } = await supabase
-        .from('waitlist_entries')
+        .from('waitlist')
         .insert({
           email,
           source,
@@ -48,9 +48,9 @@ export class WaitlistService {
         });
 
       if (error) {
-        console.error('Error adding to waitlist_entries:', error);
+        console.error('Error adding to waitlist:', error);
         // Return actual error instead of fake success
-        return { success: false, error: `Failed to add to waitlist_entries: ${error.message}` };
+        return { success: false, error: `Failed to add to waitlist: ${error.message}` };
       }
 
       // Log successful signup (only if user is authenticated)
@@ -60,7 +60,7 @@ export class WaitlistService {
           await supabase
             .from('analytics')
             .insert({
-              event_type: 'waitlist_entries_signup_success',
+              event_type: 'waitlist_signup_success',
               event_data: { email, source }
             });
         }
@@ -78,27 +78,27 @@ export class WaitlistService {
   async getWaitlistStatus(email: string): Promise<{ status?: string; error?: string }> {
     try {
       const { data, error } = await supabase
-        .from('waitlist_entries')
+        .from('waitlist')
         .select('status, created_at')
         .eq('email', email)
         .single();
 
       if (error) {
-        return { error: 'Email not found in waitlist_entries' };
+        return { error: 'Email not found in waitlist' };
       }
 
       return { status: data.status };
     } catch (error) {
-      console.error('Error checking waitlist_entries status:', error);
-      return { error: 'Failed to check waitlist_entries status' };
+      console.error('Error checking waitlist status:', error);
+      return { error: 'Failed to check waitlist status' };
     }
   }
 
-  // Get waitlist_entries count (for display purposes)
+  // Get waitlist count (for display purposes)
   async getWaitlistCount(): Promise<{ count?: number; error?: string }> {
     try {
       const { count, error } = await supabase
-        .from('waitlist_entries')
+        .from('waitlist')
         .select('*', { count: 'exact', head: true });
 
       if (error) {
@@ -107,10 +107,10 @@ export class WaitlistService {
 
       return { count: count || 0 };
     } catch (error) {
-      console.error('Error getting waitlist_entries count:', error);
+      console.error('Error getting waitlist count:', error);
       return { error: 'Failed to get count' };
     }
   }
 }
 
-export const waitlist_entriesService = WaitlistService.getInstance();
+export const waitlistService = WaitlistService.getInstance();
