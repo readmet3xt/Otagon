@@ -195,9 +195,9 @@ const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({ className = "" }) =
               <div className="w-10 h-10 flex items-center justify-center">
                 <img src="/images/Dragon Circle Logo Design.png" alt="Otagon Logo" className="w-8 h-8 rounded" />
               </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-white font-semibold text-sm">Otagon</h3>
-                <p className="text-neutral-400 text-xs">Screenshot analysis, spoiler-free wiki, and more!</p>
+              <div className="flex-1 min-w-0 text-left">
+                <h3 className="text-white font-semibold text-sm text-left">Otagon</h3>
+                <p className="text-neutral-400 text-xs text-left">Screenshot analysis, spoiler-free wiki, and more!</p>
               </div>
             </div>
             
