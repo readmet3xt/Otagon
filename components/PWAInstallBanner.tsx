@@ -192,7 +192,7 @@ const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({ className = "" }) =
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-[#1C1C1C] to-[#2E2E2E] border-t border-[#424242] p-4">
           <div className="max-w-md mx-auto">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-[#FFAB40] to-[#E53A3A] rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 flex items-center justify-center">
                 <img src="/images/Dragon Circle Logo Design.png" alt="Otagon Logo" className="w-8 h-8 rounded" />
               </div>
               <div>
