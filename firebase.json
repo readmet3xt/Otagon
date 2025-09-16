@@ -64,20 +64,20 @@
   "emulators": {
     "auth": {
       "port": 9099,
-      "host": "localhost"
+      "host": "0.0.0.0"
     },
     "firestore": {
       "port": 8081,
-      "host": "localhost"
+      "host": "0.0.0.0"
     },
     "hosting": {
       "port": 3000,
-      "host": "localhost"
+      "host": "0.0.0.0"
     },
     "ui": {
       "enabled": true,
       "port": 4000,
-      "host": "localhost"
+      "host": "0.0.0.0"
     },
     "singleProjectMode": true
   }
