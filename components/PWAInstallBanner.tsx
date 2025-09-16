@@ -155,7 +155,7 @@ const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({ className = "" }) =
             <div className="flex-1 min-w-0">
               <h3 className="text-white font-semibold text-sm">Install Otagon AI</h3>
               <p className="text-neutral-400 text-xs mt-1">
-                Get the full mobile experience with voice commands and offline access
+                Get the full mobile experience with Gaming AI assistant and offline access
               </p>
             </div>
             
@@ -196,16 +196,16 @@ const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({ className = "" }) =
                 <StarIcon className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h3 className="text-white font-semibold text-sm">🎮 Mobile Gaming Experience</h3>
-                <p className="text-neutral-400 text-xs">Voice commands, offline access, and more!</p>
+                <h3 className="text-white font-semibold text-sm">🎮 Gaming AI Assistant</h3>
+                <p className="text-neutral-400 text-xs">Screenshot download, offline access, and more!</p>
               </div>
             </div>
             
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div className="bg-[#2E2E2E] p-3 rounded-lg">
-                <div className="text-[#FFAB40] text-lg mb-1">🎤</div>
-                <div className="text-white text-xs font-medium">Voice Commands</div>
-                <div className="text-neutral-400 text-xs">Hands-free gaming help</div>
+                <div className="text-[#FFAB40] text-lg mb-1">📸</div>
+                <div className="text-white text-xs font-medium">Screenshot Download</div>
+                <div className="text-neutral-400 text-xs">Save game screenshots</div>
               </div>
               
               <div className="bg-[#2E2E2E] p-3 rounded-lg">

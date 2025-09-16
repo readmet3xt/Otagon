@@ -23,7 +23,24 @@
     "deploy:production": "npm run build && firebase deploy --only hosting",
     "deploy:full": "npm run build && npm run deploy:production",
     "setup:secrets": "./scripts/setup-secrets.sh",
-    "deploy:backend": "./scripts/deploy-production.sh"
+    "deploy:backend": "./scripts/deploy-production.sh",
+    "emulator:start": "firebase emulators:start",
+    "emulator:start:hosting": "firebase emulators:start --only hosting",
+    "emulator:start:auth": "firebase emulators:start --only auth",
+    "emulator:start:firestore": "firebase emulators:start --only firestore",
+    "emulator:start:ui": "firebase emulators:start --only ui",
+    "emulator:test": "npm run build && firebase emulators:exec --only hosting 'npm run test:run'",
+    "emulator:test:watch": "npm run build && firebase emulators:exec --only hosting 'npm run test'",
+    "emulator:export": "firebase emulators:export ./emulator-data",
+    "emulator:import": "firebase emulators:start --import ./emulator-data",
+    "test:emulator": "npm run emulator:test",
+    "dev:emulator": "npm run build && firebase emulators:start --only hosting",
+    "emulator:test:setup": "node scripts/test-emulator.js --setup",
+    "emulator:test:start": "node scripts/test-emulator.js --start",
+    "emulator:test:ui": "node scripts/test-emulator.js --ui",
+    "emulator:test:data": "node scripts/test-emulator.js --data",
+    "emulator:test:integration": "node scripts/test-emulator.js --integration",
+    "emulator:test:all": "node scripts/test-emulator.js"
   },
   "dependencies": {
     "@google/genai": "^1.12.0",
@@ -32,8 +49,8 @@
     "@supabase/supabase-js": "^2.55.0",
     "clsx": "^2.1.1",
     "lottie-react": "^2.4.1",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "react-markdown": "^9.0.1",
     "react-router-dom": "^7.9.1",
     "remark-gfm": "^4.0.0",
@@ -46,7 +63,7 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/jest": "^30.0.0",
     "@types/node": "^22.14.0",
-    "@types/react-dom": "^19.1.9",
+    "@types/react-dom": "^18.3.0",
     "@types/react-router-dom": "^5.3.3",
     "@vitejs/plugin-react": "^5.0.0",
     "@vitest/coverage-v8": "^3.2.4",
@@ -59,8 +76,5 @@
     "typescript": "~5.8.2",
     "vite": "^6.2.0",
     "vitest": "^3.2.4"
-  },
-  "overrides": {
-    "debug": "3.2.7"
   }
 }

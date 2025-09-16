@@ -943,6 +943,165 @@ The welcome message system provides first-time users with an introduction to Ota
 
 ---
 
-*Last Updated: January 15, 2025*
-*Version: 1.8*
-*Updated: Added comprehensive welcome message management system documentation with deduplication logic and testing requirements*
+## 🔥 Firebase Hosting Configuration
+
+### **Deployment Architecture**
+
+#### **Hosting Setup**
+- **Platform**: Firebase Hosting
+- **Build Output**: `dist/` directory
+- **Configuration**: `firebase.json`
+- **Site ID**: `otagon-0509`
+- **Local Development**: Firebase Emulator Suite
+
+#### **Build Configuration**
+- **Build Tool**: Vite 6.3.6
+- **Bundle Strategy**: Single main bundle (`main-CKUH2ZpR.js`)
+- **Source Maps**: Enabled for debugging
+- **CSS**: Single bundled stylesheet (`main-6mN-puJX.css`)
+- **Assets**: Optimized images and static files
+
+### **Critical Build Lessons Learned**
+
+#### **React Bundling Issues (Resolved)**
+**Problem**: Custom `manualChunks` function and `terserOptions` in `vite.config.ts` were interfering with React's proper bundling, causing:
+- `Uncaught TypeError: Cannot read properties of undefined (reading 'createContext')`
+- `Uncaught ReferenceError: React is not defined`
+- React contexts (`ToastSystem.tsx`, `AppStateProvider.tsx`) failing to initialize
+
+**Root Cause**: 
+- Custom chunking logic was separating React from its dependencies
+- Manual terser configuration was fighting against Vite's optimization
+- Complex vendor chunking (`vendor-react`, `vendor-supabase`, etc.) broke dependency resolution
+
+**Solution Applied**:
+```typescript
+// REMOVED problematic configuration:
+// - manualChunks function
+// - terserOptions with reserved names
+// - Complex vendor chunking logic
+
+// SIMPLIFIED to:
+build: {
+  outDir: 'dist',
+  sourcemap: true,
+  chunkSizeWarningLimit: 1200,
+  rollupOptions: {
+    input: {
+      main: './index.html'
+    }
+  }
+}
+```
+
+**Key Principle**: Let Vite handle code splitting and optimization automatically. Custom configurations should only be added when absolutely necessary and thoroughly tested.
+
+### **Firebase Configuration**
+
+#### **firebase.json Structure**
+```json
+{
+  "hosting": {
+    "site": "otagon-0509",
+    "public": "dist",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ],
+    "headers": [
+      {
+        "source": "**/*.html",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+#### **Emulator Configuration**
+- **Hosting Port**: 3000
+- **Emulator Hub**: 4400
+- **UI Port**: 4000 (when enabled)
+- **Local URL**: `http://127.0.0.1:3000`
+
+### **Deployment Workflow**
+
+#### **Development Process**
+1. **Local Development**: `npm run dev` (Vite dev server)
+2. **Build Testing**: `npm run build` (production build)
+3. **Emulator Testing**: `firebase emulators:start --only hosting`
+4. **Production Deploy**: `firebase deploy --only hosting`
+
+#### **Build Process**
+```bash
+# Clean build workflow (CRITICAL for React issues)
+rm -rf dist
+npm run build
+firebase emulators:start --only hosting
+```
+
+#### **Cache Management**
+- **HTML Files**: No-cache headers for immediate updates
+- **JS/CSS**: 1-hour cache for performance
+- **Images**: 1-year cache for static assets
+- **Build Artifacts**: Always delete `dist/` before rebuild
+
+### **Performance Considerations**
+
+#### **Bundle Optimization**
+- **Single Bundle**: Reduces HTTP requests and dependency resolution issues
+- **Automatic Splitting**: Vite handles dynamic imports intelligently
+- **Source Maps**: Enabled for debugging without affecting production performance
+- **Compression**: Gzip enabled for all text assets
+
+#### **Caching Strategy**
+- **HTML**: Always fresh (no-cache)
+- **JavaScript**: Cached with versioned filenames
+- **CSS**: Cached with versioned filenames
+- **Images**: Long-term caching with proper headers
+
+### **Monitoring and Debugging**
+
+#### **Build Verification**
+- **Bundle Size**: Monitor `main-CKUH2ZpR.js` size (currently ~2MB)
+- **Asset Loading**: Verify all chunks load successfully
+- **React Context**: Test `createContext()` functionality
+- **Source Maps**: Ensure debugging capabilities
+
+#### **Common Issues**
+1. **React Undefined**: Usually caused by custom bundling configuration
+2. **Context Errors**: Check for proper React imports and bundling
+3. **Cache Issues**: Always perform clean builds for testing
+4. **Emulator Serving**: Ensure `dist/` contains latest build
+
+### **Future Deployment Considerations**
+
+#### **Production Optimizations**
+- **CDN Integration**: Consider Firebase CDN for global distribution
+- **Bundle Splitting**: May implement strategic code splitting for large bundles
+- **Performance Monitoring**: Add Firebase Performance Monitoring
+- **Error Tracking**: Integrate Firebase Crashlytics
+
+#### **Scaling Considerations**
+- **Asset Optimization**: Implement image optimization pipeline
+- **Bundle Analysis**: Regular bundle size monitoring
+- **Caching Strategy**: Optimize cache headers for different asset types
+- **CDN Configuration**: Fine-tune Firebase CDN settings
+
+---
+
+*Last Updated: January 16, 2025*
+*Version: 1.9*
+*Updated: Added Firebase Hosting configuration and React bundling lessons learned*
