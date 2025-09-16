@@ -22,7 +22,7 @@ const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({ className = "" }) =
 
   useEffect(() => {
     // Check global installation status first
-    const globalInstallStatus = localStorage.getItem('otakonGlobalPWAInstalled') === 'true';
+    const globalInstallStatus = localStorage.getItem('otakonPWAGlobalInstalled') === 'true';
     if (globalInstallStatus) {
       console.log('PWA globally installed, hiding banner');
       setIsInstalled(true);
