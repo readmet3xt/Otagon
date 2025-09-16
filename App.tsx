@@ -38,7 +38,7 @@ import { structuredResponseService } from './services/structuredResponseService'
 import { useChat } from './hooks/useChat';
 import { useConnection } from './hooks/useConnection';
 import { useAdvancedCache } from './hooks/useAdvancedCache';
-import { ConnectionStatus, Conversations, Conversation } from './services/types';
+import { ConnectionStatus, Conversations, Conversation, ImageFile } from './services/types';
 
 // Import components
 import LandingPage from './components/LandingPage';
@@ -241,6 +241,57 @@ const App: React.FC = () => {
   } = useConnection((data) => {
     // Handle incoming messages from PC client
     console.log('Received message from PC client:', data);
+    
+    // Handle screenshot processing
+    if (data.type === 'screenshot_batch') {
+      console.log("📸 Processing screenshot batch:", data);
+      
+      // Extract data from payload if it exists, otherwise use data directly
+      const batchData = data.payload || data;
+      
+      if (batchData.images && batchData.images.length > 0) {
+        // Convert base64 images to ImageFile format
+        const imageFiles: ImageFile[] = batchData.images.map((imgSrc: string, index: number) => ({
+          id: `pc-screenshot-${Date.now()}-${index}`,
+          file: null, // No file object for PC screenshots
+          preview: imgSrc,
+          name: `screenshot-${index + 1}.png`,
+          size: 0,
+          type: 'image/png'
+        }));
+        
+        // Send message with screenshots
+        handleSendMessage("", imageFiles, true).then(result => {
+          if (result.success) {
+            console.log("✅ Screenshot batch processed successfully");
+          } else {
+            console.error("❌ Failed to process screenshot batch:", result.reason);
+          }
+        });
+      }
+    } else if (data.type === 'screenshot') {
+      console.log("📸 Processing individual screenshot:", data);
+      
+      if (data.dataUrl) {
+        const imageFile: ImageFile = {
+          id: `pc-screenshot-${Date.now()}`,
+          file: null,
+          preview: data.dataUrl,
+          name: `screenshot.png`,
+          size: 0,
+          type: 'image/png'
+        };
+        
+        // Send message with screenshot
+        handleSendMessage("", [imageFile], true).then(result => {
+          if (result.success) {
+            console.log("✅ Individual screenshot processed successfully");
+          } else {
+            console.error("❌ Failed to process individual screenshot:", result.reason);
+          }
+        });
+      }
+    }
   });
 
   // Missing handlers
@@ -1594,11 +1645,27 @@ const App: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setAppState(prev => ({ ...prev, isConnectionModalOpen: true }))}
-                        className="flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 px-2 sm:px-3 h-10 sm:h-12 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold bg-gradient-to-r from-[#2E2E2E] to-[#1C1C1C] border-2 border-[#424242]/60 text-white/90 transition-all duration-300 hover:from-[#424242] hover:to-[#2E2E2E] hover:scale-105 hover:shadow-lg"
-                        aria-label="Connect to PC"
+                        className={`flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 px-2 sm:px-3 h-10 sm:h-12 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 disabled:opacity-50
+                        ${
+                          connectionStatus === ConnectionStatus.CONNECTED
+                          ? 'border-2 border-[#5CBB7B]/60 text-[#5CBB7B] hover:bg-[#5CBB7B]/10 hover:border-[#5CBB7B] shadow-[0_0_20px_rgba(92,187,123,0.4)] hover:shadow-[0_0_30px_rgba(92,187,123,0.6)]'
+                          : 'bg-gradient-to-r from-[#2E2E2E] to-[#1C1C1C] border-2 border-[#424242]/60 text-white/90 hover:from-[#424242] hover:to-[#2E2E2E] hover:scale-105 hover:shadow-lg'
+                        }
+                        ${
+                          connectionStatus === ConnectionStatus.CONNECTING ? 'animate-pulse' : ''
+                        }
+                        `}
+                        title={
+                          connectionStatus === ConnectionStatus.CONNECTED 
+                              ? 'Connected to PC' 
+                              : 'Connect to PC'
+                        }
+                        aria-label={connectionStatus === ConnectionStatus.CONNECTED ? 'Connected to PC' : 'Connect to PC'}
                       >
                         <DesktopIcon className="w-5 h-5 flex-shrink-0" />
-                        <span className="hidden sm:inline font-medium">Connect PC</span>
+                        <span className="hidden sm:inline font-medium">
+                          {connectionStatus === ConnectionStatus.CONNECTED ? 'PC Connected' : 'Connect PC'}
+                        </span>
                       </button>
                       
                       
