@@ -93,15 +93,15 @@ const ResponsiveModal: React.FC<ResponsiveModalProps> = ({
     
     switch (deviceType) {
       case 'mobile':
-        return `${baseClasses} w-full max-w-sm max-h-[95vh] h-auto`;
+        return `${baseClasses} w-full max-w-sm h-[98vh]`;
       case 'tablet':
-        return `${baseClasses} w-full max-w-2xl max-h-[90vh] h-auto`;
+        return `${baseClasses} w-full max-w-3xl h-[95vh]`;
       case 'laptop':
-        return `${baseClasses} w-full max-w-4xl max-h-[85vh] h-auto`;
+        return `${baseClasses} w-full max-w-5xl h-[90vh]`;
       case 'desktop':
-        return `${baseClasses} w-full max-w-5xl max-h-[80vh] h-auto`;
+        return `${baseClasses} w-full max-w-6xl h-[85vh]`;
       case 'ultrawide':
-        return `${baseClasses} w-full max-w-7xl max-h-[75vh] h-auto`;
+        return `${baseClasses} w-full max-w-8xl h-[80vh]`;
       default:
         return baseClasses;
     }

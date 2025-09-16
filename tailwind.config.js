@@ -110,5 +110,37 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    function({ addUtilities }) {
+      addUtilities({
+        '.scrollbar-thin': {
+          'scrollbar-width': 'thin',
+        },
+        '.scrollbar-thumb-neutral-600': {
+          'scrollbar-color': '#525252 transparent',
+        },
+        '.scrollbar-track-transparent': {
+          'scrollbar-color': '#525252 transparent',
+        },
+        '.hover\\:scrollbar-thumb-neutral-500:hover': {
+          'scrollbar-color': '#737373 transparent',
+        },
+        // Webkit scrollbar styles
+        '.scrollbar-thin::-webkit-scrollbar': {
+          width: '8px',
+          height: '8px',
+        },
+        '.scrollbar-thin::-webkit-scrollbar-track': {
+          background: 'transparent',
+        },
+        '.scrollbar-thin::-webkit-scrollbar-thumb': {
+          background: '#525252',
+          borderRadius: '4px',
+        },
+        '.scrollbar-thin::-webkit-scrollbar-thumb:hover': {
+          background: '#737373',
+        },
+      })
+    }
+  ],
 }

@@ -57,6 +57,8 @@ export default defineConfig(({ mode }) => {
     publicDir: 'public',
     // Optimize development server
     server: {
+      host: true, // Allow external connections (0.0.0.0)
+      port: 3000,
       hmr: {
         overlay: false,
         // Prevent excessive hot reloads

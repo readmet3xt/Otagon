@@ -19,7 +19,7 @@ interface PerformanceSummary {
 
 export const PerformanceDashboard: React.FC = () => {
   // 🚨 DEVELOPER MODE ONLY: Only show in development environment
-  if (process.env.NODE_ENV !== 'development' && !import.meta.env.DEV) {
+  if (!import.meta.env.DEV) {
     return (
       <div className="p-6 bg-gray-100 rounded-lg border border-gray-200">
         <div className="text-center text-gray-500">

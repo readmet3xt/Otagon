@@ -18,11 +18,28 @@ const DevTierSwitcher: React.FC<DevTierSwitcherProps> = ({ currentTier, onSwitch
   const tiers: UserTier[] = ['free', 'pro', 'vanguard_pro'];
   const [localTier, setLocalTier] = useState<UserTier>(currentTier || 'free');
   const [isSwitching, setIsSwitching] = useState(false);
+  const [trialActive, setTrialActive] = useState(false);
 
   // Sync local state with prop changes
   useEffect(() => {
     setLocalTier(currentTier || 'free');
   }, [currentTier]);
+
+  // Check trial state on component mount and when tier changes
+  useEffect(() => {
+    const checkTrialState = async () => {
+      try {
+        const { unifiedUsageService } = await import('../services/unifiedUsageService');
+        const isActive = unifiedUsageService.isTrialActive();
+        setTrialActive(isActive);
+      } catch (error) {
+        console.warn('Failed to check trial state:', error);
+        setTrialActive(false);
+      }
+    };
+    
+    checkTrialState();
+  }, [localTier]);
 
   const handleCycleTier = async () => {
     if (isSwitching) return; // Prevent multiple clicks
@@ -93,6 +110,36 @@ const DevTierSwitcher: React.FC<DevTierSwitcherProps> = ({ currentTier, onSwitch
     }
   };
 
+  const handleStartTrial = async () => {
+    if (isSwitching) return;
+    
+    setIsSwitching(true);
+    
+    try {
+      console.log('🔄 Starting free trial in dev mode...');
+      const { unifiedUsageService } = await import('../services/unifiedUsageService');
+      await unifiedUsageService.startFreeTrial();
+      
+      console.log('✅ Trial started successfully');
+      
+      // Update local state
+      setLocalTier('pro');
+      setTrialActive(true);
+      
+      // Call onSwitch callback
+      try {
+        onSwitch();
+      } catch (error) {
+        console.warn('⚠️ onSwitch callback failed, but trial was started successfully:', error);
+      }
+      
+    } catch (error) {
+      console.error('❌ Failed to start trial:', error);
+    } finally {
+      setIsSwitching(false);
+    }
+  };
+
   // Use localTier for display to show immediate feedback
   const displayTier = localTier;
 
@@ -123,6 +170,30 @@ const DevTierSwitcher: React.FC<DevTierSwitcherProps> = ({ currentTier, onSwitch
         )}
       </button>
       
+      {/* Trial button - only show for free tier when trial is not active */}
+      {displayTier === 'free' && !trialActive && (
+        <button
+          type="button"
+          onClick={handleStartTrial}
+          disabled={isSwitching}
+          className={`flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3 h-8 sm:h-10 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 ${
+            isSwitching 
+              ? 'bg-[#424242] text-[#6E6E6E] cursor-not-allowed' 
+              : 'bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white hover:shadow-lg hover:shadow-[#E53A3A]/25 hover:scale-105'
+          }`}
+          title="Start 14-day free trial (Dev Mode)"
+        >
+          <span className="text-xs sm:text-sm">Start Trial</span>
+        </button>
+      )}
+      
+      {/* Trial status indicator */}
+      {displayTier === 'free' && trialActive && (
+        <div className="flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3 h-8 sm:h-10 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium bg-gradient-to-r from-[#5CBB7B] to-[#7DD3A3] text-white">
+          <span className="text-xs sm:text-sm">Trial Active</span>
+        </div>
+      )}
+      
       {/* Debug info */}
       {import.meta.env.DEV && (
         <div className="text-xs text-gray-400 text-center">
@@ -131,6 +202,7 @@ const DevTierSwitcher: React.FC<DevTierSwitcherProps> = ({ currentTier, onSwitch
           <div>Props: {currentTier}</div>
           <div>Status: {isSwitching ? 'Switching...' : 'Ready'}</div>
           <div>Synced: {displayTier === currentTier ? '✅' : '⚠️'}</div>
+          <div>Trial Active: {trialActive ? '✅' : '❌'}</div>
         </div>
       )}
     </div>

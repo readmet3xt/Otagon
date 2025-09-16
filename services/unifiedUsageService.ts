@@ -326,6 +326,62 @@ const downgradeToFree = async () => {
     }
 };
 
+const startFreeTrial = async () => {
+    try {
+        console.log('🔄 Starting 14-day free trial...');
+        
+        // Check if user is in dev mode
+        const isDevMode = localStorage.getItem('otakon_developer_mode') === 'true';
+        
+        if (isDevMode) {
+            console.log('🔧 Developer mode: Starting trial locally');
+            // For dev mode, just switch to pro tier locally
+            localStorage.setItem(STORAGE_KEYS.USER_TIER, 'pro');
+            localStorage.setItem(STORAGE_KEYS.TEXT_COUNT, '0');
+            localStorage.setItem(STORAGE_KEYS.IMAGE_COUNT, '0');
+            
+            // Mark trial as active in dev mode
+            localStorage.setItem('otakon_dev_trial_active', 'true');
+            localStorage.setItem('otakon_dev_trial_started', new Date().toISOString());
+            
+            console.log('✅ Developer mode trial started successfully');
+            return;
+        }
+        
+        // For production, use the tier service
+        const { tierService } = await import('./tierService');
+        const userId = localStorage.getItem('otakonAuthUserId') || 'anonymous';
+        const success = await tierService.startFreeTrial(userId);
+        
+        if (success) {
+            // Update localStorage for immediate effect
+            localStorage.setItem(STORAGE_KEYS.USER_TIER, 'pro');
+            localStorage.setItem(STORAGE_KEYS.TEXT_COUNT, '0');
+            localStorage.setItem(STORAGE_KEYS.IMAGE_COUNT, '0');
+            console.log('✅ Free trial started successfully');
+        } else {
+            throw new Error('Failed to start free trial');
+        }
+    } catch (error) {
+        console.error('❌ Failed to start free trial:', error);
+        throw error;
+    }
+};
+
+const resetTrialState = () => {
+    console.log('🔄 Resetting trial state in dev mode...');
+    localStorage.removeItem('otakon_dev_trial_active');
+    localStorage.removeItem('otakon_dev_trial_started');
+    console.log('✅ Trial state reset');
+};
+
+const isTrialActive = (): boolean => {
+    const isDevMode = localStorage.getItem('otakon_developer_mode') === 'true';
+    if (!isDevMode) return false;
+    
+    return localStorage.getItem('otakon_dev_trial_active') === 'true';
+};
+
 // Export the refactored functions
 export {
     getUsage,
@@ -335,6 +391,9 @@ export {
     upgradeToPro,
     upgradeToVanguardPro,
     downgradeToFree,
+    startFreeTrial,
+    resetTrialState,
+    isTrialActive,
     getTier,
     getCurrentTier
 };
@@ -402,6 +461,11 @@ export const unifiedUsageService = {
   switchToFree: async () => {
     try {
       await downgradeToFree();
+      // When returning to free tier, reset trial state in dev mode
+      const isDevMode = localStorage.getItem('otakon_developer_mode') === 'true';
+      if (isDevMode) {
+        resetTrialState();
+      }
       console.log('✅ Switched to free tier');
     } catch (error) {
       console.warn('Failed to switch to free tier:', error);
@@ -410,6 +474,11 @@ export const unifiedUsageService = {
   switchToPro: async () => {
     try {
       await upgradeToPro();
+      // If switching to pro/vanguard, reset trial state in dev mode
+      const isDevMode = localStorage.getItem('otakon_developer_mode') === 'true';
+      if (isDevMode) {
+        resetTrialState();
+      }
       console.log('✅ Switched to pro tier');
     } catch (error) {
       console.warn('Failed to switch to pro tier:', error);
@@ -418,6 +487,11 @@ export const unifiedUsageService = {
   switchToVanguard: async () => {
     try {
       await upgradeToVanguardPro();
+      // If switching to pro/vanguard, reset trial state in dev mode
+      const isDevMode = localStorage.getItem('otakon_developer_mode') === 'true';
+      if (isDevMode) {
+        resetTrialState();
+      }
       console.log('✅ Switched to vanguard pro tier');
     } catch (error) {
       console.warn('Failed to switch to vanguard pro tier:', error);
@@ -430,5 +504,19 @@ export const unifiedUsageService = {
     } catch (error) {
       console.warn('Failed to upgrade to vanguard pro tier:', error);
     }
+  },
+  startFreeTrial: async () => {
+    try {
+      await startFreeTrial();
+      console.log('✅ Started free trial');
+    } catch (error) {
+      console.warn('Failed to start free trial:', error);
+    }
+  },
+  resetTrialState: () => {
+    resetTrialState();
+  },
+  isTrialActive: () => {
+    return isTrialActive();
   }
 };

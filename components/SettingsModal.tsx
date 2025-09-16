@@ -221,6 +221,7 @@ const AdminTabContent: React.FC<{ onClearFirstRunCache?: () => void }> = ({ onCl
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, usage, onShowUpgrade, onShowVanguardUpgrade, onLogout, onResetApp, onShowHowToUse, userEmail, onClearFirstRunCache, refreshUsage }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('general');
   const modalRef = useRef<HTMLDivElement>(null);
+  const mainContentRef = useRef<HTMLElement>(null);
   
 
 
@@ -230,6 +231,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, usage, o
       setActiveTab('general');
     }
   }, [isOpen]);
+
+  // Reset scroll position when tab changes
+  useEffect(() => {
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTop = 0;
+    }
+  }, [activeTab]);
 
   if (!isOpen) {
     return null;
@@ -324,7 +332,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, usage, o
         <svg className="w-8 h-8 md:w-9 md:h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
       </button>
 
-      <ResponsiveFlex direction={{ mobile: 'col', tablet: 'row' }} className="flex-1 overflow-hidden">
+      <ResponsiveFlex direction={{ mobile: 'col', tablet: 'row' }} className="flex-1 h-full min-h-0" style={{
+                height: 'calc(100vh - 80px)',
+                maxHeight: 'calc(100vh - 80px)'
+            }}>
         <nav className="flex-shrink-0 w-full md:w-72 p-3 sm:p-4 md:p-6 lg:p-8 border-b-2 md:border-b-0 md:border-r-2 border-neutral-800/60 flex flex-row md:flex-col justify-between">
                 <div className="w-full">
                     <h2 id="settings-title" className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-4 sm:mb-6 md:mb-8 px-2 hidden md:block leading-tight">Settings</h2>
@@ -357,7 +368,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, usage, o
                 </div>
             </nav>
 
-            <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 lg:p-8 xl:p-12">
+            <main ref={mainContentRef} className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6 lg:p-8 xl:p-12 min-h-0 settings-modal-main" style={{
+                maxHeight: 'calc(100vh - 120px)'
+            }}>
 
                 {activeTab === 'general' && (
                     <GeneralSettingsTab

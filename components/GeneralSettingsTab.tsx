@@ -52,6 +52,14 @@ const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({ usage, onShowUp
         const loadDisplayName = async () => {
             try {
                 setIsLoadingName(true);
+                
+                // In developer mode, set default name as Amaan
+                if (isDeveloperMode) {
+                    setDisplayName('Amaan');
+                    setIsLoadingName(false);
+                    return;
+                }
+                
                 const { profileService } = await import('../services/profileService');
                 const name = await profileService.getName();
                 setDisplayName(name || '');
@@ -64,7 +72,7 @@ const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({ usage, onShowUp
         };
 
         loadDisplayName();
-    }, []);
+    }, [isDeveloperMode]);
 
     // Load developer data info when in developer mode
     useEffect(() => {
@@ -165,6 +173,14 @@ const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({ usage, onShowUp
 
         try {
             setNameError('');
+            
+            // In developer mode, just update local state
+            if (isDeveloperMode) {
+                setIsEditingName(false);
+                console.log('✅ Display name updated in dev mode:', displayName.trim());
+                return;
+            }
+            
             const { profileService } = await import('../services/profileService');
             await profileService.setName(displayName.trim());
             setIsEditingName(false);
@@ -178,6 +194,14 @@ const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({ usage, onShowUp
     // Handle name cancel
     const handleCancelName = async () => {
         try {
+            // In developer mode, reset to default name
+            if (isDeveloperMode) {
+                setDisplayName('Amaan');
+                setIsEditingName(false);
+                setNameError('');
+                return;
+            }
+            
             const { profileService } = await import('../services/profileService');
             const currentName = await profileService.getName();
             setDisplayName(currentName || '');
@@ -259,7 +283,7 @@ const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({ usage, onShowUp
             <div>
                 <h2 className="text-xl font-bold text-white mb-4">Active Plan</h2>
                 <div className="bg-[#2E2E2E]/60 p-4 rounded-lg space-y-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
                             <p className="text-lg font-semibold text-white">{TIER_NAMES[usage.tier]}</p>
                             <p className="text-sm text-neutral-400">
@@ -270,13 +294,13 @@ const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({ usage, onShowUp
                             </p>
                         </div>
                         {usage.tier === 'free' && (
-                            <button onClick={() => setShowTierUpgrade(true)} className="flex items-center gap-2 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white font-bold py-2 px-4 rounded-lg transition-transform transform hover:scale-105">
+                            <button onClick={() => setShowTierUpgrade(true)} className="flex items-center gap-2 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white font-bold py-2 px-4 rounded-lg transition-transform transform hover:scale-105 whitespace-nowrap">
                                 <StarIcon className="w-4 h-4" />
                                 {localStorage.getItem('otakonAuthMethod') === 'skip' ? 'Switch to Pro' : 'Upgrade'}
                             </button>
                         )}
                         {usage.tier === 'pro' && (
-                             <button onClick={() => setShowTierUpgrade(true)} className="flex items-center gap-2 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white font-bold py-2 px-4 rounded-lg transition-transform transform hover:scale-105">
+                             <button onClick={() => setShowTierUpgrade(true)} className="flex items-center gap-2 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white font-bold py-2 px-4 rounded-lg transition-transform transform hover:scale-105 whitespace-nowrap">
                                 <StarIcon className="w-4 h-4" />
                                 {localStorage.getItem('otakonAuthMethod') === 'skip' ? 'Switch to Vanguard' : 'Upgrade to Vanguard'}
                             </button>

@@ -1753,6 +1753,22 @@ const App: React.FC = () => {
                                   icon: StarIcon,
                                   action: () => setAppState(prev => ({ ...prev, isFreeTrialModalOpen: true }))
                                 }] : []),
+                                // Dev mode trial button - for testing
+                                ...(appState.userState?.tier === 'free' && 
+                                    appState.userState?.isDeveloper ? [{
+                                  label: 'Start Trial (Dev)',
+                                  icon: StarIcon,
+                                  action: async () => {
+                                    try {
+                                      const { unifiedUsageService } = await import('./services/unifiedUsageService');
+                                      await unifiedUsageService.startFreeTrial();
+                                      // Refresh the app state to reflect the tier change
+                                      window.location.reload();
+                                    } catch (error) {
+                                      console.error('Failed to start trial:', error);
+                                    }
+                                  }
+                                }] : []),
                                 {
                                   label: 'Sign Out',
                                   icon: LogoutIcon,
