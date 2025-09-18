@@ -187,54 +187,36 @@ const VanguardFeatureListItem = ({ children, comingSoon = false }: { children: R
 
 
 const PricingSection = ({ onCtaClick }: { onCtaClick: () => void }) => {
-    const proFeatures = [
-        '1,583 Text Queries/month',
-        '328 Image Queries/month',
-        'Access to Latest Advanced AI Models',
-        'Batch Screenshot Capture',
-        'Hands-Free Voice Response',
-        'In-depth Insight Tabs',
-        'Priority Support',
-        'No ads'
-    ];
-    const vanguardFeatures = [
-        { text: 'Permanent Price Lock-in' },
-        { text: 'Exclusive "Vanguard" In-App Badge' },
-        { text: "Access to Founder's Council (Discord)" },
-        { text: 'Beta Access to All Future Features' },
-        { text: 'Earn money completing latest games to help us train our ai model', comingSoon: true },
-    ];
-
     return (
-        <section id="pricing" className="py-10 md:py-14 bg-transparent">
+        <section id="pricing" className="py-8 md:py-10 bg-transparent">
             <div className="container mx-auto px-8">
-                <div className="text-center mb-12 md:mb-16 animate-fade-slide-up">
-                    <h2 className="text-5xl md:text-6xl font-bold tracking-tight text-white mb-6">Choose Your Plan</h2>
-                    <p className="text-xl text-neutral-300 mt-6 leading-relaxed">Start for free. Upgrade when you're ready.</p>
+                <div className="text-center mb-8 md:mb-10 animate-fade-slide-up">
+                    <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-4">Choose Your Plan</h2>
+                    <p className="text-lg text-neutral-300 leading-relaxed">Start for free. Upgrade when you're ready.</p>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-stretch">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
                     
                     {/* Free Plan */}
-                    <div className="bg-gradient-to-r from-[#1C1C1C]/60 to-[#0A0A0A]/60 backdrop-blur-xl border-2 border-neutral-800/60 rounded-3xl p-10 flex flex-col animate-fade-slide-up hover:border-neutral-700/80 hover:scale-105 hover:shadow-[0_0_30px_rgba(229,58,58,0.3)] hover:shadow-[#E53A3A]/20 transition-all duration-500">
-                        <h3 className="text-3xl font-bold text-white mb-3">Free</h3>
-                        <p className="text-neutral-300 mt-3 mb-8 text-lg">For the Casual Player</p>
-                        <div className="mb-8">
-                            <span className="text-6xl font-bold text-white">$0</span>
-                            <span className="text-xl text-neutral-300">/month</span>
+                    <div className="bg-gradient-to-r from-[#1C1C1C]/60 to-[#0A0A0A]/60 backdrop-blur-xl border-2 border-neutral-800/60 rounded-2xl p-6 flex flex-col animate-fade-slide-up hover:border-neutral-700/80 hover:scale-105 hover:shadow-[0_0_30px_rgba(229,58,58,0.3)] hover:shadow-[#E53A3A]/20 transition-all duration-500">
+                        <h3 className="text-2xl font-bold text-white mb-2">Free</h3>
+                        <p className="text-neutral-300 mb-6 text-sm">For the Casual Player</p>
+                        <div className="mb-6">
+                            <span className="text-4xl font-bold text-white">$0</span>
+                            <span className="text-lg text-neutral-300">/month</span>
                         </div>
-                        <ul className="space-y-4 mb-10">
+                        <ul className="space-y-3 mb-8">
                             <FeatureListItem>25 Image Queries/month</FeatureListItem>
                             <FeatureListItem>55 Text Queries/month</FeatureListItem>
-                            <FeatureListItem>Standard AI Model (Gemini 2.5 Flash)</FeatureListItem>
-                            <FeatureListItem>PC-to-Mobile Sync (Single Screenshot)</FeatureListItem>
-                            <FeatureListItem>Automatic Progress Tracking</FeatureListItem>
-                            <FeatureListItem>Otaku Diary & Wishlist</FeatureListItem>
+                            <FeatureListItem>Standard AI Model</FeatureListItem>
+                            <FeatureListItem>PC-to-Mobile Sync</FeatureListItem>
+                            <FeatureListItem>Progress Tracking</FeatureListItem>
+                            <FeatureListItem>14 day free trial for Pro</FeatureListItem>
                         </ul>
                         <div className="mt-auto">
                             <button
                                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                                className="w-full bg-gradient-to-r from-neutral-600 to-neutral-500 text-neutral-300 font-bold py-4 px-8 rounded-xl cursor-not-allowed opacity-50"
+                                className="w-full bg-gradient-to-r from-neutral-600 to-neutral-500 text-neutral-300 font-bold py-3 px-6 rounded-lg cursor-not-allowed opacity-50"
                                 disabled
                                 title="Coming Soon - Join the waitlist to be notified when pricing goes live!"
                             >
@@ -244,31 +226,31 @@ const PricingSection = ({ onCtaClick }: { onCtaClick: () => void }) => {
                     </div>
 
                     {/* Vanguard Plan (center and highlighted) */}
-                    <div className="relative border-2 border-[#FFAB40] rounded-3xl p-10 bg-gradient-to-r from-[#111] to-[#0A0A0A] shadow-2xl shadow-[#D98C1F]/30 transform lg:scale-110 flex flex-col animate-fade-slide-up hover:shadow-[#D98C1F]/50 transition-all duration-500">
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white text-sm font-bold px-6 py-2 rounded-full uppercase tracking-wider shadow-2xl">
+                    <div className="relative border-2 border-[#FFAB40] rounded-2xl p-6 bg-gradient-to-r from-[#111] to-[#0A0A0A] shadow-2xl shadow-[#D98C1F]/30 transform lg:scale-105 flex flex-col animate-fade-slide-up hover:shadow-[#D98C1F]/50 transition-all duration-500">
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white text-xs font-bold px-4 py-1 rounded-full uppercase tracking-wider shadow-2xl">
                             Limited Offer
                         </div>
-                        <h3 className="text-4xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-[#FF4D4D] to-[#FFAB40] mb-3">Pro Vanguard</h3>
-                        <p className="text-neutral-300 mt-3 mb-8 text-lg">Become a Founding Member</p>
-                        <div className="mb-8">
-                            <span className="text-6xl font-bold text-white">$20</span>
-                            <span className="text-xl text-neutral-300">/year</span>
-                            <p className="text-green-400 font-medium text-lg mt-2">Lifetime Price Guarantee!</p>
+                        <h3 className="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-[#FF4D4D] to-[#FFAB40] mb-2">Pro Vanguard</h3>
+                        <p className="text-neutral-300 mb-6 text-sm">Become a Founding Member</p>
+                        <div className="mb-6">
+                            <span className="text-4xl font-bold text-white">$20</span>
+                            <span className="text-lg text-neutral-300">/year</span>
+                            <p className="text-green-400 font-medium text-sm mt-1">Lifetime Price Guarantee!</p>
                         </div>
-                        <ul className="space-y-4 mb-6">
+                        <ul className="space-y-3 mb-6">
                             <FeatureListItem>Everything in Pro, plus:</FeatureListItem>
                         </ul>
-                        <ul className="space-y-4 mb-10 border-l-2 border-[#FFAB40]/40 pl-6 ml-2">
+                        <ul className="space-y-3 mb-8 border-l-2 border-[#FFAB40]/40 pl-4 ml-2">
                             <VanguardFeatureListItem>Permanent Price Lock-in</VanguardFeatureListItem>
-                            <VanguardFeatureListItem>Exclusive 'Vanguard' In-App Badge</VanguardFeatureListItem>
-                            <VanguardFeatureListItem>Access to Founder's Council on Discord</VanguardFeatureListItem>
-                            <VanguardFeatureListItem>Beta Access to All Future Features</VanguardFeatureListItem>
-                            <VanguardFeatureListItem comingSoon={true}>Revenue Sharing Opportunities</VanguardFeatureListItem>
+                            <VanguardFeatureListItem>Exclusive 'Vanguard' Badge</VanguardFeatureListItem>
+                            <VanguardFeatureListItem>Founder's Council Access</VanguardFeatureListItem>
+                            <VanguardFeatureListItem>Beta Access to Features</VanguardFeatureListItem>
+                            <VanguardFeatureListItem comingSoon={true}>Revenue Sharing</VanguardFeatureListItem>
                         </ul>
                         <div className="mt-auto">
                             <button 
                                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                                className="w-full bg-gradient-to-r from-neutral-600 to-neutral-500 text-neutral-300 font-bold py-4 px-8 rounded-xl cursor-not-allowed opacity-50"
+                                className="w-full bg-gradient-to-r from-neutral-600 to-neutral-500 text-neutral-300 font-bold py-3 px-6 rounded-lg cursor-not-allowed opacity-50"
                                 disabled
                                 title="Coming Soon - Join the waitlist to be notified when pricing goes live!"
                             >
@@ -278,28 +260,27 @@ const PricingSection = ({ onCtaClick }: { onCtaClick: () => void }) => {
                     </div>
 
                     {/* Pro (Monthly) Plan */}
-                    <div className="bg-gradient-to-r from-[#1C1C1C]/60 to-[#0A0A0A]/60 backdrop-blur-xl border-2 border-neutral-800/60 rounded-3xl p-10 flex flex-col animate-fade-slide-up hover:border-neutral-700/80 hover:scale-105 hover:shadow-[0_0_30px_rgba(229,58,58,0.3)] hover:shadow-[#E53A3A]/20 transition-all duration-500">
-                        <h3 className="text-3xl font-bold text-white mb-3">Pro</h3>
-                        <p className="text-neutral-300 mt-3 mb-8 text-lg">For the Serious Gamer</p>
-                        <div className="mb-8">
-                            <span className="text-6xl font-bold text-white">$3.99</span>
-                            <span className="text-xl text-neutral-300">/month</span>
+                    <div className="bg-gradient-to-r from-[#1C1C1C]/60 to-[#0A0A0A]/60 backdrop-blur-xl border-2 border-neutral-800/60 rounded-2xl p-6 flex flex-col animate-fade-slide-up hover:border-neutral-700/80 hover:scale-105 hover:shadow-[0_0_30px_rgba(229,58,58,0.3)] hover:shadow-[#E53A3A]/20 transition-all duration-500">
+                        <h3 className="text-2xl font-bold text-white mb-2">Pro</h3>
+                        <p className="text-neutral-300 mb-6 text-sm">For the Serious Gamer</p>
+                        <div className="mb-6">
+                            <span className="text-4xl font-bold text-white">$3.99</span>
+                            <span className="text-lg text-neutral-300">/month</span>
                         </div>
-                        <ul className="space-y-4 mb-10">
+                        <ul className="space-y-3 mb-8">
                             <FeatureListItem>Everything in Free, plus:</FeatureListItem>
                             <FeatureListItem>328 Image Queries/month</FeatureListItem>
                             <FeatureListItem>1,583 Text Queries/month</FeatureListItem>
-                            <FeatureListItem>Advanced AI Model (Gemini 2.5 Pro)</FeatureListItem>
-                            <FeatureListItem>In-Depth Insight Tabs (Auto-Wiki)</FeatureListItem>
+                            <FeatureListItem>Advanced AI Model</FeatureListItem>
+                            <FeatureListItem>In-Depth Insight Tabs</FeatureListItem>
                             <FeatureListItem>Hands-Free Voice Response</FeatureListItem>
                             <FeatureListItem>Batch Screenshot Capture</FeatureListItem>
-                            <FeatureListItem>Enhanced Response Quality</FeatureListItem>
                             <FeatureListItem>Priority Support & No Ads</FeatureListItem>
                         </ul>
                         <div className="mt-auto">
                             <button 
                                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                                className="w-full bg-gradient-to-r from-neutral-600 to-neutral-500 text-neutral-300 font-bold py-4 px-8 rounded-xl cursor-not-allowed opacity-50"
+                                className="w-full bg-gradient-to-r from-neutral-600 to-neutral-500 text-neutral-300 font-bold py-3 px-6 rounded-lg cursor-not-allowed opacity-50"
                                 disabled
                                 title="Coming Soon - Join the waitlist to be notified when pricing goes live!"
                             >
@@ -446,7 +427,7 @@ const FounderSection = () => (
                 </h2>
                 <p className="text-lg md:text-xl text-neutral-300 max-w-3xl mx-auto leading-relaxed">
                     Meet Amaan, a passionate gamer from Hyderabad who spent his early days printing cheat codes at internet cafes. 
-                    Having graduated from Service Design at the Royal College of Art in London in 2021, he's building the future of gaming assistance.
+                    After graduating from Service Design at the Royal College of Art in London in 2021, he's building the future of gaming assistance.
                 </p>
             </div>
             
@@ -466,7 +447,7 @@ const FounderSection = () => (
                         Amaan
                     </h3>
                     <p className="text-xl md:text-2xl text-neutral-300 font-medium">
-                        Founder & CEO
+                        Vibecoder and Designer
                     </p>
                 </div>
                 
@@ -640,7 +621,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                         </div>
 
                         <h2 className="text-6xl md:text-7xl font-bold tracking-tight mb-8 text-white animate-fade-slide-up leading-tight">
-                            Stuck In-Game? Get Hints, Not Spoilers.
+                            Stop Searching, Start Playing
                         </h2>
 
                         <AppMockup />
@@ -692,41 +673,65 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                 <section className="py-10 md:py-14 bg-transparent relative">
                     <div className="container mx-auto px-8 max-w-6xl relative z-10">
                         <div className="text-center mb-8 md:mb-10 animate-fade-slide-up">
-                            <h2 className="text-5xl md:text-6xl font-bold tracking-tight text-white mb-6">From Stuck to Unstoppable in 3 Steps</h2>
+                            <h2 className="text-5xl md:text-6xl font-bold tracking-tight text-white mb-6">How It Works</h2>
                             <p className="text-xl text-neutral-300 mt-6 leading-relaxed">Get unstuck, get smart, get back to gaming—all without leaving your game.</p>
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
                             {/* Step 1 */}
                             <div className="text-center animate-fade-slide-up">
-                                <div className="flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-r from-[#E53A3A]/20 to-[#D98C1F]/20 border-2 border-[#E53A3A]/40 mx-auto mb-6">
-                                    <span className="text-3xl font-bold text-white">1</span>
+                                <div className="flex items-center justify-center mx-auto mb-6">
+                                    <svg className="w-16 h-16" fill="url(#keyboard-gradient)" viewBox="0 0 16 16">
+                                        <defs>
+                                            <linearGradient id="keyboard-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                <stop offset="0%" stopColor="#E53A3A" />
+                                                <stop offset="100%" stopColor="#D98C1F" />
+                                            </linearGradient>
+                                        </defs>
+                                        <path d="M0 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6zm13 .25v.5c0 .138.112.25.25.25h.5a.25.25 0 0 0 .25-.25v-.5a.25.25 0 0 0-.25-.25h-.5a.25.25 0 0 0-.25.25zM2.25 8a.25.25 0 0 0-.25.25v.5c0 .138.112.25.25.25h.5A.25.25 0 0 0 3 8.75v-.5A.25.25 0 0 0 2.75 8h-.5zM4 8.25v.5c0 .138.112.25.25.25h.5A.25.25 0 0 0 5 8.75v-.5A.25.25 0 0 0 4.75 8h-.5a.25.25 0 0 0-.25.25zM6.25 8a.25.25 0 0 0-.25.25v.5c0 .138.112.25.25.25h.5A.25.25 0 0 0 7 8.75v-.5A.25.25 0 0 0 6.75 8h-.5zM8 8.25v.5c0 .138.112.25.25.25h.5A.25.25 0 0 0 9 8.75v-.5A.25.25 0 0 0 8.75 8h-.5a.25.25 0 0 0-.25.25zM13.25 8a.25.25 0 0 0-.25.25v.5c0 .138.112.25.25.25h.5a.25.25 0 0 0 .25-.25v-.5a.25.25 0 0 0-.25-.25h-.5zm0 2a.25.25 0 0 0-.25.25v.5c0 .138.112.25.25.25h.5a.25.25 0 0 0 .25-.25v-.5a.25.25 0 0 0-.25-.25h-.5zm-3-2a.25.25 0 0 0-.25.25v.5c0 .138.112.25.25.25h1.5a.25.25 0 0 0 .25-.25v-.5a.25.25 0 0 0-.25-.25h-1.5zm.75 2.25v.5c0 .138.112.25.25.25h.5a.25.25 0 0 0 .25-.25v-.5a.25.25 0 0 0-.25-.25h-.5a.25.25 0 0 0-.25.25zM11.25 6a.25.25 0 0 0-.25.25v.5c0 .138.112.25.25.25h.5a.25.25 0 0 0 .25-.25v-.5a.25.25 0 0 0-.25-.25h-.5zM9 6.25v.5c0 .138.112.25.25.25h.5a.25.25 0 0 0 .25-.25v-.5A.25.25 0 0 0 9.75 6h-.5a.25.25 0 0 0-.25.25zM7.25 6a.25.25 0 0 0-.25.25v.5c0 .138.112.25.25.25h.5A.25.25 0 0 0 8 6.75v-.5A.25.25 0 0 0 7.75 6h-.5zM5 6.25v.5c0 .138.112.25.25.25h.5A.25.25 0 0 0 6 6.75v-.5A.25.25 0 0 0 5.75 6h-.5a.25.25 0 0 0-.25.25zM2.25 6a.25.25 0 0 0-.25.25v.5c0 .138.112.25.25.25h1.5A.25.25 0 0 0 4 6.75v-.5A.25.25 0 0 0 3.75 6h-1.5zM2 10.25v.5c0 .138.112.25.25.25h.5a.25.25 0 0 0 .25-.25v-.5a.25.25 0 0 0-.25-.25h-.5a.25.25 0 0 0-.25.25zM4.25 10a.25.25 0 0 0-.25.25v.5c0 .138.112.25.25.25h5.5a.25.25 0 0 0 .25-.25v-.5a.25.25 0 0 0-.25-.25h-5.5z"/>
+                                    </svg>
                                 </div>
-                                <h3 className="text-2xl font-bold text-white mb-4">Press a Hotkey</h3>
+                                <h3 className="text-2xl font-bold text-white mb-4">Press a Hotkey on Your PC</h3>
                                 <p className="text-lg text-neutral-300 leading-relaxed">
-                                    Press a hotkey to instantly send your PC screenshot to your phone. No alt-tabbing, no interruptions.
+                                    Instantly capture and analyze PC screenshots
                                 </p>
                             </div>
                             
                             {/* Step 2 */}
                             <div className="text-center animate-fade-slide-up">
-                                <div className="flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-r from-[#E53A3A]/20 to-[#D98C1F]/20 border-2 border-[#E53A3A]/40 mx-auto mb-6">
-                                    <span className="text-3xl font-bold text-white">2</span>
+                                <div className="flex items-center justify-center mx-auto mb-6">
+                                    <svg className="w-16 h-16" fill="url(#message-gradient)" viewBox="0 0 24 24">
+                                        <defs>
+                                            <linearGradient id="message-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                <stop offset="0%" stopColor="#E53A3A" />
+                                                <stop offset="100%" stopColor="#D98C1F" />
+                                            </linearGradient>
+                                        </defs>
+                                        <path d="M2 8.994A5.99 5.99 0 0 1 8 3h8c3.313 0 6 2.695 6 5.994V21H8c-3.313 0-6-2.695-6-5.994V8.994zM14 11v2h2v-2h-2zm-6 0v2h2v-2H8z"/>
+                                    </svg>
                                 </div>
-                                <h3 className="text-2xl font-bold text-white mb-4">Get an Instant Hint</h3>
+                                <h3 className="text-2xl font-bold text-white mb-4">Get an Instant Hint on Your Phone</h3>
                                 <p className="text-lg text-neutral-300 leading-relaxed">
-                                    Our AI analyzes your situation and delivers a perfect, spoiler-free hint in seconds.
+                                    AI analyzes your situation and delivers spoiler-free hints to your mobile or second monitor
                                 </p>
                             </div>
                             
                             {/* Step 3 */}
                             <div className="text-center animate-fade-slide-up">
-                                <div className="flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-r from-[#E53A3A]/20 to-[#D98C1F]/20 border-2 border-[#E53A3A]/40 mx-auto mb-6">
-                                    <span className="text-3xl font-bold text-white">3</span>
+                                <div className="flex items-center justify-center mx-auto mb-6">
+                                    <svg className="w-16 h-16" fill="url(#joystick-gradient)" viewBox="0 0 24 24">
+                                        <defs>
+                                            <linearGradient id="joystick-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                <stop offset="0%" stopColor="#E53A3A" />
+                                                <stop offset="100%" stopColor="#D98C1F" />
+                                            </linearGradient>
+                                        </defs>
+                                        <path d="M16 6H8a6 6 0 0 0 0 12h8a6 6 0 0 0 0-12zm-5 7H9v2H7v-2H5v-2h2V9h2v2h2v2zm3.5 2a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm3-3a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>
+                                    </svg>
                                 </div>
                                 <h3 className="text-2xl font-bold text-white mb-4">Keep Playing</h3>
                                 <p className="text-lg text-neutral-300 leading-relaxed">
-                                    Get the nudge you need and dive right back into the action. No spoilers, just the perfect hint.
+                                    Get the nudge you need and dive back into action without alt-tabbing or overlays
                                 </p>
                             </div>
                         </div>
@@ -744,24 +749,24 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                         <div className="space-y-20 md:space-y-28">
                            <Feature
                                 title="Instant Contextual Hints"
-                                description="Our context-aware AI vision doesn't just see a game; it understands your moment. Get guidance on puzzles, lore, and boss strategies, all without spoilers."
+                                description="Our context-aware AI vision doesn't just see a game—it understands your moment. Get guidance on puzzles, lore, and boss strategies, all without spoilers."
                                 icon="eye"
                             />
                             <Feature
                                 title="Seamless PC-to-Mobile Sync"
-                                description="Link your desktop and phone for the ultimate uninterrupted experience. A single hotkey is all it takes to get help without ever minimizing your game."
+                                description="Connect your desktop and phone for the ultimate uninterrupted experience. A single hotkey is all it takes to get help without ever minimizing your game."
                                 icon="network"
                                 reverse={true}
                             />
                            <Feature
                                 title="Your Personal Gaming Hub"
-                                description="Track your entire gaming life. The Otaku Diary is your private journal, the Wishlist manages your backlog, and Automatic Progress Tracking organizes your game chats and story progress."
+                                description="Track your entire gaming journey. The Otaku Diary is your private journal, the Wishlist manages your backlog, and Automatic Progress Tracking organizes your game chats and story progress."
                                 icon="bookmark"
                             />
 
                             <Feature
                                 title={<>Go Pro for the Ultimate Edge<ProBadge /></>}
-                                description="Unlock In-Depth Insight Tabs to auto-generate a wiki for your game, use Hands-Free Voice Responses for ultimate immersion, and capture more detail with Batch Screenshot Capture."
+                                description="Unlock In-Depth Insight Tabs to auto-generate a wiki for your game, use Hands-Free Voice Responses for ultimate immersion, and capture more details with Batch Screenshot Capture."
                                 icon="insights"
                                 reverse={true}
                             />
@@ -779,9 +784,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                             {/* Souls-likes & Action RPGs */}
                             <div className="text-center animate-fade-slide-up">
-                                <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-[#E53A3A]/20 to-[#D98C1F]/20 border-2 border-[#E53A3A]/40 mx-auto mb-4">
-                                    <svg className="w-8 h-8 text-[#E53A3A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                <div className="flex items-center justify-center mx-auto mb-4">
+                                    <svg className="w-16 h-16" fill="url(#souls-gradient)" viewBox="0 0 800 800">
+                                        <defs>
+                                            <linearGradient id="souls-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                <stop offset="0%" stopColor="#E53A3A" />
+                                                <stop offset="100%" stopColor="#D98C1F" />
+                                            </linearGradient>
+                                        </defs>
+                                        <path d="M750.5,225H576v-75h40c6.6,0,12-5.4,12-12V12c0-6.6-5.4-12-12-12h-89.5h-253H184c-6.6,0-12,5.4-12,12v126c0,6.6,5.4,12,12,12h40v75H49.5C22.2,225,0,247.2,0,274.5v476C0,777.8,22.2,800,49.5,800h701c27.3,0,49.5-22.2,49.5-49.5v-476C800,247.2,777.8,225,750.5,225z M299,150h202v106H299V150z M725,725H75V300h152.6c7.3,18.2,25.1,31,45.9,31h253c20.8,0,38.6-12.8,45.9-31H725V725z"/>
+                                        <path d="M383.6,428h-13.5c-0.7,0-1.3,0.1-2,0.2c-2.5,0.3-4.9,1.5-6.8,3.4l-29.9,29.9l-29.9-29.9c-1.9-1.9-4.3-3-6.8-3.4c-0.7-0.1-1.3-0.2-2-0.2h-13.5c-6.6,0-12,5.4-12,12v155c0,6.6,5.4,12,12,12h13.5c6.6,0,12-5.4,12-12V487.8l17.7,17.7c2.5,2.5,5.8,3.6,9.1,3.5c3.3,0.2,6.6-1,9.1-3.5l17.7-17.7V595c0,6.6,5.4,12,12,12h13.5c6.6,0,12-5.4,12-12V440C395.6,433.4,390.2,428,383.6,428z"/>
+                                        <path d="M520.9,427h-67c-0.4,0-0.8,0-1.1,0.1c-0.4,0-0.7-0.1-1.1-0.1h-13.5c-6.6,0-12,5.4-12,12v155c0,6.6,5.4,12,12,12h13.5c6.6,0,12-5.4,12-12v-59h57.3c6.6,0,12-5.4,12-12v-6v-7v-58v-2v-11C532.9,432.4,527.5,427,520.9,427z M495.9,498h-32.3v-34h32.3V498z"/>
                                     </svg>
                                 </div>
                                 <h3 className="text-xl font-bold text-white mb-3">Souls-likes & Action RPGs</h3>
@@ -792,22 +805,56 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                             
                             {/* RPGs */}
                             <div className="text-center animate-fade-slide-up">
-                                <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-[#E53A3A]/20 to-[#D98C1F]/20 border-2 border-[#E53A3A]/40 mx-auto mb-4">
-                                    <svg className="w-8 h-8 text-[#E53A3A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 5.477 9.246 5 7.5 5s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 19 16.5 19c-1.746 0-3.332-.523-4.5-1.253"/>
+                                <div className="flex items-center justify-center mx-auto mb-4">
+                                    <svg className="w-16 h-16" viewBox="0 0 64 64">
+                                        <path fill="#ea8039" d="M53.5,13.81l2.83-6.13-6.1,2.81a24.35,24.35,0,0,1-6.93,2.2A7.16,7.16,0,0,0,38.18,16a7.13,7.13,0,1,0,13,5.22A34.82,34.82,0,0,1,53.5,13.81Z"/>
+                                        <path fill="#ea8039" d="M50.3,23.49a9.21,9.21,0,0,1-4.13-2.4,9.44,9.44,0,0,1-.8-12.41,9.42,9.42,0,0,0-6.18,16.07l.07.06c.1.1.2.18.3.27a7.12,7.12,0,0,0,9.74-.3A7.31,7.31,0,0,0,50.3,23.49Z"/>
+                                        <path fill="#ea8039" d="M40.51,13.71a9.43,9.43,0,0,0,14.82,4.92,9.42,9.42,0,0,1-16.07,6.18l-.07-.07-.27-.3a7,7,0,0,1,1.59-10.73Z"/>
+                                        <path fill="#e8a63a" d="M37.76,15.2l-.12-6.75-4.27,5.18a24.26,24.26,0,0,1-5.28,5,7.12,7.12,0,1,0,10.65,8.29,7,7,0,0,0,.19-4A34.56,34.56,0,0,1,37.76,15.2Z"/>
+                                        <path fill="#ea8039" d="M39.08,25.31a9.36,9.36,0,0,1-10.76-6.86,9.48,9.48,0,0,1-.11-4.34,9.42,9.42,0,0,0,1.42,17.16l.09,0,.39.11a7.12,7.12,0,0,0,8.63-4.5A6.44,6.44,0,0,0,39.08,25.31Z"/>
+                                        <path fill="#e8a63a" d="M23.37,25.17l-3.61-4,.17,5.35a19.15,19.15,0,0,1-.55,5.75,5.73,5.73,0,0,0,.84,4.79,5.67,5.67,0,1,0,7.88-7.93A27.66,27.66,0,0,1,23.37,25.17Z"/>
+                                        <path fill="#ea8039" d="M29.47,30.52a7.41,7.41,0,0,1-3,2.28,7.5,7.5,0,0,1-7-.74,7.42,7.42,0,0,1-2.34-2.54,7.49,7.49,0,0,0,9.84,9.53L27,39l.3-.13a5.67,5.67,0,0,0,2.8-7.23A5.19,5.19,0,0,0,29.47,30.52Z"/>
+                                        <path fill="#e85b23" d="M48.8,26.25l6.76.12-5.19,4.27a24.27,24.27,0,0,0-5,5.28,7.13,7.13,0,0,1-5.22,3.16,7,7,0,0,1-6.77-3.33A7.13,7.13,0,0,1,37.1,25.26a7,7,0,0,1,4-.19A35,35,0,0,0,48.8,26.25Z"/>
+                                        <path fill="#ea8039" d="M38.69,24.92a9.26,9.26,0,0,0,.37,4.76A9.45,9.45,0,0,0,49.89,35.8a9.41,9.41,0,0,1-17.15-1.42.29.29,0,0,1,0-.1c-.05-.12-.08-.26-.12-.38a7.13,7.13,0,0,1,4.51-8.64A7.53,7.53,0,0,1,38.69,24.92Z"/>
+                                        <path fill="#e85b23" d="M38.84,40.63l4,3.61-5.34-.16a19.54,19.54,0,0,0-5.76.54,5.67,5.67,0,1,1,3.14-8.72A27.79,27.79,0,0,0,38.84,40.63Z"/>
+                                        <path fill="#ea8039" d="M33.48,34.53a7.52,7.52,0,0,0,1,12.39A7.49,7.49,0,0,1,25,37.07L25,37c0-.1.09-.19.14-.29a5.66,5.66,0,0,1,7.22-2.81A6.19,6.19,0,0,1,33.48,34.53Z"/>
+                                        <path fill="#e5cfb3" d="M46.6,17.16,36.77,20.3a1.51,1.51,0,0,0-.53.32L22,34.91a5.05,5.05,0,0,0,0,7.14h0a5,5,0,0,0,7.14,0L43.38,27.77a1.26,1.26,0,0,0,.32-.53l3.15-9.84A.19.19,0,0,0,46.6,17.16Z"/>
+                                        <path fill="#d1baa1" d="M29.09,42.05,43.38,27.77a1.26,1.26,0,0,0,.32-.53l3.15-9.84a.21.21,0,0,0-.05-.2L22,42.05A5,5,0,0,0,29.09,42.05Z"/>
+                                        <path fill="#f4e4d3" d="M46.85,17.4a.19.19,0,0,0-.25-.24l-9.45,3-3,9.45a.19.19,0,0,0,.24.25l9.45-3Z"/>
+                                        <path fill="#f9f3ed" d="M22,37.48,36.32,23.19a1.26,1.26,0,0,1,.53-.32L46,19.93l.81-2.53a.19.19,0,0,0-.25-.24L36.77,20.3a1.51,1.51,0,0,0-.53.32L22,34.91a5.06,5.06,0,0,0-1.27,5A5,5,0,0,1,22,37.48Z"/>
+                                        <path fill="#5df9e6" d="M43.3,27.07l3.14-9.83a.18.18,0,0,0,0-.2L45,18.44l-2.51,7.83a1.26,1.26,0,0,1-.32.53L27.88,41.09a5,5,0,0,1-2.44,1.33,5,5,0,0,1-2.56.42,5,5,0,0,0,5.81-1L43,27.6A1.32,1.32,0,0,0,43.3,27.07Z"/>
+                                        <path fill="#041256" d="M25.52,44.53a6,6,0,0,1-4.28-10.32L35.53,19.92a2.3,2.3,0,0,1,.93-.57L46.3,16.2h0a1.21,1.21,0,0,1,1.21.3,1.18,1.18,0,0,1,.29,1.21l-3.15,9.83a2.22,2.22,0,0,1-.56.93L29.8,42.76A6,6,0,0,1,25.52,44.53Zm19.9-25.95-8.35,2.67a.57.57,0,0,0-.13.08L22.66,35.62a4,4,0,0,0,0,5.73,4.07,4.07,0,0,0,5.73,0L42.67,27.06a.35.35,0,0,0,.08-.13Z"/>
+                                        <rect fill="#d0e0ef" height="2.61" rx="0.89" transform="translate(36.31 -2.85) rotate(45)" width="15.43" x="13.88" y="41.11"/>
+                                        <path fill="#fff" d="M16.5,38.58a.89.89,0,0,1,1.26,0l9.29,9.29.29-.29a.9.9,0,0,0,0-1.27l-9.65-9.65a.91.91,0,0,0-1.26,0l-.58.58a.9.9,0,0,0,0,1.27l.36.36Z"/>
+                                        <path fill="#5df9e6" d="M26.9,46.31l-9.65-9.65a.83.83,0,0,0-.51-.23l9.05,9a.9.9,0,0,1,0,1.27l-.58.58a.93.93,0,0,1-.75.24l.6.6a.89.89,0,0,0,1.26,0l.58-.58A.9.9,0,0,0,26.9,46.31Z"/>
+                                        <path fill="#385272" d="M18.42,50.73l4.82-4.83L18.1,40.76l-4.87,4.87a2.55,2.55,0,0,1-1.39.69,5,5,0,1,0,5.83,5.9A2.86,2.86,0,0,1,18.42,50.73Z"/>
+                                        <rect fill="#577491" height="0.54" transform="translate(37.3 -0.51) rotate(45)" width="5.5" x="16.51" y="44.5"/>
+                                        <rect fill="#577491" height="0.54" transform="translate(37.82 0.75) rotate(45)" width="5.5" x="15.26" y="45.75"/>
+                                        <rect fill="#577491" height="0.54" transform="translate(38.33 2) rotate(45)" width="5.5" x="14" y="47"/>
+                                        <rect fill="#577491" height="0.54" transform="translate(38.85 3.25) rotate(45)" width="5.5" x="12.75" y="48.26"/>
+                                        <path fill="#5df9e6" d="M17.41,51.72a2.72,2.72,0,0,1,.75-1.49L23,45.4l-5.15-5.14-.33.33,4.34,4.34L17,49.75a2.79,2.79,0,0,0-.75,1.5,5,5,0,0,1-1.39,2.62A5,5,0,0,1,10,55.15a5,5,0,0,0,7.46-3.43Z"/>
+                                        <path fill="#577491" d="M8.91,50a5,5,0,0,1,3.33-2.2,2.55,2.55,0,0,0,1.4-.69l5.42-5.42-1-1-4.87,4.87a2.55,2.55,0,0,1-1.39.69,5,5,0,0,0-3.72,7A4.94,4.94,0,0,1,8.91,50Z"/>
+                                        <path fill="#041256" d="M26.13,49.42a1.88,1.88,0,0,1-1.34-.56l-9.65-9.65a1.87,1.87,0,0,1,0-2.67l.58-.58a1.9,1.9,0,0,1,2.68,0l9.65,9.65a1.91,1.91,0,0,1,0,2.68l-.58.57A1.89,1.89,0,0,1,26.13,49.42Zm.07-2h0Zm-9.57-9.57,9.52,9.52.41-.45-9.5-9.5Zm10,9h0Z"/>
+                                        <path fill="#041256" d="M12.73,57.33a5.83,5.83,0,0,1-.59,0,6.1,6.1,0,0,1-4.45-2.67,6,6,0,0,1,4-9.29,1.61,1.61,0,0,0,.86-.42l4.87-4.87a1,1,0,1,1,1.42,1.42l-4.87,4.87a3.63,3.63,0,0,1-1.93,1,4.08,4.08,0,0,0-2.68,1.76,4,4,0,0,0,6.25,5.07A4,4,0,0,0,16.69,52a3.82,3.82,0,0,1,1-2l4.83-4.82A1,1,0,0,1,24,46.61l-4.82,4.82a2,2,0,0,0-.48,1A5.91,5.91,0,0,1,17,55.55,6,6,0,0,1,12.73,57.33Z"/>
+                                        <path fill="#041256" d="M13.16,52A.83.83,0,0,1,12,52a.85.85,0,0,1,0-1.18A.83.83,0,0,1,13.16,52Z"/>
                                     </svg>
                                 </div>
                                 <h3 className="text-xl font-bold text-white mb-3">RPGs</h3>
                                 <p className="text-neutral-300 leading-relaxed">
-                                    Uncover deep lore and track complex quests without accidentally reading a major story spoiler.
+                                    Uncover deep lore and track complex quests without accidentally reading major story spoilers.
                                 </p>
                             </div>
                             
                             {/* Puzzle Games */}
                             <div className="text-center animate-fade-slide-up">
-                                <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-[#E53A3A]/20 to-[#D98C1F]/20 border-2 border-[#E53A3A]/40 mx-auto mb-4">
-                                    <svg className="w-8 h-8 text-[#E53A3A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                                <div className="flex items-center justify-center mx-auto mb-4">
+                                    <svg className="w-16 h-16" viewBox="0 0 500 500">
+                                        <path fill="#E53A3A" d="M202.78,371.74a34.27,34.27,0,0,1,36.11-13.5,34,34,0,0,1-8.18,67.09,34.17,34.17,0,0,1-27.93-14.46v76.51h171.7A20.55,20.55,0,0,0,395,466.83V295.23h-76.9a34,34,0,1,0-38.35,0h-77Z"/>
+                                        <path fill="#D98C1F" d="M362.63,295.23v171.6a20.55,20.55,0,0,1-20.55,20.55h32.4A20.55,20.55,0,0,0,395,466.83V295.23Z"/>
+                                        <path fill="#E53A3A" d="M126.17,295.23a34,34,0,1,1-39.13,0H10.53v171.6a20.55,20.55,0,0,0,20.55,20.55h171.7V410.47a33.83,33.83,0,0,0,32,14.63,34,34,0,0,0-4-67.82,33.82,33.82,0,0,0-28,14.85v-76.9Z"/>
+                                        <path fill="#D98C1F" d="M374.46,203.72a33.84,33.84,0,1,1,38.92,0h76.09V34a21.33,21.33,0,0,0-21.33-21.33H298.27V89.1a33.64,33.64,0,0,0-31.84-14.54,33.84,33.84,0,0,0,4,67.45,33.63,33.63,0,0,0,27.85-14.77v76.48Z"/>
+                                        <path fill="#E53A3A" d="M468.14,12.62h-32.4A21.33,21.33,0,0,1,457.07,34V203.72h32.4V34A21.33,21.33,0,0,0,468.14,12.62Z"/>
+                                        <path fill="#D98C1F" d="M202.78,218.72a34.27,34.27,0,0,1-36.11,13.5,34,34,0,0,1,8.18-67.09,34.17,34.17,0,0,1,27.93,14.46V103.08H31.08a20.55,20.55,0,0,0-20.55,20.54V295.23H87.44a34,34,0,1,0,38.34,0h77Z"/>
                                     </svg>
                                 </div>
                                 <h3 className="text-xl font-bold text-white mb-3">Puzzle Games</h3>
@@ -818,10 +865,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                             
                             {/* Open-World Adventures */}
                             <div className="text-center animate-fade-slide-up">
-                                <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-[#E53A3A]/20 to-[#D98C1F]/20 border-2 border-[#E53A3A]/40 mx-auto mb-4">
-                                    <svg className="w-8 h-8 text-[#E53A3A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                    </svg>
+                                <div className="flex items-center justify-center mx-auto mb-4">
+                                    <img src="/icons/openworld.svg" alt="Open World Adventures" className="w-16 h-16" />
                                 </div>
                                 <h3 className="text-xl font-bold text-white mb-3">Open-World Adventures</h3>
                                 <p className="text-neutral-300 leading-relaxed">
@@ -829,11 +874,63 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                                 </p>
                             </div>
                             
-                            {/* Strategy Games */}
+                            {/* Metroidvanias */}
                             <div className="text-center animate-fade-slide-up">
-                                <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-[#E53A3A]/20 to-[#D98C1F]/20 border-2 border-[#E53A3A]/40 mx-auto mb-4">
-                                    <svg className="w-8 h-8 text-[#E53A3A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                <div className="flex items-center justify-center mx-auto mb-4">
+                                    <svg className="w-16 h-16" viewBox="0 0 1367 1562">
+                                        <rect fill="#E62129" height="97.6415" width="780.786" x="293"/>
+                                        <rect fill="#E62129" height="97.5262" width="976.069" x="195" y="98"/>
+                                        <rect fill="#E62129" height="97.6415" width="195.283" x="195" y="195"/>
+                                        <rect fill="#E62129" height="97.6415" width="195.168" x="976" y="195"/>
+                                        <rect fill="#E62129" height="195.168" width="97.6415" x="293" y="293"/>
+                                        <rect fill="#E62129" height="195.168" width="97.5262" x="390" y="390"/>
+                                        <rect fill="#E62129" height="195.168" width="97.6415" x="976" y="293"/>
+                                        <rect fill="#E62129" height="195.168" width="97.5262" x="879" y="390"/>
+                                        <rect fill="#E62129" height="97.6415" width="780.786" x="293" y="586"/>
+                                        <rect fill="#E62129" height="97.5262" width="585.503" x="391" y="683"/>
+                                        <rect fill="#E62129" height="390.451" width="97.5262" x="98" y="488"/>
+                                        <rect fill="#E62129" height="97.1804" width="97.6415" x="195" y="781"/>
+                                        <rect fill="#E62129" height="390.335" width="97.6415" y="683"/>
+                                        <rect fill="#E62129" height="390.451" width="97.5262" x="1171" y="488"/>
+                                        <rect fill="#E62129" height="97.1804" width="97.6415" x="1074" y="781"/>
+                                        <rect fill="#E62129" height="390.335" width="97.6415" x="1269" y="683"/>
+                                        <rect fill="#F98812" height="292.809" width="97.6415" x="195" y="293"/>
+                                        <rect fill="#F98812" height="97.6415" width="97.6415" x="293" y="488"/>
+                                        <rect fill="#F98812" height="292.809" width="97.6415" x="1074" y="293"/>
+                                        <rect fill="#F98812" height="97.6415" width="97.6415" x="976" y="488"/>
+                                        <rect fill="#F98812" height="195.283" width="97.5262" x="390" y="195"/>
+                                        <rect fill="#F98812" height="195" width="198" x="583" y="195"/>
+                                        <rect fill="#F98812" height="195.283" width="99.1401" x="877" y="195"/>
+                                        <rect fill="#F98812" height="195" width="391" x="488" y="390"/>
+                                        <rect fill="#1D1819" height="195.283" width="94.9901" x="488" y="195"/>
+                                        <rect fill="#1D1819" height="195.283" width="96.1429" x="781" y="195"/>
+                                        <rect fill="#990000" height="195.629" width="97.6415" x="195" y="586"/>
+                                        <rect fill="#990000" height="292.348" width="97.6415" x="293" y="684"/>
+                                        <rect fill="#990000" height="293" width="195" x="390" y="781"/>
+                                        <rect fill="#990000" height="195.629" width="97.7568" x="1074" y="586"/>
+                                        <rect fill="#990000" height="292.809" width="97.5262" x="976" y="684"/>
+                                        <rect fill="#990000" height="293" width="195" x="781" y="781"/>
+                                        <rect fill="#990000" height="195" width="195" x="586" y="781"/>
+                                        <rect fill="#F98812" height="97.5262" width="195.168" y="1171"/>
+                                        <rect fill="#F98812" height="97.6415" width="292.809" y="1074"/>
+                                        <rect fill="#F98812" height="97.6415" width="292.809" x="1074" y="1074"/>
+                                        <rect fill="#F98812" height="97.5262" width="195.744" x="1171" y="1171"/>
+                                        <rect fill="#E62129" height="97.5262" width="195.168" x="586" y="976"/>
+                                        <rect fill="#E62129" height="97.6415" width="780.786" x="293" y="1074"/>
+                                        <rect fill="#E62129" height="97.5262" width="196.897" x="584" y="1171"/>
+                                        <rect fill="#E62129" height="97.6415" width="195.283" x="195" y="1269"/>
+                                        <rect fill="#E62129" height="97.6415" width="390.451" x="195" y="1366"/>
+                                        <rect fill="#E62129" height="97.5262" width="195.052" x="293" y="1464"/>
+                                        <rect fill="#E62129" height="97.5262" width="195.168" x="878" y="1464"/>
+                                        <rect fill="#E62129" height="97.6415" width="390.451" x="781" y="1366"/>
+                                        <rect fill="#E62129" height="97.6415" width="195.168" x="976" y="1269"/>
+                                        <rect fill="#F98812" height="293" width="195" x="98" y="878"/>
+                                        <rect fill="#F98812" height="293" width="195" x="1074" y="878"/>
+                                        <rect fill="#990000" height="97.5262" width="390.451" x="195" y="1171"/>
+                                        <rect fill="#990000" height="97.6415" width="390.451" x="781" y="1171"/>
+                                        <rect fill="#990000" height="97.6415" width="585.618" x="390" y="1269"/>
+                                        <rect fill="#F98812" height="97.6415" width="97.6415" x="293" y="976"/>
+                                        <rect fill="#F98812" height="97.1804" width="97.5262" x="976" y="976"/>
                                     </svg>
                                 </div>
                                 <h3 className="text-xl font-bold text-white mb-3">Metroidvanias</h3>
@@ -844,9 +941,21 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                             
                             {/* Survival & Crafting */}
                             <div className="text-center animate-fade-slide-up">
-                                <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-[#E53A3A]/20 to-[#D98C1F]/20 border-2 border-[#E53A3A]/40 mx-auto mb-4">
-                                    <svg className="w-8 h-8 text-[#E53A3A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                                <div className="flex items-center justify-center mx-auto mb-4">
+                                    <svg className="w-16 h-16" viewBox="0 0 500 500">
+                                        <path fill="#faae3b" d="M360.62,93.33c1.11,18.72-33.87,73.85-33.87,73.85C305.59,76.87,192.91,10.68,192.91,10.68s26.67,31.6-30.1,124-31.29,150.15-31.29,150.15h0c12.3,44.84,62.05,78.42,121.64,78.42s104-36.12,121.64-78.42h.05C411.52,203.21,360.62,93.33,360.62,93.33Z"/>
+                                        <path fill="#ee3734" d="M201.59,311.38c0-29,51.16-88.94,51.16-88.94s51.15,60,51.15,88.94-22.9,52.48-51.15,52.48S201.59,340.37,201.59,311.38Z"/>
+                                        <path fill="rgba(0,0,0,0.15)" d="M168.71,336.69c22.2,16.49,51.85,26.61,84.49,26.61,59.6,0,104-36.12,121.64-78.42h.05c36.63-81.67-14.27-191.55-14.27-191.55,1.11,18.72-33.87,73.85-33.87,73.85C305.59,76.87,192.91,10.68,192.91,10.68S438.82,258.17,168.71,336.69Z"/>
+                                        <ellipse fill="#513b2c" cx="55.48" cy="453.93" rx="22.06" ry="36.04" transform="translate(-107.9 26.8) rotate(-13.96)"/>
+                                        <path fill="#fff" d="M46,419.29c.27-.08.5-.26.78-.33l-.82.2Z"/>
+                                        <path fill="#fff" d="M63.36,489.11l.82-.2c-.28.07-.57,0-.85.07Z"/>
+                                        <path fill="#b3814b" d="M466.56,351.71a36,36,0,0,0-43.67-26.28L46.78,419c11.83-2.94,25.31,10.33,30.11,29.65S76,486,64.18,488.91l376.1-93.52A36,36,0,0,0,466.56,351.71Z"/>
+                                        <polygon fill="rgba(0,0,0,0.15)" points="64.18 488.91 440.28 395.39 466.56 351.71 76.89 448.61 64.18 488.91"/>
+                                        <ellipse fill="#513b2c" cx="444.52" cy="453.93" rx="36.04" ry="22.06" transform="translate(-103.27 775.77) rotate(-76.04)"/>
+                                        <path fill="#fff" d="M454,419.29c-.27-.08-.5-.26-.78-.33l.82.2Z"/>
+                                        <path fill="#fff" d="M436.64,489.11l-.82-.2c.28.07.57,0,.85.07Z"/>
+                                        <path fill="#b3814b" d="M33.44,351.71a36,36,0,0,1,43.67-26.28L453.22,419c-11.83-2.94-25.31,10.33-30.11,29.65s.89,37.36,12.71,40.3L59.72,395.39A36,36,0,0,1,33.44,351.71Z"/>
+                                        <polygon fill="rgba(0,0,0,0.15)" points="435.82 488.91 59.72 395.39 33.44 351.71 423.11 448.61 435.82 488.91"/>
                                     </svg>
                                 </div>
                                 <h3 className="text-xl font-bold text-white mb-3">Survival & Crafting</h3>
@@ -859,9 +968,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                         </div>
                     </div>
                 </section>
-
-                {/* Community Challenge Section */}
-                <CommunityChallengeSection onShareClick={handleShareClick} />
 
                 {/* Pricing Section */}
                 <PricingSection onCtaClick={onGetStarted} />
@@ -893,6 +999,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                 </section>
 
                 <FounderSection />
+                
+                {/* Community Challenge Section */}
+                <div className="hidden">
+                    <CommunityChallengeSection onShareClick={handleShareClick} />
+                </div>
                 
                 {/* CTA Section */}
                 <section className="py-16 md:py-20 bg-transparent relative">
