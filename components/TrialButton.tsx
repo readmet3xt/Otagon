@@ -17,7 +17,7 @@ const TrialButton: React.FC<TrialButtonProps> = ({
   onStartTrial,
   onUpgradeToPro
 }) => {
-  const [showContextMenu, setShowContextMenu] = useState(false);
+  const [showContextMenu, setShowContextMenu] = useState<{ x: number; y: number } | false>(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   const handleButtonClick = () => {
@@ -90,10 +90,10 @@ const TrialButton: React.FC<TrialButtonProps> = ({
       </button>
 
       <TrialContextMenu
-        isOpen={showContextMenu}
+        isOpen={!!showContextMenu}
         onClose={() => setShowContextMenu(false)}
         onStartTrial={handleButtonClick}
-        position={showContextMenu}
+        position={showContextMenu || { x: 0, y: 0 }}
         isEligibleForTrial={isEligibleForTrial}
         hasUsedTrial={hasUsedTrial}
       />

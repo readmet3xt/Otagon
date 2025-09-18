@@ -596,8 +596,9 @@
 @media (max-width: 640px) {
   /* Ensure proper viewport handling on mobile */
   html, body {
-    overflow-x: hidden;
+    overflow: hidden; /* Prevent any scrolling at root level */
     width: 100%;
+    height: 100%;
     position: relative;
     -webkit-text-size-adjust: 100%;
     -ms-text-size-adjust: 100%;
@@ -1358,6 +1359,103 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
 }
 
 /* Bounce animation variations */
+/* ===== CHAT LAYOUT FIXES ===== */
+
+/* Root level constraints to prevent whole page scrolling */
+html, body {
+  height: 100%;
+  overflow: hidden; /* Prevent any scrolling at root level */
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Fixed chat layout - prevents UI elements from scrolling out of view */
+.chat-layout-fixed {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chat-header-fixed {
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: #000000;
+  border-bottom: 1px solid rgba(46, 46, 46, 0.2);
+}
+
+.chat-content-scrollable {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0; /* Critical for flexbox scrolling */
+}
+
+.chat-input-fixed {
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  background: #000000;
+  border-top: 1px solid rgba(46, 46, 46, 0.2);
+}
+
+.chat-tabs-fixed {
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  z-index: 15;
+  background: #000000;
+  border-top: 1px solid rgba(46, 46, 46, 0.2);
+}
+
+/* Smooth scrolling for chat messages */
+.chat-messages-smooth {
+  scroll-behavior: smooth;
+  scrollbar-width: none; /* Firefox - hide scrollbar */
+  -ms-overflow-style: none; /* Internet Explorer 10+ - hide scrollbar */
+  -webkit-overflow-scrolling: touch; /* iOS momentum scrolling */
+}
+
+.chat-messages-smooth::-webkit-scrollbar {
+  display: none; /* WebKit browsers (Chrome, Safari, Edge) - hide scrollbar */
+}
+
+/* Mobile-specific chat optimizations */
+@media (max-width: 768px) {
+  html, body {
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile */
+  }
+  
+  #root {
+    height: 100vh;
+    height: 100dvh;
+  }
+  
+  .chat-layout-fixed {
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile */
+  }
+  
+  .chat-content-scrollable {
+    /* Ensure proper scrolling on mobile */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  
+  .chat-messages-smooth::-webkit-scrollbar {
+    display: none; /* Hide scrollbar on mobile */
+  }
+}
+
 /* Desktop-specific chat layout optimizations */
 @media (min-width: 1024px) {
   /* Ensure proper height constraints for desktop chat */
@@ -1386,6 +1484,10 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
   .desktop-padding {
     padding-left: 2rem;
     padding-right: 2rem;
+  }
+  
+  .chat-messages-smooth::-webkit-scrollbar {
+    display: none; /* Hide scrollbar on desktop */
   }
 }
 

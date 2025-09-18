@@ -2,6 +2,7 @@
 
 
 import React, { useState, useEffect } from 'react';
+import TTSStatusIndicator from './TTSStatusIndicator';
 // Dynamic import to avoid circular dependency
 // import { ttsService } from '../services/ttsService';
 
@@ -114,6 +115,12 @@ const HandsFreeModal: React.FC<HandsFreeModalProps> = ({
                         className={`${isHandsFree ? 'translate-x-6' : 'translate-x-1'} inline-block w-4 h-4 transform bg-white rounded-full transition-transform`}
                     />
                 </button>
+            </div>
+            
+            {/* TTS Status Indicator */}
+            <div className="bg-[#2E2E2E]/60 p-4 rounded-lg">
+                <h3 className="text-sm font-medium text-[#CFCFCF] mb-3">TTS Status</h3>
+                <TTSStatusIndicator showDetails={true} />
             </div>
             
             <div>

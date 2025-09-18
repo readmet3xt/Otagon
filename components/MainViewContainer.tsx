@@ -8,7 +8,7 @@ import ChatMessage from './ChatMessage';
 import SuggestedPrompts from './SuggestedPrompts';
 import ActionButtons from './ActionButtons';
 import { useState } from 'react';
-import { useResponsive } from '../utils/responsive';
+// import { useResponsive } from '../utils/responsive';
 import { UniversalResponsiveContainer, UniversalResponsiveFlex, UniversalResponsiveText } from './layout/UniversalResponsiveLayout';
 import OtakuDiaryTab from './OtakuDiaryTab';
 import WishlistTab from './WishlistTab';
@@ -67,7 +67,7 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
     );
   }
 
-  const { isMobile, isTablet, isLaptop, isDesktop, isUltrawide, deviceType } = useResponsive();
+  // const { isMobile, isTablet, isLaptop, isDesktop, isUltrawide, deviceType } = useResponsive();
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -113,12 +113,12 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
       
       // Always scroll to show latest interaction (AI response or loading)
       if (messages.length > 0 || loadingMessages.length > 0) {
-        // Immediate scroll
-        scrollToBottom();
+        // Immediate scroll - stop at AI response, not at suggestions
+        scrollToLatestResponse();
         
         // Also scroll after a delay to catch any delayed updates (streaming responses)
         const delayedScroll = setTimeout(() => {
-          scrollToBottom();
+          scrollToLatestResponse();
         }, 300);
         
         return () => clearTimeout(delayedScroll);
@@ -127,6 +127,37 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
     return undefined;
   }, [messages, loadingMessages, activeSubView]);
 
+
+  const scrollToLatestResponse = () => {
+    if (import.meta.env.DEV) {
+      console.log('🔍 ScrollToLatestResponse called:', {
+        messagesCount: messages.length,
+        loadingCount: loadingMessages.length,
+        activeSubView
+      });
+    }
+    
+    // Find the latest AI response message
+    const latestAiMessage = messages.filter(msg => msg.role === 'model').pop();
+    
+    if (latestAiMessage) {
+      // Try to find the AI message element and scroll to it
+      const aiMessageElement = document.querySelector(`[data-message-id="${latestAiMessage.id}"]`);
+      if (aiMessageElement) {
+        console.log('🔍 Scrolling to latest AI response message');
+        aiMessageElement.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'end',
+          inline: 'nearest'
+        });
+        return;
+      }
+    }
+    
+    // If no AI message found or during loading, fall back to bottom scroll
+    console.log('🔍 Fallback: Scrolling to bottom');
+    scrollToBottom();
+  };
 
   const scrollToBottom = () => {
     if (import.meta.env.DEV) {
@@ -203,34 +234,31 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
     
     if (viewId === 'chat') {
       return (
-        <div className="flex-1 w-full h-full flex flex-col">
+        <div className="flex-1 w-full h-full flex flex-col overflow-hidden">
           {/* Scrollable Chat Messages Area */}
-          <UniversalResponsiveContainer
-            maxWidth="full"
-            padding="none"
-            className="flex-1 w-full overflow-y-auto"
-          >
+          <div className="flex-1 w-full overflow-y-auto overflow-x-hidden chat-messages-smooth">
             <div
               ref={chatContainerRef}
               aria-live="polite"
               aria-atomic="false"
               role="log"
-              className="w-full"
+              className="w-full h-full"
             >
-              <div className="flex flex-col gap-2 sm:gap-3 md:gap-4 lg:gap-5 w-full max-w-[95%] sm:max-w-4xl md:max-w-5xl mx-auto mt-4 sm:mt-6 md:mt-8 lg:mt-10 mb-0">
+              <div className="flex flex-col gap-1 sm:gap-1.5 w-full max-w-[95%] sm:max-w-4xl md:max-w-5xl mx-auto mt-2 sm:mt-3 mb-2 sm:mb-3">
                 {messages.map(msg => (
-                  <ChatMessage
-                    key={msg.id}
-                    message={msg}
-                    isLoading={loadingMessages.includes(msg.id)}
-                    onStop={() => stopMessage(msg.id)}
-                    onPromptClick={onSendMessage}
-                    onUpgradeClick={onUpgradeClick}
-                    onFeedback={(vote) => onFeedback('message', activeConversation.id, msg.id, msg.text, vote)}
-                    onRetry={() => onRetry(msg.id)}
-                    conversationId={activeConversation.id}
-                    isEverythingElse={activeConversation.id === 'everything-else'}
-                  />
+                  <div key={msg.id} data-message-id={msg.id}>
+                    <ChatMessage
+                      message={msg}
+                      isLoading={loadingMessages.includes(msg.id)}
+                      onStop={() => stopMessage(msg.id)}
+                      onPromptClick={onSendMessage}
+                      onUpgradeClick={onUpgradeClick}
+                      onFeedback={(vote) => onFeedback('message', activeConversation.id, msg.id, msg.text, vote)}
+                      onRetry={() => onRetry(msg.id)}
+                      conversationId={activeConversation.id}
+                      isEverythingElse={activeConversation.id === 'everything-else'}
+                    />
+                  </div>
                 ))}
                 
                 {/* Suggested Prompts integrated directly into messages flow */}
@@ -248,7 +276,21 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
                 <div ref={chatEndRef} className="h-0" />
               </div>
             </div>
-          </UniversalResponsiveContainer>
+          </div>
+        </div>
+      );
+    }
+    
+    // Special handling for Wishlist tab (Everything Else conversation) - must be before insight check
+    if (viewId === 'wishlist' && activeConversation.id === 'everything-else') {
+      console.log('🎯 Rendering Wishlist tab for Everything Else conversation');
+      return (
+        <div key="wishlist-view" className="flex-1 w-full h-full flex flex-col overflow-hidden">
+          <div className="flex-1 w-full overflow-y-auto overflow-x-hidden chat-messages-smooth">
+            <WishlistTab 
+              onOpenWishlistModal={onOpenWishlistModal || (() => {})}
+            />
+          </div>
         </div>
       );
     }
@@ -270,50 +312,42 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
       if (insight.id === 'otaku-diary') {
         console.log('🎯 Rendering Otaku Diary tab for viewId:', viewId);
         return (
-          <div key={insight.id} className="flex-1 w-full h-full overflow-y-auto">
-            <OtakuDiaryTab 
-              gameId={activeConversation.id}
-              gameTitle={activeConversation.title}
-            />
-          </div>
-        );
-      }
-
-      // Special handling for Wishlist tab (Everything Else conversation)
-      if (viewId === 'wishlist' && activeConversation.id === 'everything-else') {
-        console.log('🎯 Rendering Wishlist tab for Everything Else conversation');
-        return (
-          <div key="wishlist-view" className="flex-1 w-full h-full overflow-y-auto">
-            <WishlistTab 
-              onOpenWishlistModal={onOpenWishlistModal || (() => {})}
-            />
+          <div key={insight.id} className="flex-1 w-full h-full flex flex-col overflow-hidden">
+            <div className="flex-1 w-full overflow-y-auto overflow-x-hidden chat-messages-smooth">
+              <OtakuDiaryTab 
+                gameId={activeConversation.id}
+                gameTitle={activeConversation.title}
+              />
+            </div>
           </div>
         );
       }
 
       // Regular insight tabs
       return (
-        <div key={insight.id} data-insight-id={insight.id} className="flex-1 w-full h-full overflow-y-auto p-3 sm:p-4 md:p-6 lg:p-8">
-          <div className="prose prose-invert prose-sm sm:prose-base md:prose-lg max-w-none prose-p:text-[#CFCFCF] prose-headings:text-[#F5F5F5] prose-strong:text-white prose-a:text-[#FFAB40] prose-a:no-underline hover:prose-a:underline prose-code:text-[#FFAB40] prose-code:bg-[#1C1C1C] prose-code:p-1 prose-code:rounded-md prose-li:marker:text-[#FFAB40] prose-h2:text-xl sm:text-2xl prose-h3:text-lg sm:text-xl prose-h4:text-base sm:text-lg">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {insight.content}
-            </ReactMarkdown>
-          </div>
-          
-          {/* Action Buttons for Insights */}
-          {insight.status === 'loaded' && insight.content && (
-            <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-[#424242]/30">
-              <ActionButtons
-                content={insight.content}
-                insightId={insight.id}
-                gameId={activeConversation.id}
-                onThumbsUp={() => onFeedback('insight', activeConversation.id, insight.id, insight.content, 'up')}
-                onThumbsDown={() => onFeedback('insight', activeConversation.id, insight.id, insight.content, 'down')}
-                thumbsUpActive={insight.feedback === 'up'}
-                thumbsDownActive={insight.feedback === 'down'}
-              />
+        <div key={insight.id} data-insight-id={insight.id} className="flex-1 w-full h-full flex flex-col overflow-hidden">
+          <div className="flex-1 w-full overflow-y-auto overflow-x-hidden chat-messages-smooth p-3 sm:p-4 md:p-6 lg:p-8">
+            <div className="prose prose-invert prose-sm sm:prose-base md:prose-lg max-w-none prose-p:text-[#CFCFCF] prose-headings:text-[#F5F5F5] prose-strong:text-white prose-a:text-[#FFAB40] prose-a:no-underline hover:prose-a:underline prose-code:text-[#FFAB40] prose-code:bg-[#1C1C1C] prose-code:p-1 prose-code:rounded-md prose-li:marker:text-[#FFAB40] prose-h2:text-xl sm:text-2xl prose-h3:text-lg sm:text-xl prose-h4:text-base sm:text-lg">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {insight.content}
+              </ReactMarkdown>
             </div>
-          )}
+            
+            {/* Action Buttons for Insights */}
+            {insight.status === 'loaded' && insight.content && (
+              <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-[#424242]/30">
+                <ActionButtons
+                  content={insight.content}
+                  insightId={insight.id}
+                  gameId={activeConversation.id}
+                  onThumbsUp={() => onFeedback('insight', activeConversation.id, insight.id, insight.content, 'up')}
+                  onThumbsDown={() => onFeedback('insight', activeConversation.id, insight.id, insight.content, 'down')}
+                  thumbsUpActive={insight.feedback === 'up'}
+                  thumbsDownActive={insight.feedback === 'down'}
+                />
+              </div>
+            )}
+          </div>
         </div>
       );
     }
@@ -324,7 +358,7 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
 
   return (
     <div
-      className="flex-1 overflow-hidden"
+      className="flex-1 flex flex-col overflow-hidden h-full"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}

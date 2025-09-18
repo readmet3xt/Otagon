@@ -71,7 +71,7 @@ const convertImage = async (file: File, targetMimeType: 'image/jpeg' | 'image/pn
                             const base64 = reader.result as string;
                             resolve({
                                 id: crypto.randomUUID(),
-                                file: blob,
+                                file: file,
                                 preview: base64,
                                 name: file.name.replace(/\.[^/.]+$/, `.${targetMimeType.split('/')[1]}`),
                                 size: blob.size,
@@ -450,7 +450,7 @@ const ChatInput: React.FC<ChatInputProps> = React.memo(({ value, onChange, onSen
                                 />
                             )}
                             <textarea
-                                ref={textareaRef}
+                                ref={textareaRef as React.LegacyRef<HTMLTextAreaElement>}
                                 rows={1}
                                 style={{ 
                                     minHeight: '24px', 

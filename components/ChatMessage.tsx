@@ -241,8 +241,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
         if (!text && (!images || images.length === 0)) return null;
 
         const containerClasses = (images && images.length > 0)
-          ? "p-4"
-          : "py-3 px-4";
+          ? "p-2.5"
+          : "py-2 px-3";
 
         // Determine grid layout based on image count
         const getGridClasses = (imageCount: number) => {
@@ -255,7 +255,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
         };
 
         return (
-            <div key={id} className="flex items-start gap-2 sm:gap-3 justify-end">
+            <div key={id} className="flex items-start gap-1.5 sm:gap-2 justify-end">
                 <div className={`${containerClasses} max-w-[85%] sm:max-w-2xl`}>
                     {images && images.length > 0 && (
                         <div className={`grid gap-2 sm:gap-3 ${getGridClasses(images.length)} ${text ? 'mb-3' : ''}`}>
@@ -276,7 +276,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
                         </div>
                     )}
                     {text && (
-                        <p className="text-[#F5F5F5] whitespace-pre-wrap leading-relaxed">{text}</p>
+                        <p className="text-[#F5F5F5] whitespace-pre-wrap leading-relaxed text-xs sm:text-sm">{text}</p>
                     )}
                     {!text && images && images.length > 0 && (
                         <p className="text-[#A3A3A3] text-sm mt-2 font-medium">
@@ -330,16 +330,16 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
 
     if (role === 'system') {
         return (
-            <div key={id} className="flex items-start gap-2 sm:gap-3">
-                <Logo className="w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0" />
-                <div className="bg-gradient-to-r from-[#1C1C1C]/80 to-[#0A0A0A]/80 border border-[#424242]/60 rounded-xl sm:rounded-2xl rounded-tl-none py-3 sm:py-4 px-4 sm:px-6 relative overflow-hidden backdrop-blur-sm">
-                    <div className="ai-response max-w-none text-[#CFCFCF] text-sm sm:text-base">
+            <div key={id} className="flex items-start gap-1.5 sm:gap-2">
+                <Logo className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0" />
+                <div className="bg-gradient-to-r from-[#1C1C1C]/80 to-[#0A0A0A]/80 border border-[#424242]/60 rounded-xl sm:rounded-2xl rounded-tl-none py-2 sm:py-2.5 px-3 sm:px-4 relative overflow-hidden backdrop-blur-sm">
+                    <div className="ai-response max-w-none text-[#CFCFCF] text-xs sm:text-sm">
                         <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
                             components={{
                                 a: ({ node, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" />,
                                 p: ({ children, ...props }) => (
-                                    <p {...props} className="mb-3 sm:mb-4 last:mb-0 leading-relaxed text-base sm:text-lg">
+                                    <p {...props} className="mb-2 sm:mb-2.5 last:mb-0 leading-relaxed text-sm sm:text-base">
                                         {children}
                                     </p>
                                 ),
@@ -423,32 +423,32 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
             );
         }
 
-        const bubbleClasses = `bg-[#2E2E2E]/60 border border-[#424242]/60 rounded-2xl rounded-tl-none py-3 px-4 relative overflow-hidden ${triumph ? 'triumph-glow' : ''} backdrop-blur-sm`;
+        const bubbleClasses = `bg-[#2E2E2E]/60 border border-[#424242]/60 rounded-2xl rounded-tl-none py-2 px-3 relative overflow-hidden ${triumph ? 'triumph-glow' : ''} backdrop-blur-sm`;
 
         return (
-                            <div key={id} className="flex items-start gap-2 sm:gap-3">
-                    <Logo className="w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0" />
-                    <div className="flex flex-col gap-2 sm:gap-3 w-full max-w-[95%] sm:max-w-2xl">
+                            <div key={id} className="flex items-start gap-1.5 sm:gap-2">
+                    <Logo className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0" />
+                    <div className="flex flex-col gap-1 sm:gap-1.5 w-full max-w-[95%] sm:max-w-2xl">
                         {showConfetti && <Confetti />}
                         {text.trim() && (
                             <div className={bubbleClasses}>
-                                <div className="ai-response max-w-none text-[#CFCFCF] text-sm sm:text-base">
+                                <div className="ai-response max-w-none text-[#CFCFCF] text-xs sm:text-sm">
                                     <ReactMarkdown
                                         remarkPlugins={[remarkGfm]}
                                         components={{
                                             a: ({ node, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" />,
                                             p: ({ children, ...props }) => (
-                                                <p {...props} className="mb-3 sm:mb-4 last:mb-0 leading-relaxed">
+                                                <p {...props} className="mb-2 sm:mb-2.5 last:mb-0 leading-relaxed">
                                                     {children}
                                                 </p>
                                             ),
                                             h1: ({ children, ...props }) => (
-                                                <h1 {...props} className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 mt-4 sm:mt-6 first:mt-0 text-[#F5F5F5]">
+                                                <h1 {...props} className="text-lg sm:text-xl font-bold mb-2 sm:mb-2.5 mt-2 sm:mt-3 first:mt-0 text-[#F5F5F5]">
                                                     {children}
                                                 </h1>
                                             ),
                                             h2: ({ children, ...props }) => (
-                                                <h2 {...props} className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 mt-3 sm:mt-5 first:mt-0 text-[#F5F5F5]">
+                                                <h2 {...props} className="text-base sm:text-lg font-bold mb-1.5 sm:mb-2 mt-2 sm:mt-2.5 first:mt-0 text-[#F5F5F5]">
                                                     {children}
                                                 </h2>
                                             ),

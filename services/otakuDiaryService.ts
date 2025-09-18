@@ -435,9 +435,9 @@ class OtakuDiaryService extends BaseService {
       
       if (!user) return [];
 
-      // Get tasks from new consolidated tasks table
+      // Get tasks from diary_tasks table
       const { data: tasksData, error } = await supabase
-        .from('tasks')
+        .from('diary_tasks')
         .select('*')
         .eq('user_id', user.id)
         .eq('game_id', gameId);
@@ -453,6 +453,17 @@ class OtakuDiaryService extends BaseService {
       console.error('Failed to get tasks:', error);
       // Fallback to local cache
       return this.tasksCache.get(gameId) || [];
+    }
+  }
+
+  // NEW: Get AI suggested tasks only
+  async getAISuggestedTasks(gameId: string): Promise<DiaryTask[]> {
+    try {
+      const allTasks = await this.getTasks(gameId);
+      return allTasks.filter(task => task.type === 'ai_suggested');
+    } catch (error) {
+      console.error('Failed to get AI suggested tasks:', error);
+      return [];
     }
   }
 
@@ -472,7 +483,7 @@ class OtakuDiaryService extends BaseService {
   }
 
   // NEW: Get AI-generated tasks (for completion prompting)
-  async getAISuggestedTasks(gameId: string): Promise<DiaryTask[]> {
+  async getAIGeneratedTasks(gameId: string): Promise<DiaryTask[]> {
     try {
       const allTasks = await this.getTasks(gameId);
       // AI-generated tasks are those that are still pending (not moved to central)
@@ -480,7 +491,7 @@ class OtakuDiaryService extends BaseService {
         task.type === 'ai_suggested' && task.status === 'pending'
       );
     } catch (error) {
-      console.error('Failed to get AI suggested tasks:', error);
+      console.error('Failed to get AI generated tasks:', error);
       return [];
     }
   }
@@ -1078,39 +1089,47 @@ class OtakuDiaryService extends BaseService {
   // NEW: Add AI suggested tasks from unifiedAIService
   async addAISuggestedTasks(gameId: string, tasks: DetectedTask[]): Promise<void> {
     try {
-      const currentTasks = await this.getTasks(gameId);
-      const newTasks = tasks.map(task => ({
-        id: this.generateId(),
+      if (!tasks || tasks.length === 0) return;
+      
+      // Convert DetectedTask to DiaryTask format
+      const diaryTasks: DiaryTask[] = tasks.map(task => ({
+        id: `ai_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         title: task.title,
         description: task.description,
-        type: 'ai_suggested' as const,
-        status: 'pending' as const,
-        category: task.category,
-        priority: 'medium' as const,
-        gameId,
+        category: task.category as DiaryTask['category'],
+        status: 'pending',
+        type: 'ai_suggested',
         createdAt: Date.now(),
         updatedAt: Date.now(),
-        source: task.source
+        gameId,
+        isCompleted: false,
+        completedAt: undefined,
+        priority: 'medium',
+        tags: [],
+        metadata: {
+          confidence: task.confidence,
+          source: task.source,
+          aiGenerated: true
+        }
       }));
       
-      // Filter out duplicates
-      const uniqueNewTasks = newTasks.filter(newTask => {
-        const detectedTask: DetectedTask = {
-          title: newTask.title,
-          description: newTask.description,
-          category: newTask.category,
-          confidence: 0.8, // Default confidence for AI suggested tasks
-          source: newTask.source
-        };
-        return !this.taskExists(currentTasks, detectedTask);
-      });
+      // Save to database
+      const { error } = await supabase
+        .from('diary_tasks')
+        .insert(diaryTasks);
       
-      if (uniqueNewTasks.length > 0) {
-        await this.saveTasks(gameId, [...currentTasks, ...uniqueNewTasks]);
-        console.log(`✅ Added ${uniqueNewTasks.length} AI suggested tasks for ${gameId}`);
+      if (error) {
+        console.error('Failed to save AI suggested tasks:', error);
+        throw error;
       }
+      
+      // Update cache
+      this.tasksCache.delete(gameId);
+      
+      console.log(`✅ Saved ${diaryTasks.length} AI suggested tasks for ${gameId}`);
     } catch (error) {
       console.error('Failed to add AI suggested tasks:', error);
+      throw error;
     }
   }
 

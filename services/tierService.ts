@@ -61,6 +61,14 @@ export class TierService {
    */
   async assignFreeTier(userId: string): Promise<boolean> {
     try {
+      // Skip Supabase calls in developer mode
+      const isDevMode = localStorage.getItem('otakon_developer_mode') === 'true';
+      
+      if (isDevMode) {
+        console.log('🔧 Developer mode: Skipping assignFreeTier Supabase call');
+        return true; // Always return true in dev mode
+      }
+
       // Check if user already has a tier assigned in users table
       const { data: existingUser } = await supabase
         .from('users')
@@ -99,6 +107,14 @@ export class TierService {
    */
   async startFreeTrial(userId: string): Promise<boolean> {
     try {
+      // Skip Supabase calls in developer mode
+      const isDevMode = localStorage.getItem('otakon_developer_mode') === 'true';
+      
+      if (isDevMode) {
+        console.log('🔧 Developer mode: Skipping startFreeTrial Supabase call');
+        return true; // Always return true in dev mode
+      }
+
       // Don't start trial for unauthenticated users
       if (!userId || userId === 'anonymous' || userId === 'error') {
         return false;
@@ -154,6 +170,14 @@ export class TierService {
    */
   async isEligibleForTrial(userId: string): Promise<boolean> {
     try {
+      // Skip Supabase calls in developer mode
+      const isDevMode = localStorage.getItem('otakon_developer_mode') === 'true';
+      
+      if (isDevMode) {
+        console.log('🔧 Developer mode: Skipping isEligibleForTrial Supabase call');
+        return true; // Always return true in dev mode (can always start trial)
+      }
+
       // Don't check trial eligibility for unauthenticated users
       if (!userId || userId === 'anonymous' || userId === 'error') {
         return false;

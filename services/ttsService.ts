@@ -1,5 +1,6 @@
 import { getTier } from './unifiedUsageService';
 import { supabaseDataService } from './supabaseDataService';
+import { enhancedErrorHandlingService, TTSErrorContext } from './enhancedErrorHandlingService';
 
 let synth: SpeechSynthesis;
 let voices: SpeechSynthesisVoice[] = [];
@@ -80,17 +81,40 @@ const speak = async (text: string): Promise<void> => {
     return new Promise(async (resolve, reject) => {
         try {
             const tier = await getTier();
-            if (tier !== 'pro') {
-                const error = new Error("Hands-Free mode is a Pro feature.");
-                console.warn(error.message);
-                return reject(error);
+            if (tier !== 'pro' && tier !== 'vanguard_pro') {
+                const errorContext: TTSErrorContext = {
+                    operation: 'tts_speak',
+                    component: 'ttsService',
+                    text,
+                    additionalData: { tier }
+                };
+                
+                const errorInfo = await enhancedErrorHandlingService.handleTTSError(
+                    new Error("Hands-Free mode is a Pro feature."),
+                    errorContext
+                );
+                
+                console.warn(errorInfo.userMessage);
+                return reject(errorInfo);
             }
             
             if (!synth) {
-                const error = new Error("Text-to-Speech is not available on this browser.");
-                console.error(error.message);
-                return reject(error);
+                const errorContext: TTSErrorContext = {
+                    operation: 'tts_speak',
+                    component: 'ttsService',
+                    text,
+                    additionalData: { synthAvailable: false }
+                };
+                
+                const errorInfo = await enhancedErrorHandlingService.handleTTSError(
+                    new Error("Text-to-Speech is not available on this browser."),
+                    errorContext
+                );
+                
+                console.error(errorInfo.userMessage);
+                return reject(errorInfo);
             }
+            
             if (!text.trim()) {
                 return resolve();
             }
@@ -143,15 +167,60 @@ const speak = async (text: string): Promise<void> => {
                 resolve();
             };
             
-            utterance.onerror = (e) => {
+            utterance.onerror = async (e) => {
                 console.error("SpeechSynthesis Utterance Error", e);
                 cancel();
-                reject(e);
+                
+                // Use enhanced error handling for TTS errors
+                try {
+                    const errorContext: TTSErrorContext = {
+                        operation: 'tts_utterance',
+                        component: 'ttsService',
+                        text,
+                        voiceURI: voiceToUse?.voiceURI,
+                        speechRate: utterance.rate,
+                        additionalData: { 
+                            errorEvent: e,
+                            voiceName: voiceToUse?.name,
+                            availableVoices: availableVoices.length
+                        }
+                    };
+                    
+                    const errorInfo = await enhancedErrorHandlingService.handleTTSError(
+                        e,
+                        errorContext
+                    );
+                    
+                    reject(errorInfo);
+                } catch (enhancedErrorHandlingError) {
+                    // Fallback to original error if enhanced handling fails
+                    console.warn('Enhanced TTS error handling failed, using fallback:', enhancedErrorHandlingError);
+                    reject(e);
+                }
             };
 
             synth.speak(utterance);
         } catch (error) {
-            reject(error);
+            // Use enhanced error handling for general TTS errors
+            try {
+                const errorContext: TTSErrorContext = {
+                    operation: 'tts_speak',
+                    component: 'ttsService',
+                    text,
+                    additionalData: { originalError: error }
+                };
+                
+                const errorInfo = await enhancedErrorHandlingService.handleTTSError(
+                    error,
+                    errorContext
+                );
+                
+                reject(errorInfo);
+            } catch (enhancedErrorHandlingError) {
+                // Fallback to original error if enhanced handling fails
+                console.warn('Enhanced TTS error handling failed, using fallback:', enhancedErrorHandlingError);
+                reject(error);
+            }
         }
     });
 };

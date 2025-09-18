@@ -122,14 +122,16 @@ const SubTabs: React.FC<SubTabsProps> = ({
     // Memoize tabs array to prevent recreation on every render
     const tabs = useMemo(() => {
         if (shouldShowSubtabs) {
+            // Use the actual insights from the conversation instead of hardcoded tabs
             return [
                 { id: 'chat', title: 'Chat', isNew: false, status: 'loaded' },
-                { id: 'otaku-diary', title: 'Otaku Diary', isNew: false, status: 'loaded' },
-                ...(userTier !== 'free' ? [
-                    { id: 'story-so-far', title: 'Story So Far', isNew: false, status: 'loaded' },
-                    { id: 'lore', title: 'Lore', isNew: false, status: 'loaded' },
-                    { id: 'build', title: 'Build', isNew: false, status: 'loaded' }
-                ] : [])
+                ...orderedInsights.map(insight => ({
+                    id: insight.id,
+                    title: insight.title,
+                    isNew: insight.isNew || false,
+                    status: insight.status || 'loaded',
+                    hasNotifications: false
+                }))
             ];
         } else if (shouldShowWishlistTab) {
             return [
@@ -138,7 +140,7 @@ const SubTabs: React.FC<SubTabsProps> = ({
             ];
         }
         return [];
-    }, [shouldShowSubtabs, shouldShowWishlistTab, orderedInsights, userTier, wishlistNotifications]);
+    }, [shouldShowSubtabs, shouldShowWishlistTab, orderedInsights, wishlistNotifications]);
 
 
 

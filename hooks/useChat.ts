@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { ChatMessage, Conversations, Conversation, newsPrompts, Insight, insightTabsConfig, InsightStatus, PendingInsightModification, ChatMessageFeedback, TaskCompletionPrompt } from '../services/types';
+import { ChatMessage, Conversations, Conversation, newsPrompts, Insight, insightTabsConfig, InsightStatus, PendingInsightModification, ChatMessageFeedback, TaskCompletionPrompt, DetectedTask } from '../services/types';
+import { enhancedErrorHandlingService, ChatErrorContext } from '../services/enhancedErrorHandlingService';
 import { authService, supabase } from '../services/supabase';
 // Removed databaseService - not used in useChat
 import { secureConversationService } from '../services/secureConversationService';
@@ -14,17 +15,8 @@ import { longTermMemoryService } from '../services/longTermMemoryService';
 // Removed unifiedAIService - not used in useChat
 import { otakuDiaryService } from '../services/otakuDiaryService';
 import tabManagementService from '../services/tabManagementService';
-import { 
-  generateInitialProHint, 
-  sendMessageWithImages, 
-  sendMessage as sendTextToGemini, 
-  isChatActive, 
-  renameChatSession, 
-  resetChat as resetGeminiChat, 
-  generateInsightWithSearch, 
-  generateInsightStream, 
-  generateUnifiedInsights 
-} from '../services/geminiService';
+// Import the unifiedAIService instance
+import { unifiedAIService } from '../services/unifiedAIService';
 // Dynamic imports to avoid circular dependencies
 // Services are now imported statically at the top of the file
 
@@ -115,6 +107,35 @@ const sortConversations = (conversations: Conversations) => (aId: string, bId: s
 
 export const useChat = (isHandsFreeMode: boolean) => {
     // Services are now imported statically, no initialization needed
+
+    // ===== HELPER FUNCTIONS FOR UNIVERSAL AI RESPONSE =====
+    
+    /**
+     * Set suggested prompts for UI display
+     */
+    const setSuggestedPrompts = useCallback((prompts: string[]) => {
+        // This will be handled by the parent component that manages suggested prompts
+        console.log('💡 Suggested prompts updated:', prompts);
+        // TODO: Implement proper state management for suggested prompts
+    }, []);
+
+    /**
+     * Process state update tags from AI response
+     */
+    const processStateUpdateTags = useCallback((tags: string[]) => {
+        tags.forEach(tag => {
+            if (tag.includes('OBJECTIVE_COMPLETE')) {
+                console.log('✅ Objective completed:', tag);
+                // TODO: Update game state to reflect objective completion
+            } else if (tag.includes('TRIUMPH')) {
+                console.log('🏆 Boss defeated:', tag);
+                // TODO: Update game state to reflect boss defeat
+            } else {
+                console.log('🏷️ State update:', tag);
+                // TODO: Handle other state updates
+            }
+        });
+    }, []);
 
     const [chatState, setChatState] = useState<{ 
         conversations: Conversations, 
@@ -712,6 +733,7 @@ export const useChat = (isHandsFreeMode: boolean) => {
         
         const textQueries = text.trim().length > 0 ? 1 : 0;
         const imageQueries = images ? images.length : 0;
+        const hasImages = !!(images && images.length > 0);
 
         if (textQueries === 0 && imageQueries === 0) return { success: true };
         
@@ -932,52 +954,228 @@ export const useChat = (isHandsFreeMode: boolean) => {
                 }
             };
 
-            const onStreamingError = (error: Error) => {
+            const onStreamingError = async (error: Error) => {
                 hasError = true;
-                if (error.message === 'QUOTA_EXCEEDED') {
-                    handleQuotaError(modelMessageId);
-                } else {
-                    updateMessageInConversation(activeConversationId, modelMessageId, msg => ({ ...msg, text: error.message }));
-                    if (isHandsFreeMode) ttsService.speak(error.message).catch(() => {});
+                
+                // Use enhanced error handling for streaming errors
+                try {
+                    const errorContext: ChatErrorContext = {
+                        operation: 'streaming_response',
+                        component: 'useChat',
+                        conversationId: activeConversationId,
+                        messageId: modelMessageId,
+                        isHandsFreeMode
+                    };
+                    
+                    const errorInfo = await enhancedErrorHandlingService.handleChatError(
+                        error, 
+                        errorContext
+                    );
+                    
+                    // Update message with user-friendly error message
+                    updateMessageInConversation(activeConversationId, modelMessageId, msg => ({ 
+                        ...msg, 
+                        text: errorInfo.userMessage 
+                    }));
+                    
+                    // Handle TTS for error message (only if TTS-safe)
+                    if (isHandsFreeMode && errorInfo.ttsSafe) {
+                        ttsService.speak(errorInfo.userMessage).catch(ttsError => {
+                            console.warn('TTS failed for streaming error message:', ttsError);
+                        });
+                    }
+                    
+                } catch (enhancedErrorHandlingError) {
+                    // Fallback to original error handling if enhanced service fails
+                    console.warn('Enhanced error handling failed for streaming error, using fallback:', enhancedErrorHandlingError);
+                    
+                    if (error.message === 'QUOTA_EXCEEDED') {
+                        handleQuotaError(modelMessageId);
+                    } else {
+                        updateMessageInConversation(activeConversationId, modelMessageId, msg => ({ ...msg, text: error.message }));
+                        if (isHandsFreeMode) ttsService.speak(error.message).catch(() => {});
+                    }
                 }
+                
                 setLoadingMessages(prev => prev.filter(id => id !== modelMessageId));
             };
 
-            const onErrorString = (error: string) => {
+            const onErrorString = async (error: string) => {
                 hasError = true;
-                if (error === 'QUOTA_EXCEEDED') {
-                    handleQuotaError(modelMessageId);
-                } else {
-                    updateMessageInConversation(activeConversationId, modelMessageId, msg => ({ ...msg, text: error }));
-                    if (isHandsFreeMode) ttsService.speak(error).catch(() => {});
+                
+                // Use enhanced error handling for better user experience
+                try {
+                    const errorContext: ChatErrorContext = {
+                        operation: 'chat_response',
+                        component: 'useChat',
+                        conversationId: activeConversationId,
+                        messageId: modelMessageId,
+                        isHandsFreeMode
+                    };
+                    
+                    const errorInfo = await enhancedErrorHandlingService.handleChatError(
+                        { message: error }, 
+                        errorContext
+                    );
+                    
+                    // Update message with user-friendly error message
+                    updateMessageInConversation(activeConversationId, modelMessageId, msg => ({ 
+                        ...msg, 
+                        text: errorInfo.userMessage 
+                    }));
+                    
+                    // Handle TTS for error message (only if TTS-safe)
+                    if (isHandsFreeMode && errorInfo.ttsSafe) {
+                        ttsService.speak(errorInfo.userMessage).catch(ttsError => {
+                            console.warn('TTS failed for error message:', ttsError);
+                        });
+                    }
+                    
+                    // Add recovery action if available
+                    if (errorInfo.recoveryAction) {
+                        // For now, we'll just log the recovery action
+                        // In a full implementation, we'd show a retry button
+                        console.log('Recovery action available:', errorInfo.recoveryAction);
+                    }
+                    
+                } catch (enhancedErrorHandlingError) {
+                    // Fallback to original error handling if enhanced service fails
+                    console.warn('Enhanced error handling failed, using fallback:', enhancedErrorHandlingError);
+                    
+                    if (error === 'QUOTA_EXCEEDED') {
+                        handleQuotaError(modelMessageId);
+                    } else {
+                        updateMessageInConversation(activeConversationId, modelMessageId, msg => ({ ...msg, text: error }));
+                        if (isHandsFreeMode) ttsService.speak(error).catch(() => {});
+                    }
                 }
+                
                 setLoadingMessages(prev => prev.filter(id => id !== modelMessageId));
             };
 
-            if (isProUser) {
-                const imageParts = images ? images.map(img => ({ base64: img.base64, mimeType: img.mimeType })) : null;
-                const historyMessages = history.messages.map(msg => ({ 
-                    ...msg, 
-                    text: msg.content, 
-                    role: msg.role === 'assistant' ? 'model' as const : msg.role as 'user' | 'system' 
-                }));
-                rawTextResponse = await generateInitialProHint(promptText, imageParts, sourceConversation, historyMessages, onErrorString, controller.signal) || "";
-            } else {
-                if (images && images.length > 0) {
-                    const imageParts = images.map(img => ({ base64: img.base64, mimeType: img.mimeType }));
-                    const historyMessages = history.messages.map(msg => ({ 
-                    ...msg, 
-                    text: msg.content, 
-                    role: msg.role === 'assistant' ? 'model' as const : msg.role as 'user' | 'system' 
-                }));
-                    await sendMessageWithImages(promptText, imageParts, sourceConversation, controller.signal, onChunk, onErrorString, historyMessages);
+            // Try universal AI response first (1:1 API call architecture)
+            try {
+                const universalResponse = await unifiedAIService().generateUniversalResponse(
+                    sourceConversation,
+                    promptText,
+                    hasImages,
+                    controller.signal,
+                    history.messages.map(msg => ({ 
+                        ...msg, 
+                        text: msg.content, 
+                        role: msg.role === 'assistant' ? 'model' as const : msg.role as 'user' | 'system' 
+                    }))
+                );
+
+                if (universalResponse && !controller.signal.aborted) {
+                    rawTextResponse = universalResponse.narrativeResponse;
+                    
+                    // Process suggested tasks if available
+                    if (universalResponse.suggestedTasks && universalResponse.suggestedTasks.length > 0) {
+                        try {
+                            const userTier = await unifiedUsageService.getTier();
+                            if (userTier === 'pro' || userTier === 'vanguard_pro') {
+                                await otakuDiaryService.addAISuggestedTasks(sourceConvoId, universalResponse.suggestedTasks);
+                                console.log(`🎯 Added ${universalResponse.suggestedTasks.length} AI suggested tasks for ${sourceConvoId}`);
+                            }
+                        } catch (error) {
+                            console.warn('Failed to add suggested tasks:', error);
+                        }
+                    }
+
+                    // Process task completion prompt if available
+                    if (universalResponse.taskCompletionPrompt) {
+                        console.log('📋 Task completion prompt generated:', universalResponse.taskCompletionPrompt);
+                    }
+
+                    // Process progressive insight updates if available
+                    if (universalResponse.progressiveInsightUpdates && universalResponse.progressiveInsightUpdates.length > 0) {
+                        console.log('🔄 Progressive insight updates received:', universalResponse.progressiveInsightUpdates.length);
+                        
+                        // Apply updates to conversation insights for Pro/Vanguard users
+                        try {
+                            const userTier = await unifiedUsageService.getTier();
+                            if (userTier === 'pro' || userTier === 'vanguard_pro') {
+                                updateConversation(activeConversationId, convo => {
+                                    if (!convo.insights) return convo;
+                                    
+                                    const updatedInsights = { ...convo.insights };
+                                    universalResponse.progressiveInsightUpdates.forEach(update => {
+                                        if (updatedInsights[update.tabId]) {
+                                            updatedInsights[update.tabId] = {
+                                                ...updatedInsights[update.tabId],
+                                                title: update.title,
+                                                content: update.content,
+                                                status: 'loaded',
+                                                isNew: true,
+                                                lastUpdated: Date.now()
+                                            };
+                                        }
+                                    });
+                                    
+                                    return { ...convo, insights: updatedInsights };
+                                });
+                                
+                                console.log('✅ Progressive insight updates applied to UI');
+                            } else {
+                                console.log('🚫 Progressive updates skipped for free user');
+                            }
+                        } catch (error) {
+                            console.warn('Failed to apply progressive insight updates:', error);
+                        }
+                    }
+
+                    // Process follow-up prompts if available
+                    if (universalResponse.followUpPrompts && universalResponse.followUpPrompts.length > 0) {
+                        console.log('💡 Follow-up prompts generated:', universalResponse.followUpPrompts.length);
+                        // Store follow-up prompts for UI display
+                        setSuggestedPrompts(universalResponse.followUpPrompts);
+                    }
+
+                    // Process state update tags if available
+                    if (universalResponse.stateUpdateTags && universalResponse.stateUpdateTags.length > 0) {
+                        console.log('🏷️ State update tags:', universalResponse.stateUpdateTags);
+                        // Process state changes (e.g., objective completion, boss defeats)
+                        processStateUpdateTags(universalResponse.stateUpdateTags);
+                    }
+
+                    // Process game pill data if available (Pro/Vanguard only)
+                    if (universalResponse.gamePillData?.shouldCreate) {
+                        console.log('🎮 Game pill creation data received:', universalResponse.gamePillData.gameName);
+                        // Game pill creation is handled by the AI service internally
+                    }
                 } else {
+                    console.warn('Universal response returned null or was aborted, falling back to basic streaming');
+                }
+            } catch (error) {
+                console.warn('Universal AI response failed, falling back to streaming methods:', error);
+                
+                // Fallback to existing streaming methods
+                if (isProUser) {
+                    const imageParts = images ? images.map(img => ({ base64: img.base64, mimeType: img.mimeType })) : null;
                     const historyMessages = history.messages.map(msg => ({ 
-                    ...msg, 
-                    text: msg.content, 
-                    role: msg.role === 'assistant' ? 'model' as const : msg.role as 'user' | 'system' 
-                }));
-                    await sendTextToGemini(promptText, sourceConversation, controller.signal, onChunk, onErrorString, historyMessages);
+                        ...msg, 
+                        text: msg.content, 
+                        role: msg.role === 'assistant' ? 'model' as const : msg.role as 'user' | 'system' 
+                    }));
+                    rawTextResponse = await unifiedAIService().generateInitialProHint(promptText, imageParts, sourceConversation, historyMessages, onErrorString, controller.signal) || "";
+                } else {
+                    if (images && images.length > 0) {
+                        const imageParts = images.map(img => ({ base64: img.base64, mimeType: img.mimeType }));
+                        const historyMessages = history.messages.map(msg => ({ 
+                        ...msg, 
+                        text: msg.content, 
+                        role: msg.role === 'assistant' ? 'model' as const : msg.role as 'user' | 'system' 
+                    }));
+                        await unifiedAIService().sendMessageWithImages(promptText, imageParts, sourceConversation, controller.signal, onChunk, onErrorString, historyMessages);
+                    } else {
+                        const historyMessages = history.messages.map(msg => ({ 
+                        ...msg, 
+                        text: msg.content, 
+                        role: msg.role === 'assistant' ? 'model' as const : msg.role as 'user' | 'system' 
+                    }));
+                        await unifiedAIService().sendMessage(promptText, sourceConversation, controller.signal, onChunk, onErrorString, historyMessages);
+                    }
                 }
             }
             
@@ -1014,7 +1212,6 @@ export const useChat = (isHandsFreeMode: boolean) => {
             if (genreMatch) gameGenre = genreMatch[1].trim();
 
             const confidenceMatch = rawTextResponse.match(/\[OTAKON_CONFIDENCE:\s*(high|low)\]/);
-            const hasImages = !!(images && images.length > 0);
             const isConfidenceHigh = confidenceMatch?.[1] === 'high';
             if (isConfidenceHigh || (identifiedGameName && !hasImages)) {
                 const progressMatch = rawTextResponse.match(/\[OTAKON_GAME_PROGRESS:\s*(\d+)\]/);
@@ -1108,37 +1305,10 @@ export const useChat = (isHandsFreeMode: boolean) => {
                 }
             }
 
-            // NEW: Generate AI suggested tasks for Pro/Vanguard users
-            if (finalTargetConvoId !== EVERYTHING_ELSE_ID && rawTextResponse) {
-                try {
-                    const userTier = await unifiedUsageService.getTier();
-                    if (userTier === 'pro' || userTier === 'vanguard_pro') {
-                        // Get context for task generation using statically imported services
-                        
-                        const longTermContext = longTermMemoryService.getLongTermContext(finalTargetConvoId);
-                        const screenshotTimelineContext = screenshotTimelineService.getTimelineContext(finalTargetConvoId);
-                        
-                        // Removed unifiedAIService - not used
-                        // Generate AI suggested tasks using available context
-                        const suggestedTasks: any[] = [];
-                        
-                        // Add tasks to Otaku Diary
-                        if (suggestedTasks.length > 0) {
-                          await otakuDiaryService.addAISuggestedTasks(finalTargetConvoId, suggestedTasks);
-                          console.log(`🎯 Added ${suggestedTasks.length} AI suggested tasks for ${finalTargetConvoId}`);
-                        }
-                    }
-                } catch (error) {
-                  console.warn('Failed to generate AI suggested tasks:', error);
-                }
-            }
-
-            // NEW: Get task completion prompt from AI response
+            // Task completion prompt processing (now handled by enhanced response above)
             let taskCompletionPrompt: TaskCompletionPrompt | undefined = undefined;
             if (finalTargetConvoId !== EVERYTHING_ELSE_ID) {
                 try {
-                    // Using static imports instead of dynamic imports for Firebase hosting compatibility
-                    
                     const userTier = await unifiedUsageService.getTier();
                     const centralTasks = await otakuDiaryService.getCentralTasks(finalTargetConvoId);
                     const aiGeneratedTasks = await otakuDiaryService.getAISuggestedTasks(finalTargetConvoId);
@@ -1151,6 +1321,28 @@ export const useChat = (isHandsFreeMode: boolean) => {
                     ) || undefined;
                 } catch (error) {
                     console.warn('Failed to generate task completion prompt:', error);
+                }
+            }
+
+            // Process extracted suggestions into AI tasks for Pro/Vanguard users
+            if (suggestions && suggestions.length > 0 && finalTargetConvoId !== EVERYTHING_ELSE_ID) {
+                try {
+                    const userTier = await unifiedUsageService.getTier();
+                    if (userTier === 'pro' || userTier === 'vanguard_pro') {
+                        // Convert suggestions to DetectedTask format
+                        const detectedTasks: DetectedTask[] = suggestions.map((suggestion, index) => ({
+                            title: suggestion,
+                            description: `AI-generated task based on your query: "${text}"`,
+                            category: 'custom' as const,
+                            confidence: 0.8,
+                            source: 'ai_response'
+                        }));
+                        
+                        await otakuDiaryService.addAISuggestedTasks(finalTargetConvoId, detectedTasks);
+                        console.log(`🎯 Added ${suggestions.length} AI suggested tasks from streaming response for ${finalTargetConvoId}`);
+                    }
+                } catch (error) {
+                    console.warn('Failed to add suggested tasks from streaming response:', error);
                 }
             }
             
@@ -1180,8 +1372,8 @@ export const useChat = (isHandsFreeMode: boolean) => {
                         const newOrderSet = new Set([EVERYTHING_ELSE_ID, finalTargetConvoId, ...prev.order]);
                         newOrder = Array.from(newOrderSet);
                     }
-                    if (isChatActive(sourceConvoId)) {
-                        renameChatSession(sourceConvoId, finalTargetConvoId);
+                    if (unifiedAIService().isChatActive(sourceConvoId)) {
+                        unifiedAIService().renameChatSession(sourceConvoId, finalTargetConvoId);
                     }
                 } else {
                     sourceConvo.messages = sourceConvo.messages.map(m => m.id === modelMessageId ? finalModelMessage : m);
@@ -1189,24 +1381,8 @@ export const useChat = (isHandsFreeMode: boolean) => {
                 
                 const targetConvoForUpdate = newConversations[finalTargetConvoId];
                 if (targetConvoForUpdate) {
-                     if (isProUser && identifiedGameName && gameGenre && !targetConvoForUpdate.insights) {
-                        const tabs = insightTabsConfig[gameGenre] || insightTabsConfig.default;
-                        const insightsOrder = tabs.map(t => t.id);
-                        
-                        // Create insight tabs with loading status - will be populated with actual content
-                        const instantInsights: Record<string, Insight> = {};
-                        tabs.forEach(tab => {
-                            instantInsights[tab.id] = { 
-                                id: tab.id, 
-                                title: tab.title, 
-                                content: '🔄 Generating comprehensive insights for you...', 
-                                status: 'loading' as any,
-                                isPlaceholder: false,
-                                lastUpdated: Date.now(),
-                                generationAttempts: 0
-                            };
-                        });
-                        
+                    // Create Otaku Diary tab for ALL users (free, pro, vanguard) when game pill is created
+                    if (identifiedGameName && gameGenre && !targetConvoForUpdate.insights) {
                         // 🔥 CRITICAL INTEGRATION: Add Otaku Diary tab for ALL users (free, pro, vanguard)
                         const otakuDiaryInsight: Insight = {
                             id: 'otaku-diary',
@@ -1218,19 +1394,46 @@ export const useChat = (isHandsFreeMode: boolean) => {
                             generationAttempts: 0
                         };
                         
-                        // Add Otaku Diary to insights and order
-                        instantInsights['otaku-diary'] = otakuDiaryInsight;
-                        insightsOrder.unshift('otaku-diary'); // Put Otaku Diary first
+                        // Create insights object with Otaku Diary
+                        const instantInsights: Record<string, Insight> = {
+                            'otaku-diary': otakuDiaryInsight
+                        };
+                        
+                        // For Pro/Vanguard users, also create other insight tabs
+                        if (isProUser) {
+                            const tabs = insightTabsConfig[gameGenre] || insightTabsConfig.default;
+                            const insightsOrder = tabs.map(t => t.id);
+                            
+                            // Create insight tabs with loading status - will be populated with actual content
+                            tabs.forEach(tab => {
+                                instantInsights[tab.id] = { 
+                                    id: tab.id, 
+                                    title: tab.title, 
+                                    content: '🔄 Generating comprehensive insights for you...', 
+                                    status: 'loading' as any,
+                                    isPlaceholder: false,
+                                    lastUpdated: Date.now(),
+                                    generationAttempts: 0
+                                };
+                            });
+                            
+                            // Add Otaku Diary to insights order (first)
+                            insightsOrder.unshift('otaku-diary');
+                            targetConvoForUpdate.insightsOrder = insightsOrder;
+                            
+                            console.log(`🔄 Created Otaku Diary + ${tabs.length} insight tabs for Pro user: ${identifiedGameName}`);
+                            
+                            // Generate all insights in one API call for better performance
+                            if (gameProgress !== null) {
+                                generateAllInsightsAtOnce(identifiedGameName, gameGenre, gameProgress, finalTargetConvoId);
+                            }
+                        } else {
+                            // For free users, only create Otaku Diary tab
+                            targetConvoForUpdate.insightsOrder = ['otaku-diary'];
+                            console.log(`🔄 Created Otaku Diary tab for free user: ${identifiedGameName}`);
+                        }
                         
                         targetConvoForUpdate.insights = instantInsights;
-                        targetConvoForUpdate.insightsOrder = insightsOrder;
-                        
-                        console.log(`🔄 Created Otaku Diary tab for game: ${identifiedGameName}`);
-                        
-                        // Generate all insights in one API call for better performance
-                        if (gameProgress !== null) {
-                            generateAllInsightsAtOnce(identifiedGameName, gameGenre, gameProgress, finalTargetConvoId);
-                        }
                     }
                     if (gameProgress !== null) targetConvoForUpdate.progress = gameProgress;
                     if (parsedInventory?.items) targetConvoForUpdate.inventory = parsedInventory.items;
@@ -1354,7 +1557,7 @@ export const useChat = (isHandsFreeMode: boolean) => {
         try {
             // Cancel any ongoing operations
             ttsService.cancel();
-            resetGeminiChat();
+            unifiedAIService().resetChat();
             
             // Clear abort controllers
             Object.values(abortControllersRef.current).forEach(controller => {
@@ -1520,7 +1723,7 @@ Progress: ${conversation.progress}%`;
 
                 if (!fullContent) {
                     const prompt = `${insightTabConfig.instruction || ''} for ${conversation.title}`;
-                    fullContent = await generateInsightWithSearch(
+                    fullContent = await unifiedAIService().generateInsightWithSearch(
                         prompt,
                         'flash',
                         controller.signal
@@ -1549,7 +1752,7 @@ Progress: ${conversation.progress}%`;
                 // Use the streaming function for non-search insights
                 let fullContent = '';
                 const prompt = `${insightTabConfig.instruction || ''} for ${conversation.title}`;
-                await generateInsightStream(
+                await unifiedAIService().generateInsightStream(
                     conversation.title,
                     conversation.genre || 'Unknown',
                     conversation.progress || 0,
@@ -1648,12 +1851,11 @@ Progress: ${conversation.progress}%`;
             });
             
             // Generate all insights in one API call using the unified service
-            const result = await generateUnifiedInsights(
+            const result = await unifiedAIService().generateUnifiedInsights(
                 gameName,
                 genre,
                 progress,
                 `Generate comprehensive insights for ${gameName} at ${progress}% progress`,
-                (error) => console.error('Unified insight generation error:', error),
                 new AbortController().signal
             );
             
@@ -1718,8 +1920,7 @@ Progress: ${conversation.progress}%`;
         });
     };
 
-    // 🚨 REMOVED: Automatic insight updates to prevent unauthorized API calls
-    // Insights are now only updated when user explicitly requests them
+    // Restore automatic progress updates for Pro/Vanguard users
     const updateInsightsForProgress = useCallback(async (conversationId: string, newProgress: number) => {
         const conversation = conversations[conversationId];
         if (!conversation?.insights || !conversation.genre) return;
@@ -1730,15 +1931,27 @@ Progress: ${conversation.progress}%`;
         // Only update if progress changed significantly (more than 10%)
         if (progressDifference < 10) return;
 
-        console.log(`Progress changed from ${currentProgress}% to ${newProgress}%, updating progress only...`);
+        // Only auto-update for Pro/Vanguard users
+        try {
+            const userTier = await unifiedUsageService.getTier();
+            if (userTier !== 'pro' && userTier !== 'vanguard_pro') {
+                console.log('🚫 Progress updates skipped for free user');
+                return;
+            }
+        } catch (error) {
+            console.warn('Failed to check user tier for progress updates:', error);
+            return;
+        }
 
-        // Update progress in conversation (no automatic insight updates)
+        console.log(`Progress changed from ${currentProgress}% to ${newProgress}%, updating insights...`);
+
+        // Update progress in conversation
         updateConversation(conversationId, convo => ({
             ...convo,
             progress: newProgress
         }));
 
-        // Mark progress-dependent insights as needing updates (user must click to regenerate)
+        // Get progress-dependent tabs
         const tabs = insightTabsConfig[conversation.genre] || insightTabsConfig.default;
         const progressDependentTabs = tabs.filter(tab => 
             (tab.instruction && tab.instruction.includes('progress')) || 
@@ -1747,34 +1960,84 @@ Progress: ${conversation.progress}%`;
             tab.id === 'current_objectives'
         );
 
-        updateConversation(conversationId, convo => {
-            if (!convo.insights) return convo;
-            
-            const updatedInsights = { ...convo.insights };
-            progressDependentTabs.forEach(tab => {
-                if (updatedInsights[tab.id] && !updatedInsights[tab.id].isPlaceholder) {
-                    updatedInsights[tab.id] = {
-                        ...updatedInsights[tab.id],
-                        content: `🔄 Progress updated to ${newProgress}%\n\n💡 Click to regenerate ${tab.title} with current progress`,
-                        status: 'placeholder',
-                        isNew: true,
-                        lastUpdated: Date.now()
-                    };
+        // Generate new insights for progress-dependent tabs
+        for (const tab of progressDependentTabs) {
+            try {
+                const newInsight = await unifiedAIService().generateInsight(
+                    conversation.title || 'Unknown Game',
+                    conversation.genre || 'default',
+                    newProgress,
+                    tab.id,
+                    conversationId
+                );
+                
+                if (newInsight) {
+                    updateConversation(conversationId, convo => ({
+                        ...convo,
+                        insights: {
+                            ...convo.insights,
+                            [tab.id]: {
+                                id: tab.id,
+                                title: newInsight.title,
+                                content: newInsight.content,
+                                status: 'loaded',
+                                isNew: true,
+                                lastUpdated: Date.now()
+                            }
+                        }
+                    }));
                 }
-            });
-            
-            return { ...convo, insights: updatedInsights };
-        });
+            } catch (error) {
+                console.warn(`Failed to update ${tab.id} for progress ${newProgress}%:`, error);
+            }
+        }
+    }, [conversations, updateConversation, unifiedUsageService]);
 
-        console.log('🚫 Automatic insight updates disabled - insights only updated on user request');
-    }, [conversations, updateConversation]);
-
-    // 🚨 REMOVED: Real-time insight updates to prevent unauthorized API calls
-    // Insights are now only updated when user explicitly requests them
+    // Restore real-time insight updates for Pro/Vanguard users
     const updateInsightsInRealTime = useCallback(async (chunk: string, sourceConversation: Conversation, targetConvoId: string) => {
-        // No automatic updates - insights only change when user requests them
-        console.log('🚫 Real-time insight updates disabled - insights only updated on user request');
-    }, []);
+        // Only process for Pro/Vanguard users to control costs
+        try {
+            const userTier = await unifiedUsageService.getTier();
+            if (userTier !== 'pro' && userTier !== 'vanguard_pro') {
+                return; // Skip for free users
+            }
+            
+            // Check if chunk contains relevant content
+            const { hasRelevantContent } = extractRelevantInfoFromChunk(chunk);
+            if (!hasRelevantContent) return;
+            
+            // Get stored progressive updates
+            const progressiveUpdates = unifiedAIService().getProgressiveUpdates(targetConvoId);
+            if (progressiveUpdates && Object.keys(progressiveUpdates).length > 0) {
+                // Apply updates to conversation insights
+                updateConversation(targetConvoId, convo => {
+                    if (!convo.insights) return convo;
+                    
+                    const updatedInsights = { ...convo.insights };
+                    Object.entries(progressiveUpdates).forEach(([tabId, update]) => {
+                        if (updatedInsights[tabId]) {
+                            updatedInsights[tabId] = {
+                                ...updatedInsights[tabId],
+                                title: update.title,
+                                content: update.content,
+                                status: 'loaded',
+                                isNew: true,
+                                lastUpdated: Date.now()
+                            };
+                        }
+                    });
+                    
+                    return { ...convo, insights: updatedInsights };
+                });
+                
+                // Clear processed updates
+                unifiedAIService().clearProgressiveUpdates(targetConvoId);
+                console.log('✅ Real-time progressive updates applied');
+            }
+        } catch (error) {
+            console.warn('Failed to process real-time insight updates:', error);
+        }
+    }, [conversations, updateConversation, unifiedUsageService]);
 
     // Helper function to extract relevant information from streaming chunks
     const extractRelevantInfoFromChunk = (chunk: string) => {

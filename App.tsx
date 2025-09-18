@@ -229,10 +229,12 @@ const App: React.FC = () => {
     sendMessage: handleSendMessage,
     stopMessage: handleStopMessage,
     switchConversation: handleSwitchConversation,
-    handleSubViewChange,
+    handleSubViewChange: originalHandleSubViewChange,
     retryMessage: handleRetry,
     resetConversations,
-    addSystemMessage
+    addSystemMessage,
+    fetchInsightContent,
+    markInsightAsRead
   } = useChat(appState.isHandsFreeMode);
 
   const { 
@@ -356,13 +358,45 @@ const App: React.FC = () => {
     }
   });
 
+  // Modal handlers
+  const handleOpenWishlistModal = useCallback(() => {
+    setAppState(prev => ({ ...prev, isWishlistModalOpen: true }));
+  }, []);
+
+  const handleOpenOtakuDiaryModal = useCallback(() => {
+    setAppState(prev => ({ ...prev, isOtakuDiaryModalOpen: true }));
+  }, []);
+
+  // Custom handler for sub view changes with special modal handling
+  const handleSubViewChange = useCallback((viewId: string) => {
+    // Special handling for Otaku Diary tab - open modal instead of switching views
+    if (viewId === 'otaku-diary' && activeConversation) {
+      handleOpenOtakuDiaryModal();
+      return;
+    }
+    
+    // Special handling for Wishlist tab - open modal instead of switching views
+    if (viewId === 'wishlist' && activeConversation?.id === 'everything-else') {
+      handleOpenWishlistModal();
+      return;
+    }
+    
+    // For all other tabs, use the original handler
+    originalHandleSubViewChange(viewId);
+    
+    // Handle insight content loading for non-chat tabs
+    if (activeConversation && viewId !== 'chat') {
+      markInsightAsRead(activeConversation.id, viewId);
+      const insight = activeConversation.insights?.[viewId];
+      if (insight && insight.status === 'loading') {
+        fetchInsightContent(activeConversation.id, viewId);
+      }
+    }
+  }, [activeConversation, handleOpenOtakuDiaryModal, handleOpenWishlistModal, originalHandleSubViewChange, markInsightAsRead, fetchInsightContent]);
+
   // Missing handlers
   const handleUpgradeClick = useCallback(() => {
     setAppState(prev => ({ ...prev, showUpgradeScreen: true }));
-  }, []);
-
-  const handleOpenWishlistModal = useCallback(() => {
-    setAppState(prev => ({ ...prev, isWishlistModalOpen: true }));
   }, []);
 
   // Handle sign out
@@ -614,17 +648,29 @@ const App: React.FC = () => {
 
     try {
       const isEligible = await tierService.isEligibleForTrial(appState.userState.id);
-      const { data: user } = await supabase
-        .from('users')
-        .select('has_used_trial')
-        .eq('auth_user_id', appState.userState.id)
-        .single();
+      
+      // Skip Supabase calls in developer mode
+      const isDevMode = localStorage.getItem('otakon_developer_mode') === 'true';
+      
+      let hasUsedTrial = false;
+      if (!isDevMode) {
+        const { data: user } = await supabase
+          .from('users')
+          .select('has_used_trial')
+          .eq('auth_user_id', appState.userState.id)
+          .single();
+        
+        hasUsedTrial = user?.has_used_trial || false;
+      } else {
+        console.log('🔧 Developer mode: Skipping has_used_trial Supabase call');
+        hasUsedTrial = false; // Default to false in dev mode
+      }
 
       setAppState(prev => ({
         ...prev,
         trialEligibility: {
           isEligible,
-          hasUsedTrial: user?.has_used_trial || false
+          hasUsedTrial
         }
       }));
     } catch (error) {
@@ -705,9 +751,15 @@ const App: React.FC = () => {
   }, [handleAuthStateChange, appState.userState?.isAuthenticated]);
 
   // SIMPLIFIED: Handle onboarding completion
-  const handleOnboardingComplete = useCallback(async () => {
+  const handleOnboardingComplete = useCallback(async (profile?: any) => {
     try {
-      console.log('🔧 [App] Completing onboarding for user');
+      console.log('🔧 [App] Completing onboarding for user', profile);
+      
+      // Save profile data if provided
+      if (profile) {
+        await playerProfileService.saveProfile(profile);
+        console.log('Profile data saved during onboarding:', profile);
+      }
       
       // Mark splash screens as seen and onboarding as complete
       await secureAppStateService.markOnboardingComplete();
@@ -1386,7 +1438,7 @@ const App: React.FC = () => {
           <div className="min-h-screen bg-[#000000] flex items-center justify-center">
             <PlayerProfileSetupModal
               isOpen={true}
-              onComplete={handleOnboardingComplete}
+              onComplete={(profile) => handleOnboardingComplete(profile)}
               onSkip={handleOnboardingComplete}
             />
           </div>
@@ -1655,7 +1707,7 @@ const App: React.FC = () => {
           <ContactUsModal isOpen={true} onClose={closeModal} />
         )}
         
-        <div className="min-h-screen bg-[#000000] text-white flex flex-col">
+        <div className="h-screen bg-[#000000] text-white flex flex-col overflow-hidden">
           {/* Main App View */}
           {activeConversation ? (
             <>
@@ -1698,7 +1750,15 @@ const App: React.FC = () => {
                       {(appState.userState?.tier === 'pro' || appState.userState?.tier === 'vanguard_pro') && (
                         <HandsFreeToggle
                           isHandsFree={appState.isHandsFreeMode}
-                          onToggle={() => setAppState(prev => ({ ...prev, isHandsFreeMode: !prev.isHandsFreeMode }))}
+                          onToggle={() => {
+                            const newHandsFreeMode = !appState.isHandsFreeMode;
+                            setAppState(prev => ({ 
+                              ...prev, 
+                              isHandsFreeMode: newHandsFreeMode,
+                              // Open modal when enabling hands-free mode for configuration
+                              isHandsFreeModalOpen: newHandsFreeMode
+                            }));
+                          }}
                         />
                       )}
                       
@@ -1817,8 +1877,8 @@ const App: React.FC = () => {
                 </div>
               </div>
 
-              {/* Main Content Area */}
-              <main className="flex-1 flex flex-col min-h-0 bg-[#000000]">
+              {/* Main Content Area - Fixed height with proper scrolling */}
+              <main className="flex-1 flex flex-col min-h-0 bg-[#000000] overflow-hidden">
                 <MainViewContainer
                   activeConversation={activeConversation}
                   activeSubView={activeSubView}
@@ -1847,7 +1907,7 @@ const App: React.FC = () => {
 
               {/* SubTabs and Screenshot Button - Fixed above Chat Input */}
               {((activeConversation?.insights && activeConversation.id !== 'everything-else') || activeConversation?.id === 'everything-else') && (
-                <div className="flex-shrink-0 px-3 sm:px-4 md:px-6 py-2 sm:py-3 border-t border-[#2E2E2E]/20">
+                <div className="flex-shrink-0 px-3 sm:px-4 md:px-6 py-1 border-t border-[#2E2E2E]/20">
                   <div className="w-full max-w-[95%] sm:max-w-4xl md:max-w-5xl mx-auto">
                     <div className="flex items-center gap-2 sm:gap-3">
                       <div className="flex-1 min-w-0">
@@ -1880,7 +1940,7 @@ const App: React.FC = () => {
               )}
 
               {/* Chat Input */}
-              <div className="flex-shrink-0 px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-t border-[#2E2E2E]/20">
+              <div className="flex-shrink-0 px-3 sm:px-4 md:px-6 py-1.5 border-t border-[#2E2E2E]/20">
                 <div className="w-full max-w-[95%] sm:max-w-4xl md:max-w-5xl mx-auto">
                   <ChatInput
                     value=""
@@ -2032,7 +2092,7 @@ const App: React.FC = () => {
           {appState.showProfileSetup && (
             <PlayerProfileSetupModal
               isOpen={appState.showProfileSetup}
-              onComplete={handleProfileSetupComplete}
+              onComplete={(profile) => handleProfileSetupComplete(profile)}
               onSkip={handleSkipProfileSetup}
             />
           )}
@@ -2040,8 +2100,8 @@ const App: React.FC = () => {
           {appState.isOtakuDiaryModalOpen && (
             <OtakuDiaryModal
               isOpen={appState.isOtakuDiaryModalOpen}
-              gameId=""
-              gameTitle=""
+              gameId={activeConversation?.id || ''}
+              gameTitle={activeConversation?.title || ''}
               onClose={() => setAppState(prev => ({ ...prev, isOtakuDiaryModalOpen: false }))}
             />
           )}

@@ -196,8 +196,8 @@ class UnifiedOAuthService {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Try multiple approaches to get the session
-      let session = null;
-      let sessionError = null;
+      let session: any = null;
+      let sessionError: any = null;
       
       // Approach 1: Try getSession()
       const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
@@ -242,20 +242,20 @@ class UnifiedOAuthService {
         }
       }
       
-      if (session?.user) {
-        console.log('🔐 [UnifiedOAuth] OAuth callback successful', { userId: session.user.id });
+      if (session && (session as any).user) {
+        console.log('🔐 [UnifiedOAuth] OAuth callback successful', { userId: (session as any).user.id });
         
         // Clean up URL parameters
         this.cleanupOAuthParams();
         
         // Call success callback
         if (options.onSuccess) {
-          options.onSuccess(session.user, session);
+          options.onSuccess((session as any).user, session);
         }
         
         return { 
           success: true, 
-          user: session.user, 
+          user: (session as any).user, 
           session 
         };
       }

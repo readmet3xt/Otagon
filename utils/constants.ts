@@ -76,6 +76,8 @@ export const STORAGE_KEYS = {
   // Cache
   APP_CACHE_PREFIX: 'otakon_app_cache_',
   USER_PREFERENCES: 'otakon_user_preferences',
+  USED_PROMPTS: 'otakon_used_prompts',
+  INSIGHT_CACHE: 'otakon_insight_cache',
   
   // Tasks
   TASKS_PREFIX: 'otakon_tasks_',

@@ -202,13 +202,19 @@ export const useAuthFlow = ({
     });
   }, [setConfirmationModal, executeFullReset]);
 
-  const handleProfileSetupComplete = useCallback(async () => {
+  const handleProfileSetupComplete = useCallback(async (profile?: any) => {
     try {
-      console.log('Profile setup completion started');
+      console.log('Profile setup completion started', profile);
       
       // Close the modal first
       setShowProfileSetup(false);
       console.log('Profile setup modal closed');
+      
+      // Save the profile data if provided
+      if (profile) {
+        await playerProfileService.saveProfile(profile);
+        console.log('Profile data saved:', profile);
+      }
       
       // Mark profile setup as completed in Supabase
       await secureAppStateService.markProfileSetupComplete();

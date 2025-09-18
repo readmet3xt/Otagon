@@ -70,11 +70,11 @@ const SuggestedPrompts: React.FC<SuggestedPromptsProps> = ({
     }
 
     return (
-        <div className="flex items-start gap-2 sm:gap-3 animate-fade-in">
+        <div className="flex items-start gap-1.5 sm:gap-2 animate-fade-in">
             {/* Empty space to match logo alignment */}
-            <div className="w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0"></div>
+            <div className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0"></div>
             {/* 2x2 matrix layout for all 4 prompts - aligned with chat messages */}
-            <div className="bg-[#1A1A1A]/95 backdrop-blur-md border border-[#424242]/40 rounded-xl p-2 sm:p-3 shadow-2xl max-w-[95%] sm:max-w-4xl md:max-w-5xl">
+            <div className="bg-[#1A1A1A]/95 backdrop-blur-md border border-[#424242]/40 rounded-xl p-1.5 sm:p-2 shadow-2xl max-w-[95%] sm:max-w-4xl md:max-w-5xl">
                 {isTinyScreen && (
                     <button
                         type="button"
@@ -88,13 +88,13 @@ const SuggestedPrompts: React.FC<SuggestedPromptsProps> = ({
                     </button>
                 )}
                 {(!isTinyScreen || accordionOpen) && (
-                    <div id="suggested-prompts-panel" className="grid grid-cols-2 gap-2 sm:gap-3">
+                    <div id="suggested-prompts-panel" className="grid grid-cols-2 gap-1.5 sm:gap-2">
                         {unusedPrompts.map((prompt) => (
                             <button
                                 key={prompt}
                                 onClick={() => handlePromptClick(prompt)}
                                 disabled={isInputDisabled}
-                                className={`group text-left px-2 sm:px-3 py-2 sm:py-3 rounded-lg bg-gradient-to-r from-[#1C1C1C]/80 to-[#0A0A0A]/80 border border-[#424242]/40 text-xs sm:text-sm text-[#E5E5E5] min-h-[44px] sm:min-h-[48px]
+                                className={`group text-left px-2 sm:px-2.5 py-1.5 sm:py-2 rounded-lg bg-gradient-to-r from-[#1C1C1C]/80 to-[#0A0A0A]/80 border border-[#424242]/40 text-xs sm:text-sm text-[#E5E5E5] min-h-[36px] sm:min-h-[40px]
                                             hover:bg-gradient-to-r hover:from-[#E53A3A]/20 hover:to-[#D98C1F]/20 hover:border-[#E53A3A]/60 hover:scale-105 hover:shadow-lg hover:shadow-[#E53A3A]/20
                                             transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFAB40]/50 touch-friendly`}
                             >
