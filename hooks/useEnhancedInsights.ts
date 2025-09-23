@@ -234,9 +234,10 @@ export const useEnhancedInsights = (
             // Mark failed updates as error but keep existing content
             const errorInsights: Record<string, EnhancedInsight> = {};
             insightTabs.forEach(tab => {
-                if (insights[tab.id]?.status === 'error') {
+                const insight = insights[tab.id];
+                if (insight?.status === 'error') {
                     errorInsights[tab.id] = {
-                        ...insights[tab.id],
+                        ...insight,
                         status: 'error',
                         lastUpdated: Date.now()
                     };
@@ -263,13 +264,18 @@ export const useEnhancedInsights = (
         if (!gameName || !genre || !profile) return;
         
         // Mark insight as loading
-        setInsights(prev => ({
-            ...prev,
-            [insightId]: {
-                ...prev[insightId],
-                status: 'loading'
-            }
-        }));
+        setInsights(prev => {
+            const existingInsight = prev[insightId];
+            if (!existingInsight) return prev;
+            
+            return {
+                ...prev,
+                [insightId]: {
+                    ...existingInsight,
+                    status: 'loading'
+                }
+            };
+        });
         
         try {
             console.log(`🔄 Retrying insight: ${insightId} for ${gameName}`);
@@ -293,13 +299,15 @@ export const useEnhancedInsights = (
             
             if (Object.keys(results).length > 0) {
                 const result = Object.values(results)[0];
-                setInsights(prev => ({
-                    ...prev,
-                    [insightId]: {
-                        ...result,
-                        status: 'loaded'
-                    }
-                }));
+                if (result) {
+                    setInsights(prev => ({
+                        ...prev,
+                        [insightId]: {
+                            ...result,
+                            status: 'loaded'
+                        }
+                    }));
+                }
                 
                 console.log(`✅ Retried insight: ${insightId}`);
             }
@@ -308,14 +316,19 @@ export const useEnhancedInsights = (
             console.error('Error retrying insight:', error);
             
             // Mark as error
-            setInsights(prev => ({
-                ...prev,
-                [insightId]: {
-                    ...prev[insightId],
-                    status: 'error',
-                    content: `Error: Failed to retry. Ask me about ${insights[insightId]?.title || 'this topic'} for help.`
-                }
-            }));
+            setInsights(prev => {
+                const existingInsight = prev[insightId];
+                if (!existingInsight) return prev;
+                
+                return {
+                    ...prev,
+                    [insightId]: {
+                        ...existingInsight,
+                        status: 'error',
+                        content: `Error: Failed to retry. Ask me about ${insights[insightId]?.title || 'this topic'} for help.`
+                    }
+                };
+            });
         }
     }, [profile, insightTabs, insights]);
 

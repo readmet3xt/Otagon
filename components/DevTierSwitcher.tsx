@@ -54,7 +54,7 @@ const DevTierSwitcher: React.FC<DevTierSwitcherProps> = ({ currentTier, onSwitch
 
     try {
       // First, update local state immediately for better UX
-      setLocalTier(nextTier);
+      setLocalTier(nextTier!);
       
       // Then attempt to update the backend
       if (nextTier === 'free') {

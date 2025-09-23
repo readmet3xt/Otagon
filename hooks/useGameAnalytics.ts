@@ -226,8 +226,8 @@ export const useGameAnalytics = () => {
       targetType: 'insight',
       targetId: insightId,
       feedbackType,
-      feedbackText,
-      metadata
+      ...(feedbackText && { feedbackText }),
+      ...(metadata && { metadata })
     });
   }, []);
 
@@ -258,12 +258,12 @@ export const useGameAnalytics = () => {
     const apiCall: ApiCall = {
       apiEndpoint: endpoint,
       apiMethod: method,
-      requestSizeBytes: requestSize,
-      responseSizeBytes: responseSize,
+      ...(requestSize !== undefined && { requestSizeBytes: requestSize }),
+      ...(responseSize !== undefined && { responseSizeBytes: responseSize }),
       responseTimeMs,
       success,
-      errorMessage,
-      requestMetadata: metadata,
+      ...(errorMessage && { errorMessage }),
+      ...(metadata && { requestMetadata: metadata }),
       responseMetadata: {
         timestamp: new Date().toISOString(),
         endpoint,

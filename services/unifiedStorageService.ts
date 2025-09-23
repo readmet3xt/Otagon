@@ -152,7 +152,7 @@ export class UnifiedStorageService extends BaseService {
       key,
       value,
       timestamp: Date.now(),
-      category,
+      ...(category && { category }),
       version: 1,
       metadata: { source: 'unified_storage' }
     };
@@ -582,7 +582,7 @@ export class UnifiedStorageService extends BaseService {
       .eq('auth_user_id', userId)
       .limit(1);
 
-    return data?.[0]?.[cat]?.[key] || null;
+    return (data as any)?.[0]?.[cat]?.[key] || null;
   }
 
   private async removeFromSupabase(key: string, category?: string): Promise<void> {
@@ -596,8 +596,8 @@ export class UnifiedStorageService extends BaseService {
       .eq('auth_user_id', userId)
       .limit(1);
 
-    if (data?.[0]?.[cat]) {
-      const updated = { ...data[0][cat] };
+    if ((data as any)?.[0]?.[cat]) {
+      const updated = { ...(data as any)[0][cat] };
       delete updated[key];
       
       await supabase

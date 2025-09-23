@@ -248,11 +248,11 @@ export class FeedbackLearningEngine {
       }
     });
 
-    if (confidenceFailures['high_confidence'] > 0) {
+    if ((confidenceFailures['high_confidence'] || 0) > 0) {
       improvements.push('High confidence predictions are being rejected. Require stronger evidence before making predictions.');
     }
 
-    if (confidenceFailures['low_confidence'] > 0) {
+    if ((confidenceFailures['low_confidence'] || 0) > 0) {
       improvements.push('Low confidence predictions are being rejected. Improve detection accuracy for better confidence scoring.');
     }
 
@@ -298,14 +298,14 @@ export class FeedbackLearningEngine {
         };
       }
 
-      const confirmations = feedback.filter(f => f.system_data?.event_type === 'confirmed').length;
-      const rejections = feedback.filter(f => f.system_data?.event_type === 'rejected').length;
+      const confirmations = feedback.filter((f: any) => f.system_data?.event_type === 'confirmed').length;
+      const rejections = feedback.filter((f: any) => f.system_data?.event_type === 'rejected').length;
       const totalFeedback = feedback.length;
 
       // Calculate average confidence from confirmed feedback
-      const confirmedFeedback = feedback.filter(f => f.system_data?.event_type === 'confirmed');
+      const confirmedFeedback = feedback.filter((f: any) => f.system_data?.event_type === 'confirmed');
       const averageConfidence = confirmedFeedback.length > 0 
-        ? confirmedFeedback.reduce((sum, f) => sum + (f.system_data?.ai_confidence || 0), 0) / confirmedFeedback.length
+        ? confirmedFeedback.reduce((sum: number, f: any) => sum + (f.system_data?.ai_confidence || 0), 0) / confirmedFeedback.length
         : 0;
 
       // Determine improvement trend (simplified logic)

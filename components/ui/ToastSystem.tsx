@@ -221,8 +221,10 @@ export const useToastNotifications = () => {
     return addToast({
       type: 'success',
       title,
-      message,
-      ...options
+      ...(message && { message }),
+      ...(options?.duration && { duration: options.duration }),
+      ...(options?.action && { action: options.action }),
+      ...(options?.onClose && { onClose: options.onClose })
     });
   }, [addToast]);
 
@@ -230,9 +232,10 @@ export const useToastNotifications = () => {
     return addToast({
       type: 'error',
       title,
-      message,
+      ...(message && { message }),
       duration: 7000, // Longer duration for errors
-      ...options
+      ...(options?.action && { action: options.action }),
+      ...(options?.onClose && { onClose: options.onClose })
     });
   }, [addToast]);
 
@@ -240,8 +243,10 @@ export const useToastNotifications = () => {
     return addToast({
       type: 'warning',
       title,
-      message,
-      ...options
+      ...(message && { message }),
+      ...(options?.duration && { duration: options.duration }),
+      ...(options?.action && { action: options.action }),
+      ...(options?.onClose && { onClose: options.onClose })
     });
   }, [addToast]);
 
@@ -249,8 +254,10 @@ export const useToastNotifications = () => {
     return addToast({
       type: 'info',
       title,
-      message,
-      ...options
+      ...(message && { message }),
+      ...(options?.duration && { duration: options.duration }),
+      ...(options?.action && { action: options.action }),
+      ...(options?.onClose && { onClose: options.onClose })
     });
   }, [addToast]);
 

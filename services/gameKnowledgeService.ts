@@ -340,7 +340,7 @@ export class GameKnowledgeService {
         
         if (objectiveIndex !== -1) {
           // Update the objective
-          objectives[objectiveIndex] = { ...objectives[objectiveIndex], ...updates };
+          objectives[objectiveIndex] = { ...objectives[objectiveIndex], ...updates } as GameObjective;
           
           const { data, error } = await supabase
             .from('games')
@@ -1170,23 +1170,23 @@ export class GameKnowledgeService {
       // First, try to find a knowledge match
       const knowledgeMatches = await this.findKnowledgeMatch(query, gameTitle);
       
-      if (knowledgeMatches.length > 0 && knowledgeMatches[0].confidence_score >= 0.8) {
+      if (knowledgeMatches.length > 0 && knowledgeMatches[0] && knowledgeMatches[0].confidence_score >= 0.8) {
         const bestMatch = knowledgeMatches[0];
         
         // Update usage statistics
-        if (bestMatch.response_type !== 'redirect_to_ai') {
+        if (bestMatch && bestMatch.response_type !== 'redirect_to_ai') {
           await this.updateQueryMappingUsage(bestMatch.solution_id!, true);
         }
 
         return {
-          response: bestMatch.response_content || 'I found a helpful solution in our knowledge base!',
+          response: bestMatch?.response_content || 'I found a helpful solution in our knowledge base!',
           source: 'knowledge_base',
-          confidence: bestMatch.confidence_score,
+          confidence: bestMatch?.confidence_score || 0,
           metadata: {
-            gameId: bestMatch.game_id,
-            objectiveId: bestMatch.objective_id,
-            solutionId: bestMatch.solution_id,
-            responseType: bestMatch.response_type,
+            gameId: bestMatch?.game_id,
+            objectiveId: bestMatch?.objective_id,
+            solutionId: bestMatch?.solution_id,
+            responseType: bestMatch?.response_type,
           },
         };
       }
@@ -1221,7 +1221,7 @@ export class GameKnowledgeService {
       let gameId: string | undefined;
       if (gameTitle) {
         const game = await this.getGame(gameTitle);
-        gameId = game?.game_id; // Use game_id (string) instead of id (UUID)
+        gameId = (game as any)?.game_id; // Use game_id (string) instead of id (UUID)
       }
 
       // Create or update knowledge pattern
@@ -1240,10 +1240,10 @@ export class GameKnowledgeService {
       await this.addQueryMapping({
         query_pattern: query,
         query_intent: 'help',
-        game_id: gameId,
+        ...(gameId && { game_id: gameId }),
         confidence_score: wasHelpful ? 0.8 : 0.3,
         response_type: wasHelpful ? 'direct_answer' : 'redirect_to_ai',
-        response_content: wasHelpful ? aiResponse : undefined,
+        ...(wasHelpful && { response_content: aiResponse }),
         usage_count: 1,
         success_rate: wasHelpful ? 1.0 : 0.0,
       });

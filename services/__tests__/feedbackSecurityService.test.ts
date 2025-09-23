@@ -319,8 +319,8 @@ describe('FeedbackSecurityService', () => {
       
       const log = feedbackSecurityService.getSecurityLog();
       expect(log).toHaveLength(1);
-      expect(log[0].result).toBe('blocked');
-      expect(log[0].action).toBe('feedback_validation');
+      expect(log[0]?.result).toBe('blocked');
+      expect(log[0]?.action).toBe('feedback_validation');
     });
 
     it('should maintain security log size limit', () => {

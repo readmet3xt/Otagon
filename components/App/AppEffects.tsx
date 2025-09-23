@@ -53,7 +53,10 @@ export const AppEffects: React.FC<AppEffectsProps> = ({
     initializeServices();
   }, []);
 
-  // Auth state subscription
+  // CRITICAL FIX: Remove duplicate auth listener to prevent state conflicts
+  // App.tsx already handles all auth state changes centrally
+  // This was causing race conditions and conflicting state updates
+  /*
   useEffect(() => {
     const setupAuthSubscription = async () => {
       const { authService } = await import('../../services/supabase');
@@ -89,6 +92,7 @@ export const AppEffects: React.FC<AppEffectsProps> = ({
       }
     };
   }, [onboardingStatus]);
+  */
 
   // PWA Navigation state subscription
   // PWA Navigation subscription

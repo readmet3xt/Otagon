@@ -134,10 +134,9 @@ class UniversalContentCacheService {
         queryHash,
         content,
         contentType: query.contentType,
-        gameName: query.gameName,
-        genre: query.genre,
+        ...(query.gameName && { gameName: query.gameName }),
+        ...(query.genre && { genre: query.genre }),
         userTier: query.userTier,
-        userId: undefined, // Will be set by Supabase
         timestamp: now,
         expiresAt: now + this.CACHE_DURATION,
         accessCount: 1,
@@ -203,6 +202,7 @@ class UniversalContentCacheService {
       // Return the most similar content if it meets threshold
       if (validEntries.length > 0) {
         const mostSimilar = validEntries[0];
+        if (!mostSimilar) return null;
         const similarity = this.calculateSimilarity(query.query, mostSimilar.query);
         
         if (similarity >= this.SIMILARITY_THRESHOLD) {

@@ -54,11 +54,11 @@ describe('Game Switching Timeline Integration', () => {
       const lastEvent = timeline1[timeline1.length - 1];
       
       expect(lastEvent).toBeDefined();
-      expect(lastEvent.isGameSwitch).toBe(true);
-      expect(lastEvent.gameId).toBe(mockGameId2);
-      expect(lastEvent.gameName).toBe(mockGameName2);
-      expect(lastEvent.context).toContain('Game switch');
-      expect(lastEvent.context).toContain(mockGameName2);
+      expect(lastEvent?.isGameSwitch).toBe(true);
+      expect(lastEvent?.gameId).toBe(mockGameId2);
+      expect(lastEvent?.gameName).toBe(mockGameName2);
+      expect(lastEvent?.context).toContain('Game switch');
+      expect(lastEvent?.context).toContain(mockGameName2);
     });
 
     it('should initialize timeline for new conversation after game switch', async () => {

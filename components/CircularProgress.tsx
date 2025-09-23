@@ -81,7 +81,8 @@ const CircularProgress: React.FC<CircularProgressProps> = ({
   const sizeClasses = getSizeClasses();
 
   if (variant === 'determinate') {
-    const circumference = 2 * Math.PI * (parseInt(sizeClasses.split(' ')[0].replace('w-', '')) / 4 - thickness / 2);
+    const sizeValue = sizeClasses.split(' ')[0]?.replace('w-', '');
+    const circumference = 2 * Math.PI * (parseInt(sizeValue || '24') / 4 - thickness / 2);
     const strokeDasharray = circumference;
     const strokeDashoffset = circumference - (value / 100) * circumference;
 
@@ -93,7 +94,7 @@ const CircularProgress: React.FC<CircularProgressProps> = ({
             className={`${colors.track}`}
             strokeWidth={thickness}
             fill="transparent"
-            r={(parseInt(sizeClasses.split(' ')[0].replace('w-', '')) / 4) - thickness / 2}
+            r={(parseInt(sizeValue || '24') / 4) - thickness / 2}
             cx="12"
             cy="12"
           />
@@ -102,7 +103,7 @@ const CircularProgress: React.FC<CircularProgressProps> = ({
             className={`${colors.progress} transition-all duration-300 ease-in-out`}
             strokeWidth={thickness}
             fill="transparent"
-            r={(parseInt(sizeClasses.split(' ')[0].replace('w-', '')) / 4) - thickness / 2}
+            r={(parseInt(sizeValue || '24') / 4) - thickness / 2}
             cx="12"
             cy="12"
             strokeDasharray={strokeDasharray}

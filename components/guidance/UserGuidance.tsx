@@ -126,7 +126,7 @@ const InteractiveTutorial: React.FC<InteractiveTutorialProps> = ({
     if (!isOpen) return;
 
     // Highlight the target element
-    if (currentStepData.target) {
+    if (currentStepData?.target) {
       const element = document.querySelector(currentStepData.target) as HTMLElement;
       if (element) {
         setHighlightedElement(element);
@@ -135,7 +135,7 @@ const InteractiveTutorial: React.FC<InteractiveTutorialProps> = ({
     } else {
       setHighlightedElement(null);
     }
-  }, [currentStep, isOpen, currentStepData.target]);
+  }, [currentStep, isOpen, currentStepData?.target]);
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
@@ -216,10 +216,10 @@ const InteractiveTutorial: React.FC<InteractiveTutorialProps> = ({
             {/* Step Content */}
             <div className="mb-6">
               <h4 className="text-xl font-semibold text-[#F5F5F5] mb-3">
-                {currentStepData.title}
+                {currentStepData?.title}
               </h4>
               <div className="text-[#A3A3A3]">
-                {currentStepData.content}
+                {currentStepData?.content}
               </div>
             </div>
 

@@ -273,13 +273,13 @@ export class UnifiedAIService extends BaseService {
       // Prepare content
       const content = this.prepareContent(message, hasImages);
       
-      // Generate response
-      const response = await this.generateContent({
-        model,
-        contents: content,
-        config: { systemInstruction },
-        signal
-      });
+      // Generate response
+      const response = await this.generateContent({
+        model,
+        contents: content,
+        config: { systemInstruction },
+        ...(signal && { signal })
+      });
 
       // Process response
       const processedResponse = await this.processResponse(response, model);
@@ -373,7 +373,12 @@ export class UnifiedAIService extends BaseService {
         }
       }
       
-      return { ...processedResponse, progressiveUpdates, suggestedTasks, taskCompletionPrompt };
+      return { 
+        ...processedResponse, 
+        progressiveUpdates, 
+        suggestedTasks, 
+        ...(taskCompletionPrompt && { taskCompletionPrompt })
+      };
     } catch (error) {
       console.error('Failed to generate AI response:', error);
       throw error;
@@ -427,8 +432,6 @@ export class UnifiedAIService extends BaseService {
               "What are the latest game reviews?",
               "Show me the hottest new game trailers."
             ],
-            gamePillData: null,
-            taskCompletionPrompt: null,
             metadata: {
               model: 'gemini-2.5-flash',
               tokens: 0,
@@ -455,8 +458,6 @@ export class UnifiedAIService extends BaseService {
               "What are the latest game reviews?",
               "Show me the hottest new game trailers."
             ],
-            gamePillData: null,
-            taskCompletionPrompt: null,
             metadata: {
               model: 'gemini-2.5-flash',
               tokens: 0,
@@ -670,7 +671,7 @@ You are responding to one of the 4 suggested prompts that requires real-time gam
             message,
             universalResponse.narrativeResponse,
             userTier,
-            userId
+            userId || undefined
           );
           
           console.log('📰 Cached fresh response for suggested prompt');
@@ -1096,13 +1097,13 @@ You are responding to one of the 4 suggested prompts that requires real-time gam
       }
 
       // Generate insight
-      const response = await this.generateContentStream({
-        model,
-        contents: `Generate the content for the "${insightId}" insight for the game ${gameName}, following the system instructions.`,
-        config: { systemInstruction, tools },
-        onChunk,
-        signal
-      });
+      const response = await this.generateContentStream({
+        model,
+        contents: `Generate the content for the "${insightId}" insight for the game ${gameName}, following the system instructions.`,
+        config: { systemInstruction, tools },
+        ...(onChunk && { onChunk }),
+        ...(signal && { signal })
+      });
 
       // Create insight result
       const insight: InsightResult = {
@@ -1146,8 +1147,8 @@ You are responding to one of the 4 suggested prompts that requires real-time gam
       }
 
       // Filter tabs that don't require web search
-      const tabsToGenerate = (insightTabsConfig[genre] || insightTabsConfig.default)
-        .filter(tab => !tab.webSearch);
+      const tabsToGenerate = (insightTabsConfig[genre] || insightTabsConfig.default || [])
+        .filter(tab => !tab.webSearch);
       
       if (tabsToGenerate.length === 0) {
         return null;
@@ -1166,20 +1167,20 @@ You are responding to one of the 4 suggested prompts that requires real-time gam
       });
 
       // Generate insights
-      const response = await this.generateContent({
-        model: this.getOptimalModel('insight_generation'),
-        contents: `Generate insights for the game ${gameName} (${genre}, ${progress}% progress) based on the user query: "${userQuery}". Generate content for each insight tab.`,
-        config: {
-          systemInstruction: this.getUnifiedInsightSystemInstruction(gameName, genre, progress),
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: 'object',
-            properties,
-            required: propertyOrdering
-          }
-        },
-        signal
-      });
+      const response = await this.generateContent({
+        model: this.getOptimalModel('insight_generation'),
+        contents: `Generate insights for the game ${gameName} (${genre}, ${progress}% progress) based on the user query: "${userQuery}". Generate content for each insight tab.`,
+        config: {
+          systemInstruction: this.getUnifiedInsightSystemInstruction(gameName, genre, progress),
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: 'object',
+            properties,
+            required: propertyOrdering
+          }
+        },
+        ...(signal && { signal })
+      });
 
       // Parse and cache results
       const insights = JSON.parse(response);
@@ -1609,17 +1610,17 @@ Generate comprehensive, detailed wiki-style content for each insight tab that pr
     // Clean response content
     const content = this.cleanResponseContent(response);
     
-    return {
-      content,
-      suggestions,
-      gameInfo,
-      metadata: {
-        model,
-        timestamp: Date.now(),
-        cost: this.calculateCost(model, content.length),
-        tokens: this.estimateTokens(content)
-      }
-    };
+    return {
+      content,
+      suggestions,
+      ...(gameInfo && { gameInfo }),
+      metadata: {
+        model,
+        timestamp: Date.now(),
+        cost: this.calculateCost(model, content.length),
+        tokens: this.estimateTokens(content)
+      }
+    };
   }
 
   private extractSuggestions(response: string): string[] {
@@ -1642,12 +1643,12 @@ Generate comprehensive, detailed wiki-style content for each insight tab that pr
     const genreMatch = response.match(/\[OTAKON_GENRE:\s*(.*?)\]/);
     
     if (gameIdMatch && confidenceMatch) {
-      return {
-        gameId: gameIdMatch[1].trim(),
-        confidence: confidenceMatch[1].trim() as 'high' | 'low',
-        progress: progressMatch ? parseInt(progressMatch[1]) : undefined,
-        genre: genreMatch ? genreMatch[1].trim() : undefined
-      };
+      return {
+        gameId: gameIdMatch[1]!.trim(),
+        confidence: confidenceMatch[1]!.trim() as 'high' | 'low',
+        ...(progressMatch?.[1] && { progress: parseInt(progressMatch[1]) }),
+        ...(genreMatch?.[1] && { genre: genreMatch[1].trim() })
+      };
     }
     
     return undefined;
@@ -1748,9 +1749,9 @@ Generate comprehensive, detailed wiki-style content for each insight tab that pr
   private getCachedInsight(gameName: string, insightId: string): InsightResult | null {
     const cacheKey = `${gameName}_${insightId}`;
     const cached = this.insightCache.get(cacheKey);
-    if (cached && cached.length > 0) {
-      return cached[0];
-    }
+    if (cached && cached.length > 0) {
+      return cached[0] || null;
+    }
     return null;
   }
 
@@ -2492,12 +2493,12 @@ Return a JSON array of tasks with:
 ]
 `;
 
-      const response = await this.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: `Generate actionable tasks based on this conversation: "${userQuery}" -> "${aiResponse}"`,
-        config: { systemInstruction },
-        signal
-      });
+      const response = await this.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: `Generate actionable tasks based on this conversation: "${userQuery}" -> "${aiResponse}"`,
+        config: { systemInstruction },
+        ...(signal && { signal })
+      });
 
       // Parse and return tasks
       return this.parseSuggestedTasks(response);
@@ -2561,8 +2562,8 @@ Return a JSON array of tasks with:
   
   getTabsForGenre(genre: string): EnhancedInsightTab[] {
     // Return default tabs for the genre
-    const defaultTabs = insightTabsConfig[genre] || insightTabsConfig.default;
-    return defaultTabs.map(tab => ({
+    const defaultTabs = insightTabsConfig[genre] || insightTabsConfig.default || [];
+    return defaultTabs.map(tab => ({
       ...tab,
       lastUpdated: Date.now(),
       priority: 'medium' as const,
@@ -2648,32 +2649,32 @@ Return a JSON array of tasks with:
   /**
    * Check and cache content using universal cache service (from geminiService)
    */
-  private async checkAndCacheContent(
-    query: string,
-    contentType: CacheQuery['contentType'],
-    gameName?: string,
-    genre?: string
-  ): Promise<{ found: boolean; content?: string; reason?: string }> {
-    try {
-      const userTier = await unifiedUsageService.getTier();
-      
-      const cacheQuery: CacheQuery = {
-        query,
-        contentType,
-        gameName,
-        genre,
-        userTier
-      };
+  private async checkAndCacheContent(
+    query: string,
+    contentType: CacheQuery['contentType'],
+    gameName?: string,
+    genre?: string
+  ): Promise<{ found: boolean; content?: string; reason?: string }> {
+    try {
+      const userTier = await unifiedUsageService.getTier();
+      
+      const cacheQuery: CacheQuery = {
+        query,
+        contentType,
+        ...(gameName && { gameName }),
+        ...(genre && { genre }),
+        userTier
+      };
       
       const cacheResult = await universalContentCacheService.getCachedContent(cacheQuery);
       
       if (cacheResult.found && cacheResult.content) {
         console.log(`🎯 Found cached ${contentType} content: ${query.substring(0, 50)}...`);
-        return {
-          found: true,
-          content: cacheResult.content.content,
-          reason: cacheResult.reason
-        };
+        return {
+          found: true,
+          content: cacheResult.content.content,
+          ...(cacheResult.reason && { reason: cacheResult.reason })
+        };
       }
       
       return { found: false };
@@ -2697,15 +2698,15 @@ Return a JSON array of tasks with:
     cost: number = 0
   ): Promise<void> {
     try {
-      const userTier = await unifiedUsageService.getTier();
-      
-      const cacheQuery: CacheQuery = {
-        query,
-        contentType,
-        gameName,
-        genre,
-        userTier
-      };
+      const userTier = await unifiedUsageService.getTier();
+      
+      const cacheQuery: CacheQuery = {
+        query,
+        contentType,
+        ...(gameName && { gameName }),
+        ...(genre && { genre }),
+        userTier
+      };
       
       await universalContentCacheService.cacheContent(cacheQuery, content, {
         model,
@@ -3013,10 +3014,11 @@ Return a JSON array of tasks with:
           continue;
         }
         
-        for (let i = 0; i < imagesToInclude; i++) {
-          const imageUrl = message.images[i];
-          try {
-            const [meta, base64] = imageUrl.split(',');
+        for (let i = 0; i < imagesToInclude; i++) {
+          const imageUrl = message.images[i];
+          if (!imageUrl) continue;
+          try {
+            const [meta, base64] = imageUrl.split(',');
             if (!meta || !base64) continue;
             const mimeTypeMatch = meta.match(/:(.*?);/);
             if (!mimeTypeMatch?.[1]) continue;
@@ -3047,7 +3049,7 @@ Return a JSON array of tasks with:
       }
       
       if (parts.length > 0) {
-        const lastRole = history.length > 0 ? history[history.length - 1].role : undefined;
+        const lastRole = history.length > 0 ? history[history.length - 1]?.role : undefined;
         if (lastRole === message.role) {
           console.warn(`Skipping message with duplicate consecutive role: ${message.role}`);
           continue;

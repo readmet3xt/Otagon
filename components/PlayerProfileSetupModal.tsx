@@ -72,7 +72,7 @@ export const PlayerProfileSetupModal: React.FC<PlayerProfileSetupModalProps> = (
   const handleOptionSelect = (value: string) => {
     setProfile(prev => ({
       ...prev,
-      [currentStepData.field]: value
+      [currentStepData?.field || '']: value
     }));
   };
 
@@ -117,19 +117,19 @@ export const PlayerProfileSetupModal: React.FC<PlayerProfileSetupModalProps> = (
         {/* Content */}
         <div className="p-6">
           <h3 className="text-xl font-semibold text-white mb-2">
-            {currentStepData.title}
+            {currentStepData?.title}
           </h3>
           <p className="text-[#A3A3A3] mb-6">
-            {currentStepData.description}
+            {currentStepData?.description}
           </p>
 
           <div className="space-y-3">
-            {currentStepData.options.map((option) => (
+            {currentStepData?.options.map((option) => (
               <button
                 key={option.value}
                 onClick={() => handleOptionSelect(option.value)}
                 className={`w-full p-4 rounded-lg border-2 text-left transition-all duration-200 ${
-                  profile[currentStepData.field] === option.value
+                  profile[currentStepData?.field || ''] === option.value
                     ? 'border-[#E53A3A] bg-gradient-to-r from-[#E53A3A]/20 to-[#D98C1F]/20 text-white shadow-lg shadow-[#E53A3A]/25'
                     : 'border-[#424242]/40 bg-[#0A0A0A]/60 text-[#E5E5E5] hover:border-[#E53A3A]/60 hover:bg-gradient-to-r hover:from-[#E53A3A]/10 hover:to-[#D98C1F]/10'
                 }`}
@@ -162,7 +162,7 @@ export const PlayerProfileSetupModal: React.FC<PlayerProfileSetupModalProps> = (
           
           <button
             onClick={handleNext}
-            disabled={!profile[currentStepData.field]}
+            disabled={!currentStepData?.field || !profile[currentStepData.field as keyof PlayerProfile]}
             className="px-6 py-2 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] hover:from-[#E53A3A]/90 hover:to-[#D98C1F]/90 disabled:from-[#424242] disabled:to-[#2E2E2E] disabled:text-[#6E6E6E] text-white rounded-lg transition-all duration-200 font-semibold shadow-lg hover:shadow-xl hover:shadow-[#E53A3A]/25 disabled:shadow-none"
           >
             {isLastStep ? 'Complete Setup' : 'Next →'}

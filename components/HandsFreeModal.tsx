@@ -48,8 +48,10 @@ const HandsFreeModal: React.FC<HandsFreeModalProps> = ({
         setSelectedVoiceURI(savedURI);
       } else if (sortedVoices.length > 0) {
         const defaultVoice = sortedVoices[0];
-        setSelectedVoiceURI(defaultVoice.voiceURI);
-        localStorage.setItem('otakonPreferredVoiceURI', defaultVoice.voiceURI);
+        if (defaultVoice) {
+          setSelectedVoiceURI(defaultVoice.voiceURI);
+          localStorage.setItem('otakonPreferredVoiceURI', defaultVoice.voiceURI);
+        }
       }
     };
 

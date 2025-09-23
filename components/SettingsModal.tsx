@@ -256,7 +256,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, usage, o
     ));
     if (focusable.length > 0) {
       // Focus the first interactive element
-      focusable[0].focus();
+      focusable[0]?.focus();
     }
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -272,13 +272,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, usage, o
         // Tab forward
         if (active === lastEl) {
           e.preventDefault();
-          firstEl.focus();
+          firstEl?.focus();
         }
       } else {
         // Shift+Tab backward
         if (active === firstEl) {
           e.preventDefault();
-          lastEl.focus();
+          lastEl?.focus();
         }
       }
     };
@@ -374,18 +374,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, usage, o
                         onResetApp={() => { onResetApp(); onClose(); }}
                         onLogout={() => { onLogout(); onClose(); }}
                         onShowHowToUse={() => { onShowHowToUse(); onClose(); }}
-                        userEmail={userEmail}
+                        {...(userEmail && { userEmail })}
                         isDeveloperMode={canAccessDeveloperFeatures(userEmail)}
-                        onTierChanged={refreshUsage}
+                        {...(refreshUsage && { onTierChanged: refreshUsage })}
                     />
                 )}
                 {activeTab === 'preferences' && <UserPreferencesTab />}
-                {activeTab === 'subscription' && <SubscriptionSettingsTab usage={usage} refreshUsage={refreshUsage} userEmail={userEmail} />}
+                {activeTab === 'subscription' && <SubscriptionSettingsTab usage={usage} {...(refreshUsage && { refreshUsage })} {...(userEmail && { userEmail })} />}
                 {activeTab === 'help' && <HelpGuideTab />}
                 {activeTab === 'admin' && canAccessDeveloperFeatures(userEmail) && (
                     <div>
                         <h2 className="text-xl font-bold text-white mb-6">💰 API Cost Dashboard</h2>
-                        <AdminTabContent onClearFirstRunCache={onClearFirstRunCache} />
+                        <AdminTabContent {...(onClearFirstRunCache && { onClearFirstRunCache })} />
                     </div>
                 )}
                 {activeTab === 'performance' && canAccessDeveloperFeatures(userEmail) && (

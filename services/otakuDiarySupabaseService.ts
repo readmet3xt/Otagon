@@ -303,9 +303,9 @@ class OtakuDiarySupabaseService {
 
       // Calculate summary
       const totalTasks = gameTasks.length;
-      const completedTasks = gameTasks.filter(task => task.status === 'completed').length;
-      const pendingTasks = gameTasks.filter(task => task.status === 'pending').length;
-      const needHelpTasks = gameTasks.filter(task => task.status === 'need_help').length;
+      const completedTasks = gameTasks.filter((task: any) => task.status === 'completed').length;
+      const pendingTasks = gameTasks.filter((task: any) => task.status === 'pending').length;
+      const needHelpTasks = gameTasks.filter((task: any) => task.status === 'need_help').length;
       const completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
       return {
@@ -539,10 +539,10 @@ class OtakuDiarySupabaseService {
       category: dbTask.category,
       priority: dbTask.priority,
       createdAt: new Date(dbTask.created_at).getTime(),
-      completedAt: dbTask.completed_at ? new Date(dbTask.completed_at).getTime() : undefined,
+      ...(dbTask.completed_at && { completedAt: new Date(dbTask.completed_at).getTime() }),
       gameId: dbTask.game_id,
-      source: dbTask.source,
-      sourceMessageId: dbTask.source_message_id
+      ...(dbTask.source && { source: dbTask.source }),
+      ...(dbTask.source_message_id && { sourceMessageId: dbTask.source_message_id })
     };
   }
 

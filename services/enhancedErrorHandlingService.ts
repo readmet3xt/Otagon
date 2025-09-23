@@ -379,8 +379,8 @@ class EnhancedErrorHandlingService {
       retryable: userAction === 'retry',
       context,
       timestamp: Date.now(),
-      stack: error?.stack,
-      recoveryAction: recoveryAction || undefined,
+      ...(error?.stack && { stack: error.stack }),
+      ...(recoveryAction && { recoveryAction }),
       ttsSafe
     };
 
@@ -406,8 +406,8 @@ class EnhancedErrorHandlingService {
       retryable: userAction === 'retry',
       context,
       timestamp: Date.now(),
-      stack: error?.stack,
-      recoveryAction: recoveryAction || undefined,
+      ...(error?.stack && { stack: error.stack }),
+      ...(recoveryAction && { recoveryAction }),
       ttsSafe
     };
 

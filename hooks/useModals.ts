@@ -112,7 +112,7 @@ export const useModals = ({
     setFeedbackModalState({
       isOpen: true,
       messageId: targetId,
-      insightId: type === 'insight' ? targetId : undefined,
+      ...(type === 'insight' && { insightId: targetId }),
       conversationId: convId,
       originalText,
       type,

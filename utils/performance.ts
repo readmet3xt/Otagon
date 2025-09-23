@@ -299,7 +299,9 @@ export const performanceMonitoring = {
       new PerformanceObserver((list) => {
         const entries = list.getEntries();
         const lastEntry = entries[entries.length - 1];
-        vitals.LCP = lastEntry.startTime;
+        if (lastEntry) {
+          vitals.LCP = lastEntry.startTime;
+        }
         if (resolved) resolve(vitals);
       }).observe({ entryTypes: ['largest-contentful-paint'] });
 

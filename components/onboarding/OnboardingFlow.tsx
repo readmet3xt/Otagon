@@ -110,11 +110,11 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               <div className="flex items-center gap-3 mb-4">
                 <div className={cn(
                   'w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold',
-                  isStepCompleted(currentStepData.id)
+                  isStepCompleted(currentStepData?.id || '')
                     ? 'bg-green-500 text-white'
                     : 'bg-[#E53A3A] text-white'
                 )}>
-                  {isStepCompleted(currentStepData.id) ? (
+                  {isStepCompleted(currentStepData?.id || '') ? (
                     <CheckCircleIcon className="w-5 h-5" />
                   ) : (
                     currentStep + 1
@@ -122,9 +122,9 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold text-[#F5F5F5]">
-                    {currentStepData.title}
+                    {currentStepData?.title}
                   </h3>
-                  {currentStepData.isOptional && (
+                  {currentStepData?.isOptional && (
                     <span className="text-xs text-[#FFAB40] bg-[#FFAB40]/10 px-2 py-1 rounded-full">
                       Optional
                     </span>
@@ -132,13 +132,13 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 </div>
               </div>
               <p className="text-[#A3A3A3] text-lg">
-                {currentStepData.description}
+                {currentStepData?.description}
               </p>
             </div>
 
             {/* Step Content */}
             <div className="mb-8">
-              {currentStepData.content}
+              {currentStepData?.content}
             </div>
 
             {/* Navigation */}
@@ -157,7 +157,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               </div>
 
               <div className="flex items-center gap-3">
-                {allowSkip && currentStepData.isOptional && (
+                {allowSkip && currentStepData?.isOptional && (
                   <EnhancedButton
                     variant="ghost"
                     size="md"

@@ -105,6 +105,10 @@ export const useAuthFlow = ({
           
           // Sign out from Supabase
           console.log('🔐 [Logout] Calling authService.signOut()...');
+          
+          // Set logout redirect flag to show login page instead of landing page
+          localStorage.setItem('otakon_logout_redirect', 'true');
+          
           const signOutResult = await authService.signOut();
           console.log('🔐 [Logout] Sign out result:', signOutResult);
           
@@ -113,17 +117,8 @@ export const useAuthFlow = ({
             throw new Error(signOutResult.error || 'Sign out failed');
           }
           
-          // Clear onboarding flags to ensure proper logout flow
-          localStorage.removeItem('otakonOnboardingComplete');
-          localStorage.removeItem('otakon_profile_setup_completed');
-          
-          // Reset app state and return to login screen
-          console.log('🔐 [Logout] Resetting app state...');
-          setOnboardingStatus('login');
-          setIsHandsFreeMode(false);
-          setIsConnectionModalOpen(false);
-          setView('app'); // This will show login screen since onboardingStatus is 'login'
-          
+          // ✅ CRITICAL FIX: Only sign out from Supabase
+          // The App.tsx auth state change listener will handle all UI updates
           console.log('✅ [Logout] User logged out successfully (data preserved)');
         } catch (error) {
           console.error('🔐 [Logout] Logout error:', error);

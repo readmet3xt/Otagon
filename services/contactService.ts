@@ -34,12 +34,17 @@ export class ContactService {
       // Get current user if authenticated
       const { data: { user } } = await supabase.auth.getUser();
       
+      const priority = this.determinePriority(formData.subject, formData.message);
+      
       const submission: Omit<ContactFormSubmission, 'id' | 'created_at' | 'updated_at'> = {
-        ...formData,
+        name: formData.name,
+        email: formData.email,
+        subject: formData.subject,
+        message: formData.message,
         user_id: user?.id || null,
         status: 'new',
-        priority: this.determinePriority(formData.subject, formData.message),
-        source: 'landing_page'
+        priority: priority as 'low' | 'medium' | 'high',
+        ...(formData.source && { source: formData.source })
       };
 
       // Store contact submission in app_level table

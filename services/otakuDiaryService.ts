@@ -138,11 +138,11 @@ class OtakuDiaryService extends BaseService {
       status: supabaseTask.status,
       category: supabaseTask.category || 'custom',
       createdAt: new Date(supabaseTask.created_at).getTime(),
-      completedAt: supabaseTask.completed_at ? new Date(supabaseTask.completed_at).getTime() : undefined,
+      ...(supabaseTask.completed_at && { completedAt: new Date(supabaseTask.completed_at).getTime() }),
       gameId: supabaseTask.game_id,
-      source: supabaseTask.metadata?.source,
+      ...(supabaseTask.metadata?.source && { source: supabaseTask.metadata.source }),
       priority: supabaseTask.priority,
-      sourceMessageId: supabaseTask.metadata?.source_message_id
+      ...(supabaseTask.metadata?.source_message_id && { sourceMessageId: supabaseTask.metadata.source_message_id })
     };
   }
 
@@ -526,8 +526,8 @@ class OtakuDiaryService extends BaseService {
         gameId: favorite.gameId,
         content: favorite.content,
         type: favorite.type,
-        sourceInsightId: favorite.sourceInsightId || favorite.sourceMessageId,
-        sourceMessageId: favorite.sourceMessageId,
+        ...(favorite.sourceInsightId && { sourceInsightId: favorite.sourceInsightId }),
+        ...(favorite.sourceMessageId && { sourceMessageId: favorite.sourceMessageId }),
         createdAt: Date.now()
       };
 
@@ -580,7 +580,7 @@ class OtakuDiaryService extends BaseService {
       const currentAppState = userData.app_state || {};
       const currentFavorites = currentAppState.diaryFavorites || [];
       
-      const updatedFavorites = currentFavorites.filter(fav => fav.id !== favoriteId);
+      const updatedFavorites = currentFavorites.filter((fav: any) => fav.id !== favoriteId);
       const updatedAppState = {
         ...currentAppState,
         diaryFavorites: updatedFavorites
@@ -630,13 +630,13 @@ class OtakuDiaryService extends BaseService {
       const allFavorites = currentAppState.diaryFavorites || [];
       
       // Filter by gameId
-      const gameFavorites = allFavorites.filter(fav => fav.gameId === gameId);
+      const gameFavorites = allFavorites.filter((fav: any) => fav.gameId === gameId);
       
       // Update local cache
       this.favoritesCache.set(gameId, gameFavorites);
 
       // Return in chronological order (newest first)
-      return gameFavorites.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      return gameFavorites.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     } catch (error) {
       console.error('Failed to get favorites:', error);
       // Fallback to local cache
@@ -672,7 +672,7 @@ class OtakuDiaryService extends BaseService {
       const allFavorites = currentAppState.diaryFavorites || [];
       
       // Check if sourceId exists in favorites
-      const isFavorited = allFavorites.some(fav => 
+      const isFavorited = allFavorites.some((fav: any) => 
         fav.sourceInsightId === sourceId || fav.sourceMessageId === sourceId
       );
 
@@ -752,7 +752,7 @@ class OtakuDiaryService extends BaseService {
       // Update cache by finding and updating the task
       const taskIndex = tasks.findIndex(t => t.id === taskId);
       if (taskIndex !== -1) {
-        tasks[taskIndex] = { ...tasks[taskIndex], status: 'completed', completedAt: Date.now() };
+        tasks[taskIndex] = { ...tasks[taskIndex], status: 'completed', completedAt: Date.now() } as DiaryTask;
         this.tasksCache.set(gameId, tasks);
         
         // NEW: Track task completion in AI context
@@ -795,7 +795,7 @@ class OtakuDiaryService extends BaseService {
       const tasks = this.tasksCache.get(gameId) || [];
       const taskIndex = tasks.findIndex(t => t.id === taskId);
       if (taskIndex !== -1) {
-        tasks[taskIndex] = { ...tasks[taskIndex], status: 'need_help' };
+        tasks[taskIndex] = { ...tasks[taskIndex], status: 'need_help' } as DiaryTask;
         this.tasksCache.set(gameId, tasks);
       }
       return true;
@@ -836,7 +836,7 @@ class OtakuDiaryService extends BaseService {
       const tasks = this.tasksCache.get(gameId) || [];
       const taskIndex = tasks.findIndex(t => t.id === taskId);
       if (taskIndex !== -1) {
-        tasks[taskIndex] = { ...tasks[taskIndex], type: 'user_created' };
+        tasks[taskIndex] = { ...tasks[taskIndex], type: 'user_created' } as DiaryTask;
         this.tasksCache.set(gameId, tasks);
       }
       return true;
@@ -889,7 +889,7 @@ class OtakuDiaryService extends BaseService {
         const currentFavorites = currentAppState.diaryFavorites || [];
         
         // Filter out favorites for this game
-        const updatedFavorites = currentFavorites.filter(fav => fav.gameId !== gameId);
+        const updatedFavorites = currentFavorites.filter((fav: any) => fav.gameId !== gameId);
         const updatedAppState = {
           ...currentAppState,
           diaryFavorites: updatedFavorites
@@ -1103,7 +1103,6 @@ class OtakuDiaryService extends BaseService {
         updatedAt: Date.now(),
         gameId,
         isCompleted: false,
-        completedAt: undefined,
         priority: 'medium',
         tags: [],
         metadata: {
@@ -1111,7 +1110,7 @@ class OtakuDiaryService extends BaseService {
           source: task.source,
           aiGenerated: true
         }
-      }));
+      } as DiaryTask));
       
       // Save to database
       const { error } = await supabase

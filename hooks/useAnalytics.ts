@@ -60,7 +60,7 @@ export const useAnalytics = () => {
       stepName,
       stepOrder,
       startTime: Date.now(),
-      metadata
+      ...(metadata && { metadata })
     });
     
     unifiedAnalyticsService().trackOnboardingStep(stepName, stepOrder, metadata);

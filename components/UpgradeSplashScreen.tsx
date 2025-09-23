@@ -141,7 +141,7 @@ const UpgradeSplashScreen: React.FC<UpgradeSplashScreenProps> = ({ onUpgrade, on
                         </div>
                         <ul className="space-y-3 mb-8 text-sm">
                             <CheckFeatureLine><b>All Pro features, plus:</b></CheckFeatureLine>
-                            {vanguardFeatures.map(feature => <StarFeatureLine key={feature.text} comingSoon={feature.comingSoon}>{feature.text}</StarFeatureLine>)}
+                            {vanguardFeatures.map(feature => <StarFeatureLine key={feature.text} {...(feature.comingSoon && { comingSoon: feature.comingSoon })}>{feature.text}</StarFeatureLine>)}
                         </ul>
                         <div className="mt-auto">
                             <button 

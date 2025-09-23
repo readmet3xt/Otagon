@@ -107,7 +107,7 @@ const UITutorial: React.FC<UITutorialProps> = ({ isOpen, onComplete, onSkip }) =
   useEffect(() => {
     if (isVisible && currentStep < tutorialSteps.length) {
       const step = tutorialSteps[currentStep];
-      highlightElement(step.targetSelector, step.position);
+      highlightElement(step?.targetSelector || '', step?.position || 'top');
     }
   }, [currentStep, isVisible]);
 
@@ -205,9 +205,9 @@ const UITutorial: React.FC<UITutorialProps> = ({ isOpen, onComplete, onSkip }) =
           {/* Arrow pointing to center tooltip */}
           <div 
             className={`absolute w-4 h-4 border-2 border-[#FF4D4D] bg-[#1C1C1C] transform rotate-45 ${
-              currentStepData.position === 'top' ? 'bottom-[-8px] left-1/2 -translate-x-1/2' :
-              currentStepData.position === 'bottom' ? 'top-[-8px] left-1/2 -translate-x-1/2' :
-              currentStepData.position === 'left' ? 'right-[-8px] top-1/2 -translate-y-1/2' :
+              currentStepData?.position === 'top' ? 'bottom-[-8px] left-1/2 -translate-x-1/2' :
+              currentStepData?.position === 'bottom' ? 'top-[-8px] left-1/2 -translate-x-1/2' :
+              currentStepData?.position === 'left' ? 'right-[-8px] top-1/2 -translate-y-1/2' :
               'left-[-8px] top-1/2 -translate-y-1/2'
             }`}
           />
@@ -246,8 +246,8 @@ const UITutorial: React.FC<UITutorialProps> = ({ isOpen, onComplete, onSkip }) =
           </div>
 
           {/* Content */}
-          <h3 className="text-lg font-semibold text-white mb-3">{currentStepData.title}</h3>
-          <p className="text-[#CFCFCF] text-sm leading-relaxed mb-6">{currentStepData.description}</p>
+          <h3 className="text-lg font-semibold text-white mb-3">{currentStepData?.title}</h3>
+          <p className="text-[#CFCFCF] text-sm leading-relaxed mb-6">{currentStepData?.description}</p>
 
           {/* Actions */}
           <div className="flex items-center justify-between">

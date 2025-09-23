@@ -282,7 +282,7 @@ class DeveloperModeDataService {
         ...updates,
         updated_at: new Date().toISOString(),
         last_interaction: new Date().toISOString()
-      };
+      } as DeveloperConversation;
       
       localStorage.setItem(this.STORAGE_KEYS.CONVERSATIONS, JSON.stringify(conversations));
       return true;
@@ -357,7 +357,7 @@ class DeveloperModeDataService {
         ...updates,
         updated_at: new Date().toISOString(),
         last_played: new Date().toISOString()
-      };
+      } as DeveloperGame;
       
       localStorage.setItem(this.STORAGE_KEYS.GAMES, JSON.stringify(games));
       return true;

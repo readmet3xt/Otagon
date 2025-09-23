@@ -45,7 +45,7 @@ class RequestBatchingService {
     }
 
     if (requests.length === 1) {
-      return [await requests[0]];
+      return [await requests[0]!];
     }
 
     // Create a batch ID
@@ -81,11 +81,11 @@ class RequestBatchingService {
       try {
         // Execute chunk with timeout
         const chunkResults = await Promise.race([
-          Promise.all(chunk),
+          Promise.all(chunk || []),
           this.createTimeout(config.maxWaitTime * 2, `Chunk ${i} timeout`)
         ]);
         
-        results.push(...chunkResults);
+        results.push(...(chunkResults || []));
         
         // Add small delay between chunks to prevent overwhelming
         if (i < chunks.length - 1) {
@@ -95,7 +95,7 @@ class RequestBatchingService {
         console.warn(`Chunk ${i} failed, retrying individually:`, error);
         
         // Retry chunk individually
-        const individualResults = await this.executeIndividualRequests(chunk, config);
+        const individualResults = await this.executeIndividualRequests(chunk || [], config);
         results.push(...individualResults);
       }
     }
@@ -118,7 +118,7 @@ class RequestBatchingService {
       
       while (attempt < config.retryAttempts && !success) {
         try {
-          const result = await requests[i];
+          const result = await requests[i]!;
           results.push(result);
           success = true;
         } catch (error) {
@@ -181,7 +181,7 @@ class RequestBatchingService {
     }
 
     if (operations.length === 1) {
-      return [await operations[0]()];
+      return [await operations[0]!()];
     }
 
     // Group operations by type for better batching

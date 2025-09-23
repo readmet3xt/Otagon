@@ -82,7 +82,9 @@ export const getResponsiveValue = <T>(
     .sort(([, a], [, b]) => a - b) as [Breakpoint, number][];
   
   for (let i = sortedBreakpoints.length - 1; i >= 0; i--) {
-    const [breakpoint, minWidth] = sortedBreakpoints[i];
+    const breakpointEntry = sortedBreakpoints[i];
+    if (!breakpointEntry) continue;
+    const [breakpoint, minWidth] = breakpointEntry;
     if (window.innerWidth >= minWidth && values[breakpoint] !== undefined) {
       return values[breakpoint] as T;
     }

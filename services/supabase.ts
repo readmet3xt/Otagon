@@ -210,6 +210,41 @@ class SecureAuthService implements AuthService {
     }
   }
 
+  /**
+   * CRITICAL FIX: Clean up OAuth parameters from URL to prevent auto re-authentication
+   */
+  private cleanupOAuthParams(): void {
+    try {
+      const url = new URL(window.location.href);
+      
+      // Remove OAuth-related parameters from both search params and hash
+      const oauthParams = ['code', 'state', 'error', 'access_token', 'token_type', 'expires_in', 'refresh_token'];
+      
+      // Clear search parameters
+      oauthParams.forEach(param => {
+        url.searchParams.delete(param);
+      });
+      
+      // Clear hash parameters
+      const hashParams = new URLSearchParams(url.hash.substring(1));
+      oauthParams.forEach(param => {
+        hashParams.delete(param);
+      });
+      
+      // Reconstruct URL without OAuth parameters
+      const cleanUrl = url.origin + url.pathname + (url.searchParams.toString() ? '?' + url.searchParams.toString() : '') + (hashParams.toString() ? '#' + hashParams.toString() : '');
+      
+      // Update the URL without triggering a page reload
+      window.history.replaceState({}, document.title, cleanUrl);
+      
+      this.log('OAuth parameters cleaned from URL');
+    } catch (error) {
+      this.log('Error cleaning OAuth parameters:', error);
+      // Fallback: just clear the hash
+      window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+    }
+  }
+
   private authStateListener: any = null; // ✅ RACE CONDITION FIX: Track listener for cleanup
 
   private setupAuthStateListener(): void {
@@ -244,6 +279,14 @@ class SecureAuthService implements AuthService {
               loading: false,
               error: null
             });
+            
+            // CRITICAL FIX: Reset persistence service sync state
+            try {
+              const { comprehensivePersistenceService } = await import('./comprehensivePersistenceService');
+              comprehensivePersistenceService.resetSyncState();
+            } catch (resetError) {
+              this.log('Failed to reset persistence service state:', resetError);
+            }
             
             // CRITICAL FIX: Also clear any cached data
             try {
@@ -431,6 +474,9 @@ class SecureAuthService implements AuthService {
         loading: false,
         error: null
       });
+
+      // CRITICAL FIX: Clear OAuth parameters from URL to prevent auto re-authentication
+      this.cleanupOAuthParams();
 
       // Clear developer mode if active
       if (localStorage.getItem('otakon_developer_mode') === 'true') {
@@ -698,7 +744,12 @@ class SecureAuthService implements AuthService {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            prompt: 'select_account', // Force account selection screen
+            access_type: 'offline', // Request refresh token
+            include_granted_scopes: 'true' // Include granted scopes
+          }
         }
       });
 

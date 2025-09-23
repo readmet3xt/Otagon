@@ -289,8 +289,8 @@ class VoiceService {
   destroy(): void {
     this.stopListening();
     this.stopSpeaking();
-    this.onCommandCallback = undefined;
-    this.onErrorCallback = undefined;
+    delete this.onCommandCallback;
+    delete this.onErrorCallback;
   }
 }
 

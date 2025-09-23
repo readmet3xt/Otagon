@@ -58,7 +58,7 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
   // FIXED: Better loading state management
   if (!activeConversation) {
     console.log('🔧 [MainViewContainer] No active conversation found:', {
-      activeConversationId,
+      activeConversationId: (activeConversation as any)?.id || 'unknown',
       hasConversations: !!conversations,
       conversationCount: conversations ? Object.keys(conversations).length : 0,
       conversationIds: conversations ? Object.keys(conversations) : []
@@ -67,6 +67,16 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
     // If we have conversations but no active one, try to set a default
     if (conversations && Object.keys(conversations).length > 0) {
       console.log('🔧 [MainViewContainer] Found conversations but no active one, this should not happen');
+      // FIXED: Force a re-render by returning a temporary loading state
+      return (
+        <div className="min-h-screen bg-[#1A1A1A] text-white flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+            <p className="text-gray-400">Setting up conversation...</p>
+            <p className="text-gray-500 text-sm mt-2">Found {Object.keys(conversations).length} conversations</p>
+          </div>
+        </div>
+      );
     }
     
     return (
@@ -206,11 +216,11 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchEndX.current = null;
-    touchStartX.current = e.targetTouches[0].clientX;
+    touchStartX.current = e.targetTouches[0]?.clientX || null;
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    touchEndX.current = e.targetTouches[0].clientX;
+    touchEndX.current = e.targetTouches[0]?.clientX || null;
   };
 
   const handleTouchEnd = () => {
@@ -221,10 +231,10 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
 
     if (isLeftSwipe) {
       const nextIndex = Math.min(activeIndex + 1, views.length - 1);
-      onSubViewChange(views[nextIndex]);
+      onSubViewChange(views[nextIndex]!);
     } else if (isRightSwipe) {
       const prevIndex = Math.max(activeIndex - 1, 0);
-      onSubViewChange(views[prevIndex]);
+      onSubViewChange(views[prevIndex]!);
     }
     touchStartX.current = null;
     touchEndX.current = null;
@@ -279,10 +289,10 @@ const MainViewContainer: React.FC<MainViewContainerProps> = ({
                   <SuggestedPrompts 
                     onPromptClick={onSendMessage} 
                     isInputDisabled={isInputDisabled} 
-                    isFirstTime={isFirstTime}
+                    {...(isFirstTime && { isFirstTime })}
                     isEverythingElse={activeConversation.id === 'everything-else'}
                     hasGamePills={false}
-                    aiResponseHasSuggestions={aiResponseHasSuggestions}
+                    {...(aiResponseHasSuggestions && { aiResponseHasSuggestions })}
                   />
                 )}
                 

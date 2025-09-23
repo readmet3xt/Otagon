@@ -158,7 +158,7 @@ class SecureAppStateService implements AppStateService {
       throw new Error(`Failed to get ${key}: ${error.message}`);
     }
 
-    return key === '*' ? data : data[key];
+    return key === '*' ? data : (data as any)[key];
   }
 
   private async setSupabaseData(key: string, data: any): Promise<void> {
@@ -219,10 +219,19 @@ class SecureAppStateService implements AppStateService {
         const isDevMode = isDeveloperMode();
         const cached = this.getCachedData<UserState>('userState');
         if (cached && !isDevMode) {
+          // CRITICAL FIX: Clear processing flag before returning cached data
+          this.cache.delete(processingKey);
           return cached;
         }
 
         const authState = authService.getCurrentState();
+        
+        // ✅ DEBUG: Check auth state in getUserState
+        console.log('🔧 [AppStateService] DEBUG - Auth state in getUserState:', {
+          authStateUser: authState.user,
+          authStateSession: authState.session,
+          authStateLoading: authState.loading
+        });
       
       if (!authState.user) {
         // Check if we're in developer mode and should restore session
@@ -392,52 +401,81 @@ class SecureAppStateService implements AppStateService {
       }
 
       // Get user data from Supabase
-      const userData = await this.retryOperation(
-        () => this.getSupabaseData('*'),
-        'getUserState'
-      );
+      try {
+        const userData = await this.retryOperation(
+          () => this.getSupabaseData('*'),
+          'getUserState'
+        );
 
-      const userState: UserState = {
-        id: userData.id,
-        email: userData.email,
-        tier: userData.tier || 'free',
-        isAuthenticated: true,
-        isDeveloper: false,
-        hasProfileSetup: userData.profile_data?.profileSetupCompleted || false,
-        hasSeenSplashScreens: userData.app_state?.hasSeenSplashScreens || false,
-        hasWelcomeMessage: userData.app_state?.hasWelcomeMessage || false,
-        isNewUser: !userData.app_state?.firstRunCompleted,
-        lastActivity: new Date(userData.last_activity).getTime(),
-        preferences: userData.preferences || {},
-        usage: {
-          textCount: userData.usage_data?.textCount || 0,
-          imageCount: userData.usage_data?.imageCount || 0,
-          textLimit: userData.usage_data?.textLimit || 55,
-          imageLimit: userData.usage_data?.imageLimit || 25,
-          totalRequests: userData.usage_data?.totalRequests || 0,
-          lastReset: userData.usage_data?.lastReset || 0
-        }
-      };
+        const userState: UserState = {
+          id: userData.id,
+          email: userData.email,
+          tier: userData.tier || 'free',
+          isAuthenticated: !!userData.id, // CRITICAL FIX: Check actual auth state instead of hardcoding true
+          isDeveloper: false,
+          hasProfileSetup: userData.profile_data?.profileSetupCompleted || false,
+          hasSeenSplashScreens: userData.app_state?.hasSeenSplashScreens || false,
+          hasWelcomeMessage: userData.app_state?.hasWelcomeMessage || false,
+          isNewUser: !userData.app_state?.firstRunCompleted,
+          lastActivity: new Date(userData.last_activity).getTime(),
+          preferences: userData.preferences || {},
+          usage: {
+            textCount: userData.usage_data?.textCount || 0,
+            imageCount: userData.usage_data?.imageCount || 0,
+            textLimit: userData.usage_data?.textLimit || 55,
+            imageLimit: userData.usage_data?.imageLimit || 25,
+            totalRequests: userData.usage_data?.totalRequests || 0,
+            lastReset: userData.usage_data?.lastReset || 0
+          }
+        };
 
-      
-      // Cache the result
-      this.setCachedData('userState', userState);
-      
-      return userState;
-      
-      } finally {
-        // Clear processing flag for inner try block
-        this.cache.delete('getUserState_processing');
+        console.log('🔧 [AppStateService] Returning authenticated user state:', userState);
+        
+        // CRITICAL FIX: Clear processing flag before returning
+        this.cache.delete(processingKey);
+        return userState;
+      } catch (error) {
+        console.log('🔧 [AppStateService] Failed to get user data from Supabase, returning unauthenticated state:', error);
+        
+        // Return default state for unauthenticated users
+        const unauthenticatedState: UserState = {
+          id: 'anonymous',
+          email: '',
+          tier: 'free' as const,
+          isAuthenticated: false,
+          isDeveloper: false,
+          hasProfileSetup: false,
+          hasSeenSplashScreens: false,
+          hasWelcomeMessage: false,
+          isNewUser: true,
+          lastActivity: Date.now(),
+          preferences: {},
+          usage: {
+            textCount: 0,
+            imageCount: 0,
+            textLimit: 55,
+            imageLimit: 25,
+            totalRequests: 0,
+            lastReset: 0
+          }
+        };
+        
+        // CRITICAL FIX: Clear processing flag before returning
+        this.cache.delete(processingKey);
+        return unauthenticatedState;
       }
 
     } catch (error) {
       this.error('Failed to get user state', error);
       
+      // CRITICAL FIX: Clear processing flag in catch block too
+      this.cache.delete(processingKey);
+      
       // Return fallback state
       return {
         id: 'error',
         email: '',
-        tier: 'free',
+        tier: 'free' as const,
         isAuthenticated: false,
         isDeveloper: false,
         hasProfileSetup: false,
@@ -455,6 +493,10 @@ class SecureAppStateService implements AppStateService {
           lastReset: 0
         }
       };
+    }
+    } finally {
+      // Clear processing flag
+      this.cache.delete('getUserState_processing');
     }
   }
 
@@ -707,6 +749,18 @@ class SecureAppStateService implements AppStateService {
   }
 
   determineView(userState: UserState): AppView {
+    console.log('🔧 [AppStateService] determineView called with userState:', {
+      isAuthenticated: userState.isAuthenticated,
+      id: userState.id
+    });
+    
+    // Check current flags
+    const manualLandingNav = localStorage.getItem('otakon_manual_landing_nav');
+    const logoutRedirect = localStorage.getItem('otakon_logout_redirect');
+    console.log('🔧 [AppStateService] Current flags:', {
+      manualLandingNav,
+      logoutRedirect
+    });
     try {
       if (!userState.isAuthenticated) {
         // Only log when transitioning from authenticated to unauthenticated
@@ -714,12 +768,36 @@ class SecureAppStateService implements AppStateService {
           console.log('🔧 [AppStateService] User logged out, checking for login redirect');
         }
         
+        // Check if this is a manual navigation to landing page (HIGHEST PRIORITY)
+        const isManualLandingNav = localStorage.getItem('otakon_manual_landing_nav') === 'true';
+        if (isManualLandingNav) {
+          console.log('🔧 [AppStateService] Manual landing navigation detected, showing landing page');
+          // Don't clear the flag immediately - delay it to handle multiple auth state changes
+          // Set a timeout to clear the flag after auth state stabilizes
+          setTimeout(() => {
+            localStorage.removeItem('otakon_manual_landing_nav');
+            console.log('🔧 [AppStateService] Manual landing nav flag cleared after delay');
+          }, 3000); // 3 second delay to handle multiple auth state changes
+          
+          const result = {
+            view: 'landing' as const,
+            onboardingStatus: 'complete' as const
+          };
+          console.log('🔧 [AppStateService] Returning manual landing navigation result:', result);
+          return result;
+        }
+        
         // Check if this is a logout redirect - show login page instead of landing page
         const isLogoutRedirect = localStorage.getItem('otakon_logout_redirect') === 'true';
         if (isLogoutRedirect) {
           console.log('🔧 [AppStateService] Logout redirect detected, showing login page');
-          // Clear the flag so it doesn't persist
-          localStorage.removeItem('otakon_logout_redirect');
+          // CRITICAL FIX: Don't clear the flag immediately - delay it to handle multiple auth state changes
+          // Set a timeout to clear the flag after auth state stabilizes
+          setTimeout(() => {
+            localStorage.removeItem('otakon_logout_redirect');
+            console.log('🔧 [AppStateService] Logout redirect flag cleared after delay');
+          }, 2000); // 2 second delay to handle multiple auth state changes
+          
           return {
             view: 'app',
             onboardingStatus: 'login'
@@ -727,10 +805,13 @@ class SecureAppStateService implements AppStateService {
         }
         
         // Default behavior for unauthenticated users
-        return {
-          view: 'landing',
-          onboardingStatus: 'complete'
+        console.log('🔧 [AppStateService] No special flags detected, using default behavior for unauthenticated user');
+        const result = {
+          view: 'landing' as const,
+          onboardingStatus: 'complete' as const
         };
+        console.log('🔧 [AppStateService] Returning default unauthenticated result:', result);
+        return result;
       }
 
       const onboardingStatus = this.determineOnboardingStatus(userState);

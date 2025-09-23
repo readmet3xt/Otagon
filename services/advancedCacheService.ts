@@ -388,7 +388,11 @@ class CachePredictionEngine {
     // Calculate time intervals between accesses
     const intervals: number[] = [];
     for (let i = 1; i < accessTimes.length; i++) {
-      intervals.push(accessTimes[i] - accessTimes[i - 1]);
+      const current = accessTimes[i];
+      const previous = accessTimes[i - 1];
+      if (current !== undefined && previous !== undefined) {
+        intervals.push(current - previous);
+      }
     }
 
     // Calculate standard deviation of intervals
@@ -411,7 +415,11 @@ class CachePredictionEngine {
 
     const recentIntervals: number[] = [];
     for (let i = Math.max(1, accessTimes.length - 5); i < accessTimes.length; i++) {
-      recentIntervals.push(accessTimes[i] - accessTimes[i - 1]);
+      const current = accessTimes[i];
+      const previous = accessTimes[i - 1];
+      if (current !== undefined && previous !== undefined) {
+        recentIntervals.push(current - previous);
+      }
     }
 
     const averageInterval = recentIntervals.reduce((a, b) => a + b, 0) / recentIntervals.length;

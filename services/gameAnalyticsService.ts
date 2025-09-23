@@ -465,7 +465,7 @@ class GameAnalyticsService {
       conversationId,
       pillId,
       newValue: pillContent,
-      metadata
+      ...(metadata && { metadata })
     });
   }
 
@@ -487,7 +487,7 @@ class GameAnalyticsService {
       conversationId,
       insightId,
       newValue: insightContent,
-      metadata
+      ...(metadata && { metadata })
     });
   }
 
@@ -506,7 +506,7 @@ class GameAnalyticsService {
       tabId,
       tabTitle,
       tabType,
-      metadata
+      ...(metadata && { metadata })
     }, 'created');
   }
 
@@ -526,9 +526,9 @@ class GameAnalyticsService {
       targetType: 'ai_response',
       targetId: messageId,
       feedbackType,
-      feedbackText,
-      aiResponseContext,
-      metadata
+      ...(feedbackText && { feedbackText }),
+      ...(aiResponseContext && { aiResponseContext }),
+      ...(metadata && { metadata })
     });
   }
 

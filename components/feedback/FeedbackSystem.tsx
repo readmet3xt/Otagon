@@ -64,8 +64,8 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
       type: feedbackType,
       title: title.trim(),
       description: description.trim(),
-      priority,
-      category: context,
+      ...(priority && { priority }),
+      ...(context && { category: context }),
       userAgent: navigator.userAgent,
       timestamp: new Date()
     };
@@ -309,8 +309,8 @@ const FeedbackTrigger: React.FC<FeedbackTriggerProps> = ({
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleSubmit}
-        initialType={type}
-        context={context}
+        {...(type && { initialType: type })}
+        {...(context && { context })}
       />
     </>
   );

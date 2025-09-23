@@ -186,7 +186,6 @@ class DevModeMigrationService {
         createdAt: Date.now(),
         progress: 0,
         inventory: [],
-        genre: undefined,
         insights: {},
         insightsOrder: [],
         isPinned: false,

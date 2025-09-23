@@ -141,14 +141,10 @@ interface AppState {
   currentAchievement: any | null;
   
   // Chat and connection states
-  activeConversation: any;
   activeSubView: string;
   loadingMessages: string[];
   isCooldownActive: boolean;
   isFirstTime: boolean;
-  conversations: Conversations;
-  conversationsOrder: string[];
-  activeConversationId: string;
   
   // Context menu and feedback
   contextMenu: any | null;
@@ -190,14 +186,10 @@ const App: React.FC = () => {
     currentAchievement: null,
     
     // Chat and connection states
-    activeConversation: null,
     activeSubView: 'chat',
     loadingMessages: [],
     isCooldownActive: false,
     isFirstTime: false,
-    conversations: {},
-    conversationsOrder: [],
-    activeConversationId: 'everything-else',
     
     // Context menu and feedback
     contextMenu: null,
@@ -430,146 +422,6 @@ const App: React.FC = () => {
     setAppState(prev => ({ ...prev, showUpgradeScreen: true }));
   }, []);
 
-  // Handle sign out
-  const handleSignOut = useCallback(async () => {
-    console.log('🔐 [App] handleSignOut called');
-    try {
-      // Check if this is developer mode - preserve data for developer mode
-      const isDeveloperMode = appState.userState?.isDeveloper;
-      console.log('🔐 [App] Developer mode:', isDeveloperMode);
-      
-      // Save conversations to Supabase before logout (for authenticated users)
-      if (appState.conversations && Object.keys(appState.conversations).length > 0 && appState.userState?.isAuthenticated) {
-        console.log('🔐 [App] Saving conversations to Supabase before logout...');
-        try {
-          // Save each conversation individually to Supabase
-          for (const [conversationId, conversation] of Object.entries(appState.conversations)) {
-            try {
-              const result = await secureConversationService.saveConversation(
-                conversationId,
-                conversation.title,
-                conversation.messages,
-                conversation.insights ? Object.values(conversation.insights) : [],
-                { 
-                  progress: conversation.progress,
-                  genre: conversation.genre,
-                  inventory: conversation.inventory,
-                  activeObjective: conversation.activeObjective,
-                  lastTrailerTimestamp: conversation.lastTrailerTimestamp,
-                  lastInteractionTimestamp: conversation.lastInteractionTimestamp,
-                  isPinned: conversation.isPinned
-                },
-                conversation.gameId,
-                conversation.isPinned || false,
-                true // forceOverwrite to ensure save before logout
-              );
-              
-              if (!result.success) {
-                console.warn(`Failed to save conversation ${conversationId} to Supabase:`, result.error);
-              } else {
-                console.log(`✅ Conversation ${conversationId} saved to Supabase`);
-              }
-            } catch (convError) {
-              console.error(`Error saving conversation ${conversationId}:`, convError);
-            }
-          }
-          
-          // Also save to localStorage as backup
-          localStorage.setItem('otakon_conversations', JSON.stringify(appState.conversations));
-          localStorage.setItem('otakon_conversations_order', JSON.stringify(appState.conversationsOrder));
-          localStorage.setItem('otakon_active_conversation', appState.activeConversationId);
-          console.log('🔐 [App] Conversations saved to Supabase and localStorage backup');
-        } catch (error) {
-          console.error('🔐 [App] Failed to save conversations:', error);
-          // Still continue with logout even if save fails
-        }
-      } else if (appState.conversations && Object.keys(appState.conversations).length > 0) {
-        // For unauthenticated users (developer mode), save to localStorage only
-        console.log('🔐 [App] Saving conversations to localStorage (developer mode)...');
-        localStorage.setItem('otakon_conversations', JSON.stringify(appState.conversations));
-        localStorage.setItem('otakon_conversations_order', JSON.stringify(appState.conversationsOrder));
-        localStorage.setItem('otakon_active_conversation', appState.activeConversationId);
-        console.log('🔐 [App] Conversations saved to localStorage');
-      }
-      
-      // Set logout redirect flag to show login page instead of landing page
-      localStorage.setItem('otakon_logout_redirect', 'true');
-      
-      // Clear onboarding flags to ensure proper logout flow
-      localStorage.removeItem('otakonOnboardingComplete');
-      localStorage.removeItem('otakon_profile_setup_completed');
-      
-      // Clear developer mode flags if not in developer mode
-      if (!isDeveloperMode) {
-        localStorage.removeItem('otakon_developer_mode');
-        localStorage.removeItem('otakonAuthMethod');
-        localStorage.removeItem('otakon_dev_fallback_mode');
-      }
-      
-      console.log('🔐 [App] Calling authService.signOut()...');
-      const result = await authService.signOut();
-      console.log('🔐 [App] Sign out result:', result);
-      
-      // CRITICAL FIX: Force clear auth state immediately to prevent race conditions
-      const clearedUserState = {
-        id: null,
-        email: null,
-        tier: 'free',
-        isAuthenticated: false,
-        isDeveloper: false,
-        hasSeenSplashScreens: false,
-        hasProfileSetup: false,
-        isNewUser: true
-      };
-      
-      if (isDeveloperMode) {
-        // For developer mode, just reset auth state but preserve conversations
-        console.log('🔐 [App] Resetting developer mode state...');
-        setAppState(prev => ({
-          ...prev,
-          userState: clearedUserState,
-          appView: { view: 'app', onboardingStatus: 'login' },
-          // Don't clear conversations for developer mode - they'll be restored from localStorage
-        }));
-        console.log('🔧 Developer mode sign out - conversations preserved');
-      } else {
-        // For regular users, clear everything
-        console.log('🔐 [App] Resetting regular user state...');
-        setAppState(prev => ({
-          ...prev,
-          userState: clearedUserState,
-          appView: { view: 'app', onboardingStatus: 'login' },
-          activeConversation: null,
-          conversations: {},
-          conversationsOrder: [],
-          activeConversationId: 'everything-else'
-        }));
-        console.log('🔐 [App] Regular user sign out completed');
-      }
-      
-      console.log('🔐 [App] Sign out completed successfully - user redirected to login');
-    } catch (error) {
-      console.error('🔐 [App] Failed to sign out:', error);
-      // Even if sign out fails, reset state to login
-      const clearedUserState = {
-        id: null,
-        email: null,
-        tier: 'free',
-        isAuthenticated: false,
-        isDeveloper: false,
-        hasSeenSplashScreens: false,
-        hasProfileSetup: false,
-        isNewUser: true
-      };
-      
-      setAppState(prev => ({
-        ...prev,
-        userState: clearedUserState,
-        appView: { view: 'app', onboardingStatus: 'login' }
-      }));
-    }
-  }, [appState.userState?.isDeveloper, appState.userState?.isAuthenticated, appState.conversations, appState.conversationsOrder, appState.activeConversationId]);
-
   // Handle reset (developer mode only)
   const handleReset = useCallback(async () => {
     if (!appState.userState?.isDeveloper) return;
@@ -584,10 +436,6 @@ const App: React.FC = () => {
         ...prev,
         userState: null,
         appView: { view: 'landing', onboardingStatus: 'login' },
-        activeConversation: null,
-        conversations: {},
-        conversationsOrder: [],
-        activeConversationId: 'everything-else',
         isFirstTime: true
       }));
       
@@ -670,14 +518,10 @@ const App: React.FC = () => {
         showUpgradeScreen: false,
         showDailyCheckin: false,
         currentAchievement: null,
-        activeConversation: null, // Will be set by useChat hook
         activeSubView: 'chat',
         loadingMessages: [],
         isCooldownActive: false,
         isFirstTime: userState.isNewUser,
-        conversations: {},
-        conversationsOrder: [],
-        activeConversationId: 'everything-else',
         contextMenu: null,
         feedbackModalState: null,
         confirmationModal: null,
@@ -695,106 +539,83 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // ✅ INFINITE LOOP FIX: Single auth state handler with proper debouncing
+  // ✅ FINAL FIX: Robust auth listener that avoids stale state
   const handleAuthStateChange = useCallback(async () => {
+    // Allow logout-related auth state changes to proceed even if one is already in progress
+    const currentAuthState = authService.getCurrentState();
+    const isLogout = currentAuthState.user === null && currentAuthState.session === null;
+    
+    if (isProcessingAuthState.current && !isLogout) {
+      console.log('🔧 [App] Auth state change already in progress, skipping...');
+      return;
+    }
+    
+    if (isProcessingAuthState.current && isLogout) {
+      console.log('🔧 [App] Auth state change already in progress, but logout detected - proceeding...');
+    }
+    
+    isProcessingAuthState.current = true;
+
     try {
-      if (!appState.initialized) {
-        return;
-      }
-
-      // ✅ CRITICAL FIX: Prevent multiple simultaneous auth state changes
-      if (isProcessingAuthState.current) {
-        console.log('🔧 [App] Auth state change already in progress, skipping...');
-        return;
-      }
-
-      isProcessingAuthState.current = true;
-
-      // ✅ CRITICAL FIX: Longer debouncing to prevent rapid-fire calls
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Get updated user state
+      // CRITICAL FIX: Add debouncing to prevent rapid-fire auth state changes
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const userState = await secureAppStateService.getUserState();
-      
-      // ✅ CRITICAL FIX: Only process if there's a meaningful change
-      const authChanged = !appState.userState || appState.userState.isAuthenticated !== userState.isAuthenticated;
-      const userChanged = !appState.userState || appState.userState.id !== userState.id;
-      
-      // ✅ INFINITE LOOP FIX: Add additional checks to prevent unnecessary processing
-      if (!authChanged && !userChanged) {
-        console.log('🔧 [App] No meaningful auth change detected, skipping...');
-        return;
-      }
-      
-      if (authChanged || userChanged) {
-        console.log('🔧 [App] Auth state changed:', {
-          wasAuthenticated: appState.userState?.isAuthenticated,
-          isAuthenticated: userState.isAuthenticated,
-          userId: userState.id
-        });
-        
-        // Reset OAuth callback flag when auth state change is complete
-        if (userState.isAuthenticated && isOAuthCallback) {
-          console.log('🔧 [App] Auth state change complete, resetting OAuth callback flag');
-          setIsOAuthCallback(false);
-        }
-
-        // ✅ CRITICAL FIX: Only load data once per auth change, with timeout
-        if (userState.isAuthenticated && authChanged) {
-          console.log('🔧 [App] User authenticated, loading all user data...');
-          
-          // Single data load with timeout to prevent hanging
-          const loadPromise = comprehensivePersistenceService.loadAllUserData();
-          const timeoutPromise = new Promise<void>((_, reject) => 
-            setTimeout(() => reject(new Error('Data load timeout')), 5000)
-          );
-          
-          try {
-            await Promise.race([loadPromise, timeoutPromise]);
-          } catch (error) {
-            console.error('Failed to load user data:', error);
-          }
-        }
-      }
-      
-      // Determine app view
-      const appView = secureAppStateService.determineView(userState);
-      
-      // ✅ INFINITE LOOP FIX: Only update state if there's actually a change
-      setAppState(prev => {
-        const hasUserStateChanged = !prev.userState || 
-          prev.userState.isAuthenticated !== userState.isAuthenticated ||
-          prev.userState.id !== userState.id;
-        
-        const hasAppViewChanged = !prev.appView ||
-          prev.appView.onboardingStatus !== appView.onboardingStatus ||
-          prev.appView.view !== appView.view;
-        
-        if (!hasUserStateChanged && !hasAppViewChanged) {
-          console.log('🔧 [App] No state changes needed, skipping update');
-          return prev;
-        }
-        
-        console.log('🔧 [App] Updating app state with changes');
-        return {
-          ...prev,
-          userState,
-          appView
-        };
+      console.log('🔧 [App] Got userState from secureAppStateService:', {
+        isAuthenticated: userState.isAuthenticated,
+        id: userState.id
       });
+      
+      const appView = secureAppStateService.determineView(userState);
+      console.log('🔧 [App] Got appView from determineView:', appView);
+
+      console.log('🔧 [App] Auth state changed. New state:', { 
+        isAuthenticated: userState.isAuthenticated, 
+        view: appView.view,
+        onboardingStatus: appView.onboardingStatus
+      });
+
+      // 2. Directly set the new state. This is the single source of truth for updates.
+      setAppState(prev => ({
+        ...prev,
+        userState,
+        appView,
+        loading: false, // Explicitly set loading to false
+        initialized: true, // Mark app as initialized
+        isSettingsModalOpen: false, 
+        contextMenu: null,
+      }));
+      
+      // CRITICAL FIX: Reset OAuth callback flag when user logs out
+      if (!userState.isAuthenticated) {
+        console.log('🔧 [App] User logged out, resetting OAuth callback flag');
+        setIsOAuthCallback(false);
+      }
       
     } catch (error) {
       console.error('Auth state change error:', error);
+      setAppState(prev => ({ ...prev, loading: false, error: 'Failed to update authentication state.' }));
     } finally {
-      // ✅ CRITICAL FIX: Always reset the processing flag
       isProcessingAuthState.current = false;
     }
-  }, [appState.initialized, isOAuthCallback]); // ✅ CRITICAL FIX: Removed appState.userState to prevent infinite loop
+  }, []);
+
+  // ✅ CRITICAL FIX: Remove dependency to prevent infinite loop
+  useEffect(() => {
+    // 3. We subscribe to the auth service and call our fresh handler.
+    const unsubscribe = authService.subscribe((authState) => {
+      console.log(`Auth state changed:`, authState);
+      handleAuthStateChange();
+    });
+
+    // 4. The cleanup function will unsubscribe when the component unmounts.
+    return unsubscribe;
+  }, []); // CRITICAL FIX: Remove handleAuthStateChange dependency to prevent infinite loop
 
   // Initialize app on mount
   useEffect(() => {
     initializeApp();
-  }, [initializeApp]);
+  }, []); // CRITICAL FIX: Remove initializeApp dependency to prevent infinite loop
 
   // Modal handlers (now provided by useModals hook)
 
@@ -962,17 +783,9 @@ const App: React.FC = () => {
       const needsProfileSetup = userState.isAuthenticated && !userState.hasProfileSetup;
       
       if (needsProfileSetup) {
-        console.log('🔧 [App] User needs profile setup - adding welcome message first');
+        console.log('🔧 [App] User needs profile setup - welcome message already handled by useChat');
         
-        // Add welcome message BEFORE showing profile setup modal
-        if (addSystemMessage) {
-          console.log('🔧 [App] Adding welcome message before profile setup modal...');
-          addSystemMessage('Welcome to Otagon! I\'m your AI gaming assistant, here to help you get unstuck in games with hints, not spoilers. Upload screenshots, ask questions, or connect your PC for instant help while playing!', 'everything-else');
-          console.log('🔧 [App] Welcome message added successfully');
-          
-          // CRITICAL FIX: Wait a moment for the message to be saved before loading user data
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
+        // Welcome message is already handled by useChat.ts, no need to add duplicate
         
         console.log('🔧 [App] User needs profile setup - showing modal overlay');
         // Show profile setup modal as overlay
@@ -1072,7 +885,7 @@ const App: React.FC = () => {
   const getNextOnboardingStep = (currentStep: string): string => {
     const steps = ['initial', 'features', 'how-to-use', 'features-connected', 'pro-features'];
     const currentIndex = steps.indexOf(currentStep);
-    return currentIndex < steps.length - 1 ? steps[currentIndex + 1] : 'complete';
+    return currentIndex < steps.length - 1 ? steps[currentIndex + 1]! : 'complete';
   };
 
   // Missing authentication handlers from backup
@@ -1099,6 +912,22 @@ const App: React.FC = () => {
     try {
       // Refresh app state to get updated user state
       await handleAuthStateChange();
+      
+      // CRITICAL FIX: After login completion, check if user is authenticated
+      // If they are, we need to transition them to the main app instead of staying on login screen
+      const currentUserState = await secureAppStateService.getUserState();
+      if (currentUserState.isAuthenticated) {
+        console.log('🔧 [App] User is authenticated after login completion, transitioning to main app');
+        // Force a proper app state refresh to show the main interface
+        const appView = secureAppStateService.determineView(currentUserState);
+        setAppState(prev => ({
+          ...prev,
+          userState: currentUserState,
+          appView,
+          loading: false,
+          initialized: true
+        }));
+      }
       
     } catch (error) {
       console.error('Failed to handle login completion:', error);
@@ -1209,6 +1038,7 @@ const App: React.FC = () => {
         document.removeEventListener('visibilitychange', handleVisibilityChange);
       };
     }
+    return undefined;
   }, [appState.userState?.isAuthenticated]);
 
   // Handle ESC key to close modal
@@ -1293,22 +1123,30 @@ const App: React.FC = () => {
     }
   }, [appState.feedbackModalState, closeFeedbackModal, handleError]);
 
-  // Initialize app on mount
-  useEffect(() => {
-    initializeApp();
-  }, [initializeApp]);
-
-  // Subscribe to auth state changes
-  useEffect(() => {
-    const unsubscribe = authService.subscribe(handleAuthStateChange);
-    return unsubscribe;
-  }, [handleAuthStateChange]);
 
   // OAuth callback handling - using unified service
   useEffect(() => {
     const handleOAuthCallback = async () => {
       // Only process if we're in an OAuth callback
       if (!unifiedOAuthService.isOAuthCallback()) {
+        return;
+      }
+
+      // CRITICAL FIX: Check if this is after a logout to prevent OAuth processing
+      const isLogoutRedirect = localStorage.getItem('otakon_logout_redirect') === 'true';
+      if (isLogoutRedirect) {
+        console.log('🔐 [App] Logout redirect detected, skipping OAuth callback to prevent loading loop');
+        // Clean up OAuth parameters since we don't need them after logout
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return;
+      }
+
+      // CRITICAL FIX: Check if user is already authenticated to prevent auto re-authentication
+      const currentAuthState = authService.getCurrentState();
+      if (currentAuthState.user) {
+        console.log('🔐 [App] User already authenticated, skipping OAuth callback to prevent auto re-auth');
+        // Clean up OAuth parameters since we don't need them
+        window.history.replaceState({}, document.title, window.location.pathname);
         return;
       }
 
@@ -1528,14 +1366,48 @@ const App: React.FC = () => {
               onOpenTerms={() => openModal('terms')}
               onBackToLanding={() => {
                 console.log('Back to landing clicked');
+                console.log('🔧 [App] Current flags before navigation:', {
+                  manualLandingNav: localStorage.getItem('otakon_manual_landing_nav'),
+                  logoutRedirect: localStorage.getItem('otakon_logout_redirect')
+                });
+                // Set flag to indicate manual navigation to landing page
+                localStorage.setItem('otakon_manual_landing_nav', 'true');
+                // Also clear the logout redirect flag to prevent conflicts
+                localStorage.removeItem('otakon_logout_redirect');
+                console.log('🔧 [App] Manual landing nav flag set, logout redirect flag cleared');
                 // Properly navigate back to landing page
                 setAppState(prev => ({
                   ...prev,
                   appView: {
                     view: 'landing',
                     onboardingStatus: 'complete' // Landing page only shows when onboarding is complete
-                  }
+                  },
+                  loading: false, // CRITICAL: Explicitly set loading to false
+                  initialized: true // CRITICAL: Mark app as initialized
                 }));
+                console.log('🔧 [App] App state updated to landing page');
+                // Check the current state after a brief delay
+                setTimeout(() => {
+                  console.log('🔧 [App] Post-navigation check:', {
+                    manualLandingNav: localStorage.getItem('otakon_manual_landing_nav'),
+                    logoutRedirect: localStorage.getItem('otakon_logout_redirect')
+                  });
+                  // Also check if there are any pending auth state changes
+                  console.log('🔧 [App] Checking for pending auth state changes...');
+                  
+                  // Check the actual app state
+                  setAppState(currentState => {
+                    console.log('🔧 [App] Current app state after navigation:', {
+                      loading: currentState.loading,
+                      initialized: currentState.initialized,
+                      appView: currentState.appView,
+                      userState: {
+                        isAuthenticated: currentState.userState?.isAuthenticated
+                      }
+                    });
+                    return currentState; // Don't modify, just log
+                  });
+                }, 100);
               }}
             />
             
@@ -1692,14 +1564,22 @@ const App: React.FC = () => {
   };
 
   // Render app based on view and onboarding status
-  // Only log rendering for non-landing views to reduce console noise
-  if (appState.appView?.view !== 'landing') {
-    console.log('🔧 [App] Rendering app with appView:', appState.appView);
-  }
+  console.log('🔧 [App] Rendering app with appView:', appState.appView);
+  console.log('🔧 [App] Current app state for rendering:', {
+    loading: appState.loading,
+    initialized: appState.initialized,
+    appView: appState.appView,
+    userState: {
+      isAuthenticated: appState.userState?.isAuthenticated
+    },
+    isOAuthCallback: isOAuthCallback
+  });
   
   if (appState.appView?.view === 'landing') {
+    console.log('🔧 [App] Rendering landing page');
     // If we're processing an OAuth callback, show loading instead of landing page
     if (isOAuthCallback) {
+      console.log('🔧 [App] OAuth callback in progress, showing loading instead of landing');
       return (
         <div className="min-h-screen bg-[#000000] flex items-center justify-center">
           <LoadingSpinner size="xl" />
@@ -1709,13 +1589,24 @@ const App: React.FC = () => {
     
     // If user is authenticated or auth is still loading, show loading instead of landing page to prevent flash
     const authState = authService.getCurrentState();
-    if (appState.userState?.isAuthenticated || authState.loading) {
+    console.log('🔧 [App] Landing page auth check:', {
+      userStateAuthenticated: appState.userState?.isAuthenticated,
+      authStateLoading: authState.loading,
+      manualLandingNav: localStorage.getItem('otakon_manual_landing_nav')
+    });
+    
+    // CRITICAL FIX: Allow manual navigation to landing page even if auth state suggests otherwise
+    const isManualLandingNav = localStorage.getItem('otakon_manual_landing_nav') === 'true';
+    if ((appState.userState?.isAuthenticated || authState.loading) && !isManualLandingNav) {
+      console.log('🔧 [App] Auth state prevents landing page, showing loading');
       return (
         <div className="min-h-screen bg-[#000000] flex items-center justify-center">
           <LoadingSpinner size="xl" />
         </div>
       );
     }
+    
+    console.log('🔧 [App] Auth check passed, proceeding to render landing page');
     
     // If onboarding is complete, show the actual landing page
     if (appState.appView?.onboardingStatus === 'complete') {
@@ -2089,15 +1980,12 @@ const App: React.FC = () => {
                                     }
                                   }
                                 }] : []),
-                                {
-                                  label: 'Sign Out',
-                                  icon: LogoutIcon,
-                                  action: () => {
-                                    console.log('🔐 [App] Sign Out action clicked in context menu');
-                                    handleSignOut();
-                                  },
-                                  isDestructive: true
-                                },
+        {
+          label: 'Sign Out',
+          icon: LogoutIcon,
+          action: handleLogoutOnly, // ✅ Use simple logout for regular users (preserves data)
+          isDestructive: true
+        },
                                 ...(appState.userState?.isDeveloper ? [{
                                   label: 'Reset (Dev)',
                                   icon: TrashIcon,

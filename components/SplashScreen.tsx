@@ -93,11 +93,17 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
   
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchEndX(null); // Clear end on new touch
-    setTouchStartX(e.targetTouches[0].clientX);
+    const touch = e.targetTouches[0];
+    if (touch) {
+      setTouchStartX(touch.clientX);
+    }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    setTouchEndX(e.targetTouches[0].clientX);
+    const touch = e.targetTouches[0];
+    if (touch) {
+      setTouchEndX(touch.clientX);
+    }
   };
 
   const handleTouchEnd = () => {
@@ -133,10 +139,10 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
       <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8">
         <div className="text-center max-w-lg w-full">
           <div className="mb-2 sm:mb-4 flex justify-center">
-            {currentSlide.icon}
+            {currentSlide?.icon}
           </div>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#F5F5F5] mb-2 sm:mb-4 leading-normal">{currentSlide.title}</h1>
-          <p className="text-[#CFCFCF] text-base sm:text-lg md:text-xl mb-4 leading-relaxed">{currentSlide.description}</p>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#F5F5F5] mb-2 sm:mb-4 leading-normal">{currentSlide?.title}</h1>
+          <p className="text-[#CFCFCF] text-base sm:text-lg md:text-xl mb-4 leading-relaxed">{currentSlide?.description}</p>
           
           {isLastStep && (
               <div className="space-y-3 sm:space-y-4 text-left">

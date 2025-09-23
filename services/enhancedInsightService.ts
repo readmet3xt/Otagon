@@ -193,7 +193,7 @@ class EnhancedInsightService {
         const genreTabs = genreSpecificTabs[genre] || genreSpecificTabs['rpg'];
         
         // Always return Otaku Diary first, then genre-specific tabs
-        return [otakuDiaryTab, ...genreTabs];
+        return [otakuDiaryTab, ...(genreTabs || [])];
     }
 
     /**

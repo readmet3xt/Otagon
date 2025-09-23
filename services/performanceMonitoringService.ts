@@ -90,11 +90,11 @@ class PerformanceMonitoringService {
       const userId = await this.getUserId();
       this.recordError({
         message: event.message,
-        stack: event.error?.stack,
+        ...(event.error?.stack && { stack: event.error.stack }),
         timestamp: Date.now(),
         url: window.location.href,
         userAgent: navigator.userAgent,
-        userId
+        ...(userId && { userId })
       });
     });
 
@@ -103,11 +103,11 @@ class PerformanceMonitoringService {
       const userId = await this.getUserId();
       this.recordError({
         message: event.reason?.message || 'Unhandled Promise Rejection',
-        stack: event.reason?.stack,
+        ...(event.reason?.stack && { stack: event.reason.stack }),
         timestamp: Date.now(),
         url: window.location.href,
         userAgent: navigator.userAgent,
-        userId
+        ...(userId && { userId })
       });
     });
 
@@ -116,11 +116,11 @@ class PerformanceMonitoringService {
       const userId = await this.getUserId();
       this.recordError({
         message: event.detail?.error?.message || 'React Error Boundary Error',
-        stack: event.detail?.error?.stack,
+        ...(event.detail?.error?.stack && { stack: event.detail.error.stack }),
         timestamp: Date.now(),
         url: window.location.href,
         userAgent: navigator.userAgent,
-        userId
+        ...(userId && { userId })
       });
     });
   }
@@ -242,11 +242,11 @@ class PerformanceMonitoringService {
     const userId = await this.getUserId();
     const errorEvent: ErrorEvent = {
       message: error.message,
-      stack: error.stack,
+      ...(error.stack && { stack: error.stack }),
       timestamp: Date.now(),
       url: window.location.href,
       userAgent: navigator.userAgent,
-      userId
+      ...(userId && { userId })
     };
 
     this.recordError(errorEvent);

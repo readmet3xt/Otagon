@@ -39,20 +39,24 @@ const SwipeGesture: React.FC<SwipeGestureProps> = ({
 
   const handleTouchStart = (e: React.TouchEvent) => {
     const touch = e.touches[0];
-    setStartX(touch.clientX);
-    setStartY(touch.clientY);
-    setIsDragging(true);
-    setDragOffset({ x: 0, y: 0 });
+    if (touch) {
+      setStartX(touch.clientX);
+      setStartY(touch.clientY);
+      setIsDragging(true);
+      setDragOffset({ x: 0, y: 0 });
+    }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isDragging) return;
     
     const touch = e.touches[0];
-    const deltaX = touch.clientX - startX;
-    const deltaY = touch.clientY - startY;
-    
-    setDragOffset({ x: deltaX, y: deltaY });
+    if (touch) {
+      const deltaX = touch.clientX - startX;
+      const deltaY = touch.clientY - startY;
+      
+      setDragOffset({ x: deltaX, y: deltaY });
+    }
   };
 
   const handleTouchEnd = () => {
@@ -126,15 +130,17 @@ const PinchZoom: React.FC<PinchZoomProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const getDistance = (touches: React.Touch[]) => {
-    const dx = touches[0].clientX - touches[1].clientX;
-    const dy = touches[0].clientY - touches[1].clientY;
+    if (touches.length < 2) return 0;
+    const dx = touches[0]!.clientX - touches[1]!.clientX;
+    const dy = touches[0]!.clientY - touches[1]!.clientY;
     return Math.sqrt(dx * dx + dy * dy);
   };
 
   const getCenter = (touches: React.Touch[]) => {
+    if (touches.length < 2) return { x: 0, y: 0 };
     return {
-      x: (touches[0].clientX + touches[1].clientX) / 2,
-      y: (touches[0].clientY + touches[1].clientY) / 2,
+      x: (touches[0]!.clientX + touches[1]!.clientX) / 2,
+      y: (touches[0]!.clientY + touches[1]!.clientY) / 2,
     };
   };
 
@@ -288,16 +294,22 @@ const MobileNavigationGestures: React.FC<MobileNavigationGesturesProps> = ({
   const [dragOffset, setDragOffset] = useState(0);
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    setStartX(e.touches[0].clientX);
-    setIsDragging(true);
-    setDragOffset(0);
+    const touch = e.touches[0];
+    if (touch) {
+      setStartX(touch.clientX);
+      setIsDragging(true);
+      setDragOffset(0);
+    }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isDragging) return;
     
-    const deltaX = e.touches[0].clientX - startX;
-    setDragOffset(deltaX);
+    const touch = e.touches[0];
+    if (touch) {
+      const deltaX = touch.clientX - startX;
+      setDragOffset(deltaX);
+    }
   };
 
   const handleTouchEnd = () => {

@@ -22,10 +22,11 @@ export class TabManagementService {
     if (lowerText.includes('add tab') || lowerText.includes('create tab') || lowerText.includes('new tab')) {
       const title = this.extractTitle(text);
       if (title) {
+        const content = this.extractContent(text);
         return {
           action: 'add',
           title,
-          content: this.extractContent(text) || undefined
+          ...(content && { content })
         };
       }
     }
@@ -35,11 +36,12 @@ export class TabManagementService {
       const tabId = this.extractTabId(text);
       const title = this.extractTitle(text);
       if (tabId && title) {
+        const content = this.extractContent(text);
         return {
           action: 'modify',
           tabId,
           title,
-          content: this.extractContent(text) || undefined
+          ...(content && { content })
         };
       }
     }
@@ -115,21 +117,22 @@ export class TabManagementService {
           };
         }
         
+        const tab = updatedTabs[tabIndex]!;
         if (command.title) {
-          updatedTabs[tabIndex].title = command.title;
+          tab.title = command.title;
         }
         if (command.content) {
-          updatedTabs[tabIndex].content = command.content;
+          tab.content = command.content;
         }
         if (command.position !== undefined && command.position !== tabIndex) {
-          const [tab] = updatedTabs.splice(tabIndex, 1);
-          updatedTabs.splice(command.position, 0, tab);
+          const [movedTab] = updatedTabs.splice(tabIndex, 1);
+          updatedTabs.splice(command.position, 0, movedTab!);
         }
         
         onTabUpdate(updatedTabs);
         return {
           success: true,
-          message: `✅ Tab "${updatedTabs[tabIndex].title}" modified successfully`,
+          message: `✅ Tab "${tab.title}" modified successfully`,
           updatedTabs: updatedTabs.map(t => t.id)
         };
       }
@@ -152,7 +155,7 @@ export class TabManagementService {
           };
         }
         
-        const deletedTab = updatedTabs[tabIndex];
+        const deletedTab = updatedTabs[tabIndex]!;
         updatedTabs.splice(tabIndex, 1);
         onTabUpdate(updatedTabs);
         
@@ -222,7 +225,7 @@ export class TabManagementService {
     for (const pattern of patterns) {
       const match = text.match(pattern);
       if (match && match[1]) {
-        return match[1].trim();
+        return match[1]!.trim();
       }
     }
     
@@ -231,7 +234,7 @@ export class TabManagementService {
 
   private extractContent(text: string): string | null {
     const match = text.match(/with\s+content\s+(.+?)(?:\s+at|\s*$)/i);
-    return match ? match[1].trim() : null;
+    return match && match[1] ? match[1].trim() : null;
   }
 
   private extractTabId(text: string): string | null {
@@ -242,7 +245,7 @@ export class TabManagementService {
 
   private extractPosition(text: string): number | null {
     const match = text.match(/position\s+(\d+)/i);
-    return match ? parseInt(match[1]) : null;
+    return match && match[1] ? parseInt(match[1], 10) : null;
   }
 }
 

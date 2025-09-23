@@ -143,7 +143,7 @@ class SecureAppStateService implements AppStateService {
       throw new Error(`Failed to get ${key}: ${error.message}`);
     }
 
-    return data[key];
+    return (data as any)[key];
   }
 
   private async setSupabaseData(key: string, data: any): Promise<void> {

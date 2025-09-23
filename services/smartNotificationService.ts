@@ -253,12 +253,13 @@ class SmartNotificationServiceImpl implements SmartNotificationService {
   }
 
   private getNotificationIcon(type: NotificationType): string {
-    const icons = {
+    const icons: Record<NotificationType, string> = {
       info: '/icons/info.png',
       success: '/icons/success.png',
       warning: '/icons/warning.png',
       error: '/icons/error.png',
-      ai_response: '/icons/ai.png'
+      ai_response: '/icons/ai.png',
+      reminder: '/icons/reminder.png'
     };
     
     return icons[type] || icons.info;
@@ -356,6 +357,10 @@ class SmartNotificationServiceImpl implements SmartNotificationService {
     
     const [startHour, startMin] = this.notificationPreferences.quietHours.start.split(':').map(Number);
     const [endHour, endMin] = this.notificationPreferences.quietHours.end.split(':').map(Number);
+    
+    if (startHour === undefined || startMin === undefined || endHour === undefined || endMin === undefined) {
+      return false;
+    }
     
     const startTime = startHour * 60 + startMin;
     const endTime = endHour * 60 + endMin;

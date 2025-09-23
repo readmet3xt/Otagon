@@ -20,9 +20,15 @@ export const useUsageTracking = ({ usage, setUsage }: UseUsageTrackingProps) => 
       // Get the current usage data
       const syncedUsage = await unifiedUsageService.getUsage();
       
-      // Ensure the tier is correct
-      const updatedUsage = {
-        ...syncedUsage,
+      // Ensure the tier is correct and all required properties are present
+      const updatedUsage: Usage = {
+        textQueries: (syncedUsage as any).textQueries || 0,
+        imageQueries: (syncedUsage as any).imageQueries || 0,
+        insights: (syncedUsage as any).insights || 0,
+        textCount: syncedUsage.textCount || 0,
+        imageCount: syncedUsage.imageCount || 0,
+        textLimit: syncedUsage.textLimit || 0,
+        imageLimit: syncedUsage.imageLimit || 0,
         tier: currentTier
       };
       
@@ -36,7 +42,18 @@ export const useUsageTracking = ({ usage, setUsage }: UseUsageTrackingProps) => 
   const loadUsageData = useCallback(async () => {
     try {
       const usageData = await unifiedUsageService.getUsage();
-      setUsage(usageData);
+      // Ensure all required properties are present
+      const completeUsageData: Usage = {
+        textQueries: (usageData as any).textQueries || 0,
+        imageQueries: (usageData as any).imageQueries || 0,
+        insights: (usageData as any).insights || 0,
+        textCount: usageData.textCount || 0,
+        imageCount: usageData.imageCount || 0,
+        textLimit: usageData.textLimit || 0,
+        imageLimit: usageData.imageLimit || 0,
+        tier: usageData.tier
+      };
+      setUsage(completeUsageData);
     } catch (error) {
       console.error('Failed to load usage data:', error);
     }

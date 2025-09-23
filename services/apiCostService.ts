@@ -80,12 +80,12 @@ class APICostService {
                 userTier,
                 cost: this.calculateCost(model, estimatedTokens),
                 success,
-                errorMessage,
-                conversationId,
-                gameName,
-                genre,
-                progress,
-                metadata
+                ...(errorMessage && { errorMessage }),
+                ...(conversationId && { conversationId }),
+                ...(gameName && { gameName }),
+                ...(genre && { genre }),
+                ...(progress !== undefined && { progress }),
+                ...(metadata && { metadata })
             };
 
             // Store locally for offline fallback
@@ -303,7 +303,7 @@ class APICostService {
             callsByModel,
             callsByPurpose,
             callsByTier,
-            lastCall: records.length > 0 ? records[records.length - 1].timestamp : 0,
+            lastCall: records.length > 0 ? records[records.length - 1]!.timestamp : 0,
             estimatedMonthlyCost
         };
     }
@@ -335,7 +335,7 @@ class APICostService {
             }
 
             // Check new game pill frequency
-            if (summary.callsByPurpose.new_game_pill > summary.totalCalls * 0.2) {
+            if ((summary.callsByPurpose.new_game_pill ?? 0) > summary.totalCalls * 0.2) {
                 recommendations.push('New game pill generation is high - ensure this only happens when explicitly requested');
             }
 

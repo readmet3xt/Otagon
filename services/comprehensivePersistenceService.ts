@@ -259,6 +259,22 @@ class ComprehensivePersistenceService {
   }
 
   /**
+   * CRITICAL FIX: Reset sync state when user logs out
+   * This prevents the "sync already in progress" issue after logout
+   */
+  resetSyncState(): void {
+    console.log('🔄 [PersistenceService] Resetting sync state due to logout');
+    this.syncInProgress = false;
+    this.loadInProgress = false;
+    
+    // Clear any pending auto-sync intervals
+    if (this.autoSyncInterval) {
+      clearInterval(this.autoSyncInterval);
+      this.autoSyncInterval = null;
+    }
+  }
+
+  /**
    * Sync conversations to Supabase (FIXED VERSION)
    */
   private async syncConversations(userId: string): Promise<void> {

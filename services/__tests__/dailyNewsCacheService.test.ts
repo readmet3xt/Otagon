@@ -25,8 +25,8 @@ describe('DailyNewsCacheService', () => {
       expect(status).toHaveProperty('LATEST_REVIEWS');
       expect(status).toHaveProperty('HOT_TRAILERS');
       
-      expect(status.LATEST_NEWS.hasCache).toBe(false);
-      expect(status.LATEST_NEWS.age).toBe('No Cache');
+      expect(status.LATEST_NEWS?.hasCache).toBe(false);
+      expect(status.LATEST_NEWS?.age).toBe('No Cache');
     });
   });
 
@@ -40,7 +40,7 @@ describe('DailyNewsCacheService', () => {
       dailyNewsCacheService.clearCache();
 
       const status = dailyNewsCacheService.getCacheStatus();
-      expect(status.LATEST_NEWS.hasCache).toBe(false);
+      expect(status.LATEST_NEWS?.hasCache).toBe(false);
       // Check that localStorage was updated (it should be '{}' or undefined if not set)
       const stored = localStorage.getItem('otakon_daily_news_cache');
       console.log('Stored value:', stored);

@@ -346,7 +346,7 @@ export class TierService {
         tier,
         textLimit: this.TIER_LIMITS[tier].text,
         imageLimit: this.TIER_LIMITS[tier].image,
-        price: this.TIER_PRICES[tier],
+        ...(this.TIER_PRICES[tier] !== undefined && { price: this.TIER_PRICES[tier] }),
         features: this.TIER_FEATURES[tier],
       };
     } catch (error) {
@@ -366,7 +366,7 @@ export class TierService {
         tier,
         textLimit: this.TIER_LIMITS[tier].text,
         imageLimit: this.TIER_LIMITS[tier].image,
-        price: this.TIER_PRICES[tier],
+        ...(this.TIER_PRICES[tier] !== undefined && { price: this.TIER_PRICES[tier] }),
         features: this.TIER_FEATURES[tier],
       };
     });

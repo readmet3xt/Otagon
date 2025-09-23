@@ -180,15 +180,20 @@ const MobileCarousel: React.FC<MobileCarouselProps> = ({
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    if (!touch) return;
+    
     setIsDragging(true);
-    setStartX(e.touches[0].clientX);
+    setStartX(touch.clientX);
     setDragOffset(0);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isDragging) return;
+    const touch = e.touches[0];
+    if (!touch) return;
     
-    const deltaX = e.touches[0].clientX - startX;
+    const deltaX = touch.clientX - startX;
     setDragOffset(deltaX);
   };
 
@@ -422,6 +427,7 @@ const MobilePullToRefresh: React.FC<MobilePullToRefreshProps> = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
   const [isPulling, setIsPulling] = useState(false);
+  const [startY, setStartY] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const { isMobile } = useResponsive();
 
@@ -431,6 +437,7 @@ const MobilePullToRefresh: React.FC<MobilePullToRefreshProps> = ({
     const container = containerRef.current;
     if (container && container.scrollTop === 0) {
       setIsPulling(true);
+      setStartY(e.touches[0]?.clientY || 0);
     }
   };
 
@@ -439,7 +446,10 @@ const MobilePullToRefresh: React.FC<MobilePullToRefreshProps> = ({
     
     const container = containerRef.current;
     if (container && container.scrollTop === 0) {
-      const deltaY = e.touches[0].clientY - e.touches[0].clientY;
+      const touch = e.touches[0];
+      if (!touch) return;
+      
+      const deltaY = touch.clientY - (startY || 0);
       const distance = Math.max(0, deltaY);
       
       setPullDistance(distance);

@@ -90,7 +90,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuccess })
         }
         // Login will be handled by the auth state change
       } else {
-        setError(result?.error?.message || 'Authentication failed');
+        setError(typeof result?.error === 'string' ? result.error : (result?.error as any)?.message || 'Authentication failed');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');

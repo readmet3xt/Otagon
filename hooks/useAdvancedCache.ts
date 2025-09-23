@@ -274,7 +274,7 @@ export function useUserPreferencesCache<T = any>(key: string, fallbackValue?: T)
   return useAdvancedCache<T>({
     key,
     strategy: 'user_preferences',
-    fallbackValue,
+    ...(fallbackValue !== undefined && { fallbackValue }),
     autoRefresh: false,
     enablePrediction: false
   });
@@ -284,7 +284,7 @@ export function useConversationsCache<T = any>(key: string, fallbackValue?: T) {
   return useAdvancedCache<T>({
     key,
     strategy: 'conversations',
-    fallbackValue,
+    ...(fallbackValue !== undefined && { fallbackValue }),
     autoRefresh: true,
     refreshInterval: 300000, // 5 minutes
     enablePrediction: true
@@ -295,7 +295,7 @@ export function useSuggestionsCache<T = any>(key: string, fallbackValue?: T) {
   return useAdvancedCache<T>({
     key,
     strategy: 'suggestions',
-    fallbackValue,
+    ...(fallbackValue !== undefined && { fallbackValue }),
     autoRefresh: true,
     refreshInterval: 120000, // 2 minutes
     enablePrediction: true
@@ -306,7 +306,7 @@ export function usePredictiveCache<T = any>(key: string, fallbackValue?: T) {
   return useAdvancedCache<T>({
     key,
     strategy: 'default',
-    fallbackValue,
+    ...(fallbackValue !== undefined && { fallbackValue }),
     autoRefresh: false,
     enablePrediction: true
   });

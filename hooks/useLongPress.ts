@@ -10,7 +10,9 @@ export const useLongPress = () => {
     const start = useCallback((event: React.MouseEvent | React.TouchEvent, callback: (e: React.MouseEvent | React.TouchEvent) => void) => {
         if ('button' in event && event.button === 2) return;
         
-        const coords = 'touches' in event ? { x: event.touches[0].clientX, y: event.touches[0].clientY } : { x: event.clientX, y: event.clientY };
+        const coords = 'touches' in event ? 
+            { x: event.touches[0]?.clientX || 0, y: event.touches[0]?.clientY || 0 } : 
+            { x: event.clientX || 0, y: event.clientY || 0 };
         pressCoordinates.current = coords;
         
         // Capture the target immediately to avoid stale references in the timeout.
@@ -42,7 +44,9 @@ export const useLongPress = () => {
     const move = useCallback((event: React.MouseEvent | React.TouchEvent) => {
         if (!pressCoordinates.current) return;
         
-        const coords = 'touches' in event ? { x: event.touches[0].clientX, y: event.touches[0].clientY } : { x: event.clientX, y: event.clientY };
+        const coords = 'touches' in event ? 
+            { x: event.touches[0]?.clientX || 0, y: event.touches[0]?.clientY || 0 } : 
+            { x: event.clientX || 0, y: event.clientY || 0 };
         
         const deltaX = Math.abs(coords.x - pressCoordinates.current.x);
         const deltaY = Math.abs(coords.y - pressCoordinates.current.y);

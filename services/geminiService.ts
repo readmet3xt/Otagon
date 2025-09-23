@@ -376,6 +376,7 @@ const mapMessagesToGeminiContent = (messages: ChatMessage[]): Content[] => {
             
             for (let i = 0; i < imagesToInclude; i++) {
                 const imageUrl = message.images[i];
+                if (!imageUrl) continue;
                 try {
                     const [meta, base64] = imageUrl.split(',');
                     if (!meta || !base64) continue;
@@ -408,7 +409,7 @@ const mapMessagesToGeminiContent = (messages: ChatMessage[]): Content[] => {
         }
         
         if (parts.length > 0) {
-            const lastRole = history.length > 0 ? history[history.length - 1].role : undefined;
+            const lastRole = history.length > 0 ? history[history.length - 1]?.role : undefined;
             if (lastRole === message.role) {
                 console.warn(`Skipping message with duplicate consecutive role: ${message.role}`);
                 continue;
@@ -744,8 +745,8 @@ const checkAndCacheContent = async (
     const cacheQuery: CacheQuery = {
       query,
       contentType,
-      gameName,
-      genre,
+      ...(gameName && { gameName }),
+      ...(genre && { genre }),
       userTier
     };
     
@@ -756,7 +757,7 @@ const checkAndCacheContent = async (
       return {
         found: true,
         content: cacheResult.content.content,
-        reason: cacheResult.reason
+        ...(cacheResult.reason && { reason: cacheResult.reason })
       };
     }
     
@@ -786,8 +787,8 @@ const cacheGeneratedContent = async (
     const cacheQuery: CacheQuery = {
       query,
       contentType,
-      gameName,
-      genre,
+      ...(gameName && { gameName }),
+      ...(genre && { genre }),
       userTier
     };
     
@@ -1098,7 +1099,7 @@ export const generateUnifiedInsights = async (
 
     // Filter out tabs that require web search, as they cannot be used with JSON response mode.
     // They will be loaded individually on-demand by the user.
-    const tabsToGenerate = (insightTabsConfig[genre] || insightTabsConfig.default).filter(tab => !tab.webSearch);
+    const tabsToGenerate = (insightTabsConfig[genre] || insightTabsConfig.default || []).filter(tab => !tab.webSearch);
     
     if (tabsToGenerate.length === 0) {
         console.log("No non-web-search insights to generate in batch.");

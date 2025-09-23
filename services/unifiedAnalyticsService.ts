@@ -228,7 +228,7 @@ export class UnifiedAnalyticsService extends BaseService {
       stepName,
       stepOrder,
       startTime: Date.now(),
-      metadata
+      ...(metadata && { metadata })
     });
 
     await this.trackEvent({
@@ -473,7 +473,6 @@ export class UnifiedAnalyticsService extends BaseService {
         // User not authenticated, return event without user data
         return {
           ...event,
-          userId: undefined,
           userTier: 'free',
           platform: this.getPlatform(),
           version: this.getAppVersion()
@@ -485,7 +484,7 @@ export class UnifiedAnalyticsService extends BaseService {
       
       return {
         ...event,
-        userId: user || undefined,
+        ...(user && { userId: user }),
         userTier: tier,
         platform: this.getPlatform(),
         version: this.getAppVersion()
@@ -494,7 +493,6 @@ export class UnifiedAnalyticsService extends BaseService {
       console.warn('Failed to enrich event:', error);
       return {
         ...event,
-        userId: undefined,
         userTier: 'free',
         platform: this.getPlatform(),
         version: this.getAppVersion()

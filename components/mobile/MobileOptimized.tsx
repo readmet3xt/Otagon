@@ -139,31 +139,40 @@ const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
   const sheetRef = useRef<HTMLDivElement>(null);
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    setIsDragging(true);
-    setDragY(e.touches[0].clientY);
+    const touch = e.touches[0];
+    if (touch) {
+      setIsDragging(true);
+      setDragY(touch.clientY);
+    }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isDragging) return;
     
-    const currentY = e.touches[0].clientY;
-    const deltaY = currentY - dragY;
-    
-    if (deltaY > 0 && sheetRef.current) {
-      sheetRef.current.style.transform = `translateY(${deltaY}px)`;
+    const touch = e.touches[0];
+    if (touch) {
+      const currentY = touch.clientY;
+      const deltaY = currentY - dragY;
+      
+      if (deltaY > 0 && sheetRef.current) {
+        sheetRef.current.style.transform = `translateY(${deltaY}px)`;
+      }
     }
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (!isDragging) return;
     
-    const currentY = e.changedTouches[0].clientY;
-    const deltaY = currentY - dragY;
+    const touch = e.changedTouches[0];
+    if (touch) {
+      const currentY = touch.clientY;
+      const deltaY = currentY - dragY;
     
-    if (deltaY > 100) {
-      onClose();
-    } else if (sheetRef.current) {
-      sheetRef.current.style.transform = 'translateY(0)';
+      if (deltaY > 100) {
+        onClose();
+      } else if (sheetRef.current) {
+        sheetRef.current.style.transform = 'translateY(0)';
+      }
     }
     
     setIsDragging(false);
@@ -256,18 +265,22 @@ const MobileSwipeableCard: React.FC<MobileSwipeableCardProps> = ({
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (!isMobile) return;
+    const touch = e.touches[0];
+    if (!touch) return;
     
     setIsDragging(true);
-    setStartX(e.touches[0].clientX);
-    setStartY(e.touches[0].clientY);
+    setStartX(touch.clientX);
+    setStartY(touch.clientY);
     setDragOffset({ x: 0, y: 0 });
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isDragging || !isMobile) return;
+    const touch = e.touches[0];
+    if (!touch) return;
     
-    const currentX = e.touches[0].clientX;
-    const currentY = e.touches[0].clientY;
+    const currentX = touch.clientX;
+    const currentY = touch.clientY;
     const deltaX = currentX - startX;
     const deltaY = currentY - startY;
     
@@ -337,6 +350,7 @@ const MobilePullToRefresh: React.FC<MobilePullToRefreshProps> = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
   const [isPulling, setIsPulling] = useState(false);
+  const [startY, setStartY] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -345,6 +359,7 @@ const MobilePullToRefresh: React.FC<MobilePullToRefreshProps> = ({
     const container = containerRef.current;
     if (container && container.scrollTop === 0) {
       setIsPulling(true);
+      setStartY(e.touches[0]?.clientY || 0);
     }
   };
 
@@ -353,7 +368,7 @@ const MobilePullToRefresh: React.FC<MobilePullToRefreshProps> = ({
     
     const container = containerRef.current;
     if (container && container.scrollTop === 0) {
-      const deltaY = e.touches[0].clientY - e.touches[0].clientY;
+      const deltaY = (e.touches[0]?.clientY || 0) - startY;
       const distance = Math.max(0, deltaY);
       
       setPullDistance(distance);
@@ -468,3 +483,5 @@ export {
   MobilePullToRefresh,
   MobileFAB
 };
+
+

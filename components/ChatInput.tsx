@@ -24,7 +24,7 @@ const fileToBase64 = async (file: File): Promise<ImageFile> => {
             name: processedFile.name,
             size: processedFile.size,
             type: processedFile.type,
-            base64: base64.split(',')[1], // Remove data URL prefix
+            base64: base64.split(',')[1]!, // Remove data URL prefix
             mimeType,
             dataUrl
         };
@@ -76,7 +76,7 @@ const convertImage = async (file: File, targetMimeType: 'image/jpeg' | 'image/pn
                                 name: file.name.replace(/\.[^/.]+$/, `.${targetMimeType.split('/')[1]}`),
                                 size: blob.size,
                                 type: targetMimeType,
-                                base64: base64.split(',')[1],
+                                base64: base64.split(',')[1]!,
                                 mimeType: targetMimeType,
                                 dataUrl: base64
                             });
@@ -287,7 +287,7 @@ const ChatInput: React.FC<ChatInputProps> = React.memo(({ value, onChange, onSen
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (showSuggestions && suggestions.length > 0) {
-            handleSelectSuggestion(suggestions[activeSuggestionIndex]);
+            handleSelectSuggestion(suggestions[activeSuggestionIndex]!);
         } else {
             submitMessage();
         }
@@ -316,10 +316,10 @@ const ChatInput: React.FC<ChatInputProps> = React.memo(({ value, onChange, onSen
                 setActiveSuggestionIndex(prev => (prev - 1 + suggestions.length) % suggestions.length);
             } else if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                handleSelectSuggestion(suggestions[activeSuggestionIndex]);
+                handleSelectSuggestion(suggestions[activeSuggestionIndex]!);
             } else if (e.key === 'Tab') {
                 e.preventDefault();
-                handleSelectSuggestion(suggestions[activeSuggestionIndex]);
+                handleSelectSuggestion(suggestions[activeSuggestionIndex]!);
             } else if (e.key === 'Escape') {
                 e.preventDefault();
                 setShowSuggestions(false);
@@ -344,7 +344,7 @@ const ChatInput: React.FC<ChatInputProps> = React.memo(({ value, onChange, onSen
         const atIndex = textUpToCursor.lastIndexOf('@');
         
         // Trigger condition: '@' is at the start of the string or preceded by a space.
-        const isTrigger = atIndex !== -1 && (atIndex === 0 || /\s/.test(newValue[atIndex - 1]));
+        const isTrigger = atIndex !== -1 && (atIndex === 0 || /\s/.test(newValue[atIndex - 1]!));
 
         if (isTrigger) {
             const query = textUpToCursor.substring(atIndex + 1);
@@ -355,7 +355,7 @@ const ChatInput: React.FC<ChatInputProps> = React.memo(({ value, onChange, onSen
             }
 
             const insightTitles = activeConversation.insightsOrder
-                ? activeConversation.insightsOrder.map(id => activeConversation.insights![id].title)
+                ? activeConversation.insightsOrder.map(id => activeConversation.insights![id]!.title)
                 : [];
 
             const filtered = insightTitles.filter(title => title.toLowerCase().includes(query.toLowerCase()));

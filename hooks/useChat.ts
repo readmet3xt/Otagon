@@ -155,6 +155,16 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
     });
     const { conversations, order: conversationsOrder, activeId: activeConversationId } = chatState;
     
+    // DEBUG: Log chatState changes
+    useEffect(() => {
+        console.log('🔧 [useChat] chatState updated:');
+        console.log('  - conversationCount:', Object.keys(chatState.conversations).length);
+        console.log('  - conversationIds:', Object.keys(chatState.conversations));
+        console.log('  - order:', chatState.order);
+        console.log('  - activeId:', chatState.activeId);
+        console.log('  - conversations:', chatState.conversations);
+    }, [chatState]);
+    
     const [loadingMessages, setLoadingMessages] = useState<string[]>([]);
     const [isCooldownActive, setIsCooldownActive] = useState(false);
     const [activeSubView, setActiveSubView] = useState<string>('chat');
@@ -345,8 +355,7 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                 const welcomeMessage = shouldAddWelcome ? {
                     id: crypto.randomUUID(),
                     role: 'model' as const,
-                    text: 'Welcome to Otagon! I\'m your AI gaming assistant, here to help you get unstuck in games with hints, not spoilers. Upload screenshots, ask questions, or connect your PC for instant help while playing!',
-                    feedback: undefined
+                    text: 'Welcome to Otagon! I\'m your AI gaming assistant, here to help you get unstuck in games with hints, not spoilers. Upload screenshots, ask questions, or connect your PC for instant help while playing!'
                 } : null;
                 
                 const defaultConversations = {
@@ -375,6 +384,10 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                         order: [EVERYTHING_ELSE_ID],
                         activeId: EVERYTHING_ELSE_ID
                     });
+                    console.log('🔧 [useChat] setChatState called - default conversation created immediately:');
+                    console.log('  - conversations:', defaultConversations);
+                    console.log('  - order:', [EVERYTHING_ELSE_ID]);
+                    console.log('  - activeId:', EVERYTHING_ELSE_ID);
                     console.log('💬 [useChat] Default conversation created immediately');
                 }
                 
@@ -429,8 +442,7 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                         const welcomeMessage: ChatMessage = {
                             id: crypto.randomUUID(),
                             role: 'model' as const,
-                            text: 'Welcome to Otagon! I\'m your AI gaming assistant, here to help you get unstuck in games with hints, not spoilers. Upload screenshots, ask questions, or connect your PC for instant help while playing!',
-                            feedback: undefined
+                            text: 'Welcome to Otagon! I\'m your AI gaming assistant, here to help you get unstuck in games with hints, not spoilers. Upload screenshots, ask questions, or connect your PC for instant help while playing!'
                         };
                         
                         const conversationsWithWelcome = {
@@ -504,6 +516,60 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                                 conversations: conversations
                             });
                             
+                            // CRITICAL FIX: If Supabase returns empty conversations, preserve existing ones
+                            if (Object.keys(conversations).length === 0) {
+                                console.log('🔧 [useChat] Supabase returned empty conversations, preserving existing...');
+                                console.log('🔧 [useChat] Current conversations before preservation:', Object.keys(chatState.conversations));
+                                
+                                // Don't overwrite existing conversations if we have them
+                                if (Object.keys(chatState.conversations).length > 0) {
+                                    console.log('🔧 [useChat] Preserving existing conversations, skipping empty overwrite');
+                                    return; // Exit early to preserve existing conversations
+                                }
+                                
+                                // Only create default if we truly have no conversations
+                                console.log('🔧 [useChat] No existing conversations, creating default with welcome message...');
+                                
+                                const welcomeAddedThisSession = sessionStorage.getItem('otakon_welcome_added_session');
+                                if (!welcomeAddedThisSession) {
+                                    const welcomeMessage: ChatMessage = {
+                                        id: crypto.randomUUID(),
+                                        role: 'model' as const,
+                                        text: 'Welcome to Otagon! I\'m your AI gaming assistant, here to help you get unstuck in games with hints, not spoilers. Upload screenshots, ask questions, or connect your PC for instant help while playing!'
+                                    };
+                                    
+                                    const defaultConversations = {
+                                        [EVERYTHING_ELSE_ID]: {
+                                            id: EVERYTHING_ELSE_ID,
+                                            title: 'Everything else',
+                                            messages: [welcomeMessage],
+                                            insights: {},
+                                            insightsOrder: [],
+                                            context: {},
+                                            createdAt: Date.now(),
+                                            isPinned: false
+                                        }
+                                    };
+                                    
+                                    setChatState({
+                                        conversations: defaultConversations,
+                                        order: [EVERYTHING_ELSE_ID],
+                                        activeId: EVERYTHING_ELSE_ID
+                                    });
+                                    
+                                    // Mark that we've added a welcome message this session
+                                    sessionStorage.setItem('otakon_welcome_added_session', 'true');
+                                    
+                                    // Update welcome message shown in Supabase (but don't block on this)
+                                    try {
+                                        await supabaseDataService.updateWelcomeMessageShown('returning_user');
+                                    } catch (error) {
+                                        console.warn('Failed to update welcome message tracking:', error);
+                                    }
+                                }
+                                return; // Exit early after creating default
+                            }
+                            
                             // CRITICAL FIX: Ensure we always have a default conversation with welcome message
                             if (!conversations[EVERYTHING_ELSE_ID] || 
                                 (conversations[EVERYTHING_ELSE_ID] && 
@@ -517,8 +583,7 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                                     const welcomeMessage: ChatMessage = {
                                         id: crypto.randomUUID(),
                                         role: 'model' as const,
-                                        text: 'Welcome to Otagon! I\'m your AI gaming assistant, here to help you get unstuck in games with hints, not spoilers. Upload screenshots, ask questions, or connect your PC for instant help while playing!',
-                                        feedback: undefined
+                                        text: 'Welcome to Otagon! I\'m your AI gaming assistant, here to help you get unstuck in games with hints, not spoilers. Upload screenshots, ask questions, or connect your PC for instant help while playing!'
                                     };
                                     
                                     conversations[EVERYTHING_ELSE_ID] = {
@@ -582,7 +647,7 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                             const currentActiveId = chatState.activeId;
                             const activeId = (currentActiveId && conversations[currentActiveId]) 
                                 ? currentActiveId 
-                                : (order.length > 0 ? order[0] : EVERYTHING_ELSE_ID);
+                                : (order.length > 0 ? order[0]! : EVERYTHING_ELSE_ID);
                             
                             console.log('🔧 [useChat] Setting chat state with processed conversations:', {
                                 conversationCount: Object.keys(conversations).length,
@@ -597,19 +662,34 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                                 order,
                                 activeId
                             });
+                            console.log('🔧 [useChat] setChatState called with:');
+                            console.log('  - conversationCount:', Object.keys(conversations).length);
+                            console.log('  - conversationIds:', Object.keys(conversations));
+                            console.log('  - order:', order);
+                            console.log('  - activeId:', activeId);
+                            console.log('  - conversations:', conversations);
                             console.log('✅ Conversations loaded from Supabase:', Object.keys(conversations).length);
                         } else if (isMounted && result.success && (!result.conversations || Object.keys(result.conversations).length === 0)) {
                             // No conversations found in Supabase, but user is authenticated
-                            // Create default conversation with welcome message
-                            console.log('🔧 [useChat] No conversations found in Supabase, creating default with welcome message...');
+                            // PRESERVE existing conversations instead of overwriting with empty
+                            console.log('🔧 [useChat] No conversations found in Supabase, preserving existing conversations...');
+                            console.log('🔧 [useChat] Current conversations before preservation:', Object.keys(chatState.conversations));
+                            
+                            // Don't overwrite existing conversations if we have them
+                            if (Object.keys(chatState.conversations).length > 0) {
+                                console.log('🔧 [useChat] Preserving existing conversations, skipping empty overwrite');
+                                return; // Exit early to preserve existing conversations
+                            }
+                            
+                            // Only create default if we truly have no conversations
+                            console.log('🔧 [useChat] No existing conversations, creating default with welcome message...');
                             
                             const welcomeAddedThisSession = sessionStorage.getItem('otakon_welcome_added_session');
                             if (!welcomeAddedThisSession) {
                                 const welcomeMessage: ChatMessage = {
                                 id: crypto.randomUUID(),
                                 role: 'model' as const,
-                                text: 'Welcome to Otagon! I\'m your AI gaming assistant, here to help you get unstuck in games with hints, not spoilers. Upload screenshots, ask questions, or connect your PC for instant help while playing!',
-                                feedback: undefined
+                                text: 'Welcome to Otagon! I\'m your AI gaming assistant, here to help you get unstuck in games with hints, not spoilers. Upload screenshots, ask questions, or connect your PC for instant help while playing!'
                             };
                             
                             const defaultConversations = {
@@ -687,7 +767,7 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                                         }
                                         
                                         const order = Object.keys(conversations).sort(sortConversations(conversations));
-                                        const activeId = order.length > 0 ? order[0] : EVERYTHING_ELSE_ID;
+                                        const activeId = order.length > 0 ? order[0]! : EVERYTHING_ELSE_ID;
                                         
                                         if (isMounted) {
                                             setChatState({
@@ -735,7 +815,7 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                                     }
                                     
                                     const order = Object.keys(conversations).sort(sortConversations(conversations));
-                                    const activeId = order.length > 0 ? order[0] : EVERYTHING_ELSE_ID;
+                                    const activeId = order.length > 0 ? order[0]! : EVERYTHING_ELSE_ID;
                                     
                                     if (isMounted) {
                                         setChatState({
@@ -770,8 +850,7 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                             const welcomeMessage: ChatMessage = {
                                 id: crypto.randomUUID(),
                                 role: 'model' as const,
-                                text: 'Welcome to Otagon! I\'m your AI gaming assistant, here to help you get unstuck in games with hints, not spoilers. Upload screenshots, ask questions, or connect your PC for instant help while playing!',
-                                feedback: undefined
+                                text: 'Welcome to Otagon! I\'m your AI gaming assistant, here to help you get unstuck in games with hints, not spoilers. Upload screenshots, ask questions, or connect your PC for instant help while playing!'
                             };
                             
                             conversations[EVERYTHING_ELSE_ID].messages = [welcomeMessage];
@@ -822,7 +901,7 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                     }
                     
                     const order = Object.keys(conversations).sort(sortConversations(conversations));
-                    const activeId = order.length > 0 ? order[0] : EVERYTHING_ELSE_ID;
+                    const activeId = order.length > 0 ? order[0]! : EVERYTHING_ELSE_ID;
                     
                     console.log('🔐 Setting chat state with conversations:', {
                         conversationIds: Object.keys(conversations),
@@ -838,7 +917,6 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                     });
                     
                     console.log(`💾 Conversations loaded successfully`);
-                }
             } catch (error) {
                 console.error('Failed to load conversations:', error);
                 
@@ -926,8 +1004,7 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                             const welcomeMessage: ChatMessage = {
                                 id: crypto.randomUUID(),
                                 role: 'model' as const,
-                                text: 'Welcome to Otagon! I\'m your AI gaming assistant, here to help you get unstuck in games with hints, not spoilers. Upload screenshots, ask questions, or connect your PC for instant help while playing!',
-                                feedback: undefined
+                                text: 'Welcome to Otagon! I\'m your AI gaming assistant, here to help you get unstuck in games with hints, not spoilers. Upload screenshots, ask questions, or connect your PC for instant help while playing!'
                             };
                             
                             const defaultConversations = {
@@ -1061,8 +1138,18 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
             activeConversationId,
             hasConversation: !!conv,
             conversationId: conv?.id,
-            messageCount: conv?.messages?.length || 0
+            messageCount: conv?.messages?.length || 0,
+            availableConversations: Object.keys(conversations),
+            conversationsCount: Object.keys(conversations).length
         });
+        
+        // FIXED: Ensure we always return a conversation, even if it's not the expected one
+        if (!conv && Object.keys(conversations).length > 0) {
+            console.log('🔧 [useChat] Active conversation not found, falling back to first available');
+            const firstConversationId = Object.keys(conversations)[0];
+            return conversations[firstConversationId!];
+        }
+        
         return conv;
     }, [conversations, activeConversationId]);
     
@@ -1131,7 +1218,9 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
         setChatState(prev => {
             const newOrder = [...prev.order];
             const [removed] = newOrder.splice(sourceIndex, 1);
-            newOrder.splice(destIndex, 0, removed);
+            if (removed) {
+                newOrder.splice(destIndex!, 0, removed);
+            }
             return { ...prev, order: newOrder };
         });
     }, []);
@@ -1140,7 +1229,10 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
         updateConversation(convoId, convo => {
             if (convo.insights?.[insightId]?.isNew) {
                 const newInsights = { ...convo.insights };
-                newInsights[insightId] = { ...newInsights[insightId], isNew: false };
+                const existingInsight = newInsights[insightId];
+                if (existingInsight) {
+                    newInsights[insightId] = { ...existingInsight, isNew: false };
+                }
                 return { ...convo, insights: newInsights };
             }
             return convo;
@@ -1173,7 +1265,9 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
             if (!convo.insightsOrder) return convo;
             const newOrder = [...convo.insightsOrder];
             const [removed] = newOrder.splice(sourceIndex, 1);
-            newOrder.splice(destIndex, 0, removed);
+            if (removed) {
+                newOrder.splice(destIndex!, 0, removed);
+            }
             return { ...convo, insightsOrder: newOrder };
         });
     }, [updateConversation]);
@@ -1273,18 +1367,18 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
     
     const sendMessage = useCallback(async (text: string, images?: ImageFile[], isFromPC?: boolean): Promise<{ success: boolean; reason?: string }> => {
         // Check if this is a tab management command
-        if (text && text.startsWith('[TAB_MANAGEMENT] ')) {
+        if (text && typeof text === 'string' && text.startsWith('[TAB_MANAGEMENT] ')) {
             const commandText = text.replace('[TAB_MANAGEMENT] ', '');
             const result = await handleTabManagementCommand(commandText);
             
             if (result) {
                 // Add a system message showing the result
                 addSystemMessage(result.message, activeConversationId, false);
-                return { success: result.success, reason: result.error };
+                return { success: result.success, ...(result.error && { reason: result.error }) };
             }
         }
         
-        const textQueries = text.trim().length > 0 ? 1 : 0;
+        const textQueries = (text && typeof text === 'string' && text.trim().length > 0) ? 1 : 0;
         const imageQueries = images ? images.length : 0;
         const hasImages = !!(images && images.length > 0);
 
@@ -1305,8 +1399,8 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
             id: crypto.randomUUID(),
             role: 'user',
             text,
-            images: images?.map(img => img.dataUrl),
-            isFromPC
+            ...(images && { images: images.map(img => img.dataUrl) }),
+            ...(isFromPC !== undefined && { isFromPC })
         };
 
         const sourceConvoId = activeConversationId;
@@ -1372,7 +1466,7 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
             // Using static import instead of dynamic import for Firebase hosting compatibility
             const gameTitle = sourceConversation.id !== EVERYTHING_ELSE_ID ? sourceConversation.id : undefined;
             
-            const smartResponse = await gameKnowledgeService.getSmartResponse(text.trim(), gameTitle);
+            const smartResponse = await gameKnowledgeService.getSmartResponse(text && typeof text === 'string' ? text.trim() : '', gameTitle);
             
             if (smartResponse.source === 'knowledge_base' && smartResponse.confidence >= 0.8) {
                 // Use knowledge base response instead of calling AI
@@ -1385,7 +1479,7 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                 // Removed unifiedAnalyticsService - not used
                 
                 // Learn from this successful interaction
-                await gameKnowledgeService.learnFromAIResponse(text.trim(), smartResponse.response, gameTitle, true);
+                await gameKnowledgeService.learnFromAIResponse(text && typeof text === 'string' ? text.trim() : '', smartResponse.response, gameTitle, true);
                 
                 setLoadingMessages(prev => prev.filter(id => id !== modelMessageId));
                 return { success: true, reason: 'knowledge_base_response' };
@@ -1475,7 +1569,7 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                     // Using static import instead of dynamic import for Firebase hosting compatibility
                     const cacheType = sourceConversation.id === EVERYTHING_ELSE_ID ? 'general' : 'game_info';
                     const cached = await simpleCacheService.getCachedContent({
-                        query: text.trim(),
+                        query: text && typeof text === 'string' ? text.trim() : '',
                         contentType: cacheType as any,
                         gameName: sourceConversation.id === EVERYTHING_ELSE_ID ? undefined : sourceConversation.id,
                         genre: sourceConversation.genre,
@@ -1499,7 +1593,7 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                 }
             }
 
-            const promptText = metaNotes + (text.trim() || "A player needs help. First, identify the game from this screenshot. Then, provide a spoiler-free hint and some interesting lore about what's happening in the image.");
+            const promptText = metaNotes + ((text && typeof text === 'string' ? text.trim() : '') || "A player needs help. First, identify the game from this screenshot. Then, provide a spoiler-free hint and some interesting lore about what's happening in the image.");
             
             let rawTextResponse = "";
             let hasError = false;
@@ -1669,14 +1763,17 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                                     const updatedInsights = { ...convo.insights };
                                     universalResponse.progressiveInsightUpdates.forEach(update => {
                                         if (updatedInsights[update.tabId]) {
-                                            updatedInsights[update.tabId] = {
-                                                ...updatedInsights[update.tabId],
-                                                title: update.title,
-                                                content: update.content,
-                                                status: 'loaded',
-                                                isNew: true,
-                                                lastUpdated: Date.now()
-                                            };
+                                            const existingInsight = updatedInsights[update.tabId];
+                                            if (existingInsight) {
+                                                updatedInsights[update.tabId] = {
+                                                    ...existingInsight,
+                                                    title: update.title,
+                                                    content: update.content,
+                                                    status: 'loaded',
+                                                    isNew: true,
+                                                    lastUpdated: Date.now()
+                                                };
+                                            }
                                         }
                                     });
                                     
@@ -1773,16 +1870,16 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
             let objectiveComplete = false;
 
             const gameIdMatch = rawTextResponse.match(/\[OTAKON_GAME_ID:\s*(.*?)\]/);
-            if (gameIdMatch) identifiedGameName = gameIdMatch[1].trim();
+            if (gameIdMatch?.[1]) identifiedGameName = gameIdMatch[1].trim();
 
             const genreMatch = rawTextResponse.match(/\[OTAKON_GENRE:\s*(.*?)\]/);
-            if (genreMatch) gameGenre = genreMatch[1].trim();
+            if (genreMatch?.[1]) gameGenre = genreMatch[1].trim();
 
             const confidenceMatch = rawTextResponse.match(/\[OTAKON_CONFIDENCE:\s*(high|low)\]/);
             const isConfidenceHigh = confidenceMatch?.[1] === 'high';
             if (isConfidenceHigh || (identifiedGameName && !hasImages)) {
                 const progressMatch = rawTextResponse.match(/\[OTAKON_GAME_PROGRESS:\s*(\d+)\]/);
-                if (progressMatch) gameProgress = parseInt(progressMatch[1], 10);
+                if (progressMatch?.[1]) gameProgress = parseInt(progressMatch[1], 10);
             }
 
             if (rawTextResponse.includes('[OTAKON_GAME_IS_UNRELEASED: true]')) {
@@ -1922,9 +2019,9 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
 
                 const finalModelMessage: ChatMessage = {
                     id: modelMessageId, role: 'model', text: finalCleanedText,
-                    suggestions: suggestions.length > 0 ? suggestions : undefined,
-                    triumph: triumphPayload,
-                    taskCompletionPrompt, // NEW: Add task completion prompt
+                    ...(suggestions.length > 0 && { suggestions }),
+                    ...(triumphPayload && { triumph: triumphPayload }),
+                    ...(taskCompletionPrompt && { taskCompletionPrompt })
                 };
                 
                 const isNewConversation = finalTargetConvoId !== sourceConvoId;
@@ -1969,10 +2066,11 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                         // For Pro/Vanguard users, also create other insight tabs
                         if (isProUser) {
                             const tabs = insightTabsConfig[gameGenre] || insightTabsConfig.default;
-                            const insightsOrder = tabs.map(t => t.id);
-                            
-                            // Create insight tabs with loading status - will be populated with actual content
-                            tabs.forEach(tab => {
+                            if (tabs) {
+                                const insightsOrder = tabs.map(t => t.id);
+                                
+                                // Create insight tabs with loading status - will be populated with actual content
+                                tabs.forEach(tab => {
                                 instantInsights[tab.id] = { 
                                     id: tab.id, 
                                     title: tab.title, 
@@ -1987,8 +2085,9 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                             // Add Otaku Diary to insights order (first)
                             insightsOrder.unshift('otaku-diary');
                             targetConvoForUpdate.insightsOrder = insightsOrder;
+                        }
                             
-                            console.log(`🔄 Created Otaku Diary + ${tabs.length} insight tabs for Pro user: ${identifiedGameName}`);
+                        console.log(`🔄 Created Otaku Diary + ${tabs?.length || 0} insight tabs for Pro user: ${identifiedGameName}`);
                             
                             // Generate all insights in one API call for better performance
                             if (gameProgress !== null) {
@@ -2006,12 +2105,15 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                     if (parsedInventory?.items) targetConvoForUpdate.inventory = parsedInventory.items;
                     if (gameGenre) targetConvoForUpdate.genre = gameGenre;
                     if (insightUpdate && targetConvoForUpdate.insights?.[insightUpdate.id]) {
-                        const oldContent = targetConvoForUpdate.insights[insightUpdate.id].content;
-                        const separator = oldContent && oldContent !== 'Loading...' ? '\n\n' : '';
-                        const newContent = (oldContent === 'Loading...' ? '' : oldContent) + separator + insightUpdate.content;
-                        targetConvoForUpdate.insights[insightUpdate.id].content = newContent;
-                        targetConvoForUpdate.insights[insightUpdate.id].status = 'loaded';
-                        targetConvoForUpdate.insights[insightUpdate.id].isNew = true;
+                        const insight = targetConvoForUpdate.insights[insightUpdate.id];
+                        if (insight) {
+                            const oldContent = insight.content;
+                            const separator = oldContent && oldContent !== 'Loading...' ? '\n\n' : '';
+                            const newContent = (oldContent === 'Loading...' ? '' : oldContent) + separator + insightUpdate.content;
+                            insight.content = newContent;
+                            insight.status = 'loaded';
+                            insight.isNew = true;
+                        }
                     }
                     if(isGameUnreleased) targetConvoForUpdate.lastTrailerTimestamp = Date.now();
                      if (objectiveSet) {
@@ -2033,13 +2135,13 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                 // Use the extracted game help section. If missing, extract the most relevant part of the response.
                 let textToSpeak = '';
                 
-                if (hintMatch) {
+                if (hintMatch?.[1]) {
                     // Use the explicitly marked game help section
                     textToSpeak = hintMatch[1].trim();
                     console.log('🎤 Hands-free: Using explicit game help section');
                 } else {
                     // Fallback: Extract the most relevant part of the response for hands-free mode
-                    textToSpeak = extractGameHelpFromResponse(finalCleanedText, text.trim());
+                    textToSpeak = extractGameHelpFromResponse(finalCleanedText, text && typeof text === 'string' ? text.trim() : '');
                     console.log('🎤 Hands-free: Using extracted game help (no explicit tags found)');
                 }
                 
@@ -2050,7 +2152,7 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
 
             // 🔥 NEW: Consolidated insight update function that only runs on user queries
             if (isProUser && finalTargetConvoId !== EVERYTHING_ELSE_ID) {
-                updateInsightsOnUserQuery(finalCleanedText, finalTargetConvoId, identifiedGameName, gameGenre, gameProgress, text.trim());
+                updateInsightsOnUserQuery(finalCleanedText, finalTargetConvoId, identifiedGameName, gameGenre, gameProgress, text && typeof text === 'string' ? text.trim() : '');
                 
                 // Ensure insights are saved to database immediately
                 try {
@@ -2095,7 +2197,7 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                     const cacheType = sourceConvoId === EVERYTHING_ELSE_ID ? 'general' : 'game_info';
                     // Removed unifiedCacheService - using simpleCacheService instead
                     await simpleCacheService.cacheContent({
-                        query: text.trim(),
+                        query: text && typeof text === 'string' ? text.trim() : '',
                         content: finalCleanedText,
                         contentType: cacheType as any,
                         gameName: sourceConvoId === EVERYTHING_ELSE_ID ? undefined : sourceConvoId,
@@ -2119,7 +2221,7 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                 const gameTitle = finalTargetConvoId !== EVERYTHING_ELSE_ID ? finalTargetConvoId : identifiedGameName;
                 if (gameTitle && finalCleanedText) {
                     await gameKnowledgeService.learnFromAIResponse(
-                        text.trim(),
+                        text && typeof text === 'string' ? text.trim() : '',
                         finalCleanedText,
                         gameTitle,
                         true // Assume helpful response
@@ -2274,20 +2376,32 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
             conversationCount: Object.keys(history).length
         });
         
-        setChatState({ conversations: history, order: newOrder, activeId });
+        setChatState({ conversations: history, order: newOrder, activeId: activeId || EVERYTHING_ELSE_ID });
     }, [resetConversations, chatState.activeId]);
 
     const fetchInsightContent = useCallback(async (conversationId: string, insightId: string) => {
         const conversation = conversations[conversationId];
         if (!conversation || !conversation.insights || !conversation.genre || typeof conversation.progress !== 'number') return;
     
-        const insightTabConfig = (insightTabsConfig[conversation.genre] || insightTabsConfig.default).find(tab => tab.id === insightId);
+        const tabs = insightTabsConfig[conversation.genre] || insightTabsConfig.default;
+        const insightTabConfig = tabs?.find(tab => tab.id === insightId);
         if (!insightTabConfig) return;
     
-        updateConversation(conversationId, convo => ({
-            ...convo,
-            insights: { ...convo.insights!, [insightId]: { ...convo.insights![insightId], status: 'streaming' } }
-        }));
+        updateConversation(conversationId, convo => {
+            const existingInsight = convo.insights?.[insightId];
+            if (!existingInsight) return convo;
+            
+            return {
+                ...convo,
+                insights: { 
+                    ...convo.insights!, 
+                    [insightId]: { 
+                        ...existingInsight, 
+                        status: 'streaming' 
+                    } 
+                }
+            };
+        });
     
         const controller = new AbortController();
         // You might want to store this controller in a ref if you need to abort it from elsewhere
@@ -2299,10 +2413,22 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                     const tier = await unifiedUsageService.getTier();
                     if (tier === 'free') {
                         addSystemMessage('This insight requires the latest data. Upgrade to Pro/Vanguard to enable live updates.', conversationId, true);
-                        updateConversation(conversationId, convo => ({
-                            ...convo,
-                            insights: { ...convo.insights!, [insightId]: { ...convo.insights![insightId], status: 'error', content: 'Upgrade to enable live data for this tab.' } }
-                        }));
+                        updateConversation(conversationId, convo => {
+                            const existingInsight = convo.insights?.[insightId];
+                            if (!existingInsight) return convo;
+                            
+                            return {
+                                ...convo,
+                                insights: { 
+                                    ...convo.insights!, 
+                                    [insightId]: { 
+                                        ...existingInsight, 
+                                        status: 'error', 
+                                        content: 'Upgrade to enable live data for this tab.' 
+                                    } 
+                                }
+                            };
+                        });
                         return;
                     }
                 } catch (e) {
@@ -2359,10 +2485,23 @@ Progress: ${conversation.progress}%`;
                     }
                 }
                 if (controller.signal.aborted) return;
-                updateConversation(conversationId, convo => ({
-                    ...convo,
-                    insights: { ...convo.insights!, [insightId]: { ...convo.insights![insightId], content: fullContent, status: 'loaded', isNew: true } }
-                }));
+                updateConversation(conversationId, convo => {
+                    const existingInsight = convo.insights?.[insightId];
+                    if (!existingInsight) return convo;
+                    
+                    return {
+                        ...convo,
+                        insights: { 
+                            ...convo.insights!, 
+                            [insightId]: { 
+                                ...existingInsight, 
+                                content: fullContent, 
+                                status: 'loaded', 
+                                isNew: true 
+                            } 
+                        }
+                    };
+                });
             } else {
                 // Use the streaming function for non-search insights
                 let fullContent = '';
@@ -2382,27 +2521,63 @@ Progress: ${conversation.progress}%`;
                             .replace(/^[\s`"\]\}]*/, '') // Remove leading brackets/quotes
                             .replace(/[\s`"\]\}]*$/, '') // Remove trailing brackets/quotes
                             .trim();
-                        updateConversation(conversationId, convo => ({
-                            ...convo,
-                            insights: { ...convo.insights!, [insightId]: { ...convo.insights![insightId], content: cleanedContent, status: 'streaming' } }
-                        }), true);
+                        updateConversation(conversationId, convo => {
+                            const existingInsight = convo.insights?.[insightId];
+                            if (!existingInsight) return convo;
+                            
+                            return {
+                                ...convo,
+                                insights: { 
+                                    ...convo.insights!, 
+                                    [insightId]: { 
+                                        ...existingInsight, 
+                                        content: cleanedContent, 
+                                        status: 'streaming' 
+                                    } 
+                                }
+                            };
+                        }, true);
                     },
                     (error) => {
                         console.error(`Error streaming insight ${insightId}:`, error);
-                        updateConversation(conversationId, convo => ({
-                            ...convo,
-                            insights: { ...convo.insights!, [insightId]: { ...convo.insights![insightId], content: `Error: ${error}`, status: 'error' } }
-                        }));
+                        updateConversation(conversationId, convo => {
+                            const existingInsight = convo.insights?.[insightId];
+                            if (!existingInsight) return convo;
+                            
+                            return {
+                                ...convo,
+                                insights: { 
+                                    ...convo.insights!, 
+                                    [insightId]: { 
+                                        ...existingInsight, 
+                                        content: `Error: ${error}`, 
+                                        status: 'error' 
+                                    } 
+                                }
+                            };
+                        });
                     },
                     controller.signal
                 );
 
                 if (controller.signal.aborted) return;
 
-                updateConversation(conversationId, convo => ({
-                    ...convo,
-                    insights: { ...convo.insights!, [insightId]: { ...convo.insights![insightId], status: 'loaded', isNew: true } }
-                }));
+                updateConversation(conversationId, convo => {
+                    const existingInsight = convo.insights?.[insightId];
+                    if (!existingInsight) return convo;
+                    
+                    return {
+                        ...convo,
+                        insights: { 
+                            ...convo.insights!, 
+                            [insightId]: { 
+                                ...existingInsight, 
+                                status: 'loaded', 
+                                isNew: true 
+                            } 
+                        }
+                    };
+                });
             }
         } catch (error) {
             if (error instanceof DOMException && error.name === 'AbortError') {
@@ -2410,10 +2585,22 @@ Progress: ${conversation.progress}%`;
             } else {
                 const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
                 console.error(`Error fetching content for insight ${insightId}:`, error);
-                updateConversation(conversationId, convo => ({
-                    ...convo,
-                    insights: { ...convo.insights!, [insightId]: { ...convo.insights![insightId], content: `Error: ${errorMessage}`, status: 'error' } }
-                }));
+                updateConversation(conversationId, convo => {
+                    const existingInsight = convo.insights?.[insightId];
+                    if (!existingInsight) return convo;
+                    
+                    return {
+                        ...convo,
+                        insights: { 
+                            ...convo.insights!, 
+                            [insightId]: { 
+                                ...existingInsight, 
+                                content: `Error: ${errorMessage}`, 
+                                status: 'error' 
+                            } 
+                        }
+                    };
+                });
             }
         }
     }, [conversations, updateConversation]);
@@ -2437,7 +2624,7 @@ Progress: ${conversation.progress}%`;
         // Resend the message - convert string[] to ImageFile[] if needed
         const imageFiles = message.images ? message.images.map(img => ({
             base64: img.split(',')[1] || img,
-            mimeType: img.startsWith('data:') ? img.split(';')[0].split(':')[1] : 'image/png',
+            mimeType: img.startsWith('data:') ? (img.split(';')[0]?.split(':')[1] || 'image/png') : 'image/png',
             dataUrl: img
         })) : undefined;
         return await sendMessage(message.text, imageFiles, message.isFromPC);
@@ -2461,8 +2648,9 @@ Progress: ${conversation.progress}%`;
             updateConversation(conversationId, convo => {
                 if (convo.insights) {
                     Object.keys(convo.insights).forEach(tabId => {
-                        if (convo.insights![tabId].status === 'loading') {
-                            convo.insights![tabId].content = '🔄 Generating comprehensive insights...';
+                        const insight = convo.insights![tabId];
+                        if (insight && insight.status === 'loading') {
+                            insight.content = '🔄 Generating comprehensive insights...';
                         }
                     });
                 }
@@ -2481,14 +2669,16 @@ Progress: ${conversation.progress}%`;
             if (result && result.insights) {
                 // Update all insights with generated content
                 updateConversation(conversationId, convo => {
-                    if (convo.insights) {
+                    if (convo.insights && result.insights) {
                         Object.keys(result.insights).forEach(tabId => {
-                            if (convo.insights![tabId]) {
-                                convo.insights![tabId].content = result.insights[tabId].content;
-                                convo.insights![tabId].title = result.insights[tabId].title;
-                                convo.insights![tabId].status = 'loaded';
-                                convo.insights![tabId].lastUpdated = Date.now();
-                                convo.insights![tabId].isNew = true;
+                            const insight = convo.insights![tabId];
+                            const resultInsight = (result.insights as any)[tabId];
+                            if (insight && resultInsight) {
+                                insight.content = resultInsight.content;
+                                insight.title = resultInsight.title;
+                                insight.status = 'loaded';
+                                insight.lastUpdated = Date.now();
+                                insight.isNew = true;
                             }
                         });
                     }
@@ -2521,17 +2711,20 @@ Progress: ${conversation.progress}%`;
         const tabs = insightTabsConfig[genre] || insightTabsConfig.default;
         
         updateConversation(conversationId, convo => {
-            if (!convo.insights) return convo;
+            if (!convo.insights || !tabs) return convo;
             
             const updatedInsights = { ...convo.insights };
             tabs.forEach(tab => {
                 if (updatedInsights[tab.id]?.isPlaceholder) {
-                    updatedInsights[tab.id] = {
-                        ...updatedInsights[tab.id],
-                        status: 'placeholder',
-                        content: `💡 Click to generate ${tab.title} content\n\nThis insight will be generated when you request it.`,
-                        isPlaceholder: true
-                    };
+                    const existingInsight = updatedInsights[tab.id];
+                    if (existingInsight) {
+                        updatedInsights[tab.id] = {
+                            ...existingInsight,
+                            status: 'placeholder',
+                            content: `💡 Click to generate ${tab.title} content\n\nThis insight will be generated when you request it.`,
+                            isPlaceholder: true
+                        };
+                    }
                 }
             });
             
@@ -2572,6 +2765,8 @@ Progress: ${conversation.progress}%`;
 
         // Get progress-dependent tabs
         const tabs = insightTabsConfig[conversation.genre] || insightTabsConfig.default;
+        if (!tabs) return;
+        
         const progressDependentTabs = tabs.filter(tab => 
             (tab.instruction && tab.instruction.includes('progress')) || 
             (tab.instruction && tab.instruction.includes('current')) ||
@@ -2725,6 +2920,7 @@ Progress: ${conversation.progress}%`;
 
             // Get insight tabs for this genre
             const tabs = insightTabsConfig[genre] || insightTabsConfig.default;
+            if (!tabs) return;
             
             // Update each insight tab with new information from this query/response
             for (const tab of tabs) {
@@ -2784,12 +2980,15 @@ Progress: ${conversation.progress}%`;
                         updateConversation(conversationId, convo => {
                             if (!convo.insights?.[tab.id]) return convo;
                             
+                            const existingInsight = convo.insights[tab.id];
+                            if (!existingInsight) return convo;
+                            
                             return {
                                 ...convo,
                                 insights: {
                                     ...convo.insights,
                                     [tab.id]: {
-                                        ...convo.insights[tab.id],
+                                        ...existingInsight,
                                         content: newContent,
                                         status: 'loaded',
                                         isNew: true,
@@ -2823,32 +3022,32 @@ Progress: ${conversation.progress}%`;
     // Helper functions to extract specific information from AI responses
     const extractStoryInfo = (response: string): string | null => {
         const storyMatch = response.match(/(?:story|plot|narrative)[:\s]*([^.!?]+[.!?])/i);
-        return storyMatch ? storyMatch[1].trim() : null;
+        return storyMatch?.[1]?.trim() || null;
     };
 
     const extractObjectiveInfo = (response: string): string | null => {
         const objectiveMatch = response.match(/(?:objective|quest|goal|mission)[:\s]*([^.!?]+[.!?])/i);
-        return objectiveMatch ? objectiveMatch[1].trim() : null;
+        return objectiveMatch?.[1]?.trim() || null;
     };
 
     const extractCharacterInfo = (response: string): string | null => {
         const characterMatch = response.match(/(?:character|npc|companion)[:\s]*([^.!?]+[.!?])/i);
-        return characterMatch ? characterMatch[1].trim() : null;
+        return characterMatch?.[1]?.trim() || null;
     };
 
     const extractLoreInfo = (response: string): string | null => {
         const loreMatch = response.match(/(?:lore|world|history|background)[:\s]*([^.!?]+[.!?])/i);
-        return loreMatch ? loreMatch[1].trim() : null;
+        return loreMatch?.[1]?.trim() || null;
     };
 
     const extractTipInfo = (response: string): string | null => {
         const tipMatch = response.match(/(?:tip|hint|strategy|advice)[:\s]*([^.!?]+[.!?])/i);
-        return tipMatch ? tipMatch[1].trim() : null;
+        return tipMatch?.[1]?.trim() || null;
     };
 
     const extractInventoryInfo = (response: string): string | null => {
         const inventoryMatch = response.match(/(?:inventory|item|equipment|gear)[:\s]*([^.!?]+[.!?])/i);
-        return inventoryMatch ? inventoryMatch[1].trim() : null;
+        return inventoryMatch?.[1]?.trim() || null;
     };
 
     // Helper function to extract the most relevant game help content for hands-free mode
@@ -2887,11 +3086,13 @@ Progress: ${conversation.progress}%`;
         const paragraphs = response.split('\n\n').filter(p => p.trim().length > 20);
         if (paragraphs.length > 0) {
             const firstParagraph = paragraphs[0];
-            const sentences = firstParagraph.split(/[.!?]+/).filter(s => s.trim().length > 10);
-            if (sentences.length >= 2) {
-                return sentences.slice(0, 2).join('. ').trim() + '.';
-            } else if (sentences.length === 1) {
-                return sentences[0].trim() + '.';
+            if (firstParagraph) {
+                const sentences = firstParagraph.split(/[.!?]+/).filter(s => s.trim().length > 10);
+                if (sentences.length >= 2) {
+                    return sentences.slice(0, 2).join('. ').trim() + '.';
+                } else if (sentences.length === 1) {
+                    return sentences[0]?.trim() + '.';
+                }
             }
         }
         

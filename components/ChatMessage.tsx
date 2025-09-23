@@ -184,7 +184,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
             if (line.includes('**') && line.includes('**')) {
                 // Look for bold text which often indicates game names
                 const match = line.match(/\*\*(.*?)\*\*/);
-                if (match) return match[1].trim();
+                if (match && match[1]) return match[1].trim();
             }
         }
         return null;
@@ -289,7 +289,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading, onStop, o
                         <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-[#424242]/30">
                             {images.length === 1 ? (
                                 <button
-                                    onClick={() => downloadImage(images[0], 0)}
+                                    onClick={() => images[0] && downloadImage(images[0], 0)}
                                     className="flex items-center justify-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-gradient-to-r from-[#FF4D4D] to-[#FFAB40] text-white text-xs sm:text-sm font-medium rounded-lg hover:from-[#E53A3A] hover:to-[#D98C1F] transition-all duration-300 hover:scale-105 hover:shadow-lg"
                                     title="Download this screenshot"
                                 >

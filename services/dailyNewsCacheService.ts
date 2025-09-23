@@ -298,10 +298,10 @@ class DailyNewsCacheService {
     const response: CachedNewsResponse = {
       content,
       timestamp: now,
-      date: new Date(now).toISOString().split('T')[0],
+      date: new Date(now).toISOString().split('T')[0]!,
       source: userTier === 'free' ? 'free_user_window' : 'fresh_grounding',
       triggeredBy: userTier as 'pro' | 'vanguard_pro' | 'free',
-      userId
+      ...(userId && { userId })
     };
 
     // Store in local cache
@@ -329,7 +329,7 @@ class DailyNewsCacheService {
         date: response.date,
         source: response.source,
         triggeredBy: response.triggeredBy,
-        userId: response.userId,
+        ...(response.userId && { userId: response.userId }),
         contentHash
       };
 
@@ -571,12 +571,15 @@ class DailyNewsCacheService {
     // Add free user window information
     for (const [key, promptKey] of Object.entries(this.PROMPT_KEYS)) {
       const inFreeWindow = await this.isInFreeUserWindow(promptKey);
-      status[key].freeUserWindowActive = inFreeWindow;
-      
-      if (inFreeWindow) {
-        status[key].freeWindowStatus = '🆓 Free users can trigger search';
-      } else {
-        status[key].freeWindowStatus = '🔒 Free users cannot trigger search';
+      const statusItem = status[key];
+      if (statusItem) {
+        statusItem.freeUserWindowActive = inFreeWindow;
+        
+        if (inFreeWindow) {
+          statusItem.freeWindowStatus = '🆓 Free users can trigger search';
+        } else {
+          statusItem.freeWindowStatus = '🔒 Free users cannot trigger search';
+        }
       }
     }
     

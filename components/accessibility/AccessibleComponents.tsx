@@ -358,8 +358,8 @@ const AccessibleListbox: React.FC<AccessibleListboxProps> = ({
 
     if (e.key === keyboard.keys.ENTER) {
       e.preventDefault();
-      if (focusedIndex >= 0 && !options[focusedIndex].disabled) {
-        onChange(options[focusedIndex].value);
+      if (focusedIndex >= 0 && options[focusedIndex] && !options[focusedIndex]!.disabled) {
+        onChange(options[focusedIndex]!.value);
         setIsOpen(false);
         buttonRef.current?.focus();
       }

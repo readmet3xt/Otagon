@@ -65,8 +65,8 @@ class ScreenshotTimelineService {
       context: isGameSwitch ? 
         `Single screenshot showing current game state in ${gameName || 'new game'}` :
         'Single screenshot showing current game state',
-      gameId,
-      gameName,
+      ...(gameId && { gameId }),
+      ...(gameName && { gameName }),
       isGameSwitch
     };
     
@@ -94,8 +94,8 @@ class ScreenshotTimelineService {
       context: isGameSwitch ? 
         `Multi-shot sequence: ${imageDataArray.length} screenshots showing progression over 5 minutes in ${gameName || 'new game'}` :
         `Multi-shot sequence: ${imageDataArray.length} screenshots showing progression over 5 minutes`,
-      gameId,
-      gameName,
+      ...(gameId && { gameId }),
+      ...(gameName && { gameName }),
       isGameSwitch
     };
     
@@ -165,7 +165,7 @@ class ScreenshotTimelineService {
     
     const totalScreenshots = timeline.reduce((sum, event) => sum + event.screenshotCount, 0);
     const timeSpan = timeline.length > 0 ? 
-      Math.ceil((now - timeline[0].timestamp) / (60 * 1000)) : 0; // Minutes
+      Math.ceil((now - timeline[0]!.timestamp) / (60 * 1000)) : 0; // Minutes
     
     // Determine progression type
     let progressionType: 'linear' | 'scattered' | 'focused' = 'scattered';
@@ -216,15 +216,17 @@ class ScreenshotTimelineService {
       
       // Add specific context for the most recent event
       const lastEvent = recentEvents[recentEvents.length - 1];
-      contextString += `[META_LAST_EVENT: ${lastEvent.eventType} with ${lastEvent.screenshotCount} screenshots over ${lastEvent.timeWindow} minutes]
+      if (lastEvent) {
+        contextString += `[META_LAST_EVENT: ${lastEvent.eventType} with ${lastEvent.screenshotCount} screenshots over ${lastEvent.timeWindow} minutes]
 [META_LAST_EVENT_CONTEXT: ${lastEvent.context}]
 `;
-      
-      // NEW: Add game switching context
-      if (lastEvent.isGameSwitch && lastEvent.gameName) {
-        contextString += `[META_GAME_SWITCH: User switched to ${lastEvent.gameName} - provide context for this specific game]
+        
+        // NEW: Add game switching context
+        if (lastEvent.isGameSwitch && lastEvent.gameName) {
+          contextString += `[META_GAME_SWITCH: User switched to ${lastEvent.gameName} - provide context for this specific game]
 [META_CURRENT_GAME: ${lastEvent.gameName} - all responses should be specific to this game]
 `;
+        }
       }
       
       // Check for recent game switches
@@ -320,7 +322,7 @@ class ScreenshotTimelineService {
     
     const totalScreenshots = gameEvents.reduce((sum, event) => sum + event.screenshotCount, 0);
     const timeSpan = gameEvents.length > 0 ? 
-      Math.ceil((Date.now() - gameEvents[0].timestamp) / (60 * 1000)) : 0;
+      Math.ceil((Date.now() - gameEvents[0]!.timestamp) / (60 * 1000)) : 0;
     
     return `
 [META_GAME_SPECIFIC_TIMELINE: ${totalScreenshots} screenshots for ${gameName} over ${timeSpan} minutes]

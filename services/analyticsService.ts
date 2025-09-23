@@ -88,7 +88,7 @@ class AnalyticsService {
       stepName,
       stepOrder,
       startTime: Date.now(),
-      metadata
+      ...(metadata && { metadata })
     });
 
     console.log(`🚀 Onboarding step started: ${stepName} (${stepOrder})`);
@@ -253,7 +253,7 @@ class AnalyticsService {
       featureName,
       featureCategory: this.categorizeFeature(featureName),
       durationMs,
-      metadata
+      ...(metadata && { metadata })
     });
 
     console.log(`⏱️ Feature timer stopped: ${featureName} (${durationMs}ms)`);

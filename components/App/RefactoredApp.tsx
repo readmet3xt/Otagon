@@ -130,7 +130,11 @@ const RefactoredApp: React.FC = () => {
     setIsHandsFreeMode: state.setIsHandsFreeMode,
     setIsConnectionModalOpen: state.setIsConnectionModalOpen,
     setShowProfileSetup: state.setShowProfileSetup,
-    setConfirmationModal: (modal: any) => {}, // Will be set by useModals
+    showConfirmation: (title: string, message: string, onConfirm: () => void) => {
+      // Will be handled by confirmation modal system
+      console.log('Confirmation requested:', title, message);
+      onConfirm();
+    },
     send,
     disconnect,
     resetConversations,
@@ -346,7 +350,7 @@ const RefactoredApp: React.FC = () => {
             <>
               {/* Main App View */}
               <MainViewContainer
-                activeConversation={activeConversation}
+                activeConversation={activeConversation!}
                 activeSubView={activeSubView}
                 onSubViewChange={handleSubViewChange}
                 onSendMessage={handleSendMessage}

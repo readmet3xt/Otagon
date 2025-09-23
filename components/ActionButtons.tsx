@@ -76,8 +76,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = React.memo(({
           content: content.substring(0, 200) + (content.length > 200 ? '...' : ''),
           type,
           gameId,
-          sourceMessageId: messageId,
-          sourceInsightId: insightId,
+          ...(messageId && { sourceMessageId: messageId }),
+          ...(insightId && { sourceInsightId: insightId }),
           context: `From ${type === 'ai_response' ? 'AI response' : 'insight'}`
         });
         setIsFavorited(true);
@@ -110,7 +110,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = React.memo(({
             category: detectedTask.category,
             gameId,
             source: content.substring(0, 100) + '...',
-            sourceMessageId: messageId,
+            ...(messageId && { sourceMessageId: messageId }),
             priority: 'medium'
           });
         }
@@ -127,7 +127,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = React.memo(({
           category: 'custom',
           gameId,
           source: content.substring(0, 100) + '...',
-          sourceMessageId: messageId,
+          ...(messageId && { sourceMessageId: messageId }),
           priority: 'medium'
         });
         

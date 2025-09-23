@@ -784,8 +784,11 @@ class AIContextService {
     const existingIndex = existing.findIndex(c => c.context_type === contextType);
 
     if (existingIndex >= 0) {
-      existing[existingIndex].context_data = contextData;
-      existing[existingIndex].updated_at = new Date().toISOString();
+      const existingItem = existing[existingIndex];
+      if (existingItem) {
+        existingItem.context_data = contextData;
+        existingItem.updated_at = new Date().toISOString();
+      }
     } else {
       existing.push({
         user_id: userId,

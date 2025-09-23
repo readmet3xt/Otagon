@@ -73,7 +73,7 @@ class ProgressiveInsightService {
       }
 
       // Get the relevant tab configurations
-      const tabsConfig = insightTabsConfig[context.genre] || insightTabsConfig.default;
+      const tabsConfig = insightTabsConfig[context.genre] || insightTabsConfig.default || [];
       const relevantTabs = tabsConfig.filter(tab => relevantTabIds.includes(tab.id));
 
       // Generate progressive updates for relevant tabs

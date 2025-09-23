@@ -110,7 +110,7 @@ class PerformanceService {
       value,
       unit,
       timestamp: Date.now(),
-      metadata,
+      ...(metadata && { metadata })
     };
 
     this.metrics.push(metric);
@@ -127,9 +127,9 @@ class PerformanceService {
     const interaction: UserInteraction = {
       action,
       timestamp: Date.now(),
-      duration,
+      ...(duration !== undefined && { duration }),
       success,
-      metadata,
+      ...(metadata && { metadata })
     };
 
     this.interactions.push(interaction);
@@ -145,10 +145,10 @@ class PerformanceService {
   recordError(message: string, stack?: string, component?: string, metadata?: Record<string, any>) {
     const error: ErrorEvent = {
       message,
-      stack,
+      ...(stack && { stack }),
       timestamp: Date.now(),
-      component,
-      metadata,
+      ...(component && { component }),
+      ...(metadata && { metadata })
     };
 
     this.errors.push(error);

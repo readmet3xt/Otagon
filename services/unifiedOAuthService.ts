@@ -109,7 +109,11 @@ class UnifiedOAuthService {
         
         try {
           // Parse JWT token to extract user info
-          const tokenPayload = JSON.parse(atob(accessToken.split('.')[1]));
+          const tokenParts = accessToken.split('.');
+          if (tokenParts.length < 2) {
+            throw new Error('Invalid token format');
+          }
+          const tokenPayload = JSON.parse(atob(tokenParts[1]!));
           console.log('🔐 [UnifiedOAuth] Token payload:', {
             sub: tokenPayload.sub,
             email: tokenPayload.email,

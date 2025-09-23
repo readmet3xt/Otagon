@@ -177,11 +177,11 @@ const speak = async (text: string): Promise<void> => {
                         operation: 'tts_utterance',
                         component: 'ttsService',
                         text,
-                        voiceURI: voiceToUse?.voiceURI,
+                        ...(voiceToUse?.voiceURI && { voiceURI: voiceToUse.voiceURI }),
                         speechRate: utterance.rate,
                         additionalData: { 
                             errorEvent: e,
-                            voiceName: voiceToUse?.name,
+                            ...(voiceToUse?.name && { voiceName: voiceToUse.name }),
                             availableVoices: availableVoices.length
                         }
                     };

@@ -27,10 +27,12 @@ describe('Suggested Prompts Behavior', () => {
     const firstPrompt = newsPrompts[0];
     
     // Mark first prompt as used
-    suggestedPromptsService.markPromptAsUsed(firstPrompt);
-    
-    // Check that first prompt is now used
-    expect(suggestedPromptsService.isPromptUsed(firstPrompt)).toBe(true);
+    if (firstPrompt) {
+      suggestedPromptsService.markPromptAsUsed(firstPrompt);
+      
+      // Check that first prompt is now used
+      expect(suggestedPromptsService.isPromptUsed(firstPrompt)).toBe(true);
+    }
     
     // Check that remaining prompts are still unused
     const unusedPrompts = suggestedPromptsService.getUnusedPrompts(newsPrompts);
@@ -46,11 +48,15 @@ describe('Suggested Prompts Behavior', () => {
     const secondPrompt = newsPrompts[1];
     
     // Mark first prompt as used
-    suggestedPromptsService.markPromptAsUsed(firstPrompt);
-    
-    // Check individual prompt status
-    expect(suggestedPromptsService.isPromptUsed(firstPrompt)).toBe(true);
-    expect(suggestedPromptsService.isPromptUsed(secondPrompt)).toBe(false);
+    if (firstPrompt) {
+      suggestedPromptsService.markPromptAsUsed(firstPrompt);
+      
+      // Check individual prompt status
+      expect(suggestedPromptsService.isPromptUsed(firstPrompt)).toBe(true);
+    }
+    if (secondPrompt) {
+      expect(suggestedPromptsService.isPromptUsed(secondPrompt)).toBe(false);
+    }
     
     // Check unused prompts
     const unusedPrompts = suggestedPromptsService.getUnusedPrompts(newsPrompts);
@@ -78,10 +84,14 @@ describe('Suggested Prompts Behavior', () => {
   test('should track usage count correctly', () => {
     expect(suggestedPromptsService.getUsedCount()).toBe(0);
     
-    suggestedPromptsService.markPromptAsUsed(newsPrompts[0]);
-    expect(suggestedPromptsService.getUsedCount()).toBe(1);
+    if (newsPrompts[0]) {
+      suggestedPromptsService.markPromptAsUsed(newsPrompts[0]);
+      expect(suggestedPromptsService.getUsedCount()).toBe(1);
+    }
     
-    suggestedPromptsService.markPromptAsUsed(newsPrompts[1]);
+    if (newsPrompts[1]) {
+      suggestedPromptsService.markPromptAsUsed(newsPrompts[1]);
+    }
     expect(suggestedPromptsService.getUsedCount()).toBe(2);
   });
 });

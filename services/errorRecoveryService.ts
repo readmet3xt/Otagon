@@ -326,7 +326,7 @@ class ErrorRecoveryService {
     return {
       isLoading: false,
       isDisabled: !strategy.allowRetry,
-      errorMessage: strategy.showMessage ? this.getUserFriendlyMessage(error) : undefined
+      ...(strategy.showMessage && { errorMessage: this.getUserFriendlyMessage(error) })
     };
   }
 

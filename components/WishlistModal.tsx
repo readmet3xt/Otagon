@@ -50,7 +50,7 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({
       const { wishlistService } = await import('../services/wishlistService');
       const newItem = await wishlistService.addToWishlist({
         gameName: newGameName.trim(),
-        platform: newGamePlatform || undefined,
+        ...(newGamePlatform && { platform: newGamePlatform }),
         gameId: 'everything-else',
         source: 'user_input'
       });
