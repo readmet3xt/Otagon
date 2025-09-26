@@ -727,12 +727,12 @@ class SecureConversationService implements ConversationService {
       }
 
       // Use direct Supabase query with proper user ID mapping
+      // FIXED: Remove deleted_at check to avoid schema issues
       const { data, error } = await supabase
         .from('conversations')
         .select('*')
         .eq('id', conversationId)
         .eq('user_id', user.id) // This will be mapped by RLS
-        .is('deleted_at', null)
         .single();
 
       if (error) {

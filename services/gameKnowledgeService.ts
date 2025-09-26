@@ -196,10 +196,11 @@ export class GameKnowledgeService {
    */
   async getGame(identifier: string): Promise<Game | null> {
     try {
+      // FIXED: Use 'id' instead of 'game_id' column
       const { data, error } = await supabase
         .from('games')
         .select('*')
-        .or(`game_id.eq.${identifier},title.ilike.%${identifier}%`)
+        .or(`id.eq.${identifier},title.ilike.%${identifier}%`)
         .single();
 
       if (error && error.code !== 'PGRST116') throw error;

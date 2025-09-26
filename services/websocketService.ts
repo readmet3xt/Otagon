@@ -3,12 +3,15 @@ let ws: WebSocket | null = null;
 const SERVER_ADDRESS = 'wss://otakon-relay.onrender.com';
 
 let reconnectAttempts = 0;
-const maxBackoffMs = 5000;
+const maxBackoffMs = 30000; // Increased to 30s max
+const maxReconnectAttempts = 10; // Limit reconnection attempts
 const sendQueue: object[] = [];
 let lastCode: string | null = null;
 let handlers: { onOpen: () => void; onMessage: (data: any) => void; onError: (error: string) => void; onClose: () => void } | null = null;
 let heartbeatTimer: number | null = null;
-const HEARTBEAT_MS = 90000; // 90s
+let connectionHealthTimer: number | null = null;
+const HEARTBEAT_MS = 30000; // Reduced to 30s for better health monitoring
+const CONNECTION_TIMEOUT_MS = 10000; // 10s connection timeout
 
 const connect = (
   code: string,
@@ -35,6 +38,16 @@ const connect = (
 
   try {
     ws = new WebSocket(fullUrl);
+    
+    // Set connection timeout
+    connectionHealthTimer = window.setTimeout(() => {
+      if (ws && ws.readyState === WebSocket.CONNECTING) {
+        console.warn('WebSocket connection timeout, closing...');
+        ws.close();
+        onError('Connection attempt timed out. Please check your network and try again.');
+      }
+    }, CONNECTION_TIMEOUT_MS);
+    
   } catch (e) {
     const message = e instanceof Error ? e.message : "An unknown error occurred.";
     onError(`Connection failed: ${message}. Please check the URL and your network connection.`);
@@ -42,9 +55,16 @@ const connect = (
   }
 
   ws.onopen = () => {
-    // Connection established - no need to log every connection
+    // Clear connection timeout
+    if (connectionHealthTimer) {
+      clearTimeout(connectionHealthTimer);
+      connectionHealthTimer = null;
+    }
+    
+    // Connection established - reset reconnection attempts
     reconnectAttempts = 0;
     onOpen();
+    
     // Flush queued messages
     while (sendQueue.length && ws && ws.readyState === WebSocket.OPEN) {
       const payload = sendQueue.shift();
@@ -58,7 +78,11 @@ const connect = (
     }
     heartbeatTimer = window.setInterval(() => {
       if (ws && ws.readyState === WebSocket.OPEN) {
-        try { ws.send(JSON.stringify({ type: 'ping', ts: Date.now() })); } catch {}
+        try { 
+          ws.send(JSON.stringify({ type: 'ping', ts: Date.now() })); 
+        } catch (e) {
+          console.warn('Failed to send heartbeat:', e);
+        }
       }
     }, HEARTBEAT_MS);
   };
@@ -103,17 +127,23 @@ const connect = (
       heartbeatTimer = null;
     }
 
-    // Auto-reconnect with backoff+jitter
-    if (lastCode && handlers) {
+    // Auto-reconnect with exponential backoff and jitter
+    if (lastCode && handlers && reconnectAttempts < maxReconnectAttempts) {
       reconnectAttempts += 1;
-      const base = Math.min(maxBackoffMs, 500 * Math.pow(2, reconnectAttempts - 1));
-      const jitter = Math.random() * 300;
+      const base = Math.min(maxBackoffMs, 1000 * Math.pow(2, reconnectAttempts - 1));
+      const jitter = Math.random() * 1000; // Increased jitter for better distribution
       const delay = base + jitter;
+      
+      console.log(`🔄 WebSocket reconnection attempt ${reconnectAttempts}/${maxReconnectAttempts} in ${Math.round(delay)}ms`);
+      
       setTimeout(() => {
         if (!ws && handlers) {
           connect(lastCode!, handlers.onOpen, handlers.onMessage, handlers.onError, handlers.onClose);
         }
       }, delay);
+    } else if (reconnectAttempts >= maxReconnectAttempts) {
+      console.error('🚫 WebSocket max reconnection attempts reached. Manual reconnection required.');
+      onError('Connection lost. Please refresh the page to reconnect.');
     }
   };
 };
@@ -134,9 +164,15 @@ const disconnect = () => {
     ws = null;
   }
   reconnectAttempts = 0;
+  
+  // Clear all timers
   if (heartbeatTimer) {
     clearInterval(heartbeatTimer);
     heartbeatTimer = null;
+  }
+  if (connectionHealthTimer) {
+    clearTimeout(connectionHealthTimer);
+    connectionHealthTimer = null;
   }
   
   // Clear all connection state to prevent auto-reconnection after logout

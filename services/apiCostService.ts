@@ -140,13 +140,14 @@ class APICostService {
                 return;
             }
 
+            // FIXED: Remove category column reference and use event_data instead
             const { error } = await supabase
                 .from('analytics')
                 .insert({
                     user_id: user.id,
-                    category: 'api_costs',
                     event_type: 'api_call',
-                    data: {
+                    event_data: {
+                        category: 'api_costs',
                         timestamp: new Date(record.timestamp).toISOString(),
                         model: record.model,
                         purpose: record.purpose,
@@ -209,10 +210,11 @@ class APICostService {
             const thirtyDaysAgo = new Date();
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
+            // FIXED: Query by event_type instead of category column
             const { data: records, error } = await supabase
                 .from('analytics')
                 .select('*')
-                .eq('category', 'api_costs')
+                .eq('event_type', 'api_call')
                 .gte('created_at', thirtyDaysAgo.toISOString())
                 .order('created_at', { ascending: false });
 

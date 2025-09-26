@@ -62,6 +62,12 @@ class WelcomeMessageService {
       const userId = await this.getUserId();
       if (!userId) return false;
 
+      // Skip database calls for special conversation IDs that don't exist in the database
+      if (conversationId === 'everything-else') {
+        console.log('🔧 [welcomeMessageService] Skipping database call for special conversation:', conversationId);
+        return false;
+      }
+
       // Decide reason based on backend flag
       const decision = await this.decide();
       const reason: WelcomeReason = decision.reason === 'none' ? 'returning' : (decision.reason as WelcomeReason);

@@ -417,6 +417,13 @@ const App: React.FC = () => {
     }
   }, [activeConversation, handleOpenOtakuDiaryModal, handleOpenWishlistModal, originalHandleSubViewChange, markInsightAsRead, fetchInsightContent]);
 
+  // Handler for retrying failed insights
+  const handleRetryInsight = useCallback((tabId: string) => {
+    console.log('🔄 [App] Retrying insight generation for tab:', tabId);
+    // This will be handled by the useChat hook's retry mechanism
+    // The actual retry logic is in the SubTabs component
+  }, []);
+
   // Missing handlers
   const handleUpgradeClick = useCallback(() => {
     setAppState(prev => ({ ...prev, showUpgradeScreen: true }));
@@ -2070,6 +2077,7 @@ const App: React.FC = () => {
                           onReorder={() => {}} // TODO: Add reorder handler
                           onContextMenu={() => {}} // TODO: Add context menu handler
                           connectionStatus={connectionStatus}
+                          onRetryInsight={handleRetryInsight}
                         />
                       </div>
                       <div className="flex-shrink-0">

@@ -13,6 +13,7 @@ interface SubTabsProps {
     onReorder: (conversationId: string, fromIndex: number, toIndex: number) => void;
     onContextMenu: (e: React.MouseEvent, tabId: string, insightTitle: string) => void;
     connectionStatus: ConnectionStatus;
+    onRetryInsight?: (tabId: string) => void;
 }
 
 const SubTabs: React.FC<SubTabsProps> = ({ 
@@ -22,7 +23,8 @@ const SubTabs: React.FC<SubTabsProps> = ({
     userTier, 
     onReorder, 
     onContextMenu,
-    connectionStatus
+    connectionStatus,
+    onRetryInsight
 }) => {
     const draggedItem = useRef<number | null>(null);
     const [dragOverItem, setDragOverItem] = useState<number | null>(null);
@@ -223,7 +225,16 @@ const SubTabs: React.FC<SubTabsProps> = ({
                                     <span className="ml-2 text-xs opacity-80">✨</span>
                                 )}
                                 {hasError && (
-                                    <span className="ml-2 text-xs opacity-80">⚠️</span>
+                                    <span
+                                        className="ml-2 text-xs opacity-80 cursor-pointer hover:opacity-100"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onRetryInsight?.(tab.id);
+                                        }}
+                                        title="Click to retry"
+                                    >
+                                        🔄
+                                    </span>
                                 )}
                             </button>
                         );
