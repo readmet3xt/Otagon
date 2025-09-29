@@ -823,12 +823,36 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
 
     // ✅ INFINITE LOOP FIX: Disabled duplicate auth listener in useChat
     // The App.tsx now handles all auth state changes centrally
-    // This prevents the infinite loop caused by multiple auth listeners
-    /*
+    // CRITICAL FIX: Add auth state change listener to handle welcome message when user becomes authenticated
     useEffect(() => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (event === 'SIGNED_IN' && session?.user) {
-                console.log('🔐 User signed in, triggering conversation reload...');
+                console.log('🔐 User signed in, ensuring welcome message...');
+                
+                // Ensure welcome message exists for newly authenticated user
+                try {
+                    const welcomeResult = await welcomeMessageService.ensureInserted(EVERYTHING_ELSE_ID, 'Everything else');
+                    console.log('🔐 Welcome message ensureInserted result after sign in:', welcomeResult);
+                    
+                    if (welcomeResult) {
+                        // Reload conversations to get the welcome message
+                        const reloadResult = await secureConversationService.loadConversations();
+                        if (reloadResult.success && reloadResult.conversations) {
+                            const conversations = reloadResult.conversations as any;
+                            const order = Object.keys(conversations);
+                            const activeId = EVERYTHING_ELSE_ID;
+                            
+                            setChatState({
+                                conversations,
+                                order,
+                                activeId
+                            });
+                            console.log('🔐 Conversations reloaded with welcome message after sign in');
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Failed to ensure welcome message after sign in:', e);
+                }
                 
                 // Prevent duplicate operations with improved flag management
                 if (isLoadingConversationsRef.current) {
@@ -872,58 +896,8 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                             activeId: order[0] || EVERYTHING_ELSE_ID
                         });
                     } else {
-                        console.log('🔧 No conversations found in database, creating default...');
-                        
-                        // Create default conversation with welcome message
-                        const welcomeAddedThisSession = sessionStorage.getItem('otakon_welcome_added_session');
-                        if (!welcomeAddedThisSession) {
-                            const welcomeMessage: ChatMessage = {
-                                id: crypto.randomUUID(),
-                                role: 'model' as const,
-                                text: 'Welcome to Otagon! I\'m your AI gaming assistant, here to help you get unstuck in games with hints, not spoilers. Upload screenshots, ask questions, or connect your PC for instant help while playing!'
-                            };
-                            
-                            const defaultConversations = {
-                                [EVERYTHING_ELSE_ID]: {
-                                    id: EVERYTHING_ELSE_ID,
-                                    title: 'Everything else',
-                                    messages: [welcomeMessage],
-                                    insights: {},
-                                    insightsOrder: [],
-                                    context: {},
-                                    createdAt: Date.now(),
-                                    isPinned: false
-                                }
-                            };
-                            
-                            setChatState({
-                                conversations: defaultConversations,
-                                order: [EVERYTHING_ELSE_ID],
-                                activeId: EVERYTHING_ELSE_ID
-                            });
-                            
-                            // Mark that we've added a welcome message this session
-                            sessionStorage.setItem('otakon_welcome_added_session', 'true');
-                            
-                            console.log('🔧 [useChat] Default conversation with welcome message created after sign in');
-                            
-                            // Try to save the conversation
-                            try {
-                                await secureConversationService.saveConversation(
-                                    EVERYTHING_ELSE_ID,
-                                    'Everything Else',
-                                    [welcomeMessage],
-                                    [],
-                                    {},
-                                    undefined,
-                                    false,
-                                    true
-                                );
-                                console.log('🔧 [useChat] Welcome message conversation saved to database');
-                            } catch (saveError) {
-                                console.error('Failed to save welcome message conversation:', saveError);
-                            }
-                        }
+                        console.log('🔧 No conversations found in database, using default conversation...');
+                        // Default conversation will be created by the main loadConversations flow
                     }
                 } catch (error) {
                     console.error('Error loading conversations after sign in:', error);
@@ -962,7 +936,6 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
             subscription.unsubscribe();
         };
     }, [secureConversationService]);
-    */
 
     // REMOVED: Duplicate conversation creation effect to prevent race conditions
 
