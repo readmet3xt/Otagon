@@ -417,6 +417,13 @@ const App: React.FC = () => {
     }
   }, [activeConversation, handleOpenOtakuDiaryModal, handleOpenWishlistModal, originalHandleSubViewChange, markInsightAsRead, fetchInsightContent]);
 
+  // Handler for retrying failed insights
+  const handleRetryInsight = useCallback((tabId: string) => {
+    console.log('🔄 [App] Retrying insight generation for tab:', tabId);
+    // This will be handled by the useChat hook's retry mechanism
+    // The actual retry logic is in the SubTabs component
+  }, []);
+
   // Missing handlers
   const handleUpgradeClick = useCallback(() => {
     setAppState(prev => ({ ...prev, showUpgradeScreen: true }));
@@ -586,9 +593,12 @@ const App: React.FC = () => {
         contextMenu: null,
       }));
       
-      // CRITICAL FIX: Reset OAuth callback flag when user logs out
+      // CRITICAL FIX: Reset OAuth callback flag when user logs out OR when user becomes authenticated
       if (!userState.isAuthenticated) {
         console.log('🔧 [App] User logged out, resetting OAuth callback flag');
+        setIsOAuthCallback(false);
+      } else if (userState.isAuthenticated && isOAuthCallback) {
+        console.log('🔧 [App] User authenticated successfully, resetting OAuth callback flag');
         setIsOAuthCallback(false);
       }
       
@@ -1167,6 +1177,14 @@ const App: React.FC = () => {
             console.log('🔐 [App] OAuth callback successful, user:', user);
             // Keep OAuth callback flag true until auth state is fully processed
             // The auth state change will be handled by the auth service subscription
+            
+            // Add a timeout fallback to reset OAuth callback flag if auth state doesn't change
+            setTimeout(() => {
+              if (isOAuthCallback) {
+                console.log('🔧 [App] OAuth callback timeout fallback - resetting flag');
+                setIsOAuthCallback(false);
+              }
+            }, 5000); // 5 second timeout
           },
           onError: (error) => {
             console.error('🔐 [App] OAuth callback failed:', error);
@@ -1490,13 +1508,17 @@ const App: React.FC = () => {
             connectionCode={connectionCode}
             onConnectionSuccess={() => {
               // After successful connection, show "You're Connected" screen
-              setAppState(prev => ({
-                ...prev,
-                appView: {
-                  ...prev.appView!,
-                  onboardingStatus: 'features-connected'
-                }
-              }));
+              console.log('🔗 [App] PC connection success callback triggered');
+              setAppState(prev => {
+                console.log('🔗 [App] Current onboarding status:', prev.appView?.onboardingStatus);
+                return {
+                  ...prev,
+                  appView: {
+                    ...prev.appView!,
+                    onboardingStatus: 'features-connected'
+                  }
+                };
+              });
             }}
           />
         );
@@ -1520,13 +1542,17 @@ const App: React.FC = () => {
             connectionCode={connectionCode}
             onConnectionSuccess={() => {
               // If PC connection is successful, show "You're Connected" screen
-              setAppState(prev => ({
-                ...prev,
-                appView: {
-                  ...prev.appView!,
-                  onboardingStatus: 'features-connected'
-                }
-              }));
+              console.log('🔗 [App] PC connection success callback triggered (how-to-use)');
+              setAppState(prev => {
+                console.log('🔗 [App] Current onboarding status (how-to-use):', prev.appView?.onboardingStatus);
+                return {
+                  ...prev,
+                  appView: {
+                    ...prev.appView!,
+                    onboardingStatus: 'features-connected'
+                  }
+                };
+              });
             }}
           />
         );
@@ -1723,6 +1749,25 @@ const App: React.FC = () => {
                     onOpenContact={() => openModal('contact')}
                     onOpenTerms={() => openModal('terms')}
                     onDirectNavigation={(path: string) => console.log('Navigate to:', path)}
+                  />
+                } 
+              />
+              <Route 
+                path="/auth/callback" 
+                element={
+                  <AuthCallbackHandler 
+                    onAuthSuccess={() => {
+                      console.log('🔐 [App] OAuth callback successful, redirecting to main app');
+                      // The OAuth callback handling in useEffect will handle the redirect
+                    }}
+                    onAuthError={(error: string) => {
+                      console.error('🔐 [App] OAuth callback error:', error);
+                      handleError(new Error(error), 'oauthCallback');
+                    }}
+                    onRedirectToSplash={() => {
+                      console.log('🔐 [App] OAuth callback redirecting to splash screen');
+                      // The OAuth callback handling will manage the flow
+                    }}
                   />
                 } 
               />
@@ -2041,14 +2086,21 @@ const App: React.FC = () => {
                   loadingMessages={loadingMessages}
                   onUpgradeClick={handleUpgradeClick}
                   onFeedback={(type, convId, targetId, originalText, vote) => {
-                    // Handle feedback - this would integrate with feedback service
+                    // Handle feedback - open modal for down votes, direct feedback for up votes
                     console.log('Feedback received:', { type, convId, targetId, vote });
-                    addFeedback({
-                      conversationId: convId,
-                      targetId: targetId,
-                      originalText: originalText,
-                      feedbackText: `${type}: ${vote}`
-                    });
+                    
+                    if (vote === 'down') {
+                      // Open feedback modal for down votes
+                      handleFeedbackModal(type, convId, targetId, originalText, vote);
+                    } else {
+                      // Direct feedback for up votes
+                      addFeedback({
+                        conversationId: convId,
+                        targetId: targetId,
+                        originalText: originalText,
+                        feedbackText: `${type}: ${vote}`
+                      });
+                    }
                   }}
                   onRetry={handleRetry}
                   isFirstTime={appState.isFirstTime}
@@ -2070,6 +2122,7 @@ const App: React.FC = () => {
                           onReorder={() => {}} // TODO: Add reorder handler
                           onContextMenu={() => {}} // TODO: Add context menu handler
                           connectionStatus={connectionStatus}
+                          onRetryInsight={handleRetryInsight}
                         />
                       </div>
                       <div className="flex-shrink-0">

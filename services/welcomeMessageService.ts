@@ -21,16 +21,19 @@ class WelcomeMessageService {
 
   async decide(): Promise<WelcomeDecision> {
     try {
-      // Prefer backend truth when available
+      // Always show welcome message for empty conversations
+      // The actual check for existing welcome messages happens in ensureInserted()
+      // This method just determines the reason for the welcome message
       const shouldShow = await playerProfileService.shouldShowWelcomeMessage();
       if (shouldShow) {
         return { shouldShow: true, reason: 'first_run' };
       }
-      return { shouldShow: false, reason: 'none' };
+      // Even if backend says no, we still want to show welcome for empty conversations
+      return { shouldShow: true, reason: 'returning' };
     } catch (error) {
-      // Fallback: never block chat on decision issues
-      console.warn('[welcomeMessageService] decide() failed, defaulting to no welcome:', error);
-      return { shouldShow: false, reason: 'none' };
+      // Fallback: always show welcome message for empty conversations
+      console.warn('[welcomeMessageService] decide() failed, defaulting to show welcome:', error);
+      return { shouldShow: true, reason: 'returning' };
     }
   }
 

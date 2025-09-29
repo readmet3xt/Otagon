@@ -57,16 +57,22 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
   const [step, setStep] = useState(0);
   const [code, setCode] = useState(connectionCode || '');
   const [syncInitiated, setSyncInitiated] = useState(false);
+  const [connectionSuccessCalled, setConnectionSuccessCalled] = useState(false);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [touchEndX, setTouchEndX] = useState<number | null>(null);
   
   useEffect(() => {
     // This effect transitions to the next screen ONLY if the connection
     // was successful AND it was initiated by the user clicking the button.
-    if (syncInitiated && status === ConnectionStatus.CONNECTED) {
-        onConnectionSuccess();
+    if (syncInitiated && status === ConnectionStatus.CONNECTED && !connectionSuccessCalled) {
+        console.log('🔗 [SplashScreen] Connection successful, calling onConnectionSuccess');
+        setConnectionSuccessCalled(true);
+        // Add a small delay to ensure state is stable
+        setTimeout(() => {
+            onConnectionSuccess();
+        }, 100);
     }
-  }, [status, onConnectionSuccess, syncInitiated]);
+  }, [status, onConnectionSuccess, syncInitiated, connectionSuccessCalled]);
 
   const currentSlide = slides[step];
   const isLastStep = step === slides.length - 1;
@@ -89,6 +95,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
   const handleConnectClick = () => {
     if (isConnecting || isConnected) return;
     setSyncInitiated(true);
+    setConnectionSuccessCalled(false); // Reset the flag for new connection attempt
     onConnect(code);
   };
   

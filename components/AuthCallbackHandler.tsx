@@ -49,9 +49,36 @@ const AuthCallbackHandler: React.FC<AuthCallbackHandlerProps> = ({ onAuthSuccess
           
           if (userError) {
             console.error('User error:', userError);
-            setError('Authentication failed. Please try again.');
-            setStatus('error');
-            onAuthError('Authentication failed. Please try again.');
+            
+            // Handle specific error types more gracefully
+            if (userError.message.includes('AuthSessionMissingError') || 
+                userError.message.includes('session missing')) {
+              // This is likely a reload during OAuth flow - wait a bit and try again
+              console.log('Session missing during OAuth flow, waiting and retrying...');
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              
+              // Try one more time
+              const { data: { user: retryUser }, error: retryError } = await supabase.auth.getUser();
+              if (retryError || !retryUser) {
+                setError('Authentication session expired. Please try signing in again.');
+                setStatus('error');
+                onAuthError('Authentication session expired. Please try signing in again.');
+              } else {
+                console.log('User authenticated on retry:', retryUser);
+                setStatus('success');
+                setTimeout(() => {
+                  if (onRedirectToSplash) {
+                    onRedirectToSplash();
+                  } else {
+                    onAuthSuccess();
+                  }
+                }, 1500);
+              }
+            } else {
+              setError('Authentication failed. Please try again.');
+              setStatus('error');
+              onAuthError('Authentication failed. Please try again.');
+            }
           } else if (user) {
             console.log('User authenticated:', user);
             setStatus('success');

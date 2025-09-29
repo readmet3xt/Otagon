@@ -814,6 +814,14 @@ class SecureAppStateService implements AppStateService {
         return result;
       }
 
+      // CRITICAL FIX: Clear logout redirect flag when user becomes authenticated
+      // This prevents the user from being stuck in "login" state after successful login
+      const isLogoutRedirect = localStorage.getItem('otakon_logout_redirect') === 'true';
+      if (isLogoutRedirect) {
+        console.log('🔧 [AppStateService] User is now authenticated, clearing logout redirect flag');
+        localStorage.removeItem('otakon_logout_redirect');
+      }
+
       const onboardingStatus = this.determineOnboardingStatus(userState);
       
       // Only log meaningful onboarding status changes

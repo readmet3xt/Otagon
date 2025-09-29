@@ -621,15 +621,24 @@ class SecureConversationService implements ConversationService {
         return this.deleteConversationDeveloperMode(conversationId);
       }
 
-      // Use direct Supabase query with proper user ID mapping
-      const { error } = await supabase
-        .from('conversations')
-        .update({ deleted_at: new Date().toISOString() })
-        .eq('id', conversationId)
-        .eq('user_id', user.id); // This will be mapped by RLS
+      // Use RPC function to handle user ID mapping properly
+      const { data, error } = await this.retryOperation(
+        async () => {
+          const result = await supabase.rpc('delete_conversation', {
+            p_conversation_id: conversationId,
+            p_auth_user_id: user.id
+          });
+          return result;
+        },
+        'deleteConversation'
+      );
 
       if (error) {
         throw new Error(`Failed to delete conversation: ${error.message}`);
+      }
+
+      if (!data.success) {
+        throw new Error(`Failed to delete conversation: ${data.error}`);
       }
 
       // Clear cache
@@ -726,32 +735,45 @@ class SecureConversationService implements ConversationService {
         return this.getConversationDeveloperMode(conversationId);
       }
 
-      // Use direct Supabase query with proper user ID mapping
-      const { data, error } = await supabase
-        .from('conversations')
-        .select('*')
-        .eq('id', conversationId)
-        .eq('user_id', user.id) // This will be mapped by RLS
-        .is('deleted_at', null)
-        .single();
+      // Use the optimized RPC function that handles user ID mapping properly
+      const { data, error } = await this.retryOperation(
+        async () => {
+          const result = await supabase.rpc('get_conversation_optimized', {
+            p_conversation_id: conversationId,
+            p_auth_user_id: user.id
+          });
+          console.log('🔧 [SecureConversationService] get_conversation_optimized result:', result);
+          return result;
+        },
+        'getConversation'
+      );
 
       if (error) {
         throw new Error(`Failed to get conversation: ${error.message}`);
       }
 
+      if (!data.success) {
+        // If conversation not found, return success: false instead of throwing error
+        // This allows the caller to handle the "not found" case gracefully
+        return {
+          success: false,
+          error: data.error
+        };
+      }
+
       const conversation: Conversation = {
-        id: data.id,
-        title: data.title,
-        messages: data.messages || [],
-        insights: data.insights || [],
-        context: data.context || {},
-        game_id: data.game_id,
-        is_pinned: data.is_pinned || false,
-        version: data.version || 1,
-        checksum: data.checksum || '',
-        last_modified: data.last_modified || data.updated_at,
-        created_at: data.created_at,
-        updated_at: data.updated_at
+        id: data.conversation.id,
+        title: data.conversation.title,
+        messages: data.conversation.messages || [],
+        insights: data.conversation.insights || [],
+        context: data.conversation.context || {},
+        game_id: data.conversation.game_id,
+        is_pinned: data.conversation.is_pinned || false,
+        version: data.conversation.version || 1,
+        checksum: data.conversation.checksum || '',
+        last_modified: data.conversation.last_modified || data.conversation.updated_at,
+        created_at: data.conversation.created_at,
+        updated_at: data.conversation.updated_at
       };
 
       // Cache the result
@@ -863,18 +885,25 @@ class SecureConversationService implements ConversationService {
         return this.updateConversationTitleDeveloperMode(conversationId, title);
       }
 
-      // Use direct Supabase query with proper user ID mapping
-      const { error } = await supabase
-        .from('conversations')
-        .update({ 
-          title,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', conversationId)
-        .eq('user_id', user.id); // This will be mapped by RLS
+      // Use RPC function to handle user ID mapping properly
+      const { data, error } = await this.retryOperation(
+        async () => {
+          const result = await supabase.rpc('update_conversation_title', {
+            p_conversation_id: conversationId,
+            p_title: title,
+            p_auth_user_id: user.id
+          });
+          return result;
+        },
+        'updateConversationTitle'
+      );
 
       if (error) {
         throw new Error(`Failed to update conversation title: ${error.message}`);
+      }
+
+      if (!data.success) {
+        throw new Error(`Failed to update conversation title: ${data.error}`);
       }
 
       // Clear cache
@@ -965,18 +994,25 @@ class SecureConversationService implements ConversationService {
         return this.pinConversationDeveloperMode(conversationId, isPinned);
       }
 
-      // Use direct Supabase query with proper user ID mapping
-      const { error } = await supabase
-        .from('conversations')
-        .update({ 
-          is_pinned: isPinned,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', conversationId)
-        .eq('user_id', user.id); // This will be mapped by RLS
+      // Use RPC function to handle user ID mapping properly
+      const { data, error } = await this.retryOperation(
+        async () => {
+          const result = await supabase.rpc('pin_conversation', {
+            p_conversation_id: conversationId,
+            p_is_pinned: isPinned,
+            p_auth_user_id: user.id
+          });
+          return result;
+        },
+        'pinConversation'
+      );
 
       if (error) {
         throw new Error(`Failed to pin conversation: ${error.message}`);
+      }
+
+      if (!data.success) {
+        throw new Error(`Failed to pin conversation: ${data.error}`);
       }
 
       // Clear cache

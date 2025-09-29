@@ -68,29 +68,23 @@ const allOtakonTags = [
 // More comprehensive regex to catch all possible tags and IDs that should be hidden
 const tagCleanupRegex = new RegExp(`\\[OTAKON_(${allOtakonTags.join('|')}):.*?\\]`, 'gs');
 const comprehensiveTagCleanupRegex = new RegExp(
-    // OTAKON tags
+    // OTAKON tags - only remove specific OTAKON internal tags
     `\\[OTAKON_(${allOtakonTags.join('|')}):.*?\\]|` +
     // Any other OTAKON tags not in the list
     `\\[OTAKON_[^\\]]*\\]|` +
-    // Common ID patterns that might appear
-    `\\[ID:[^\\]]*\\]|` +
-    `\\[TAG:[^\\]]*\\]|` +
-    `\\[META:[^\\]]*\\]|` +
-    `\\[DEBUG:[^\\]]*\\]|` +
-    `\\[SYSTEM:[^\\]]*\\]|` +
-    // UUID patterns
-    `\\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\b|` +
-    // Other common ID patterns
-    `\\b[A-Z0-9_]{10,}\\b(?=\\s|$)|` +
-    // Clean up any remaining bracket patterns that look like metadata
-    `\\[[^\\]]*:[^\\]]*\\](?=\\s|$)|` +
+    // Specific internal ID patterns (be more specific)
+    `\\[ID:[A-Z0-9_-]+\\]|` +
+    `\\[TAG:[A-Z0-9_-]+\\]|` +
+    `\\[META:[A-Z0-9_-]+\\]|` +
+    `\\[DEBUG:[A-Z0-9_-]+\\]|` +
+    `\\[SYSTEM:[A-Z0-9_-]+\\]|` +
     // Handle incomplete streaming tags (tags that end without closing bracket)
     `\\[OTAKON_[^\\]]*$|` +
-    `\\[ID:[^\\]]*$|` +
-    `\\[TAG:[^\\]]*$|` +
-    `\\[META:[^\\]]*$|` +
-    `\\[DEBUG:[^\\]]*$|` +
-    `\\[SYSTEM:[^\\]]*$`,
+    `\\[ID:[A-Z0-9_-]*$|` +
+    `\\[TAG:[A-Z0-9_-]*$|` +
+    `\\[META:[A-Z0-9_-]*$|` +
+    `\\[DEBUG:[A-Z0-9_-]*$|` +
+    `\\[SYSTEM:[A-Z0-9_-]*$`,
     'gs'
 );
 
@@ -448,24 +442,8 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                     return;
                 }
                 
-                // For authenticated users, ensure we have a conversation with welcome message
-                if (authState.user && isMounted) {
-                    console.log('🔧 [useChat] User authenticated, ensuring default conversation with welcome message...');
-                    
-                    // Check if we need to add a welcome message
-                    const welcomeAddedThisSession = sessionStorage.getItem('otakon_welcome_added_session');
-                    if (!welcomeAddedThisSession) {
-                        // Ensure welcome exists via centralized service (handles save+tracking)
-                        await welcomeMessageService.ensureInserted(EVERYTHING_ELSE_ID, 'Everything else');
-                        // Mark that we've attempted welcome this session to avoid redundant work
-                        sessionStorage.setItem('otakon_welcome_added_session', 'true');
-                        console.log('🔧 [useChat] Ensured welcome message for authenticated user');
-                        return;
-                    }
-                }
-                
-                    // Only load conversations if auth is not loading and user is authenticated
-                    if (!authState.loading && authState.user) {
+                // For authenticated users, load conversations from Supabase first
+                if (!authState.loading && authState.user) {
                         console.log('🔐 User signed in, reloading conversations...');
                         
                         // Add additional delay to ensure auth state is fully ready
@@ -480,6 +458,12 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                             conversationCount: result.conversations ? Object.keys(result.conversations).length : 0,
                             error: result.error
                         });
+                        
+                        // If loading failed, preserve existing conversations and don't create new ones
+                        if (!result.success) {
+                            console.log('🔧 [useChat] Conversation loading failed, preserving existing conversations:', result.error);
+                            return; // Exit early to preserve existing conversations
+                        }
                         
                         if (isMounted && result.success && result.conversations) {
                             const conversations = result.conversations as any; // Type cast to handle interface mismatch
@@ -501,8 +485,14 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                                     return; // Exit early to preserve existing conversations
                                 }
                                 
-                                // Only create default if we truly have no conversations
-                                console.log('🔧 [useChat] No existing conversations, creating default with welcome message...');
+                                // Only create default if we truly have no conversations AND we're not in the middle of loading
+                                console.log('🔧 [useChat] No existing conversations, checking if we should create default...');
+                                
+                                // Check if we already have a default conversation in the state
+                                if (chatState.conversations[EVERYTHING_ELSE_ID]) {
+                                    console.log('🔧 [useChat] Default conversation already exists in state, not creating new one');
+                                    return;
+                                }
                                 
                                 const welcomeAddedThisSession = sessionStorage.getItem('otakon_welcome_added_session');
                                 if (!welcomeAddedThisSession) {
@@ -643,6 +633,14 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                             console.log('  - activeId:', activeId);
                             console.log('  - conversations:', conversations);
                             console.log('✅ Conversations loaded from Supabase:', Object.keys(conversations).length);
+                            
+                            // CRITICAL FIX: Ensure welcome message exists after loading conversations
+                            try {
+                                await welcomeMessageService.ensureInserted(EVERYTHING_ELSE_ID, 'Everything else');
+                                console.log('🔧 [useChat] Welcome message ensured after loading conversations');
+                            } catch (welcomeError) {
+                                console.warn('Failed to ensure welcome message after loading conversations:', welcomeError);
+                            }
                         } else if (isMounted && result.success && (!result.conversations || Object.keys(result.conversations).length === 0)) {
                             // No conversations found in Supabase, but user is authenticated
                             // PRESERVE existing conversations instead of overwriting with empty
@@ -658,57 +656,27 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                             // Only create default if we truly have no conversations
                             console.log('🔧 [useChat] No existing conversations, creating default with welcome message...');
                             
-                            const welcomeAddedThisSession = sessionStorage.getItem('otakon_welcome_added_session');
-                            if (!welcomeAddedThisSession) {
-                                const welcomeMessage: ChatMessage = {
-                                id: crypto.randomUUID(),
-                                role: 'model' as const,
-                                text: 'Welcome to Otagon! I\'m your AI gaming assistant, here to help you get unstuck in games with hints, not spoilers. Upload screenshots, ask questions, or connect your PC for instant help while playing!'
-                            };
-                            
-                            const defaultConversations = {
-                                [EVERYTHING_ELSE_ID]: {
-                                    id: EVERYTHING_ELSE_ID,
-                                    title: 'Everything else',
-                                    messages: [welcomeMessage],
-                                    insights: {},
-                                    insightsOrder: [],
-                                    context: {},
-                                    createdAt: Date.now(),
-                                    isPinned: false
+                            // Use welcomeMessageService to ensure proper welcome message handling
+                            try {
+                                await welcomeMessageService.ensureInserted(EVERYTHING_ELSE_ID, 'Everything else');
+                                console.log('🔧 [useChat] Welcome message ensured for new user');
+                                
+                                // Reload conversations to get the welcome message that was just created
+                                const reloadResult = await secureConversationService.loadConversations();
+                                if (reloadResult.success && reloadResult.conversations) {
+                                    const conversations = reloadResult.conversations as any;
+                                    const order = Object.keys(conversations);
+                                    const activeId = EVERYTHING_ELSE_ID;
+                                    
+                                    setChatState({
+                                        conversations,
+                                        order,
+                                        activeId
+                                    });
+                                    console.log('🔧 [useChat] Conversations reloaded with welcome message');
                                 }
-                            };
-                            
-                                setChatState({
-                                    conversations: defaultConversations,
-                                    order: [EVERYTHING_ELSE_ID],
-                                    activeId: EVERYTHING_ELSE_ID
-                                });
-                                
-                                // Mark that we've added a welcome message this session
-                                sessionStorage.setItem('otakon_welcome_added_session', 'true');
-                                
-                                // Try to save the default conversation with welcome message
-                                try {
-                                    await secureConversationService.saveConversation(
-                                        EVERYTHING_ELSE_ID,
-                                        'Everything Else',
-                                        [welcomeMessage],
-                                        [],
-                                        {},
-                                        undefined,
-                                        false,
-                                        true // force overwrite
-                                    );
-                                    console.log('🔧 [useChat] Default conversation with welcome message saved to database');
-                                } catch (saveError) {
-                                    console.error('Failed to save default conversation with welcome message:', saveError);
-                                    // Continue anyway - conversation is in memory
-                                }
-                                
-                                console.log('💬 [useChat] Default conversation with welcome message created');
-                            } else {
-                                console.log('🔧 [useChat] Welcome message already added this session, skipping default conversation creation');
+                            } catch (welcomeError) {
+                                console.error('Failed to ensure welcome message for new user:', welcomeError);
                             }
                         } else {
                             // Loading failed, try to restore from localStorage as fallback
@@ -1542,8 +1510,6 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                 rawTextResponse += chunk;
                 const displayText = rawTextResponse
                     .replace(comprehensiveTagCleanupRegex, '')
-                    .replace(/^[\s`"\]\}]*/, '') // Remove leading brackets/quotes
-                    .replace(/[\s`"\]\}]*$/, '') // Remove trailing brackets/quotes
                     .trim();
                 updateMessageInConversation(activeConversationId, modelMessageId, msg => ({ ...msg, text: displayText }));
                 
@@ -1857,11 +1823,6 @@ export const useChat = (isHandsFreeMode: boolean, refreshUsage?: () => Promise<v
                 .replace(hintTagsRegex, '') // Remove hint tags for display
                 .replace(comprehensiveTagCleanupRegex, '')
                 .replace(/^Game Progress: \d+%\s*$/m, '')
-                .replace(/^[\s`"\]\}]*/, '')
-                .replace(/[\s`"\]\}]*$/, '')
-                // Remove these problematic lines that filter out formatting:
-                // .replace(/\s+/g, ' ') // Clean up multiple spaces
-                // .replace(/\n\s*\n/g, '\n') // Clean up multiple newlines
                 .trim();
             
             // Removed smartNotificationService - not used
@@ -2457,8 +2418,6 @@ Progress: ${conversation.progress}%`;
                         // Clean the content before displaying to hide tags and IDs
                         const cleanedContent = fullContent
                             .replace(comprehensiveTagCleanupRegex, '')
-                            .replace(/^[\s`"\]\}]*/, '') // Remove leading brackets/quotes
-                            .replace(/[\s`"\]\}]*$/, '') // Remove trailing brackets/quotes
                             .trim();
                         updateConversation(conversationId, convo => {
                             const existingInsight = convo.insights?.[insightId];

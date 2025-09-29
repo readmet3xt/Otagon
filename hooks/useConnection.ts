@@ -83,9 +83,14 @@ export const useConnection = (onMessage: MessageHandler) => {
                     console.log("Partner PC client has disconnected.");
                     // Update status to disconnected when partner disconnects
                     if (statusRef.current === ConnectionStatus.CONNECTED) {
-                        setStatus(ConnectionStatus.DISCONNECTED);
-                        setError(null);
-                        console.log("🔄 Connection status updated to DISCONNECTED");
+                        // Add a small delay to prevent immediate disconnection after successful connection
+                        setTimeout(() => {
+                            if (statusRef.current === ConnectionStatus.CONNECTED) {
+                                setStatus(ConnectionStatus.DISCONNECTED);
+                                setError(null);
+                                console.log("🔄 Connection status updated to DISCONNECTED");
+                            }
+                        }, 1000);
                     }
                 } else if (data.type === 'waiting_for_client') {
                     console.log("Waiting for PC client to connect...");

@@ -245,10 +245,17 @@ export class TierService {
         return { isOnTrial: false, trialExpiresAt: null, daysRemaining: null };
       }
 
+      // Get the current auth user ID from Supabase
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) {
+        console.warn('No authenticated user found');
+        return { isOnTrial: false, trialExpiresAt: null, daysRemaining: null };
+      }
+
       const { data: user } = await supabase
         .from('users')
         .select('tier, trial_expires_at')
-        .eq('auth_user_id', userId)
+        .eq('auth_user_id', authUser.id) // Use the auth user ID, not the internal user ID
         .single();
 
       if (!user?.trial_expires_at || user.tier !== 'pro') {
@@ -275,12 +282,19 @@ export class TierService {
    */
   async upgradeToPro(userId: string): Promise<boolean> {
     try {
+      // Get the current auth user ID from Supabase
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) {
+        console.warn('No authenticated user found');
+        return false;
+      }
+
       const { error } = await supabase
         .from('users')
         .update({
           tier: 'pro'
         })
-        .eq('auth_user_id', userId);
+        .eq('auth_user_id', authUser.id); // Use the auth user ID, not the internal user ID
 
       if (error) {
         console.error('Error upgrading to Pro:', error);
@@ -300,12 +314,19 @@ export class TierService {
    */
   async upgradeToVanguardPro(userId: string): Promise<boolean> {
     try {
+      // Get the current auth user ID from Supabase
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) {
+        console.warn('No authenticated user found');
+        return false;
+      }
+
       const { error } = await supabase
         .from('users')
         .update({
           tier: 'vanguard_pro'
         })
-        .eq('auth_user_id', userId);
+        .eq('auth_user_id', authUser.id); // Use the auth user ID, not the internal user ID
 
       if (error) {
         console.error('Error upgrading to Vanguard Pro:', error);
@@ -330,10 +351,17 @@ export class TierService {
         return null;
       }
 
+      // Get the current auth user ID from Supabase
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) {
+        console.warn('No authenticated user found');
+        return null;
+      }
+
       const { data, error } = await supabase
         .from('users')
         .select('tier')
-        .eq('auth_user_id', userId)
+        .eq('auth_user_id', authUser.id) // Use the auth user ID, not the internal user ID
         .single();
 
       if (error) {

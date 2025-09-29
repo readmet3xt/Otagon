@@ -534,7 +534,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
             const result = await waitlistService.addToWaitlist(email, 'landing_page');
             
             if (result.success) {
-                setSubmitMessage('Thanks for joining! We\'ll email you when access is ready.');
+                if (result.alreadyExists) {
+                    setSubmitMessage('You\'re already on our waitlist! We\'ll email you when access is ready.');
+                } else {
+                    setSubmitMessage('Thanks for joining! We\'ll email you when access is ready.');
+                }
                 setEmail('');
             } else {
                 setSubmitMessage(result.error || 'Failed to join waitlist. Please try again.');
