@@ -22,7 +22,7 @@ const ProFeature: React.FC<{ title: string; description: string; children: React
 );
 
 const proFeatures = [
-  { title: "Massively Increased Limits", description: "Get 1,583 text and 328 image queries every month, so you never have to hold back.", icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-[#FFAB40]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> },
+  { title: "Massively Increased Limits", description: "Get 1,583 Text | 328 Image Queries every month, so you never have to hold back.", icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-[#FFAB40]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> },
   { title: "Batch Screenshot Capture", description: "Instantly capture the last 5 minutes of gameplay with a hotkey. Otagon analyzes all key moments for a comprehensive summary.", icon: <KeyboardIcon className="w-6 h-6 text-[#FFAB40]" /> },
   { title: "In-Depth Insight Tabs", description: "Go beyond a simple hint. Get detailed breakdowns on lore, character builds, missed items, and more.", icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-[#FFAB40]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" /></svg> },
   { title: "Hands-Free Mode", description: "Stay focused on the action. Get hints read aloud to you without ever looking away from your screen.", icon: <HandsFreeIcon isActive={true} className="w-6 h-6 text-[#FFAB40]" /> },
@@ -51,8 +51,8 @@ const ProFeaturesSplashScreen: React.FC<ProFeaturesSplashScreenProps> = ({ onCom
           <p className="text-sm sm:text-base md:text-lg text-neutral-300 leading-relaxed px-2">Unlock exclusive features for the ultimate gaming companion.</p>
 
           <div className="w-full max-w-sm mx-auto p-1 bg-gradient-to-r from-[#2E2E2E]/60 to-[#1A1A1A]/60 backdrop-blur-sm rounded-2xl flex items-center gap-1 mt-4 sm:mt-6">
-            <button onClick={() => setActiveTab('pro')} className={`w-1/2 py-2 sm:py-3 text-xs sm:text-sm font-bold rounded-xl transition-all duration-300 ${activeTab === 'pro' ? 'bg-gradient-to-r from-[#424242] to-[#2A2A2A] text-white shadow-lg' : 'text-neutral-300 hover:bg-neutral-700/50'}`}>Pro</button>
-            <button onClick={() => setActiveTab('vanguard')} className={`w-1/2 py-2 sm:py-3 text-xs sm:text-sm font-bold rounded-xl transition-all duration-300 ${activeTab === 'vanguard' ? 'bg-gradient-to-r from-[#424242] to-[#2A2A2A] text-white shadow-lg' : 'text-neutral-300 hover:bg-neutral-700/50'}`}>Pro Vanguard</button>
+            <button onClick={() => setActiveTab('pro')} className={`w-1/2 py-2 sm:py-3 text-xs sm:text-sm font-bold rounded-xl transition-all duration-300 active:scale-95 ${activeTab === 'pro' ? 'bg-gradient-to-r from-[#424242] to-[#2A2A2A] text-white shadow-lg' : 'text-neutral-300 hover:bg-neutral-700/50'}`}>Pro</button>
+            <button onClick={() => setActiveTab('vanguard')} className={`w-1/2 py-2 sm:py-3 text-xs sm:text-sm font-bold rounded-xl transition-all duration-300 active:scale-95 ${activeTab === 'vanguard' ? 'bg-gradient-to-r from-[#424242] to-[#2A2A2A] text-white shadow-lg' : 'text-neutral-300 hover:bg-neutral-700/50'}`}>Pro Vanguard</button>
           </div>
         </div>
       </header>
@@ -81,13 +81,13 @@ const ProFeaturesSplashScreen: React.FC<ProFeaturesSplashScreenProps> = ({ onCom
         <div className="w-full max-w-lg mx-auto space-y-2 sm:space-y-3">
           <button
             onClick={activeTab === 'pro' ? onUpgrade : onUpgradeToVanguard}
-            className="w-full bg-gradient-to-r from-neutral-700 to-neutral-600 hover:from-neutral-600 hover:to-neutral-500 text-white font-bold py-3 sm:py-4 px-6 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg text-sm sm:text-base flex items-center justify-center"
+            className="w-full bg-gradient-to-r from-neutral-700 to-neutral-600 hover:from-neutral-600 hover:to-neutral-500 text-white font-bold py-3 sm:py-4 px-6 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95 text-sm sm:text-base flex items-center justify-center"
           >
             {activeTab === 'pro' ? 'Upgrade to Pro' : 'Upgrade to Vanguard'}
           </button>
           <button
             onClick={onComplete}
-            className="w-full text-neutral-300 font-medium py-2 sm:py-3 px-4 rounded-xl hover:bg-neutral-800/50 transition-all duration-300 hover:scale-105 text-xs sm:text-sm flex items-center justify-center"
+            className="w-full text-neutral-300 font-medium py-2 sm:py-3 px-4 rounded-xl hover:bg-neutral-800/50 transition-all duration-300 hover:scale-105 active:scale-95 text-xs sm:text-sm flex items-center justify-center"
           >
             Maybe Later
           </button>

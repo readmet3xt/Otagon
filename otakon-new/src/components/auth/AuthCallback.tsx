@@ -233,7 +233,7 @@ const AuthCallback: React.FC<AuthCallbackProps> = ({ onAuthSuccess, onAuthError 
                 window.history.replaceState({}, document.title, window.location.pathname);
                 onAuthError('User cancelled authentication');
               }}
-              className="bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] hover:from-[#D42A2A] hover:to-[#C87A1A] text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 hover:scale-105"
+              className="bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] hover:from-[#D42A2A] hover:to-[#C87A1A] text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 hover:scale-105 active:scale-95"
             >
               Return to Login
             </button>
@@ -244,7 +244,7 @@ const AuthCallback: React.FC<AuthCallbackProps> = ({ onAuthSuccess, onAuthError 
                   window.history.replaceState({}, document.title, window.location.pathname);
                   onAuthError('Email confirmation expired - show resend option');
                 }}
-                className="bg-gradient-to-r from-[#4F46E5] to-[#7C3AED] hover:from-[#4338CA] hover:to-[#6D28D9] text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 hover:scale-105"
+                className="bg-gradient-to-r from-[#4F46E5] to-[#7C3AED] hover:from-[#4338CA] hover:to-[#6D28D9] text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 hover:scale-105 active:scale-95"
               >
                 Request New Confirmation Email
               </button>

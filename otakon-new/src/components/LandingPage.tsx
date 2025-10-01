@@ -75,12 +75,12 @@ const FeatureIcon = ({ icon }: { icon: 'eye' | 'bookmark' | 'network' | 'mic' | 
     }
 
     return (
-        <div className="relative flex h-48 w-full items-center justify-center rounded-2xl p-6 group hover:scale-105 transition-all duration-500" style={{ pointerEvents: 'auto' }}>
+        <div className="relative flex h-full w-full items-center justify-center rounded-2xl p-4 group hover:scale-105 transition-all duration-500" style={{ pointerEvents: 'auto' }}>
             <div className="absolute inset-0 bg-gradient-to-r from-[#E53A3A]/20 to-[#D98C1F]/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ pointerEvents: 'none' }}></div>
             <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="80"
-                height="80"
+                width="60"
+                height="60"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="url(#feature-gradient)"
@@ -101,14 +101,14 @@ const FeatureIcon = ({ icon }: { icon: 'eye' | 'bookmark' | 'network' | 'mic' | 
     );
 };
 
-const Feature = React.memo(({ title, description, icon, reverse = false }: { title: React.ReactNode, description: string, icon: 'eye' | 'bookmark' | 'network' | 'mic' | 'insights' | 'cpu', reverse?: boolean }) => (
-        <div className={`flex flex-col md:flex-row items-center gap-12 md:gap-20 group ${reverse ? 'md:flex-row-reverse' : ''}`}>
-            <div className="md:w-1/2 w-full animate-fade-slide-up group-hover:scale-105 transition-transform duration-500">
+const Feature = React.memo(({ title, description, icon }: { title: React.ReactNode, description: string, icon: 'eye' | 'bookmark' | 'network' | 'mic' | 'insights' | 'cpu' }) => (
+        <div className="flex flex-col items-center text-center group p-6 rounded-2xl hover:bg-gradient-to-br hover:from-neutral-800/20 hover:to-neutral-900/20 transition-all duration-500">
+            <div className="w-20 h-20 mb-6 animate-fade-slide-up group-hover:scale-110 transition-transform duration-500">
                 <FeatureIcon icon={icon} />
             </div>
-            <div className="md:w-1/2 w-full text-center md:text-left animate-fade-slide-up group-hover:translate-x-2 transition-transform duration-500">
-                <h3 className="text-4xl font-bold tracking-tight text-white mb-6 flex items-center justify-center md:justify-start leading-tight group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-[#E53A3A] group-hover:to-[#D98C1F] transition-all duration-500">{title}</h3>
-                <p className="text-xl text-neutral-300 leading-relaxed group-hover:text-neutral-200 transition-colors duration-500">{description}</p>
+            <div className="animate-fade-slide-up group-hover:translate-y-1 transition-transform duration-500">
+                <h3 className="text-2xl lg:text-3xl font-bold tracking-tight text-white mb-4 leading-tight group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-[#E53A3A] group-hover:to-[#D98C1F] transition-all duration-500">{title}</h3>
+                <p className="text-lg text-neutral-300 leading-relaxed group-hover:text-neutral-200 transition-colors duration-500">{description}</p>
             </div>
         </div>
     ));
@@ -345,7 +345,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                             </div>
                         </div>
 
-                        <div className="relative mx-auto my-16 w-full max-w-2xl h-auto rounded-3xl bg-black/60 backdrop-blur-xl p-2 shadow-2xl border-2 border-[#424242]/40 group hover:border-[#E53A3A]/60 transition-all duration-500 hover:shadow-2xl hover:shadow-[#E53A3A]/25 hover:scale-105">
+                        <div className="relative mx-auto my-16 w-full max-w-2xl h-auto rounded-3xl bg-black/60 backdrop-blur-xl p-2 shadow-2xl border-2 border-[#424242]/40 group hover:border-[#E53A3A]/60 transition-all duration-500 hover:shadow-2xl hover:shadow-[#E53A3A]/25 hover:scale-105" style={{
+                            animation: 'glow 2s ease-in-out infinite alternate',
+                            boxShadow: '0 0 20px rgba(229, 58, 58, 0.3), 0 0 40px rgba(229, 58, 58, 0.1), 0 0 60px rgba(229, 58, 58, 0.1)'
+                        }}>
                             <div className="bg-transparent rounded-2xl p-6 space-y-6">
                                 {/* User Prompt */}
                                 <div className="flex justify-end">
@@ -380,14 +383,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
               placeholder="Enter your email address"
               required
               disabled={isSubmitting}
-                                        className="w-full bg-gradient-to-r from-[#1C1C1C] to-[#0A0A0A] border-2 border-neutral-800/60 rounded-xl py-4 sm:py-5 px-4 sm:px-6 text-white placeholder-neutral-400 focus:outline-none focus:ring-4 focus:ring-[#FFAB40]/30 focus:border-[#FFAB40] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-base sm:text-lg backdrop-blur-sm group-hover:border-neutral-700/80"
+                                        className="w-full bg-gradient-to-r from-[#1C1C1C] to-[#0A0A0A] border-2 border-neutral-800/60 rounded-xl py-4 sm:py-5 px-4 sm:px-6 text-white placeholder-neutral-400 focus:outline-none focus:ring-4 focus:ring-[#FFAB40]/30 focus:border-[#FFAB40] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-base sm:text-lg backdrop-blur-sm hover:border-neutral-700/80"
               aria-label="Email for waitlist"
             />
                                 </div>
                                 <button
               type="submit"
               disabled={isSubmitting}
-                                    className="bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white font-bold py-4 sm:py-5 px-8 sm:px-12 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-[#E53A3A]/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 text-base sm:text-lg relative overflow-hidden group min-h-[56px]"
+                                    className="bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white font-bold py-4 sm:py-5 px-8 sm:px-12 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-[#E53A3A]/30 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100 text-base sm:text-lg relative overflow-hidden group min-h-[56px]"
                                 >
                                     <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                     <span className="relative z-10">
@@ -509,8 +512,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                             <h2 className="text-5xl md:text-6xl font-bold tracking-tight text-white mb-6 leading-tight" style={{ lineHeight: '1.3', minHeight: '1.3em', height: 'auto', paddingTop: '0.5rem', paddingBottom: '0.5rem' }}>Your All-in-One Gaming Assistant</h2>
                             <p className="text-xl text-neutral-300 mt-6 leading-relaxed">Features built to enhance your gameplay, not spoil it</p>
                         </div>
-                        <div className="space-y-20 md:space-y-28">
-                           <Feature
+                        {/* Desktop: 2x2 Grid, Mobile: Vertical Stack */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+                            <Feature
                                 title="Instant Contextual Hints"
                                 description="Our context-aware AI vision doesn't just see a game—it understands your moment. Get guidance on puzzles, lore, and boss strategies, all without spoilers."
                                 icon="eye"
@@ -519,19 +523,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                                 title="Seamless PC-to-Mobile Sync"
                                 description="Connect your desktop and phone for the ultimate uninterrupted experience. A single hotkey is all it takes to get help without ever minimizing your game."
                                 icon="network"
-                                reverse={true}
                             />
-                           <Feature
+                            <Feature
                                 title="Your Personal Gaming Hub"
                                 description="Track your entire gaming journey. The Otaku Diary is your private journal, the Wishlist manages your backlog, and Automatic Progress Tracking organizes your game chats and story progress."
                                 icon="bookmark"
                             />
-
                             <Feature
                                 title={<>Go Pro for the Ultimate Edge<ProBadge /></>}
                                 description="Unlock In-Depth Insight Tabs to auto-generate a wiki for your game, use Hands-Free Voice Responses for ultimate immersion, and capture more details with Batch Screenshot Capture."
                                 icon="insights"
-                                reverse={true}
                             />
                         </div>
                     </div>
@@ -750,8 +751,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                                     <span className="text-lg text-neutral-300">/month</span>
                                 </div>
                                 <ul className="space-y-3 mb-8">
-                                    <FeatureListItem>25 Image Queries/month</FeatureListItem>
-                                    <FeatureListItem>55 Text Queries/month</FeatureListItem>
+                                    <FeatureListItem>55 Text | 25 Image Queries/month</FeatureListItem>
+                                    <FeatureListItem>Knowledge till January 2025</FeatureListItem>
                                     <FeatureListItem>Standard AI Model</FeatureListItem>
                                     <FeatureListItem>PC-to-Mobile Sync</FeatureListItem>
                                     <FeatureListItem>Progress Tracking</FeatureListItem>
@@ -813,8 +814,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                                 </div>
                                 <ul className="space-y-3 mb-8">
                                     <FeatureListItem>Everything in Free, plus:</FeatureListItem>
-                                    <FeatureListItem>328 Image Queries/month</FeatureListItem>
-                                    <FeatureListItem>1,583 Text Queries/month</FeatureListItem>
+                                    <FeatureListItem>1,583 Text | 328 Image Queries/month</FeatureListItem>
+                                    <FeatureListItem>Up-to-date knowledge using web search</FeatureListItem>
                                     <FeatureListItem>Advanced AI Model</FeatureListItem>
                                     <FeatureListItem>In-Depth Insight Tabs</FeatureListItem>
                                     <FeatureListItem>Hands-Free Voice Response</FeatureListItem>
@@ -960,7 +961,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                                     href="https://www.linkedin.com/in/readmetxt/"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center justify-center gap-3 bg-gradient-to-r from-[#0077B5] to-[#005885] hover:from-[#005885] hover:to-[#004066] text-white font-semibold py-4 px-8 rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl hover:shadow-[#0077B5]/25"
+                                    className="inline-flex items-center justify-center gap-3 bg-gradient-to-r from-[#0077B5] to-[#005885] hover:from-[#005885] hover:to-[#004066] text-white font-semibold py-4 px-8 rounded-xl transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl hover:shadow-[#0077B5]/25"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
                                         <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
@@ -973,7 +974,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
 
                                 <a
                                     href="mailto:support@otagon.app"
-                                    className="inline-flex items-center justify-center gap-3 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] hover:from-[#D42A2A] hover:to-[#C87A1A] text-white font-semibold py-4 px-8 rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl hover:shadow-[#E53A3A]/25"
+                                    className="inline-flex items-center justify-center gap-3 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] hover:from-[#D42A2A] hover:to-[#C87A1A] text-white font-semibold py-4 px-8 rounded-xl transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl hover:shadow-[#E53A3A]/25"
                                 >
                                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
@@ -994,11 +995,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                         {/* Footer Links - Above logo on mobile, right side on desktop */}
                         <div className="flex items-center gap-6 text-sm font-medium text-neutral-400 order-1 md:order-2">
                            <a href="#pricing" onClick={handleScrollTo('pricing')} className="hover:text-white transition-colors">Pricing</a>
-                           <button type="button" onClick={onOpenAbout} className="hover:text-white transition-colors">About</button>
-                           <button type="button" onClick={onOpenTerms} className="hover:text-white transition-colors">Terms</button>
-                           <button type="button" onClick={onOpenPrivacy} className="hover:text-white transition-colors">Privacy</button>
-                           <button type="button" onClick={onOpenRefund} className="hover:text-white transition-colors">Refund Policy</button>
-                           <button type="button" onClick={() => setShowContactModal(true)} className="hover:text-white transition-colors">Contact Us</button>
+                           <button type="button" onClick={onOpenAbout} className="hover:text-white transition-colors active:scale-95">About</button>
+                           <button type="button" onClick={onOpenTerms} className="hover:text-white transition-colors active:scale-95">Terms</button>
+                           <button type="button" onClick={onOpenPrivacy} className="hover:text-white transition-colors active:scale-95">Privacy</button>
+                           <button type="button" onClick={onOpenRefund} className="hover:text-white transition-colors active:scale-95">Refund Policy</button>
+                           <button type="button" onClick={() => setShowContactModal(true)} className="hover:text-white transition-colors active:scale-95">Contact Us</button>
             </div>
             
                         {/* Logo and Branding - Centered on mobile, left side on desktop */}

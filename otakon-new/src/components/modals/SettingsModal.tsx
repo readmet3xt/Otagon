@@ -63,7 +63,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         <div className="flex space-x-1 bg-surface/50 rounded-lg p-1">
           <button
             onClick={() => setActiveTab('account')}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors active:scale-95 ${
               activeTab === 'account'
                 ? 'bg-primary text-white'
                 : 'text-text-muted hover:text-text-primary'
@@ -73,7 +73,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('tier')}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors active:scale-95 ${
               activeTab === 'tier'
                 ? 'bg-primary text-white'
                 : 'text-text-muted hover:text-text-primary'
@@ -83,7 +83,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('preferences')}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors active:scale-95 ${
               activeTab === 'preferences'
                 ? 'bg-primary text-white'
                 : 'text-text-muted hover:text-text-primary'

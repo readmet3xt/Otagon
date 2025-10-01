@@ -197,17 +197,17 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
                             <button
                                 onClick={handleConnectClick}
                                 disabled={isConnecting || !isCodeValid}
-                                className={`w-full font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl transition-all duration-300 flex items-center justify-center text-sm sm:text-base ${
+                                className={`w-full font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl transition-all duration-300 flex items-center justify-center text-sm sm:text-base active:scale-95 ${
                                     isCodeValid && !isConnecting 
-                                        ? 'bg-gradient-to-r from-neutral-700 to-neutral-600 hover:from-neutral-600 hover:to-neutral-500 text-white hover:scale-105 hover:shadow-lg' 
-                                        : 'bg-gradient-to-r from-neutral-600 to-neutral-500 text-neutral-300 cursor-not-allowed'
+                                        ? 'bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] hover:from-[#D42A2A] hover:to-[#C87A1A] text-white hover:scale-105 hover:shadow-xl hover:shadow-[#E53A3A]/25' 
+                                        : 'bg-gradient-to-r from-neutral-600 to-neutral-500 text-neutral-300 cursor-not-allowed opacity-25'
                                 }`}
                             >
                                 {isConnecting ? "Connecting..." : "Sync Now"}
                             </button>
                             <button
                                 onClick={onSkipConnection}
-                                className="w-full bg-gradient-to-r from-neutral-700 to-neutral-600 hover:from-neutral-600 hover:to-neutral-500 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg flex items-center justify-center text-sm sm:text-base"
+                                className="w-full bg-gradient-to-r from-neutral-700 to-neutral-600 hover:from-neutral-600 hover:to-neutral-500 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95 flex items-center justify-center text-sm sm:text-base"
                             >
                                 Skip for Now
                             </button>
@@ -226,7 +226,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
             ) : (
                 <button
                     onClick={handleNext}
-                    className="w-full bg-gradient-to-r from-neutral-700 to-neutral-600 hover:from-neutral-600 hover:to-neutral-500 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg flex items-center justify-center"
+                    className="w-full bg-gradient-to-r from-neutral-700 to-neutral-600 hover:from-neutral-600 hover:to-neutral-500 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95 flex items-center justify-center"
                 >
                     Next
                 </button>

@@ -100,13 +100,13 @@ const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({ className = '' }) =
         <div className="flex items-center space-x-2">
           <button
             onClick={handleInstallClick}
-            className="px-3 py-1.5 bg-gradient-to-r from-[#E53A3A] to-[#FFAB40] text-white text-xs font-medium rounded-lg hover:from-[#D42A2A] hover:to-[#C87A1A] transition-all duration-200"
+            className="px-3 py-1.5 bg-gradient-to-r from-[#E53A3A] to-[#FFAB40] text-white text-xs font-medium rounded-lg hover:from-[#D42A2A] hover:to-[#C87A1A] transition-all duration-200 active:scale-95"
           >
             Install
           </button>
           <button
             onClick={handleDismiss}
-            className="text-neutral-400 hover:text-white transition-colors"
+            className="text-neutral-400 hover:text-white transition-colors active:scale-95"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>

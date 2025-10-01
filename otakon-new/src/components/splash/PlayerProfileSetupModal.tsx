@@ -120,7 +120,7 @@ export const PlayerProfileSetupModal: React.FC<PlayerProfileSetupModalProps> = (
               <button
                 key={option.value}
                 onClick={() => handleOptionSelect(currentStepData.field, option.value)}
-                className={`w-full p-4 text-left rounded-lg border-2 transition-all duration-200 ${
+                className={`w-full p-4 text-left rounded-lg border-2 transition-all duration-200 active:scale-95 ${
                   profile[currentStepData.field] === option.value
                     ? 'border-[#E53A3A] bg-[#E53A3A]/10 text-white'
                     : 'border-neutral-600 bg-neutral-800/50 text-neutral-300 hover:border-neutral-500 hover:bg-neutral-700/50'
@@ -138,14 +138,14 @@ export const PlayerProfileSetupModal: React.FC<PlayerProfileSetupModalProps> = (
               {currentStep > 0 && (
                 <button
                   onClick={handleBack}
-                  className="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-lg transition-colors"
+                  className="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-lg transition-colors active:scale-95"
                 >
                   Back
                 </button>
               )}
               <button
                 onClick={onSkip}
-                className="px-4 py-2 text-neutral-400 hover:text-white transition-colors"
+                className="px-4 py-2 text-neutral-400 hover:text-white transition-colors active:scale-95"
               >
                 Skip
               </button>
@@ -153,7 +153,7 @@ export const PlayerProfileSetupModal: React.FC<PlayerProfileSetupModalProps> = (
             
             <button
               onClick={handleNext}
-              className="px-6 py-2 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] hover:from-[#D42A2A] hover:to-[#C87A1A] text-white font-semibold rounded-lg transition-all duration-200 hover:scale-105"
+              className="px-6 py-2 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] hover:from-[#D42A2A] hover:to-[#C87A1A] text-white font-semibold rounded-lg transition-all duration-200 hover:scale-105 active:scale-95"
             >
               {currentStep === steps.length - 1 ? 'Complete Setup' : 'Next'}
             </button>

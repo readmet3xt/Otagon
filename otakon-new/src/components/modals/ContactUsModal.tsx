@@ -93,7 +93,7 @@ const ContactUsModal: React.FC<ContactUsModalProps> = ({ isOpen, onClose }) => {
           </div>
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 text-[#A3A3A3] hover:text-white transition-colors rounded-lg hover:bg-white/10 z-20"
+            className="absolute top-4 right-4 p-2 text-[#A3A3A3] hover:text-white transition-colors rounded-lg hover:bg-white/10 active:scale-95 z-20"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -215,14 +215,14 @@ const ContactUsModal: React.FC<ContactUsModalProps> = ({ isOpen, onClose }) => {
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-6 py-3 text-[#CFCFCF] hover:text-white transition-colors rounded-lg hover:bg-white/10"
+                  className="px-6 py-3 text-[#CFCFCF] hover:text-white transition-colors rounded-lg hover:bg-white/10 active:scale-95"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={!isFormValid || isSubmitting}
-                  className="px-6 py-3 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white font-medium rounded-lg hover:from-[#D42A2A] hover:to-[#C87A1A] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 hover:shadow-lg"
+                  className="px-6 py-3 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white font-medium rounded-lg hover:from-[#D42A2A] hover:to-[#C87A1A] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 hover:shadow-lg active:scale-95 disabled:active:scale-100"
                 >
                   {isSubmitting ? (
                     <div className="flex items-center space-x-2">
