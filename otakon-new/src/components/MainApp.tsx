@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Conversation, UserTier } from '../types';
+import { User, Conversation } from '../types';
 import { UserService } from '../services/userService';
 import { ConversationService } from '../services/conversationService';
 import { authService } from '../services/authService';
@@ -82,13 +82,6 @@ const MainApp: React.FC<MainAppProps> = ({
     }
   };
 
-  const handleTierChange = (newTier: UserTier) => {
-    if (user) {
-      const updatedUser = { ...user, tier: newTier };
-      setUser(updatedUser);
-      UserService.setCurrentUser(updatedUser);
-    }
-  };
 
   const handleTrialStart = () => {
     // Refresh user data to reflect trial status
@@ -242,7 +235,6 @@ const MainApp: React.FC<MainAppProps> = ({
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         user={user}
-        onTierChange={handleTierChange}
       />
     </div>
   );
