@@ -4,11 +4,12 @@
   "description": "Load testing suite for Otagon app",
   "main": "load-test.js",
   "scripts": {
-    "test:light": "node load-test.js light",
-    "test:medium": "node load-test.js medium", 
-    "test:heavy": "node load-test.js heavy",
-    "test:extreme": "node load-test.js extreme",
-    "test:all": "npm run test:light && npm run test:medium && npm run test:heavy"
+    "test:light": "node simple-load-test.js light",
+    "test:medium": "node simple-load-test.js medium", 
+    "test:heavy": "node simple-load-test.js heavy",
+    "test:extreme": "node simple-load-test.js extreme",
+    "test:all": "npm run test:light && npm run test:medium && npm run test:heavy",
+    "test:real": "node load-test.js medium"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.38.0",
