@@ -55,19 +55,21 @@ class OnboardingService {
 
   async getOnboardingStatus(userId: string): Promise<OnboardingStatus | null> {
     try {
+      console.log('🎯 [OnboardingService] Getting onboarding status for user:', userId);
       const { data, error } = await supabase.rpc('get_user_onboarding_status', {
         p_user_id: userId
       });
 
       if (error) {
-        console.error('Error getting onboarding status:', error);
+        console.error('🎯 [OnboardingService] Error getting onboarding status:', error);
         return null;
       }
 
+      console.log('🎯 [OnboardingService] Onboarding status data:', data);
       return data;
 
     } catch (error) {
-      console.error('Error getting onboarding status:', error);
+      console.error('🎯 [OnboardingService] Error getting onboarding status:', error);
       return null;
     }
   }

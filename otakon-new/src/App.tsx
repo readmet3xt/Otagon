@@ -173,9 +173,40 @@ function App() {
             
             if (shouldProcessOnboarding && 
                 (appStateRef.current.onboardingStatus === 'login' || appStateRef.current.onboardingStatus === 'initial')) {
-              // Check if user has completed onboarding
-              if (newAuthState.user.onboardingCompleted || (newAuthState.user.hasSeenSplashScreens && newAuthState.user.hasProfileSetup)) {
+              // Use the onboarding service to determine the next step
+              console.log('🎯 [App] Determining onboarding status for user...');
+              console.log('🎯 [App] User authUserId:', newAuthState.user.authUserId);
+              console.log('🎯 [App] User onboarding flags:', {
+                onboardingCompleted: newAuthState.user.onboardingCompleted,
+                hasSeenSplashScreens: newAuthState.user.hasSeenSplashScreens,
+                hasSeenHowToUse: newAuthState.user.hasSeenHowToUse,
+                hasSeenFeaturesConnected: newAuthState.user.hasSeenFeaturesConnected,
+                hasSeenProFeatures: newAuthState.user.hasSeenProFeatures,
+                pcConnected: newAuthState.user.pcConnected,
+                pcConnectionSkipped: newAuthState.user.pcConnectionSkipped
+              });
+              
+              // Determine the next onboarding step using the service
+              const nextStep = await onboardingService.getNextOnboardingStep(newAuthState.user.authUserId);
+              console.log('🎯 [App] Next onboarding step:', nextStep);
+              
+              // Additional check: If user has been active recently and has seen splash screens,
+              // they should be considered as having completed onboarding
+              const hasAppActivity = newAuthState.user.lastActivity && 
+                (Date.now() - newAuthState.user.lastActivity) < (30 * 24 * 60 * 60 * 1000); // 30 days
+              
+              const shouldSkipOnboarding = nextStep === 'complete' || 
+                (hasAppActivity && newAuthState.user.hasSeenSplashScreens);
+              
+              if (shouldSkipOnboarding) {
                 console.log('🎯 [App] User onboarding completed, going to main app');
+                console.log('🎯 [App] Skip onboarding details:', {
+                  nextStep,
+                  hasAppActivity,
+                  hasSeenSplashScreens: newAuthState.user.hasSeenSplashScreens,
+                  lastActivity: newAuthState.user.lastActivity,
+                  timeSinceActivity: newAuthState.user.lastActivity ? (Date.now() - newAuthState.user.lastActivity) / (1000 * 60 * 60 * 24) : 'N/A'
+                });
                 if (isMounted) {
                   setAppState(prev => ({ 
                     ...prev, 
@@ -185,17 +216,6 @@ function App() {
                   }));
                 }
               } else {
-                console.log('🎯 [App] User needs onboarding, determining next step...');
-                console.log('🎯 [App] User authUserId:', newAuthState.user.authUserId);
-                console.log('🎯 [App] User onboarding status:', {
-                  onboardingCompleted: newAuthState.user.onboardingCompleted,
-                  hasSeenSplashScreens: newAuthState.user.hasSeenSplashScreens,
-                  hasProfileSetup: newAuthState.user.hasProfileSetup
-                });
-                
-                // Determine the next onboarding step
-                const nextStep = await onboardingService.getNextOnboardingStep(newAuthState.user.authUserId);
-                console.log('🎯 [App] Next onboarding step:', nextStep);
                 
                 if (isMounted) {
                   console.log('🎯 [App] Setting app state with onboarding status:', nextStep);

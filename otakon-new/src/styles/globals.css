@@ -7,11 +7,34 @@
 html, body {
   background-color: #0F0F0F;
   background: linear-gradient(135deg, #0F0F0F 0%, #111111 50%, #0F0F0F 100%);
+  /* Improve mobile scrolling */
+  -webkit-overflow-scrolling: touch;
+  /* Prevent zoom on input focus on iOS */
+  -webkit-text-size-adjust: 100%;
 }
 
 /* Smooth transitions for all elements */
 * {
   transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Mobile-specific improvements */
+@media (max-width: 640px) {
+  /* Prevent zoom on input focus */
+  input[type="text"], input[type="email"], input[type="password"], textarea {
+    font-size: 16px;
+  }
+  
+  /* Improve touch targets */
+  button, .btn-icon {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Better spacing for mobile */
+  .conversation-tab {
+    padding: 12px;
+  }
 }
 
 /* Hide scrollbar utility */
@@ -21,6 +44,45 @@ html, body {
 }
 .scrollbar-hide::-webkit-scrollbar { 
   display: none;  /* Safari and Chrome */
+}
+
+/* Spin animation for logo */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Credit Modal Animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out;
 }
 
 /* Enhanced Design System Variables */
@@ -408,13 +470,13 @@ html, body {
   
 }
 
-/* Hide native scrollbars globally */
-* {
+/* Hide native scrollbars globally, except for custom-scrollbar elements */
+*:not(.custom-scrollbar) {
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
 }
 
-*::-webkit-scrollbar {
+*:not(.custom-scrollbar)::-webkit-scrollbar {
   display: none !important;
 }
 

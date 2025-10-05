@@ -188,8 +188,8 @@ export class AuthService {
             usage: {
               textCount: tableData.usage_data?.textCount || 0,
               imageCount: tableData.usage_data?.imageCount || 0,
-              textLimit: tableData.usage_data?.textLimit || TIER_LIMITS[tableData.tier as UserTier]?.text || 0,
-              imageLimit: tableData.usage_data?.imageLimit || TIER_LIMITS[tableData.tier as UserTier]?.image || 0,
+              textLimit: TIER_LIMITS[tableData.tier as UserTier]?.text || 0,
+              imageLimit: TIER_LIMITS[tableData.tier as UserTier]?.image || 0,
               totalRequests: tableData.usage_data?.totalRequests || 0,
               lastReset: tableData.usage_data?.lastReset || Date.now(),
               tier: tableData.tier as UserTier,
@@ -203,6 +203,7 @@ export class AuthService {
             createdAt: tableData.created_at ? new Date(tableData.created_at).getTime() : Date.now(),
             updatedAt: tableData.updated_at ? new Date(tableData.updated_at).getTime() : Date.now(),
           };
+
 
           this.updateAuthState({ user, isLoading: false, error: null });
           return;
@@ -235,8 +236,8 @@ export class AuthService {
           usage: {
             textCount: userData.text_count || 0,
             imageCount: userData.image_count || 0,
-            textLimit: userData.text_limit || TIER_LIMITS[userData.tier as UserTier]?.text || 0,
-            imageLimit: userData.image_limit || TIER_LIMITS[userData.tier as UserTier]?.image || 0,
+            textLimit: TIER_LIMITS[userData.tier as UserTier]?.text || 0,
+            imageLimit: TIER_LIMITS[userData.tier as UserTier]?.image || 0,
             totalRequests: 0,
             lastReset: Date.now(),
             tier: userData.tier as UserTier,
@@ -250,6 +251,18 @@ export class AuthService {
           createdAt: userData.created_at ? new Date(userData.created_at).getTime() : Date.now(),
           updatedAt: userData.updated_at ? new Date(userData.updated_at).getTime() : Date.now(),
         };
+
+        console.log('🔐 [AuthService] User onboarding flags:', {
+          hasProfileSetup: user.hasProfileSetup,
+          hasSeenSplashScreens: user.hasSeenSplashScreens,
+          hasSeenHowToUse: user.hasSeenHowToUse,
+          hasSeenFeaturesConnected: user.hasSeenFeaturesConnected,
+          hasSeenProFeatures: user.hasSeenProFeatures,
+          pcConnected: user.pcConnected,
+          pcConnectionSkipped: user.pcConnectionSkipped,
+          onboardingCompleted: user.onboardingCompleted
+        });
+
 
         this.updateAuthState({ user, isLoading: false, error: null });
       } else {

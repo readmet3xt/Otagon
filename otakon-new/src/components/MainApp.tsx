@@ -6,10 +6,13 @@ import { authService } from '../services/authService';
 import Sidebar from './layout/Sidebar';
 import ChatInterface from './features/ChatInterface';
 import SettingsModal from './modals/SettingsModal';
-import TrialBanner from './trial/TrialBanner';
-import Button from './ui/Button';
+import CreditModal from './modals/CreditModal';
+import ConnectionModal from './modals/ConnectionModal';
 import Logo from './ui/Logo';
+import CreditIndicator from './ui/CreditIndicator';
 import { LoadingSpinner } from './ui/LoadingSpinner';
+import { ConnectionStatus } from '../types';
+import { connect, disconnect } from '../services/websocketService';
 
 interface MainAppProps {
   onLogout: () => void;
@@ -19,6 +22,10 @@ interface MainAppProps {
   onOpenRefund?: () => void;
   onOpenContact?: () => void;
   onOpenTerms?: () => void;
+  connectionStatus?: ConnectionStatus;
+  connectionError?: string | null;
+  onConnect?: (code: string) => void;
+  onDisconnect?: () => void;
 }
 
 const MainApp: React.FC<MainAppProps> = ({
@@ -29,6 +36,10 @@ const MainApp: React.FC<MainAppProps> = ({
   onOpenRefund: _onOpenRefund,
   onOpenContact: _onOpenContact,
   onOpenTerms: _onOpenTerms,
+  connectionStatus: propConnectionStatus,
+  connectionError: propConnectionError,
+  onConnect: propOnConnect,
+  onDisconnect: propOnDisconnect,
 }) => {
   const [user, setUser] = useState<User | null>(null);
   const [conversations, setConversations] = useState({});
@@ -36,6 +47,14 @@ const MainApp: React.FC<MainAppProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [creditModalOpen, setCreditModalOpen] = useState(false);
+  const [connectionModalOpen, setConnectionModalOpen] = useState(false);
+  const [connectionCode, setConnectionCode] = useState<string | null>(null);
+  const [lastSuccessfulConnection, setLastSuccessfulConnection] = useState<Date | null>(null);
+  
+  // Use props for connection state, fallback to local state if not provided
+  const connectionStatus = propConnectionStatus ?? ConnectionStatus.DISCONNECTED;
+  const connectionError = propConnectionError ?? null;
 
   useEffect(() => {
     // Get user from AuthService instead of UserService
@@ -51,7 +70,76 @@ const MainApp: React.FC<MainAppProps> = ({
 
     const active = ConversationService.getActiveConversation();
     setActiveConversation(active);
+
+    // Auto-create a conversation if none exists
+    if (!active && Object.keys(userConversations).length === 0) {
+      const newConversation = ConversationService.createConversation();
+      ConversationService.addConversation(newConversation);
+      ConversationService.setActiveConversation(newConversation.id);
+      
+      setConversations(ConversationService.getConversations());
+      setActiveConversation(newConversation);
+    }
   }, []);
+
+  // WebSocket message handling (only if using local websocket)
+  useEffect(() => {
+    if (propOnConnect) {
+      // Using App.tsx connection state, no local websocket needed
+      return;
+    }
+
+    const handleWebSocketMessage = (data: any) => {
+      console.log('📨 WebSocket message received:', data);
+      
+      if (data.type === 'screenshot') {
+        // Handle screenshot received from PC client
+        if (data.imageData && activeConversation) {
+          // Add screenshot to current conversation
+          const screenshotMessage = {
+            id: `msg_${Date.now()}`,
+            content: data.text || 'Screenshot captured',
+            role: 'user' as const,
+            timestamp: Date.now(),
+            imageUrl: data.imageData, // Base64 image data
+          };
+          
+          ConversationService.addMessage(activeConversation.id, screenshotMessage);
+          setConversations(ConversationService.getConversations());
+          
+          // If in automatic mode, send to AI immediately
+          if (data.processImmediate !== false) {
+            // TODO: Send to AI for processing
+            console.log('🤖 Auto-processing screenshot with AI');
+          }
+        }
+      }
+    };
+
+    const handleWebSocketError = (error: string) => {
+      console.error('WebSocket error:', error);
+    };
+
+    const handleWebSocketOpen = () => {
+      console.log('🔌 WebSocket connected');
+    };
+
+    const handleWebSocketClose = () => {
+      console.log('🔌 WebSocket disconnected');
+    };
+
+    // Check if we have a stored connection code and try to reconnect
+    const storedCode = localStorage.getItem('otakon_connection_code');
+    if (storedCode) {
+      setConnectionCode(storedCode);
+      connect(storedCode, handleWebSocketOpen, handleWebSocketMessage, handleWebSocketError, handleWebSocketClose);
+    }
+
+    // Cleanup on unmount
+    return () => {
+      disconnect();
+    };
+  }, [activeConversation, propOnConnect]);
 
   const handleNewConversation = () => {
     const newConversation = ConversationService.createConversation();
@@ -83,14 +171,67 @@ const MainApp: React.FC<MainAppProps> = ({
   };
 
 
-  const handleTrialStart = () => {
-    // Refresh user data to reflect trial status
-    const currentUser = authService.getCurrentUser();
-    if (currentUser) {
-      setUser(currentUser);
-      // Also sync to UserService for compatibility
-      UserService.setCurrentUser(currentUser);
+
+  const handleCreditModalOpen = () => {
+    setCreditModalOpen(true);
+  };
+
+  const handleCreditModalClose = () => {
+    setCreditModalOpen(false);
+  };
+
+  const handleUpgrade = () => {
+    // TODO: Implement upgrade functionality
+    console.log('Upgrade clicked');
+  };
+
+  const handleConnectionModalOpen = () => {
+    setConnectionModalOpen(true);
+  };
+
+  const handleConnectionModalClose = () => {
+    setConnectionModalOpen(false);
+  };
+
+  const handleConnect = (code: string) => {
+    setConnectionCode(code);
+    
+    // Store connection code for persistence
+    localStorage.setItem('otakon_connection_code', code);
+    
+    // Use prop handler if available, otherwise use local websocket
+    if (propOnConnect) {
+      propOnConnect(code);
+    } else {
+      // Fallback to local websocket connection
+      connect(
+        code,
+        () => {
+          setLastSuccessfulConnection(new Date());
+          localStorage.setItem('otakonHasConnectedBefore', 'true');
+        },
+        (data: any) => {
+          console.log('Connection message:', data);
+        },
+        (error: string) => {
+          console.error('Connection error:', error);
+        },
+        () => {
+          console.log('Connection closed');
+        }
+      );
     }
+  };
+
+  const handleDisconnect = () => {
+    if (propOnDisconnect) {
+      propOnDisconnect();
+    } else {
+      disconnect();
+    }
+    setConnectionCode(null);
+    setLastSuccessfulConnection(null);
+    localStorage.removeItem('otakon_connection_code');
   };
 
   const handleSendMessage = async (message: string, imageUrl?: string) => {
@@ -150,11 +291,11 @@ const MainApp: React.FC<MainAppProps> = ({
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="chat-header-fixed bg-gradient-to-r from-surface/50 to-background/50 backdrop-blur-sm border-b border-surface-light/20 p-6 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+        <header className="chat-header-fixed bg-gradient-to-r from-surface/50 to-background/50 backdrop-blur-sm border-b border-surface-light/20 px-3 py-3 sm:px-4 sm:py-4 lg:px-6 lg:py-6 flex items-center justify-between">
+          <div className="flex items-center space-x-3 sm:space-x-4">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden btn-icon p-3 text-text-muted hover:text-text-primary"
+              className="lg:hidden btn-icon p-3 text-text-muted hover:text-text-primary min-h-[44px] min-w-[44px] flex items-center justify-center"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -163,70 +304,79 @@ const MainApp: React.FC<MainAppProps> = ({
             
             <div className="flex items-center space-x-3">
               <Logo size="sm" />
-              <span className="text-2xl font-bold text-text-primary">Otagon</span>
+              <span className="text-lg sm:text-xl lg:text-2xl font-bold text-text-primary">Otagon</span>
             </div>
           </div>
 
-          <div className="flex items-center space-x-6">
-            <div className="text-sm text-text-muted bg-surface/30 px-4 py-2 rounded-xl">
-              {user.tier.toUpperCase()} • {user.usage.textCount}/{user.usage.textLimit} messages
-            </div>
+          <div className="flex items-center space-x-2 sm:space-x-3 lg:space-x-4">
+            <CreditIndicator 
+              user={user} 
+              onClick={handleCreditModalOpen}
+            />
             
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={() => setSettingsOpen(true)}
-                className="btn-icon p-3 text-text-muted hover:text-text-primary transition-colors"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </button>
-              
-              <button
-                onClick={onLogout}
-                className="btn-icon p-3 text-text-muted hover:text-red-400 transition-colors"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-              </button>
-            </div>
+            <button
+              onClick={handleConnectionModalOpen}
+              className={`btn-icon p-3 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                connectionStatus === ConnectionStatus.CONNECTED 
+                  ? 'text-green-400 hover:text-green-300' 
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+              title={connectionStatus === ConnectionStatus.CONNECTED ? 'PC Connected - Click to manage' : 'Connect to PC'}
+            >
+              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </button>
+            
+            <button
+              onClick={() => setSettingsOpen(true)}
+              className="btn-icon p-3 text-text-muted hover:text-text-primary transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+            >
+              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
+            
+            <button
+              onClick={onLogout}
+              className="btn-icon p-3 text-text-muted hover:text-red-400 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+            >
+              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </button>
           </div>
         </header>
 
         {/* Chat Area */}
-        <div className="flex-1">
-          {/* Trial Banner */}
-          <div className="px-6 pt-6">
-            <TrialBanner
-              userTier={user.tier}
-              onTrialStart={handleTrialStart}
-            />
-          </div>
-          
-          {activeConversation ? (
-            <ChatInterface
-              conversation={activeConversation}
-              onSendMessage={handleSendMessage}
-              isLoading={isLoading}
-            />
-          ) : (
-            <div className="h-full flex items-center justify-center">
-              <div className="text-center">
-                <Logo size="lg" className="mx-auto mb-8 opacity-50" />
-                <h2 className="text-4xl font-bold text-text-primary mb-4">
-                  Welcome to Otagon
-                </h2>
-                <p className="text-xl text-text-muted mb-8 max-w-md mx-auto">
-                  Start a new conversation to begin your gaming adventure
-                </p>
-                <Button onClick={handleNewConversation} variant="primary" className="btn-primary-enhanced">
-                  Start New Chat
-                </Button>
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* AdSense Placeholder Banner - Always show for free users */}
+          {user.tier === 'free' && (
+            <div className="px-3 sm:px-4 lg:px-6 pt-3 sm:pt-4 lg:pt-6 flex-shrink-0">
+              <div className="bg-gradient-to-r from-gray-100/10 to-gray-200/10 border border-gray-300/20 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
+                <div className="flex items-center justify-center h-16 sm:h-20 lg:h-24 bg-gray-100/20 rounded-lg border-2 border-dashed border-gray-300/40">
+                  <div className="text-center">
+                    <div className="text-gray-400 text-xs sm:text-sm font-medium mb-1">Advertisement</div>
+                    <div className="text-gray-300 text-xs">AdSense Placeholder</div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
+
+          
+            {/* Chat Interface - Takes remaining space */}
+            <div className="flex-1 min-h-0">
+              <ChatInterface
+                conversation={activeConversation}
+                onSendMessage={handleSendMessage}
+                isLoading={isLoading}
+                isPCConnected={connectionStatus === ConnectionStatus.CONNECTED}
+                onRequestConnect={handleConnectionModalOpen}
+                userTier={user.tier}
+              />
+            </div>
         </div>
       </div>
 
@@ -235,6 +385,26 @@ const MainApp: React.FC<MainAppProps> = ({
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         user={user}
+      />
+
+      {/* Credit Modal */}
+      <CreditModal
+        isOpen={creditModalOpen}
+        onClose={handleCreditModalClose}
+        onUpgrade={handleUpgrade}
+        user={user}
+      />
+
+      {/* Connection Modal */}
+      <ConnectionModal
+        isOpen={connectionModalOpen}
+        onClose={handleConnectionModalClose}
+        onConnect={handleConnect}
+        onDisconnect={handleDisconnect}
+        status={connectionStatus}
+        error={connectionError}
+        connectionCode={connectionCode}
+        lastSuccessfulConnection={lastSuccessfulConnection}
       />
     </div>
   );

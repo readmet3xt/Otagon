@@ -4,7 +4,22 @@ import { STORAGE_KEYS, DEFAULT_CONVERSATION_TITLE } from '../constants';
 
 export class ConversationService {
   static getConversations(): Conversations {
-    return StorageService.get(STORAGE_KEYS.CONVERSATIONS, {});
+    const conversations = StorageService.get(STORAGE_KEYS.CONVERSATIONS, {}) as Conversations;
+    
+    // Migration: Update existing "General Chat" titles to "Everything else" (one-time migration)
+    let needsUpdate = false;
+    Object.values(conversations).forEach((conv: Conversation) => {
+      if (conv.title === 'General Chat') {
+        conv.title = 'Everything else';
+        needsUpdate = true;
+      }
+    });
+    
+    if (needsUpdate) {
+      this.setConversations(conversations);
+    }
+    
+    return conversations;
   }
 
   static setConversations(conversations: Conversations): void {

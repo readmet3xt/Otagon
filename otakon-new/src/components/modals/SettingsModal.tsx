@@ -3,6 +3,7 @@ import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import { User, UserTier } from '../../types';
 import { authService } from '../../services/authService';
+import TrialBanner from '../trial/TrialBanner';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -22,6 +23,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const handleLogout = async () => {
     await authService.signOut();
     onClose();
+  };
+
+  const handleTrialStart = () => {
+    // Refresh user data to reflect trial status
+    const currentUser = authService.getCurrentUser();
+    if (currentUser) {
+      // The parent component should handle updating the user state
+      // For now, we'll just close the modal to refresh the UI
+      onClose();
+    }
   };
 
 
@@ -135,6 +146,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         {/* Tier Tab */}
         {activeTab === 'tier' && (
           <div className="space-y-4">
+            {/* Trial Banner */}
+            <TrialBanner
+              userTier={user.tier}
+              onTrialStart={handleTrialStart}
+            />
+            
             <div className="bg-surface/50 rounded-lg p-4">
               <h3 className="text-lg font-semibold text-text-primary mb-4">Current Usage</h3>
               

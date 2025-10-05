@@ -17,10 +17,11 @@ const Logo: React.FC<LogoProps> = ({ className = '', size = 'md' }) => {
     <img
       src="/images/Dragon Circle Logo Design.png"
       alt="Otagon Logo"
-      className={`${sizeClasses[size]} ${className}`}
+      className={`${sizeClasses[size]} ${className} animate-bounce`}
       style={{ 
         filter: 'drop-shadow(0 0 24px rgba(255, 140, 0, 0.3))',
-        objectFit: 'contain'
+        objectFit: 'contain',
+        animation: 'bounce 2s infinite, spin 6s linear infinite'
       }}
     />
   );
