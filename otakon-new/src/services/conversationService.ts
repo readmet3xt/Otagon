@@ -5,20 +5,20 @@ import { STORAGE_KEYS, DEFAULT_CONVERSATION_TITLE, USER_TIERS } from '../constan
 // ✅ SCALABILITY: Tier-based limits for conversations and messages
 const TIER_CONVERSATION_LIMITS = {
   [USER_TIERS.FREE]: 10,      // Free users: 10 conversations max
-  [USER_TIERS.PRO]: 50,       // Pro users: 50 conversations max  
-  [USER_TIERS.VANGUARD_PRO]: 100, // Vanguard Pro: 100 conversations max
+  [USER_TIERS.PRO]: 100,      // Pro users: 100 conversations max  
+  [USER_TIERS.VANGUARD_PRO]: 100, // Vanguard Pro: 100 conversations max (same as Pro)
 } as const;
 
 const TIER_MESSAGE_LIMITS = {
   [USER_TIERS.FREE]: 20,      // Free users: 20 messages per conversation
-  [USER_TIERS.PRO]: 100,      // Pro users: 100 messages per conversation
-  [USER_TIERS.VANGUARD_PRO]: 200, // Vanguard Pro: 200 messages per conversation
+  [USER_TIERS.PRO]: 200,      // Pro users: 200 messages per conversation
+  [USER_TIERS.VANGUARD_PRO]: 200, // Vanguard Pro: 200 messages per conversation (same as Pro)
 } as const;
 
 const TIER_TOTAL_MESSAGE_LIMITS = {
   [USER_TIERS.FREE]: 200,     // Free users: 200 total messages
-  [USER_TIERS.PRO]: 1000,     // Pro users: 1000 total messages
-  [USER_TIERS.VANGUARD_PRO]: 2000, // Vanguard Pro: 2000 total messages
+  [USER_TIERS.PRO]: 2000,     // Pro users: 2000 total messages
+  [USER_TIERS.VANGUARD_PRO]: 2000, // Vanguard Pro: 2000 total messages (same as Pro)
 } as const;
 
 export class ConversationService {
