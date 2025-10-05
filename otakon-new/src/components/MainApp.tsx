@@ -303,7 +303,7 @@ const MainApp: React.FC<MainAppProps> = ({
             </button>
             
             <div className="flex items-center space-x-3">
-              <Logo size="sm" />
+              <Logo size="sm" bounce={false} />
               <span className="text-lg sm:text-xl lg:text-2xl font-bold text-text-primary">Otagon</span>
             </div>
           </div>
