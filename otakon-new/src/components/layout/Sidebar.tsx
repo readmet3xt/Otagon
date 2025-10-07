@@ -1,12 +1,12 @@
 import React, { useState, useRef } from 'react';
-import { Conversations, Conversation } from '../../types';
+import { Conversation } from '../../types';
 import ContextMenu from '../ui/ContextMenu';
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  conversations: Conversations;
-  activeConversation: Conversation | null;
+  conversations: Conversation[];
+  activeConversationId: string;
   onConversationSelect: (id: string) => void;
   onDeleteConversation: (id: string) => void;
   onPinConversation?: (id: string) => void;
@@ -18,7 +18,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   isOpen,
   onClose,
   conversations,
-  activeConversation,
+  activeConversationId,
   onConversationSelect,
   onDeleteConversation,
   onPinConversation,
@@ -40,8 +40,12 @@ const Sidebar: React.FC<SidebarProps> = ({
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const longPressDelay = 1500; // 1.5 seconds
 
-  // Sort conversations: pinned first, then by creation date
-  const conversationList = Object.values(conversations).sort((a, b) => {
+  // Separate game tabs from "Everything Else"
+  const gameTabs = conversations.filter(c => c.id !== 'everything-else');
+  const everythingElseTab = conversations.find(c => c.id === 'everything-else');
+  
+  // Sort game tabs: pinned first, then by creation date
+  const sortedGameTabs = gameTabs.sort((a, b) => {
     // Pinned conversations first
     if (a.isPinned && !b.isPinned) return -1;
     if (!a.isPinned && b.isPinned) return 1;
@@ -144,65 +148,114 @@ const Sidebar: React.FC<SidebarProps> = ({
           {/* Conversation List */}
           <div className="flex-1 overflow-y-auto px-4 sm:px-6 pb-4 sm:pb-6 custom-scrollbar" style={{ minHeight: 0 }}>
             <div className="space-y-2 sm:space-y-3 pt-2">
-              {conversationList.map((conversation) => {
-                const isEverythingElse = conversation.title === 'Everything else';
-                return (
-                  <div
-                    key={conversation.id}
-                    className={`conversation-tab cursor-pointer transition-all duration-300 relative ${
-                      activeConversation?.id === conversation.id
-                        ? 'conversation-tab-active'
-                        : ''
-                    }`}
-                    onClick={() => onConversationSelect(conversation.id)}
-                    onContextMenu={(e) => handleContextMenu(e, conversation.id)}
-                    onMouseDown={() => handleLongPressStart(conversation.id)}
-                    onMouseUp={handleLongPressEnd}
-                    onMouseLeave={handleLongPressEnd}
-                    onTouchStart={() => handleLongPressStart(conversation.id)}
-                    onTouchEnd={handleLongPressEnd}
-                    style={{ zIndex: 1 }}
-                  >
-                    <div className="flex items-center justify-between p-4 min-h-[60px]">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2">
-                          <p className="text-xs font-medium text-text-primary truncate">
-                            {conversation.title}
-                          </p>
-                          {conversation.isPinned && (
-                            <svg className="w-3 h-3 text-primary-dark flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                            </svg>
-                          )}
-                        </div>
-                        <p className="text-xs text-text-muted mt-1">
-                          {conversation.messages.length} messages
+              {/* Everything Else Tab */}
+              {everythingElseTab && (
+                <div
+                  key={everythingElseTab.id}
+                  className={`conversation-tab cursor-pointer transition-all duration-300 relative ${
+                    activeConversationId === everythingElseTab.id
+                      ? 'conversation-tab-active'
+                      : ''
+                  }`}
+                  onClick={() => onConversationSelect(everythingElseTab.id)}
+                  onContextMenu={(e) => handleContextMenu(e, everythingElseTab.id)}
+                  onMouseDown={() => handleLongPressStart(everythingElseTab.id)}
+                  onMouseUp={handleLongPressEnd}
+                  onMouseLeave={handleLongPressEnd}
+                  onTouchStart={() => handleLongPressStart(everythingElseTab.id)}
+                  onTouchEnd={handleLongPressEnd}
+                  style={{ zIndex: 1 }}
+                >
+                  <div className="flex items-center justify-between p-4 min-h-[60px]">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2">
+                        <p className="text-xs font-medium text-text-primary truncate">
+                          {everythingElseTab.title}
+                        </p>
+                        {everythingElseTab.isPinned && (
+                          <svg className="w-3 h-3 text-primary-dark flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                          </svg>
+                        )}
+                      </div>
+                      <p className="text-xs text-text-muted mt-1">
+                        {everythingElseTab.messages.length} messages
+                      </p>
+                      <p className="text-xs text-text-muted">
+                        {new Date(everythingElseTab.updatedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Divider */}
+              {sortedGameTabs.length > 0 && (
+                <div className="border-t border-gray-700 my-2"></div>
+              )}
+              
+              {/* Games Section Header */}
+              {sortedGameTabs.length > 0 && (
+                <div className="px-2 py-1">
+                  <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Games</h3>
+                </div>
+              )}
+              
+              {/* Game Tabs */}
+              {sortedGameTabs.map((conversation) => (
+                <div
+                  key={conversation.id}
+                  className={`conversation-tab cursor-pointer transition-all duration-300 relative ${
+                    activeConversationId === conversation.id
+                      ? 'conversation-tab-active'
+                      : ''
+                  }`}
+                  onClick={() => onConversationSelect(conversation.id)}
+                  onContextMenu={(e) => handleContextMenu(e, conversation.id)}
+                  onMouseDown={() => handleLongPressStart(conversation.id)}
+                  onMouseUp={handleLongPressEnd}
+                  onMouseLeave={handleLongPressEnd}
+                  onTouchStart={() => handleLongPressStart(conversation.id)}
+                  onTouchEnd={handleLongPressEnd}
+                  style={{ zIndex: 1 }}
+                >
+                  <div className="flex items-center justify-between p-4 min-h-[60px]">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2">
+                        <p className="text-xs font-medium text-text-primary truncate">
+                          {conversation.title}
+                        </p>
+                        {conversation.isPinned && (
+                          <svg className="w-3 h-3 text-primary-dark flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                          </svg>
+                        )}
+                      </div>
+                      <p className="text-xs text-text-muted mt-1">
+                        {conversation.messages.length} messages
                       </p>
                       <p className="text-xs text-text-muted">
                         {new Date(conversation.updatedAt).toLocaleDateString()}
                       </p>
                     </div>
                     
-                    {/* Delete button - only show for non-Everything else conversations */}
-                    {!isEverythingElse && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteConversation(conversation.id);
-                        }}
-                        className="opacity-0 group-hover:opacity-100 p-3 text-text-muted hover:text-red-400 transition-all duration-200 rounded-lg hover:bg-red-500/10 active:scale-95 min-h-[44px] min-w-[44px] flex items-center justify-center"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    )}
+                    {/* Delete button for game tabs */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteConversation(conversation.id);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-3 text-text-muted hover:text-red-400 transition-all duration-200 rounded-lg hover:bg-red-500/10 active:scale-95 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
-                );
-              })}
+              ))}
               
-              {conversationList.length === 0 && (
+              {conversations.length === 0 && (
                 <div className="text-center py-12">
                   <div className="w-16 h-16 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -227,10 +280,10 @@ const Sidebar: React.FC<SidebarProps> = ({
         onPin={handlePin}
         onUnpin={handleUnpin}
         onClearConversation={handleClearConversation}
-        canDelete={contextMenu.conversationId ? conversations[contextMenu.conversationId]?.title !== 'Everything else' : true}
-        canPin={contextMenu.conversationId ? conversations[contextMenu.conversationId]?.title !== 'Everything else' : true}
-        isPinned={contextMenu.conversationId ? conversations[contextMenu.conversationId]?.isPinned : false}
-        isEverythingElse={contextMenu.conversationId ? conversations[contextMenu.conversationId]?.title === 'Everything else' : false}
+        canDelete={contextMenu.conversationId ? conversations.find(c => c.id === contextMenu.conversationId)?.title !== 'Everything else' : true}
+        canPin={contextMenu.conversationId ? conversations.find(c => c.id === contextMenu.conversationId)?.title !== 'Everything else' : true}
+        isPinned={contextMenu.conversationId ? conversations.find(c => c.id === contextMenu.conversationId)?.isPinned : false}
+        isEverythingElse={contextMenu.conversationId ? conversations.find(c => c.id === contextMenu.conversationId)?.title === 'Everything else' : false}
       />
     </>
   );

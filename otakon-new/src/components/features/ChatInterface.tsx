@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Conversation } from '../../types';
-import Button from '../ui/Button';
+import { Conversation, User, ActiveSessionState } from '../../types';
 import ManualUploadToggle from '../ui/ManualUploadToggle';
 import ScreenshotButton from '../ui/ScreenshotButton';
 import DownloadIcon from '../ui/DownloadIcon';
@@ -8,10 +7,19 @@ import UserAvatar from '../ui/UserAvatar';
 import AIAvatar from '../ui/AIAvatar';
 import TypingIndicator from '../ui/TypingIndicator';
 import SendIcon from '../ui/SendIcon';
+import { ActiveSessionToggle } from '../ui/ActiveSessionToggle';
+import SuggestedPrompts from './SuggestedPrompts';
+import { SubTabs } from './SubTabs';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 // import { LoadingSpinner } from '../ui/LoadingSpinner';
 
 interface ChatInterfaceProps {
   conversation: Conversation | null;
+  user: User;
+  session: ActiveSessionState;
+  onToggleSession: () => void;
+  onCreateGameTab: (gameInfo: { gameTitle: string; genre?: string; }) => void;
   onSendMessage: (message: string, imageUrl?: string) => void;
   isLoading: boolean;
   isPCConnected?: boolean;
@@ -24,6 +32,8 @@ interface ChatInterfaceProps {
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
   conversation,
+  session,
+  onToggleSession,
   onSendMessage,
   isLoading,
   isPCConnected = false,
@@ -37,6 +47,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isFocused, setIsFocused] = useState(false);
+  const [suggestedPrompts, setSuggestedPrompts] = useState<string[]>([]);
+  const [activeSubTabId, setActiveSubTabId] = useState<string>('chat');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -91,9 +103,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     setMessage('');
     setImageFile(null);
     setImagePreview(null);
+    setSuggestedPrompts([]); // Clear suggestions when sending a message
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const handleSuggestedPromptClick = (prompt: string) => {
+    setMessage(prompt);
+    // Auto-submit the suggested prompt
+    onSendMessage(prompt);
+    setSuggestedPrompts([]); // Clear suggestions
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -143,16 +163,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
-  // Function to download all images in a group
-  const downloadAllImages = (images: string[]) => {
-    if (!images || images.length === 0) return;
-    
-    images.forEach((imageSrc, index) => {
-      setTimeout(() => {
-        downloadImage(imageSrc, index);
-      }, index * 100); // Small delay between downloads to avoid browser blocking
-    });
-  };
 
   // Show loading state if no conversation yet
   if (!conversation) {
@@ -182,74 +192,104 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   return (
     <div className="h-full bg-background flex flex-col overflow-hidden">
-      {/* Messages Area - Only this should scroll */}
+      {/* Chat Header with Active Session Toggle */}
+      {conversation && conversation.id !== 'everything-else' && (
+        <div className="flex-shrink-0 p-4 border-b border-gray-700 flex justify-between items-center">
+          <h2 className="text-xl font-bold text-white">{conversation.title}</h2>
+          <ActiveSessionToggle
+            isActive={session.isActive && session.currentGameId === conversation.id}
+            onClick={onToggleSession}
+          />
+        </div>
+      )}
+      
+      {/* Render Sub-Tabs for game conversations */}
+      {conversation && conversation.subtabs && conversation.id !== 'everything-else' && (
+        <SubTabs
+          subtabs={conversation.subtabs}
+          activeSubTabId={activeSubTabId}
+          onSelectSubTab={setActiveSubTabId}
+        />
+      )}
+      
+      {/* Content Area - Only this should scroll */}
       <div className={`flex-1 p-6 space-y-6 min-h-0 ${conversation.messages.length > 0 ? 'overflow-y-auto custom-scrollbar' : 'overflow-y-hidden'}`}>
-        {conversation.messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <p className="text-text-muted text-lg">
-                Start a conversation with <span className="bg-gradient-to-r from-[#FF4D4D] to-[#FFAB40] bg-clip-text text-transparent font-semibold">Otagon</span>
-              </p>
-              <p className="text-text-muted text-sm mt-2">Ask me anything about gaming, strategies, or tips.</p>
-            </div>
-          </div>
-        ) : (
-          conversation.messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
-            <div
-              className={`max-w-[80%] ${
-                msg.role === 'user'
-                  ? 'chat-message-user'
-                  : 'chat-message-ai'
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                {/* Avatar */}
-                <div className="flex-shrink-0">
-                  {msg.role === 'user' ? (
-                    <UserAvatar className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0 text-[#D98C1F]" />
-                  ) : (
-                    <AIAvatar className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0" />
-                  )}
-                </div>
-                
-                {/* Message content */}
-                <div className="flex-1 min-w-0">
-              {msg.imageUrl && (
-                <div className="chat-image-container mb-3">
-                  <img
-                    src={msg.imageUrl}
-                    alt="Uploaded"
-                    className="w-full max-w-sm rounded-lg"
-                  />
-                  {/* Download button for single image */}
-                  <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-[#424242]/30">
-                    <button
-                      onClick={() => downloadImage(msg.imageUrl!, 0)}
-                      className="flex items-center justify-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 border border-[#FF4D4D] text-[#FF4D4D] text-xs sm:text-sm font-medium rounded-lg hover:bg-[#FF4D4D] hover:text-white transition-all duration-300 hover:scale-105"
-                      title="Download this screenshot"
-                    >
-                      <DownloadIcon className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                      <span className="hidden sm:inline">Download</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-                  {msg.role === 'ai' && (
-                    <p className="text-base font-bold text-white mb-2">Hint:</p>
-                  )}
-                  <p className="text-[#F5F5F5] whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-                  <p className="text-xs text-[#A3A3A3] mt-3">
-                    {new Date(msg.timestamp).toLocaleTimeString()}
-                  </p>
-                </div>
+        {/* Conditional Rendering of Content */}
+        {activeSubTabId === 'chat' ? (
+          conversation.messages.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <p className="text-text-muted text-lg">
+                  Start a conversation with <span className="bg-gradient-to-r from-[#FF4D4D] to-[#FFAB40] bg-clip-text text-transparent font-semibold">Otagon</span>
+                </p>
+                <p className="text-text-muted text-sm mt-2">Ask me anything about gaming, strategies, or tips.</p>
               </div>
             </div>
+          ) : (
+            conversation.messages.map((msg) => (
+              <div
+                key={msg.id}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-[80%] ${
+                    msg.role === 'user'
+                      ? 'chat-message-user'
+                      : 'chat-message-ai'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    {/* Avatar */}
+                    <div className="flex-shrink-0">
+                      {msg.role === 'user' ? (
+                        <UserAvatar className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0 text-[#D98C1F]" />
+                      ) : (
+                        <AIAvatar className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0" />
+                      )}
+                    </div>
+                    
+                    {/* Message content */}
+                    <div className="flex-1 min-w-0">
+                      {msg.imageUrl && (
+                        <div className="chat-image-container mb-3">
+                          <img
+                            src={msg.imageUrl}
+                            alt="Uploaded"
+                            className="w-full max-w-sm rounded-lg"
+                          />
+                          {/* Download button for single image */}
+                          <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-[#424242]/30">
+                            <button
+                              onClick={() => downloadImage(msg.imageUrl!, 0)}
+                              className="flex items-center justify-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 border border-[#FF4D4D] text-[#FF4D4D] text-xs sm:text-sm font-medium rounded-lg hover:bg-[#FF4D4D] hover:text-white transition-all duration-300 hover:scale-105"
+                              title="Download this screenshot"
+                            >
+                              <DownloadIcon className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                              <span className="hidden sm:inline">Download</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      {msg.role === 'assistant' && (
+                        <p className="text-base font-bold text-white mb-2">Hint:</p>
+                      )}
+                      <p className="text-[#F5F5F5] whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                      <p className="text-xs text-[#A3A3A3] mt-3">
+                        {new Date(msg.timestamp).toLocaleTimeString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
+          )
+        ) : (
+          // Render the content of the selected insight tab
+          <div className="prose prose-invert max-w-none">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {conversation.subtabs?.find(st => st.id === activeSubTabId)?.content || 'Loading content...'}
+            </ReactMarkdown>
           </div>
-          ))
         )}
         
         {isLoading && (
@@ -301,8 +341,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       )}
 
-      {/* Floating Chat Input Section with Gradient Border */}
-      <div className="flex-shrink-0 bg-background/95 backdrop-blur-sm">
+      {/* Hide chat input when not on the chat sub-tab */}
+      {activeSubTabId === 'chat' && (
+        <>
+          {/* Floating Chat Input Section with Gradient Border */}
+          <div className="flex-shrink-0 bg-background/95 backdrop-blur-sm">
         <div className="mx-3 my-3 rounded-2xl p-px transition-all duration-300" style={{
           background: isFocused 
             ? 'linear-gradient(135deg, #FF4D4D, #FFAB40)'
@@ -312,6 +355,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             background: 'linear-gradient(135deg, #1A1A1A 0%, #0F0F0F 100%)',
             boxShadow: '0 0 20px rgba(255, 77, 77, 0.3), 0 0 40px rgba(255, 171, 64, 0.2), 0 0 60px rgba(0, 0, 0, 0.1)'
           }}>
+          
+          {/* Suggested Prompts */}
+          <SuggestedPrompts
+            prompts={suggestedPrompts}
+            onPromptClick={handleSuggestedPromptClick}
+            isLoading={isLoading}
+          />
           
           {/* Textarea Container - Grows upward */}
           <div className="relative mb-2">
@@ -396,6 +446,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           </div>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 };

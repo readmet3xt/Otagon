@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { User, Conversation, Conversations } from '../types';
-import { UserService } from '../services/userService';
+import { User, Conversation } from '../types';
 import { ConversationService } from '../services/conversationService';
-import { authService } from '../services/authService';
 import Sidebar from './layout/Sidebar';
 import ChatInterface from './features/ChatInterface';
 import SettingsModal from './modals/SettingsModal';
@@ -14,6 +12,10 @@ import { LoadingSpinner } from './ui/LoadingSpinner';
 import SettingsContextMenu from './ui/SettingsContextMenu';
 import { ConnectionStatus } from '../types';
 import { connect, disconnect } from '../services/websocketService';
+import { aiService } from '../services/aiService';
+import { useActiveSession } from '../hooks/useActiveSession';
+import { gameTabService } from '../services/gameTabService';
+import { errorRecoveryService } from '../services/errorRecoveryService';
 
 interface MainAppProps {
   onLogout: () => void;
@@ -44,11 +46,15 @@ const MainApp: React.FC<MainAppProps> = ({
   onDisconnect: propOnDisconnect,
   onWebSocketMessage: propOnWebSocketMessage,
 }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [conversations, setConversations] = useState<Conversations>({});
-  const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
+  const [user] = useState<User | null>(null);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<string>('everything-else');
+  const { session, toggleSession } = useActiveSession();
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  
+  // Computed values
+  const activeConversation = conversations.find(c => c.id === activeConversationId);
   const [isManualUploadMode, setIsManualUploadMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -120,77 +126,40 @@ const MainApp: React.FC<MainAppProps> = ({
     }
   }, [propOnWebSocketMessage, activeConversation]);
 
+  // Load conversations on initial load
   useEffect(() => {
-    const loadData = async (retryCount = 0) => {
+    const loadConversations = async () => {
+      if (!user) return;
+      
+      setIsLoading(true);
       try {
-        // Get user from AuthService instead of UserService
-        const currentUser = authService.getCurrentUser();
-        if (currentUser) {
-          setUser(currentUser);
-          // Also sync to UserService for compatibility
-          UserService.setCurrentUser(currentUser);
+        const conversationsObject = await ConversationService.getConversations();
+        const fetchedConversations = Object.values(conversationsObject);
+        // Ensure 'Everything Else' always exists
+        if (!fetchedConversations.find(c => c.id === 'everything-else')) {
+          const everythingElseConversation: Conversation = {
+            id: 'everything-else',
+            title: 'Everything Else',
+            messages: [],
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            isActive: true,
+          };
+          fetchedConversations.unshift(everythingElseConversation);
         }
-
-        console.log('🔍 [MainApp] Loading conversations (attempt', retryCount + 1, ')');
-        const userConversations = await ConversationService.getConversations();
-        console.log('🔍 [MainApp] Loaded conversations:', userConversations);
-        setConversations(userConversations);
-
-        const active = await ConversationService.getActiveConversation();
-        console.log('🔍 [MainApp] Active conversation:', active);
-        setActiveConversation(active);
-
-        // Auto-create a conversation if none exists
-        if (!active && Object.keys(userConversations).length === 0) {
-          console.log('🔍 [MainApp] No conversations found, creating new one...');
-          
-          // Check if there's already an "Everything else" conversation
-          const existingEverythingElse = Object.values(userConversations).find(
-            conv => conv.title === 'Everything else'
-          );
-          
-          if (existingEverythingElse) {
-            // Use the existing "Everything else" conversation
-            console.log('🔍 [MainApp] Using existing "Everything else" conversation');
-            await ConversationService.setActiveConversation(existingEverythingElse.id);
-            setActiveConversation(existingEverythingElse);
-          } else {
-            // Create a new conversation
-            console.log('🔍 [MainApp] Creating new conversation...');
-            const newConversation = ConversationService.createConversation();
-            await ConversationService.addConversation(newConversation);
-            await ConversationService.setActiveConversation(newConversation.id);
-            
-            const updatedConversations = await ConversationService.getConversations();
-            setConversations(updatedConversations);
-            setActiveConversation(newConversation);
-            console.log('🔍 [MainApp] New conversation created and set as active');
-          }
-        } else if (active) {
-          console.log('🔍 [MainApp] Found active conversation:', active.title);
-        }
-        
-        // Mark initialization as complete
-        setIsInitializing(false);
+        setConversations(fetchedConversations);
       } catch (error) {
-        console.error('🔍 [MainApp] Error loading data:', error);
-        
-        // Retry up to 3 times with exponential backoff
-        if (retryCount < 3) {
-          const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
-          console.log(`🔍 [MainApp] Retrying in ${delay}ms...`);
-          setTimeout(() => loadData(retryCount + 1), delay);
-        } else {
-          console.error('🔍 [MainApp] Failed to load data after 3 attempts');
-          // Set a fallback state to prevent infinite loading
-          setActiveConversation(null);
-          setIsInitializing(false);
-        }
+        console.error('Error loading conversations:', error);
+      } finally {
+        setIsLoading(false);
+        setIsInitializing(false);
       }
     };
 
-    loadData();
-  }, []);
+    if (user) {
+      loadConversations();
+    }
+  }, [user]);
 
   // WebSocket message handling (only if using local websocket)
   useEffect(() => {
@@ -224,28 +193,21 @@ const MainApp: React.FC<MainAppProps> = ({
   }, [activeConversation, propOnConnect]);
 
 
-  const handleConversationSelect = async (id: string) => {
-    await ConversationService.setActiveConversation(id);
-    const updatedConversations = await ConversationService.getConversations();
-    setConversations(updatedConversations);
-    setActiveConversation(updatedConversations[id]);
-    setSidebarOpen(false);
-  };
 
   const handleDeleteConversation = async (id: string) => {
     await ConversationService.deleteConversation(id);
-    const updatedConversations = await ConversationService.getConversations();
+    const conversationsObject = await ConversationService.getConversations();
+    const updatedConversations = Object.values(conversationsObject);
     setConversations(updatedConversations);
     
-    if (activeConversation?.id === id) {
-      const newActive = await ConversationService.getActiveConversation();
-      setActiveConversation(newActive);
+    if (activeConversationId === id) {
+      setActiveConversationId('everything-else');
     }
   };
 
   const handlePinConversation = async (id: string) => {
     // Check if we can pin (max 3 pinned conversations)
-    const pinnedCount = Object.values(conversations).filter((conv: Conversation) => conv.isPinned).length;
+    const pinnedCount = conversations.filter((conv: Conversation) => conv.isPinned).length;
     if (pinnedCount >= 3) {
       alert('You can only pin up to 3 conversations. Please unpin another conversation first.');
       return;
@@ -255,7 +217,8 @@ const MainApp: React.FC<MainAppProps> = ({
       isPinned: true, 
       pinnedAt: Date.now() 
     });
-    const updatedConversations = await ConversationService.getConversations();
+    const conversationsObject = await ConversationService.getConversations();
+    const updatedConversations = Object.values(conversationsObject);
     setConversations(updatedConversations);
   };
 
@@ -264,18 +227,20 @@ const MainApp: React.FC<MainAppProps> = ({
       isPinned: false, 
       pinnedAt: undefined 
     });
-    const updatedConversations = await ConversationService.getConversations();
+    const conversationsObject = await ConversationService.getConversations();
+    const updatedConversations = Object.values(conversationsObject);
     setConversations(updatedConversations);
   };
 
   const handleClearConversation = async (id: string) => {
     await ConversationService.clearConversation(id);
-    const updatedConversations = await ConversationService.getConversations();
+    const conversationsObject = await ConversationService.getConversations();
+    const updatedConversations = Object.values(conversationsObject);
     setConversations(updatedConversations);
     
     // If this was the active conversation, update it
-    if (activeConversation?.id === id) {
-      setActiveConversation(updatedConversations[id]);
+    if (activeConversationId === id) {
+      setActiveConversationId('everything-else');
     }
   };
 
@@ -371,8 +336,51 @@ const MainApp: React.FC<MainAppProps> = ({
     localStorage.removeItem('otakon_last_connection');
   };
 
+  const handleCreateGameTab = async (gameInfo: { gameTitle: string; genre?: string; }) => {
+    if (!user) return;
+    
+    // 1. Check if a tab for this game already exists to prevent duplicates
+    const existingConv = conversations.find(c => c.gameTitle?.toLowerCase() === gameInfo.gameTitle.toLowerCase());
+    if (existingConv) {
+      setActiveConversationId(existingConv.id); // Just switch to it
+      return;
+    }
+
+    try {
+      // 2. Create the new tab structure using the service
+      const newConversation = await gameTabService.createGameTab(gameInfo, user.id);
+      
+      // 3. Add the new conversation to the state and make it active
+      const updatedConversations = [...conversations, newConversation];
+      setConversations(updatedConversations);
+      setActiveConversationId(newConversation.id);
+
+      // 4. (Async) Post-creation enrichment: Use Gemini 2.5 Pro to fill in sub-tabs
+      // This happens in the background and updates the state once complete.
+      const initialInsights = await aiService.generateInitialInsights(newConversation.gameTitle!, newConversation.genre!);
+      
+      setConversations(prevConvs => prevConvs.map(conv => {
+          if (conv.id === newConversation.id) {
+              const enrichedSubtabs = conv.subtabs?.map(subtab => {
+                  if (initialInsights[subtab.id]) {
+                      return { ...subtab, content: initialInsights[subtab.id], status: 'loaded' as 'loaded' };
+                  }
+              return subtab;
+              });
+              const updatedConv = { ...conv, subtabs: enrichedSubtabs };
+              // Persist this final update to Supabase
+              ConversationService.updateConversation(updatedConv.id, updatedConv);
+              return updatedConv;
+          }
+          return conv;
+      }));
+    } catch (error) {
+      console.error('Error creating game tab:', error);
+    }
+  };
+
   const handleSendMessage = async (message: string, imageUrl?: string) => {
-    if (!activeConversation) return;
+    if (!activeConversation || !user) return;
 
     const newMessage = {
       id: `msg_${Date.now()}`,
@@ -383,24 +391,73 @@ const MainApp: React.FC<MainAppProps> = ({
     };
 
     await ConversationService.addMessage(activeConversation.id, newMessage);
-    const updatedConversations = await ConversationService.getConversations();
+    const conversationsObject = await ConversationService.getConversations();
+    const updatedConversations = Object.values(conversationsObject);
     setConversations(updatedConversations);
 
-    // Simulate AI response
+    // Get real AI response
     setIsLoading(true);
-    setTimeout(async () => {
+    try {
+      const isActiveSession = session.isActive && session.currentGameId === activeConversation.id;
+      const response = await errorRecoveryService.retryWithBackoff(
+        () => aiService.getChatResponse(activeConversation, user, message, isActiveSession, !!imageUrl)
+      );
+
       const aiMessage = {
         id: `msg_${Date.now() + 1}`,
-        content: `I received your message: "${message}". This is a simulated AI response. In the real implementation, this would connect to your AI service.`,
+        content: response.content,
         role: 'assistant' as const,
         timestamp: Date.now(),
       };
 
       await ConversationService.addMessage(activeConversation.id, aiMessage);
-      const updatedConversations = await ConversationService.getConversations();
+      const conversationsObject = await ConversationService.getConversations();
+      const updatedConversations = Object.values(conversationsObject);
       setConversations(updatedConversations);
+
+      // Check for game tab creation signal
+      if (response.otakonTags.has('GAME_ID')) {
+        const gameInfo = {
+          gameTitle: response.otakonTags.get('GAME_ID'),
+          genre: response.otakonTags.get('GENRE') || 'Default',
+        };
+        console.log('Game detected:', gameInfo);
+        handleCreateGameTab(gameInfo);
+      }
+
+      // Check for insight updates
+      if (response.otakonTags.has('INSIGHT_UPDATE')) {
+        const insightData = response.otakonTags.get('INSIGHT_UPDATE');
+        if (insightData && typeof insightData === 'object') {
+          try {
+            await ConversationService.updateSubTabContent(activeConversation.id, insightData.id, insightData.content);
+            console.log(`Updated sub-tab ${insightData.id} with new content`);
+          } catch (error) {
+            console.error('Error updating sub-tab content:', error);
+            errorRecoveryService.handleConversationError(error);
+          }
+        }
+      }
+
+    } catch (error) {
+      console.error("Failed to get AI response:", error);
+      errorRecoveryService.handleAIServiceError(error);
+      
+      // Fallback to error message
+      const errorMessage = {
+        id: `msg_${Date.now() + 1}`,
+        content: "Sorry, I'm having trouble connecting to the AI service right now. Please try again in a moment.",
+        role: 'assistant' as const,
+        timestamp: Date.now(),
+      };
+
+      await ConversationService.addMessage(activeConversation.id, errorMessage);
+      const conversationsObject = await ConversationService.getConversations();
+      const updatedConversations = Object.values(conversationsObject);
+      setConversations(updatedConversations);
+    } finally {
       setIsLoading(false);
-    }, 2000);
+    }
   };
 
   if (!user || isInitializing) {
@@ -421,8 +478,8 @@ const MainApp: React.FC<MainAppProps> = ({
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
           conversations={conversations}
-          activeConversation={activeConversation}
-          onConversationSelect={handleConversationSelect}
+          activeConversationId={activeConversationId}
+          onConversationSelect={setActiveConversationId}
           onDeleteConversation={handleDeleteConversation}
           onPinConversation={handlePinConversation}
           onUnpinConversation={handleUnpinConversation}
@@ -513,7 +570,11 @@ const MainApp: React.FC<MainAppProps> = ({
             {/* Chat Interface - Takes remaining space */}
             <div className="flex-1 min-h-0">
               <ChatInterface
-                conversation={activeConversation}
+                conversation={activeConversation || null}
+                user={user}
+                session={session}
+                onToggleSession={() => activeConversation && toggleSession(activeConversation.id)}
+                onCreateGameTab={handleCreateGameTab}
                 onSendMessage={handleSendMessage}
                 isLoading={isLoading}
                 isPCConnected={connectionStatus === ConnectionStatus.CONNECTED}
