@@ -1,10 +1,11 @@
-// src/services/aiService.ts
-
 import { GoogleGenerativeAI, GenerativeModel } from "@google/generative-ai";
 import { parseOtakonTags } from './otakonTags';
-import { AIResponse, Conversation, User } from '../types';
-import { getPromptForPersona } from './promptSystem';
+import { AIResponse, Conversation, User, insightTabsConfig } from '../types';
 import { cacheService } from './cacheService';
+import { getPromptForPersona } from './promptSystem';
+import { sessionSummaryService } from './sessionSummaryService';
+import { errorRecoveryService } from './errorRecoveryService';
+import { characterImmersionService } from './characterImmersionService';
 
 const API_KEY = (import.meta as any).env.VITE_GEMINI_API_KEY;
 
@@ -18,37 +19,93 @@ class AIService {
       throw new Error("VITE_GEMINI_API_KEY is not set in the environment variables.");
     }
     this.genAI = new GoogleGenerativeAI(API_KEY);
+    // Using the latest stable models as recommended
     this.flashModel = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     this.proModel = this.genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
   }
 
   /**
-   * The main method to get a chat response. It determines the persona and calls the AI.
+   * Main method to get AI chat response
    */
   public async getChatResponse(
     conversation: Conversation,
     user: User,
     userMessage: string,
     isActiveSession: boolean,
-    hasImages: boolean = false
+    hasImages: boolean = false,
+    imageData?: string
   ): Promise<AIResponse> {
-    // Generate the master prompt using the persona system
-    const masterPrompt = await getPromptForPersona(conversation, userMessage, user, isActiveSession, hasImages);
+    // Create cache key for this request
+    const cacheKey = `ai_response_${conversation.id}_${userMessage.substring(0, 50)}_${isActiveSession}`;
     
-    // Create cache key from the prompt
-    const cacheKey = cacheService.createPromptCacheKey(masterPrompt);
-    
-    // 1. Check cache first
-    const cachedResponse = await cacheService.getAIResponse<AIResponse>(cacheKey);
+    // Check cache first
+    const cachedResponse = await cacheService.get<AIResponse>(cacheKey);
     if (cachedResponse) {
       return { ...cachedResponse, metadata: { ...cachedResponse.metadata, fromCache: true } };
     }
-    
-    // In a real scenario, you'd also pass image data if `hasImages` is true
-    // For now, we're focusing on the text logic
 
+    // Get session context if available
+    let sessionContext = '';
     try {
-      const result = await this.flashModel.generateContent(masterPrompt);
+      const latestSummary = await sessionSummaryService.getLatestSessionSummary(conversation.id);
+      if (latestSummary) {
+        sessionContext = `\n\n**Previous Session Context:**\n${latestSummary.summary}`;
+      }
+    } catch (error) {
+      console.warn('Failed to get session context:', error);
+    }
+
+    // Use the enhanced prompt system with session context
+    const basePrompt = getPromptForPersona(conversation, userMessage, user, isActiveSession, hasImages);
+    
+    // Add immersion context for game conversations
+    let immersionContext = '';
+    if (conversation.id !== 'everything-else' && conversation.gameTitle && conversation.genre) {
+      immersionContext = characterImmersionService.generateImmersionContext({
+        gameTitle: conversation.gameTitle,
+        genre: conversation.genre,
+        currentLocation: conversation.activeObjective,
+        playerProgress: conversation.gameProgress
+      });
+    }
+    
+    const prompt = basePrompt + sessionContext + '\n\n' + immersionContext;
+    
+    console.log('🤖 [AIService] Processing request:', { 
+      hasImages, 
+      hasImageData: !!imageData, 
+      imageDataLength: imageData?.length,
+      conversationId: conversation.id 
+    });
+    
+    try {
+      const modelToUse = conversation.id === 'everything-else' ? this.flashModel : this.flashModel;
+      
+      // Prepare content for Gemini API
+      let content: any;
+      if (hasImages && imageData) {
+        // Extract MIME type from data URL
+        const mimeType = imageData.split(';')[0].split(':')[1] || 'image/jpeg';
+        const base64Data = imageData.split(',')[1];
+        
+        // For image analysis, we need to send both text and image
+        content = [
+          {
+            text: prompt
+          },
+          {
+            inlineData: {
+              mimeType: mimeType,
+              data: base64Data
+            }
+          }
+        ];
+      } else {
+        // For text-only requests
+        content = prompt;
+      }
+      
+      const result = await modelToUse.generateContent(content);
       const rawContent = await result.response.text();
       const { cleanContent, tags } = parseOtakonTags(rawContent);
 
@@ -65,60 +122,93 @@ class AIService {
         }
       };
       
-      // 3. Store the new response in cache before returning
-      await cacheService.setAIResponse(cacheKey, aiResponse);
+      // Cache the response for 1 hour
+      await cacheService.set(cacheKey, aiResponse, 60 * 60 * 1000);
+      
       return aiResponse;
 
     } catch (error) {
       console.error("AI Service Error:", error);
-      // Return a structured error response
+      
+      // Use error recovery service
+      const recoveryAction = await errorRecoveryService.handleAIError(
+        error as Error,
+        {
+          operation: 'getChatResponse',
+          conversationId: conversation.id,
+          userId: user.id,
+          timestamp: Date.now(),
+          retryCount: 0
+        }
+      );
+      
+      if (recoveryAction.type === 'retry') {
+        // Retry the request
+        return this.getChatResponse(conversation, user, userMessage, isActiveSession, hasImages, imageData);
+      } else if (recoveryAction.type === 'user_notification') {
+        // Return a user-friendly error response
+        return {
+          content: recoveryAction.message || "I'm having trouble thinking right now. Please try again later.",
+          suggestions: ["Try again", "Check your connection", "Contact support"],
+          otakonTags: new Map(),
+          rawContent: recoveryAction.message || "Error occurred",
+          metadata: {
+            model: 'error',
+            timestamp: Date.now(),
+            cost: 0,
+            tokens: 0
+          }
+        };
+      }
+      
       throw new Error("Failed to get response from AI service.");
     }
   }
 
+
   /**
-   * Generates the structured JSON for the initial insight sub-tabs for a new game.
-   * This method exclusively uses the Gemini 2.5 Pro model.
+   * Generates initial sub-tab content for a new game
    */
   public async generateInitialInsights(gameTitle: string, genre: string): Promise<Record<string, string>> {
-    const cacheKey = `insights-${gameTitle.toLowerCase().replace(/\s+/g, '-')}`;
-
-    // 1. Check cache first
-    const cachedInsights = await cacheService.getAIResponse<Record<string, string>>(cacheKey);
+    const cacheKey = `insights_${gameTitle.toLowerCase().replace(/\s+/g, '-')}`;
+    
+    // Check cache first
+    const cachedInsights = await cacheService.get<Record<string, string>>(cacheKey);
     if (cachedInsights) {
       return cachedInsights;
     }
 
-    const { insightTabsConfig } = await import('../types');
-    const subTabInstructions = (insightTabsConfig[genre] || insightTabsConfig['Default'])
-        .map(tab => `- ${tab.title} (${tab.id}): ${tab.instruction}`)
-        .join('\n');
+    const config = insightTabsConfig[genre] || insightTabsConfig['Default'];
+    const instructions = config
+      .map(tab => `- ${tab.title} (${tab.id}): ${tab.instruction}`)
+      .join('\n');
 
-    const proPrompt = `
-      **Task:** Generate initial content for the insight tabs of the game "${gameTitle}", which is a/an "${genre}" game.
-      **Format:** Respond with a single, minified JSON object. The keys of the object MUST be the tab IDs, and the values should be the generated content as a string.
+    const prompt = `
+      **Task:** Generate initial content for ${gameTitle} (${genre} game)
+      **Format:** Respond with a single JSON object where keys are tab IDs and values are content strings
       
-      **Instructions for each tab:**
-      ${subTabInstructions}
-
+      **Instructions:**
+      ${instructions}
+      
       **Rules:**
-      - The content must be concise, spoiler-free, and suitable for a new player.
-      - The output MUST be a valid, single-line JSON object with no extra formatting. Example: {"walkthrough":"Start by heading to the main gate...","tips":"Don't forget to save your game..."}
+      - Content must be concise, spoiler-free, and suitable for new players
+      - Output must be valid JSON: {"walkthrough":"content","tips":"content",...}
+      - Each content should be 2-3 paragraphs maximum
+      - Use markdown formatting for better readability
     `;
 
     try {
-      const result = await this.proModel.generateContent(proPrompt);
+      const result = await this.proModel.generateContent(prompt);
       const rawJson = await result.response.text();
-      // Clean up potential markdown code block fences
       const cleanedJson = rawJson.replace(/```json\n?|\n?```/g, '').trim();
       const insights = JSON.parse(cleanedJson);
-      
-      // 3. Store the new insights in cache
-      await cacheService.setAIResponse(cacheKey, insights);
+
+      // Cache for 24 hours
+      await cacheService.set(cacheKey, insights, 24 * 60 * 60 * 1000);
       return insights;
+
     } catch (error) {
-      console.error("AI Service (Pro) Error generating initial insights:", error);
-      // Return an empty object on failure so the app doesn't crash
+      console.error("Failed to generate initial insights:", error);
       return {};
     }
   }

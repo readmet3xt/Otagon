@@ -1,84 +1,202 @@
-// src/services/gameTabService.ts
-
-import { v4 as uuidv4 } from 'uuid';
-import { SubTab, insightTabsConfig, Conversation } from '../types';
+import { Conversation, SubTab, GameTab, insightTabsConfig } from '../types';
+import { aiService } from './aiService';
 import { ConversationService } from './conversationService';
 
-interface GameInfo {
+export interface GameTabCreationData {
   gameTitle: string;
-  genre?: string;
+  genre: string;
+  conversationId: string;
+  userId: string;
 }
 
 class GameTabService {
   /**
-   * Main function to create a new game conversation (tab).
-   * It generates the sub-tabs and saves everything to the database.
+   * Create a new game-specific conversation tab
    */
-  public async createGameTab(gameInfo: GameInfo, _userId: string): Promise<Conversation> {
-    const { gameTitle, genre = 'Default' } = gameInfo;
+  async createGameTab(data: GameTabCreationData): Promise<Conversation> {
+    console.log('🎮 [GameTabService] Creating game tab:', data);
 
-    // 1. Generate the sub-tabs based on genre
-    const subtabs = this.generateSubtabs(genre);
-
-    // 2. Create the initial "Chat" content for the chat sub-tab
-    const chatSubTab = subtabs.find(st => st.id === 'chat');
-    if (chatSubTab) {
-        chatSubTab.content = `Welcome to your adventure in ${gameTitle}! Ask me anything.`;
-        chatSubTab.status = 'loaded';
-    }
-
-    // 3. Create the new conversation object
-    const newConversation: Conversation = {
-      id: uuidv4(),
-      title: gameTitle,
-      messages: [{
-          id: `msg_${Date.now()}`,
-          content: `Begin your journey in ${gameTitle}. I'll keep track of your progress here.`,
-          role: 'assistant',
-          timestamp: Date.now()
-      }],
+    // Generate initial sub-tabs based on genre
+    const subTabs = this.generateInitialSubTabs(data.genre);
+    
+    // Create the conversation
+    const conversation: Conversation = {
+      id: data.conversationId,
+      title: data.gameTitle,
+      messages: [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
-      isActive: true,
-      gameId: gameTitle.toLowerCase().replace(/\s+/g, '-'), // Simple slug for now
-      gameTitle: gameTitle,
-      genre: genre,
-      subtabs: subtabs,
-      subtabsOrder: subtabs.map(st => st.id),
+      isActive: false,
+      gameId: data.gameTitle.toLowerCase().replace(/\s+/g, '-'),
+      gameTitle: data.gameTitle,
+      genre: data.genre,
+      subtabs: subTabs,
+      subtabsOrder: subTabs.map(tab => tab.id),
+      isActiveSession: false,
+      activeObjective: '',
+      gameProgress: 0
     };
 
-    // 4. Persist to Supabase (via conversationService)
-    await ConversationService.addConversation(newConversation);
+    // Save to database
+    await ConversationService.addConversation(conversation);
 
-    return newConversation;
+    // Generate initial AI insights for sub-tabs
+    await this.generateInitialInsights(conversation);
+
+    return conversation;
   }
 
   /**
-   * Generates the initial structure for sub-tabs based on the game's genre.
+   * Generate initial sub-tabs based on game genre
    */
-  private generateSubtabs(genre: string): SubTab[] {
+  private generateInitialSubTabs(genre: string): SubTab[] {
     const config = insightTabsConfig[genre] || insightTabsConfig['Default'];
+    
+    return config.map(tabConfig => ({
+      id: tabConfig.id,
+      title: tabConfig.title,
+      type: tabConfig.type,
+      content: 'Loading...',
+      isNew: true,
+      status: 'loading' as const,
+      instruction: tabConfig.instruction
+    }));
+  }
 
-    const subtabs: SubTab[] = [
-      // Every game starts with a Chat tab
-      {
-        id: 'chat',
-        title: 'Chat',
-        content: '',
-        type: 'chat',
+  /**
+   * Generate initial AI insights for all sub-tabs
+   */
+  private async generateInitialInsights(conversation: Conversation): Promise<void> {
+    console.log('🤖 [GameTabService] Generating initial insights for:', conversation.gameTitle);
+
+    try {
+      // Generate insights for each sub-tab
+      const insights = await aiService.generateInitialInsights(
+        conversation.gameTitle || 'Unknown Game',
+        conversation.genre || 'Action RPG'
+      );
+
+      // Update sub-tabs with generated content
+      const updatedSubTabs = conversation.subtabs?.map(subTab => {
+        const content = insights[subTab.id] || `Welcome to ${subTab.title} for ${conversation.gameTitle}!`;
+        return {
+          ...subTab,
+          content,
+          isNew: false,
+          status: 'loaded' as const
+        };
+      }) || [];
+
+      // Update conversation with new sub-tab content
+      const updatedConversation = {
+        ...conversation,
+        subtabs: updatedSubTabs,
+        updatedAt: Date.now()
+      };
+
+      // Save updated conversation
+      await ConversationService.updateConversation(conversation.id, updatedConversation);
+
+    } catch (error) {
+      console.error('Failed to generate initial insights:', error);
+      
+      // Set error state for sub-tabs
+      const errorSubTabs = conversation.subtabs?.map(subTab => ({
+        ...subTab,
+        content: `Failed to load ${subTab.title} content. Please try again later.`,
         isNew: false,
-        status: 'loading',
-      },
-      // Add the rest from the config
-      ...config.map(c => ({
-        ...c,
-        content: '', // Initially empty
-        isNew: true,
-        status: 'loading' as 'loading',
-      }))
-    ];
+        status: 'error' as const
+      })) || [];
 
-    return subtabs;
+      const updatedConversation = {
+        ...conversation,
+        subtabs: errorSubTabs,
+        updatedAt: Date.now()
+      };
+
+      await ConversationService.updateConversation(conversation.id, updatedConversation);
+    }
+  }
+
+  /**
+   * Update a specific sub-tab content
+   */
+  async updateSubTabContent(
+    conversationId: string, 
+    subTabId: string, 
+    content: string
+  ): Promise<void> {
+    console.log('📝 [GameTabService] Updating sub-tab content:', { conversationId, subTabId });
+
+    try {
+      // Get current conversation
+      const conversations = await ConversationService.getConversations();
+      const conversation = conversations[conversationId];
+      
+      if (!conversation || !conversation.subtabs) {
+        throw new Error('Conversation or sub-tabs not found');
+      }
+
+      // Update the specific sub-tab
+      const updatedSubTabs = conversation.subtabs.map(tab => 
+        tab.id === subTabId 
+          ? { ...tab, content, isNew: false, status: 'loaded' as const }
+          : tab
+      );
+
+      // Update conversation with new sub-tab content
+      await ConversationService.updateConversation(conversationId, {
+        subtabs: updatedSubTabs,
+        updatedAt: Date.now()
+      });
+    } catch (error) {
+      console.error('Failed to update sub-tab content:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get game tab by conversation ID
+   */
+  async getGameTab(conversationId: string): Promise<GameTab | null> {
+    try {
+      const conversations = await ConversationService.getConversations();
+      const conversation = conversations[conversationId];
+      
+      if (!conversation || !conversation.gameTitle) {
+        return null;
+      }
+
+      return {
+        id: conversation.id,
+        title: conversation.title,
+        gameId: conversation.gameId || conversation.gameTitle.toLowerCase().replace(/\s+/g, '-'),
+        gameTitle: conversation.gameTitle,
+        genre: conversation.genre || 'Unknown',
+        subtabs: conversation.subtabs || [],
+        createdAt: conversation.createdAt,
+        updatedAt: conversation.updatedAt,
+        isActiveSession: conversation.isActiveSession || false
+      };
+    } catch (error) {
+      console.error('Failed to get game tab:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Check if a conversation is a game tab
+   */
+  isGameTab(conversation: Conversation): boolean {
+    return conversation.id !== 'everything-else' && !!conversation.gameTitle;
+  }
+
+  /**
+   * Generate a unique conversation ID for a game
+   */
+  generateGameConversationId(gameTitle: string): string {
+    const sanitized = gameTitle.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
+    return `game-${sanitized}-${Date.now()}`;
   }
 }
 

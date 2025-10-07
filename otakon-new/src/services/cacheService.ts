@@ -419,32 +419,6 @@ class CacheService {
       console.warn('[CacheService] Error checking cache table:', error);
     }
   }
-
-  /**
-   * Caches a generated AI response.
-   * The key can be a hash of the prompt for chat, or the game title for initial insights.
-   */
-  public async setAIResponse(key: string, response: any): Promise<void> {
-    // Cache for 1 hour for chat, 24 hours for initial insights
-    const ttl = key.startsWith('insights-') ? 24 * 60 * 60 * 1000 : 60 * 60 * 1000;
-    await this.set(key, response, ttl, 'ai_response');
-  }
-
-  /**
-   * Retrieves a cached AI response.
-   */
-  public async getAIResponse<T>(key: string): Promise<T | null> {
-    return this.get<T>(key);
-  }
-
-  /**
-   * Creates a unique cache key from a prompt string.
-   * This is a simple example; a more robust solution might use a hashing function like SHA-256.
-   */
-  public createPromptCacheKey(prompt: string): string {
-    // Simple key generation for demonstration
-    return `prompt-${prompt.substring(0, 50)}-${prompt.length}`;
-  }
 }
 
 // Export singleton instance

@@ -1,5 +1,3 @@
-// src/hooks/useActiveSession.ts
-
 import { useState, useCallback } from 'react';
 
 export interface ActiveSessionState {
@@ -21,5 +19,16 @@ export const useActiveSession = (initialState: ActiveSessionState = { isActive: 
     });
   }, []);
 
-  return { session, toggleSession };
+  const setActiveSession = useCallback((conversationId: string, isActive: boolean) => {
+    setSession({
+      isActive,
+      currentGameId: isActive ? conversationId : undefined
+    });
+  }, []);
+
+  return { 
+    session, 
+    toggleSession, 
+    setActiveSession 
+  };
 };

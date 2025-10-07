@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { User, Conversation } from '../types';
+import { User, Conversation, Conversations } from '../types';
 import { ConversationService } from '../services/conversationService';
+import { authService } from '../services/authService';
+import { aiService } from '../services/aiService';
+import { useActiveSession } from '../hooks/useActiveSession';
+import { suggestedPromptsService } from '../services/suggestedPromptsService';
+import { sessionSummaryService } from '../services/sessionSummaryService';
+import { gameTabService } from '../services/gameTabService';
+import { errorRecoveryService } from '../services/errorRecoveryService';
+import { UserService } from '../services/userService';
+import { SupabaseService } from '../services/supabaseService';
 import Sidebar from './layout/Sidebar';
 import ChatInterface from './features/ChatInterface';
 import SettingsModal from './modals/SettingsModal';
@@ -12,10 +21,6 @@ import { LoadingSpinner } from './ui/LoadingSpinner';
 import SettingsContextMenu from './ui/SettingsContextMenu';
 import { ConnectionStatus } from '../types';
 import { connect, disconnect } from '../services/websocketService';
-import { aiService } from '../services/aiService';
-import { useActiveSession } from '../hooks/useActiveSession';
-import { gameTabService } from '../services/gameTabService';
-import { errorRecoveryService } from '../services/errorRecoveryService';
 
 interface MainAppProps {
   onLogout: () => void;
@@ -46,15 +51,16 @@ const MainApp: React.FC<MainAppProps> = ({
   onDisconnect: propOnDisconnect,
   onWebSocketMessage: propOnWebSocketMessage,
 }) => {
-  const [user] = useState<User | null>(null);
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [activeConversationId, setActiveConversationId] = useState<string>('everything-else');
-  const { session, toggleSession } = useActiveSession();
+  const [user, setUser] = useState<User | null>(null);
+  const [conversations, setConversations] = useState<Conversations>({});
+  const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [suggestedPrompts, setSuggestedPrompts] = useState<string[]>([]);
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
   
-  // Computed values
-  const activeConversation = conversations.find(c => c.id === activeConversationId);
+  // Active session management
+  const { session, toggleSession, setActiveSession } = useActiveSession();
   const [isManualUploadMode, setIsManualUploadMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -126,40 +132,91 @@ const MainApp: React.FC<MainAppProps> = ({
     }
   }, [propOnWebSocketMessage, activeConversation]);
 
-  // Load conversations on initial load
   useEffect(() => {
-    const loadConversations = async () => {
-      if (!user) return;
-      
-      setIsLoading(true);
+    const loadData = async (retryCount = 0) => {
       try {
-        const conversationsObject = await ConversationService.getConversations();
-        const fetchedConversations = Object.values(conversationsObject);
-        // Ensure 'Everything Else' always exists
-        if (!fetchedConversations.find(c => c.id === 'everything-else')) {
-          const everythingElseConversation: Conversation = {
-            id: 'everything-else',
-            title: 'Everything Else',
-            messages: [],
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-            isActive: true,
-          };
-          fetchedConversations.unshift(everythingElseConversation);
+        // Get user from AuthService instead of UserService
+        const currentUser = authService.getCurrentUser();
+        if (currentUser) {
+          setUser(currentUser);
+          // Also sync to UserService for compatibility
+          UserService.setCurrentUser(currentUser);
         }
-        setConversations(fetchedConversations);
-      } catch (error) {
-        console.error('Error loading conversations:', error);
-      } finally {
-        setIsLoading(false);
+
+        console.log('🔍 [MainApp] Loading conversations (attempt', retryCount + 1, ')');
+        const userConversations = await ConversationService.getConversations();
+        console.log('🔍 [MainApp] Loaded conversations:', userConversations);
+        setConversations(userConversations);
+
+        const active = await ConversationService.getActiveConversation();
+        console.log('🔍 [MainApp] Active conversation:', active);
+        setActiveConversation(active);
+
+        // Auto-create a conversation if none exists
+        if (!active && Object.keys(userConversations).length === 0) {
+          console.log('🔍 [MainApp] No conversations found, creating new one...');
+          
+          // Check if there's already an "Everything else" conversation
+          const existingEverythingElse = Object.values(userConversations).find(
+            conv => conv.title === 'Everything else'
+          );
+          
+          if (existingEverythingElse) {
+            // Use the existing "Everything else" conversation
+            console.log('🔍 [MainApp] Using existing "Everything else" conversation');
+            await ConversationService.setActiveConversation(existingEverythingElse.id);
+            setActiveConversation(existingEverythingElse);
+          } else {
+            // Create a new conversation
+            console.log('🔍 [MainApp] Creating new conversation...');
+            const newConversation = ConversationService.createConversation();
+            await ConversationService.addConversation(newConversation);
+            await ConversationService.setActiveConversation(newConversation.id);
+            
+            const updatedConversations = await ConversationService.getConversations();
+            setConversations(updatedConversations);
+            setActiveConversation(newConversation);
+            console.log('🔍 [MainApp] New conversation created and set as active');
+          }
+        } else if (active) {
+          console.log('🔍 [MainApp] Found active conversation:', active.title);
+        }
+        
+        // Mark initialization as complete
         setIsInitializing(false);
+      } catch (error) {
+        console.error('🔍 [MainApp] Error loading data:', error);
+        
+        // Retry up to 3 times with exponential backoff
+        if (retryCount < 3) {
+          const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+          console.log(`🔍 [MainApp] Retrying in ${delay}ms...`);
+          setTimeout(() => loadData(retryCount + 1), delay);
+        } else {
+          console.error('🔍 [MainApp] Failed to load data after 3 attempts');
+          // Set a fallback state to prevent infinite loading
+          setActiveConversation(null);
+          setIsInitializing(false);
+        }
       }
     };
 
-    if (user) {
-      loadConversations();
+    loadData();
+  }, []);
+
+  // Function to refresh user data (for credit updates)
+  const refreshUserData = async () => {
+    try {
+      const currentUser = authService.getCurrentUser();
+      if (currentUser) {
+        setUser(currentUser);
+        UserService.setCurrentUser(currentUser);
+        console.log('📊 [MainApp] User data refreshed for credit update');
+      }
+    } catch (error) {
+      console.warn('Failed to refresh user data:', error);
     }
-  }, [user]);
+  };
 
   // WebSocket message handling (only if using local websocket)
   useEffect(() => {
@@ -193,21 +250,28 @@ const MainApp: React.FC<MainAppProps> = ({
   }, [activeConversation, propOnConnect]);
 
 
+  const handleConversationSelect = async (id: string) => {
+    await ConversationService.setActiveConversation(id);
+    const updatedConversations = await ConversationService.getConversations();
+    setConversations(updatedConversations);
+    setActiveConversation(updatedConversations[id]);
+    setSidebarOpen(false);
+  };
 
   const handleDeleteConversation = async (id: string) => {
     await ConversationService.deleteConversation(id);
-    const conversationsObject = await ConversationService.getConversations();
-    const updatedConversations = Object.values(conversationsObject);
+    const updatedConversations = await ConversationService.getConversations();
     setConversations(updatedConversations);
     
-    if (activeConversationId === id) {
-      setActiveConversationId('everything-else');
+    if (activeConversation?.id === id) {
+      const newActive = await ConversationService.getActiveConversation();
+      setActiveConversation(newActive);
     }
   };
 
   const handlePinConversation = async (id: string) => {
     // Check if we can pin (max 3 pinned conversations)
-    const pinnedCount = conversations.filter((conv: Conversation) => conv.isPinned).length;
+    const pinnedCount = Object.values(conversations).filter((conv: Conversation) => conv.isPinned).length;
     if (pinnedCount >= 3) {
       alert('You can only pin up to 3 conversations. Please unpin another conversation first.');
       return;
@@ -217,8 +281,7 @@ const MainApp: React.FC<MainAppProps> = ({
       isPinned: true, 
       pinnedAt: Date.now() 
     });
-    const conversationsObject = await ConversationService.getConversations();
-    const updatedConversations = Object.values(conversationsObject);
+    const updatedConversations = await ConversationService.getConversations();
     setConversations(updatedConversations);
   };
 
@@ -227,20 +290,18 @@ const MainApp: React.FC<MainAppProps> = ({
       isPinned: false, 
       pinnedAt: undefined 
     });
-    const conversationsObject = await ConversationService.getConversations();
-    const updatedConversations = Object.values(conversationsObject);
+    const updatedConversations = await ConversationService.getConversations();
     setConversations(updatedConversations);
   };
 
   const handleClearConversation = async (id: string) => {
     await ConversationService.clearConversation(id);
-    const conversationsObject = await ConversationService.getConversations();
-    const updatedConversations = Object.values(conversationsObject);
+    const updatedConversations = await ConversationService.getConversations();
     setConversations(updatedConversations);
     
     // If this was the active conversation, update it
-    if (activeConversationId === id) {
-      setActiveConversationId('everything-else');
+    if (activeConversation?.id === id) {
+      setActiveConversation(updatedConversations[id]);
     }
   };
 
@@ -336,51 +397,169 @@ const MainApp: React.FC<MainAppProps> = ({
     localStorage.removeItem('otakon_last_connection');
   };
 
-  const handleCreateGameTab = async (gameInfo: { gameTitle: string; genre?: string; }) => {
-    if (!user) return;
-    
-    // 1. Check if a tab for this game already exists to prevent duplicates
-    const existingConv = conversations.find(c => c.gameTitle?.toLowerCase() === gameInfo.gameTitle.toLowerCase());
-    if (existingConv) {
-      setActiveConversationId(existingConv.id); // Just switch to it
-      return;
+  // Handle suggested prompt clicks
+  const handleSuggestedPromptClick = (prompt: string) => {
+    handleSendMessage(prompt);
+  };
+
+  // Handle active session toggle with session summaries
+  const handleToggleActiveSession = async () => {
+    if (!activeConversation) return;
+
+    const wasPlaying = session.isActive && session.currentGameId === activeConversation.id;
+    const willBePlaying = !wasPlaying;
+
+    // Create summary of current session before switching
+    if (wasPlaying) {
+      // Switching from Playing to Planning - create playing session summary
+      console.log('📝 [MainApp] Creating Playing session summary for Planning mode');
+      try {
+        const playingSummary = await sessionSummaryService.generatePlayingSessionSummary(activeConversation);
+        await sessionSummaryService.storeSessionSummary(activeConversation.id, playingSummary);
+        
+        // Add summary message to conversation
+        const summaryMessage = {
+          id: `msg_${Date.now()}`,
+          content: `**Session Summary - Switching to Planning Mode**\n\n${playingSummary.summary}`,
+          role: 'assistant' as const,
+          timestamp: Date.now(),
+        };
+        
+        setConversations(prev => {
+          const updated = { ...prev };
+          if (updated[activeConversation.id]) {
+            updated[activeConversation.id] = {
+              ...updated[activeConversation.id],
+              messages: [...updated[activeConversation.id].messages, summaryMessage],
+              updatedAt: Date.now()
+            };
+          }
+          return updated;
+        });
+        
+        await ConversationService.addMessage(activeConversation.id, summaryMessage);
+      } catch (error) {
+        console.error('Failed to create playing session summary:', error);
+      }
+    } else if (willBePlaying) {
+      // Switching from Planning to Playing - create planning session summary
+      console.log('📝 [MainApp] Creating Planning session summary for Playing mode');
+      try {
+        const planningSummary = await sessionSummaryService.generatePlanningSessionSummary(activeConversation);
+        await sessionSummaryService.storeSessionSummary(activeConversation.id, planningSummary);
+        
+        // Add summary message to conversation
+        const summaryMessage = {
+          id: `msg_${Date.now()}`,
+          content: `**Session Summary - Switching to Playing Mode**\n\n${planningSummary.summary}`,
+          role: 'assistant' as const,
+          timestamp: Date.now(),
+        };
+        
+        setConversations(prev => {
+          const updated = { ...prev };
+          if (updated[activeConversation.id]) {
+            updated[activeConversation.id] = {
+              ...updated[activeConversation.id],
+              messages: [...updated[activeConversation.id].messages, summaryMessage],
+              updatedAt: Date.now()
+            };
+          }
+          return updated;
+        });
+        
+        await ConversationService.addMessage(activeConversation.id, summaryMessage);
+      } catch (error) {
+        console.error('Failed to create planning session summary:', error);
+      }
     }
 
-    try {
-      // 2. Create the new tab structure using the service
-      const newConversation = await gameTabService.createGameTab(gameInfo, user.id);
-      
-      // 3. Add the new conversation to the state and make it active
-      const updatedConversations = [...conversations, newConversation];
-      setConversations(updatedConversations);
-      setActiveConversationId(newConversation.id);
+    // Toggle the session
+    toggleSession(activeConversation.id);
+  };
 
-      // 4. (Async) Post-creation enrichment: Use Gemini 2.5 Pro to fill in sub-tabs
-      // This happens in the background and updates the state once complete.
-      const initialInsights = await aiService.generateInitialInsights(newConversation.gameTitle!, newConversation.genre!);
+  // Handle stop AI request
+  const handleStopAI = () => {
+    if (abortController) {
+      abortController.abort();
+      setAbortController(null);
+      setIsLoading(false);
+      setSuggestedPrompts([]);
+    }
+  };
+
+  // Placeholder for game tab creation - will be implemented in Week 3
+  const handleCreateGameTab = async (gameInfo: { gameTitle: string; genre?: string }) => {
+    console.log('🎮 [MainApp] Game tab creation requested:', gameInfo);
+    
+    try {
+      const user = authService.getCurrentUser();
+      if (!user) {
+        console.error('User not authenticated for game tab creation');
+        return;
+      }
+
+      // Generate unique conversation ID
+      const conversationId = gameTabService.generateGameConversationId(gameInfo.gameTitle);
       
-      setConversations(prevConvs => prevConvs.map(conv => {
-          if (conv.id === newConversation.id) {
-              const enrichedSubtabs = conv.subtabs?.map(subtab => {
-                  if (initialInsights[subtab.id]) {
-                      return { ...subtab, content: initialInsights[subtab.id], status: 'loaded' as 'loaded' };
-                  }
-              return subtab;
-              });
-              const updatedConv = { ...conv, subtabs: enrichedSubtabs };
-              // Persist this final update to Supabase
-              ConversationService.updateConversation(updatedConv.id, updatedConv);
-              return updatedConv;
-          }
-          return conv;
+      // Check if game tab already exists
+      const existingConversation = conversations[conversationId];
+      if (existingConversation) {
+        console.log('🎮 [MainApp] Game tab already exists, switching to it');
+        setActiveConversation(existingConversation);
+        return;
+      }
+
+      // Create new game tab
+      const newGameTab = await gameTabService.createGameTab({
+        gameTitle: gameInfo.gameTitle,
+        genre: gameInfo.genre || 'Action RPG',
+        conversationId,
+        userId: user.id
+      });
+
+      // Add to conversations state
+      setConversations(prev => ({
+        ...prev,
+        [conversationId]: newGameTab
       }));
+
+      // Switch to the new game tab
+      setActiveConversation(newGameTab);
+
+      // Auto-switch to Playing mode for new game tabs
+      setActiveSession(conversationId, true);
+
+      console.log('🎮 [MainApp] Game tab created successfully:', newGameTab.title);
     } catch (error) {
-      console.error('Error creating game tab:', error);
+      console.error('Failed to create game tab:', error);
+      // You could show a user-friendly error message here
     }
   };
 
   const handleSendMessage = async (message: string, imageUrl?: string) => {
-    if (!activeConversation || !user) return;
+    if (!activeConversation || isLoading) return;
+
+    console.log('📸 [MainApp] Sending message with image:', { message, hasImage: !!imageUrl, imageUrl: imageUrl?.substring(0, 50) + '...' });
+
+    // Auto-switch to Playing mode for game help requests
+    const isGameHelpRequest = imageUrl || 
+      (message && (
+        message.toLowerCase().includes('help') ||
+        message.toLowerCase().includes('how to') ||
+        message.toLowerCase().includes('what should') ||
+        message.toLowerCase().includes('stuck') ||
+        message.toLowerCase().includes('tutorial') ||
+        message.toLowerCase().includes('guide')
+      ));
+
+    if (isGameHelpRequest && activeConversation.id !== 'everything-else') {
+      // Switch to Playing mode if not already active
+      if (!session.isActive || session.currentGameId !== activeConversation.id) {
+        console.log('🎮 [MainApp] Auto-switching to Playing mode for game help request');
+        setActiveSession(activeConversation.id, true);
+      }
+    }
 
     const newMessage = {
       id: `msg_${Date.now()}`,
@@ -390,17 +569,90 @@ const MainApp: React.FC<MainAppProps> = ({
       imageUrl,
     };
 
-    await ConversationService.addMessage(activeConversation.id, newMessage);
-    const conversationsObject = await ConversationService.getConversations();
-    const updatedConversations = Object.values(conversationsObject);
-    setConversations(updatedConversations);
+    // Optimized: Update state immediately without re-fetching
+    setConversations(prev => {
+      const updated = { ...prev };
+      if (updated[activeConversation.id]) {
+        updated[activeConversation.id] = {
+          ...updated[activeConversation.id],
+          messages: [...updated[activeConversation.id].messages, newMessage],
+          updatedAt: Date.now()
+        };
+      }
+      return updated;
+    });
 
-    // Get real AI response
+    // Add message to service
+    await ConversationService.addMessage(activeConversation.id, newMessage);
+
+    // Track credit usage based on query type
+    const hasImage = !!imageUrl;
+    
+    // Determine query type: image+text or image-only = image query, text-only = text query
+    const queryType = hasImage ? 'image' : 'text';
+    
+    // Check if user can make the request
+    if (!UserService.canMakeRequest(queryType)) {
+      const errorMessage = {
+        id: `msg_${Date.now() + 1}`,
+        content: `You've reached your ${queryType} query limit for this month. Upgrade to Pro for more queries.`,
+        role: 'assistant' as const,
+        timestamp: Date.now(),
+      };
+      
+      // Add error message to conversation
+      setConversations(prev => {
+        const updated = { ...prev };
+        if (updated[activeConversation.id]) {
+          updated[activeConversation.id] = {
+            ...updated[activeConversation.id],
+            messages: [...updated[activeConversation.id].messages, errorMessage],
+            updatedAt: Date.now()
+          };
+        }
+        return updated;
+      });
+      
+      await ConversationService.addMessage(activeConversation.id, errorMessage);
+      return;
+    }
+
+    // Increment usage count
+    UserService.incrementUsage(queryType);
+    
+    // Also update in Supabase
+    if (user?.authUserId) {
+      try {
+        const supabaseService = new SupabaseService();
+        await supabaseService.incrementUsage(user.authUserId, queryType);
+        console.log(`📊 [MainApp] Credit usage updated: ${queryType} query`);
+        
+        // Refresh user data to update credit indicator
+        await refreshUserData();
+      } catch (error) {
+        console.warn('Failed to update usage in Supabase:', error);
+      }
+    }
+
+    // Clear previous suggestions and start loading
+    setSuggestedPrompts([]);
     setIsLoading(true);
+    
+    // Create abort controller for stop functionality
+    const controller = new AbortController();
+    setAbortController(controller);
+    
     try {
-      const isActiveSession = session.isActive && session.currentGameId === activeConversation.id;
-      const response = await errorRecoveryService.retryWithBackoff(
-        () => aiService.getChatResponse(activeConversation, user, message, isActiveSession, !!imageUrl)
+      const user = authService.getCurrentUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const response = await aiService.getChatResponse(
+        activeConversation,
+        user,
+        message,
+        session.isActive && session.currentGameId === activeConversation.id,
+        !!imageUrl,
+        imageUrl
       );
 
       const aiMessage = {
@@ -410,53 +662,96 @@ const MainApp: React.FC<MainAppProps> = ({
         timestamp: Date.now(),
       };
 
-      await ConversationService.addMessage(activeConversation.id, aiMessage);
-      const conversationsObject = await ConversationService.getConversations();
-      const updatedConversations = Object.values(conversationsObject);
-      setConversations(updatedConversations);
+      // Optimized: Update state immediately
+      setConversations(prev => {
+        const updated = { ...prev };
+        if (updated[activeConversation.id]) {
+          updated[activeConversation.id] = {
+            ...updated[activeConversation.id],
+            messages: [...updated[activeConversation.id].messages, aiMessage],
+            updatedAt: Date.now()
+          };
+        }
+        return updated;
+      });
 
-      // Check for game tab creation signal
+      // Add message to service
+      await ConversationService.addMessage(activeConversation.id, aiMessage);
+
+      // Process suggested prompts
+      console.log('🔍 [MainApp] Raw suggestions from AI:', response.suggestions);
+      const processedSuggestions = suggestedPromptsService.processAISuggestions(response.suggestions);
+      console.log('🔍 [MainApp] Processed suggestions:', processedSuggestions);
+      
+      if (processedSuggestions.length > 0) {
+        setSuggestedPrompts(processedSuggestions);
+      } else {
+        // Use fallback suggestions if AI doesn't provide any
+        const fallbackSuggestions = suggestedPromptsService.getFallbackSuggestions(activeConversation.id);
+        console.log('🔍 [MainApp] Using fallback suggestions:', fallbackSuggestions);
+        setSuggestedPrompts(fallbackSuggestions);
+      }
+
+      // Handle game tab creation if game is identified
       if (response.otakonTags.has('GAME_ID')) {
         const gameInfo = {
           gameTitle: response.otakonTags.get('GAME_ID'),
-          genre: response.otakonTags.get('GENRE') || 'Default',
+          genre: response.otakonTags.get('GENRE') || 'Default'
         };
-        console.log('Game detected:', gameInfo);
-        handleCreateGameTab(gameInfo);
-      }
-
-      // Check for insight updates
-      if (response.otakonTags.has('INSIGHT_UPDATE')) {
-        const insightData = response.otakonTags.get('INSIGHT_UPDATE');
-        if (insightData && typeof insightData === 'object') {
-          try {
-            await ConversationService.updateSubTabContent(activeConversation.id, insightData.id, insightData.content);
-            console.log(`Updated sub-tab ${insightData.id} with new content`);
-          } catch (error) {
-            console.error('Error updating sub-tab content:', error);
-            errorRecoveryService.handleConversationError(error);
-          }
-        }
+        await handleCreateGameTab(gameInfo);
       }
 
     } catch (error) {
       console.error("Failed to get AI response:", error);
-      errorRecoveryService.handleAIServiceError(error);
       
-      // Fallback to error message
+      // Check if it was aborted
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('AI request was aborted by user');
+        return;
+      }
+      
+      // Use error recovery service
+      const recoveryAction = await errorRecoveryService.handleAIError(
+        error as Error,
+        {
+          operation: 'handleSendMessage',
+          conversationId: activeConversation.id,
+          userId: user?.id,
+          timestamp: Date.now(),
+          retryCount: 0
+        }
+      );
+      
+      // Add error message to chat
       const errorMessage = {
         id: `msg_${Date.now() + 1}`,
-        content: "Sorry, I'm having trouble connecting to the AI service right now. Please try again in a moment.",
+        content: recoveryAction.message || "Sorry, I'm having trouble thinking right now. Please try again.",
         role: 'assistant' as const,
         timestamp: Date.now(),
       };
+      
+      // Optimized: Update state immediately
+      setConversations(prev => {
+        const updated = { ...prev };
+        if (updated[activeConversation.id]) {
+          updated[activeConversation.id] = {
+            ...updated[activeConversation.id],
+            messages: [...updated[activeConversation.id].messages, errorMessage],
+            updatedAt: Date.now()
+          };
+        }
+        return updated;
+      });
 
       await ConversationService.addMessage(activeConversation.id, errorMessage);
-      const conversationsObject = await ConversationService.getConversations();
-      const updatedConversations = Object.values(conversationsObject);
-      setConversations(updatedConversations);
+      
+      // Display user notification if needed
+      if (recoveryAction.type === 'user_notification') {
+        errorRecoveryService.displayError(recoveryAction.message || 'An error occurred', 'error');
+      }
     } finally {
       setIsLoading(false);
+      setAbortController(null);
     }
   };
 
@@ -478,8 +773,8 @@ const MainApp: React.FC<MainAppProps> = ({
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
           conversations={conversations}
-          activeConversationId={activeConversationId}
-          onConversationSelect={setActiveConversationId}
+          activeConversation={activeConversation}
+          onConversationSelect={handleConversationSelect}
           onDeleteConversation={handleDeleteConversation}
           onPinConversation={handlePinConversation}
           onUnpinConversation={handleUnpinConversation}
@@ -570,22 +865,19 @@ const MainApp: React.FC<MainAppProps> = ({
             {/* Chat Interface - Takes remaining space */}
             <div className="flex-1 min-h-0">
               <ChatInterface
-                conversation={activeConversation || null}
-                user={user}
-                session={session}
-                onToggleSession={() => activeConversation && toggleSession(activeConversation.id)}
-                onCreateGameTab={handleCreateGameTab}
+                conversation={activeConversation}
                 onSendMessage={handleSendMessage}
                 isLoading={isLoading}
                 isPCConnected={connectionStatus === ConnectionStatus.CONNECTED}
                 onRequestConnect={handleConnectionModalOpen}
                 userTier={user.tier}
-                onStop={() => {
-                  // TODO: Implement stop functionality
-                  console.log('Stop button clicked');
-                }}
+                onStop={handleStopAI}
                 isManualUploadMode={isManualUploadMode}
                 onToggleManualUploadMode={() => setIsManualUploadMode(!isManualUploadMode)}
+                suggestedPrompts={suggestedPrompts}
+                onSuggestedPromptClick={handleSuggestedPromptClick}
+                activeSession={session}
+                onToggleActiveSession={handleToggleActiveSession}
               />
             </div>
         </div>

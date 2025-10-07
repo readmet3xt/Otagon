@@ -97,6 +97,12 @@ export interface Conversation {
   messages: ChatMessage[];
   gameId?: string;
   gameTitle?: string;
+  genre?: string;
+  subtabs?: SubTab[];
+  subtabsOrder?: string[];
+  isActiveSession?: boolean;
+  activeObjective?: string;
+  gameProgress?: number;
   createdAt: number;
   updatedAt: number;
   isActive: boolean;
@@ -164,14 +170,7 @@ export interface AuthState {
   error: string | null;
 }
 
-// Active Session Types
-export interface ActiveSessionState {
-  isActive: boolean;
-  currentGameId?: string; // Corresponds to conversation.id
-}
-
-// --- NEW AI-ENHANCED INTERFACES ---
-
+// AI Types
 export interface SubTab {
   id: string;
   title: string;
@@ -202,35 +201,18 @@ export interface AIResponse {
   metadata: {
     model: string;
     timestamp: number;
-    cost: number; // For future tracking
-    tokens: number; // For future tracking
-    fromCache?: boolean; // Indicates if response was served from cache
+    cost: number;
+    tokens: number;
+    fromCache?: boolean;
   };
 }
 
-// Extend the existing Conversation interface
-export interface Conversation {
-  id: string;
-  title: string;
-  messages: ChatMessage[];
-  gameId?: string;
-  gameTitle?: string;
-  createdAt: number;
-  updatedAt: number;
+export interface ActiveSessionState {
   isActive: boolean;
-  isPinned?: boolean;
-  pinnedAt?: number;
-  // --- New Fields ---
-  genre?: string;
-  subtabs?: SubTab[];
-  subtabsOrder?: string[];
-  isActiveSession?: boolean;
-  activeObjective?: string;
-  gameProgress?: number;
+  currentGameId?: string; // Corresponds to conversation.id
 }
 
-// --- CONFIGURATION CONSTANTS ---
-
+// Configuration constants
 export const newsPrompts: string[] = [
   "What's the latest gaming news?",
   "Which games are releasing soon?",
@@ -247,9 +229,40 @@ export const insightTabsConfig: Record<string, Omit<SubTab, 'content' | 'isNew' 
     { id: 'characters', title: 'Characters', type: 'characters', instruction: 'Provide a brief on a key character the player just met.' },
     { id: 'items', title: 'Items & Equipment', type: 'items', instruction: 'Describe a recently acquired item or piece of equipment and its use.' },
   ],
+  'RPG': [
+    { id: 'walkthrough', title: 'Walkthrough', type: 'walkthrough', instruction: 'Provide a step-by-step guide for the current quest or objective.' },
+    { id: 'tips', title: 'Tips & Tricks', type: 'tips', instruction: 'Offer helpful tips for character building and progression.' },
+    { id: 'strategies', title: 'Combat Strategies', type: 'strategies', instruction: 'Detail combat strategies and party composition advice.' },
+    { id: 'story', title: 'Story So Far', type: 'story', instruction: 'Summarize the story up to the current point, avoiding future spoilers.' },
+    { id: 'characters', title: 'Characters', type: 'characters', instruction: 'Provide information about key characters and NPCs.' },
+    { id: 'items', title: 'Items & Equipment', type: 'items', instruction: 'Describe important items, weapons, and equipment.' },
+  ],
+  'FPS': [
+    { id: 'walkthrough', title: 'Walkthrough', type: 'walkthrough', instruction: 'Provide tactical guidance for the current mission or level.' },
+    { id: 'tips', title: 'Tips & Tricks', type: 'tips', instruction: 'Offer combat tips and weapon recommendations.' },
+    { id: 'strategies', title: 'Strategies', type: 'strategies', instruction: 'Detail tactical approaches for different combat situations.' },
+    { id: 'story', title: 'Story So Far', type: 'story', instruction: 'Summarize the story up to the current point, avoiding future spoilers.' },
+    { id: 'characters', title: 'Characters', type: 'characters', instruction: 'Provide information about key characters and allies.' },
+    { id: 'items', title: 'Weapons & Equipment', type: 'items', instruction: 'Describe weapons, equipment, and their tactical uses.' },
+  ],
+  'Strategy': [
+    { id: 'walkthrough', title: 'Walkthrough', type: 'walkthrough', instruction: 'Provide strategic guidance for the current scenario or mission.' },
+    { id: 'tips', title: 'Tips & Tricks', type: 'tips', instruction: 'Offer resource management and tactical tips.' },
+    { id: 'strategies', title: 'Strategies', type: 'strategies', instruction: 'Detail strategic approaches for different scenarios.' },
+    { id: 'story', title: 'Story So Far', type: 'story', instruction: 'Summarize the story up to the current point, avoiding future spoilers.' },
+    { id: 'characters', title: 'Characters', type: 'characters', instruction: 'Provide information about key characters and leaders.' },
+    { id: 'items', title: 'Resources & Units', type: 'items', instruction: 'Describe important resources, units, and technologies.' },
+  ],
+  'Puzzle': [
+    { id: 'walkthrough', title: 'Walkthrough', type: 'walkthrough', instruction: 'Provide step-by-step solution for the current puzzle.' },
+    { id: 'tips', title: 'Tips & Tricks', type: 'tips', instruction: 'Offer puzzle-solving strategies and techniques.' },
+    { id: 'strategies', title: 'Strategies', type: 'strategies', instruction: 'Detail approaches for different types of puzzles.' },
+    { id: 'story', title: 'Story So Far', type: 'story', instruction: 'Summarize the story up to the current point, avoiding future spoilers.' },
+    { id: 'characters', title: 'Characters', type: 'characters', instruction: 'Provide information about key characters and their roles.' },
+    { id: 'items', title: 'Items & Tools', type: 'items', instruction: 'Describe important items and tools for puzzle solving.' },
+  ],
   'Default': [
     { id: 'walkthrough', title: 'Walkthrough', type: 'walkthrough', instruction: 'Provide a step-by-step guide for the current objective.' },
     { id: 'tips', title: 'Tips', type: 'tips', instruction: 'Give some helpful tips for the game.' },
   ]
-  // Add other genres like 'FPS', 'Strategy', 'Puzzle' etc.
 };

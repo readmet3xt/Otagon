@@ -1,6 +1,7 @@
 import { StorageService } from './storageService';
 import { cacheService } from './cacheService';
-import { Conversations, Conversation, ChatMessage, UserTier, SubTab } from '../types';
+import { chatMemoryService } from './chatMemoryService';
+import { Conversations, Conversation, ChatMessage, UserTier } from '../types';
 import { STORAGE_KEYS, DEFAULT_CONVERSATION_TITLE, USER_TIERS } from '../constants';
 
 // ✅ SCALABILITY: Tier-based limits for conversations and messages
@@ -176,7 +177,11 @@ export class ConversationService {
       StorageService.set(STORAGE_KEYS.CONVERSATIONS, conversations);
       
       // Store individual conversations for better performance
-      // Conversations saved to storage
+      await Promise.all(
+        Object.values(conversations).map(conv => 
+          chatMemoryService.saveConversation(conv)
+        )
+      );
     } catch (error) {
       console.warn('Failed to store conversations in cache, using localStorage only:', error);
       StorageService.set(STORAGE_KEYS.CONVERSATIONS, conversations);
@@ -231,6 +236,7 @@ export class ConversationService {
     await this.setConversations(conversations);
     
     // ✅ SCALABILITY: Save individual conversation to cache for better performance
+    await chatMemoryService.saveConversation(conversation);
     
     return { success: true };
   }
@@ -246,6 +252,7 @@ export class ConversationService {
       await this.setConversations(conversations);
       
       // ✅ SCALABILITY: Update individual conversation in cache
+      await chatMemoryService.saveConversation(conversations[id]);
     }
   }
 
@@ -290,14 +297,21 @@ export class ConversationService {
       await this.setConversations(conversations);
       
       // ✅ SCALABILITY: Save individual conversation to cache
+      await chatMemoryService.saveConversation(conversation);
       
       // ✅ SCALABILITY: Save chat context for AI memory
       try {
         // Try to get actual user ID from auth service
-        const authService = require('./authService').authService;
+        const { authService } = await import('./authService');
         const user = authService.getCurrentUser();
-        if (user?.id) {
-          // Chat context saved
+        if (user?.authUserId) {
+          // Use the auth user ID for cache operations (app_cache table references auth.users)
+          await chatMemoryService.saveChatContext(user.authUserId, {
+            recentMessages: conversation.messages.slice(-10), // Last 10 messages
+            userPreferences: {}, // This would come from user service
+            gameContext: {}, // This would come from game context
+            conversationSummary: conversation.title
+          });
         }
       } catch (error) {
         console.warn('Failed to save chat context:', error);
@@ -436,56 +450,59 @@ export class ConversationService {
       };
       
       await this.setConversations(conversations);
+      await chatMemoryService.saveConversation(conversations[conversationId]);
     }
   }
 
   /**
-   * Updates just the sub-tabs for a given conversation.
-   * Useful for when the AI provides an [OTAKON_INSIGHT_UPDATE].
+   * Update sub-tab content for a conversation
    */
-  public static async updateSubTabContent(conversationId: string, subTabId: string, newContent: string): Promise<void> {
-    try {
-      const conversations = await this.getConversations();
-      const conversation = conversations[conversationId];
-      
-      if (!conversation) {
-        console.error('Conversation not found for sub-tab update:', conversationId);
-        return;
-      }
-
-      const updatedSubtabs = conversation.subtabs?.map((tab: SubTab) =>
-        tab.id === subTabId ? { ...tab, content: newContent, isNew: false, status: 'loaded' as const } : tab
-      ) || [];
-
-      await this.updateConversation(conversationId, { subtabs: updatedSubtabs });
-    } catch (error) {
-      console.error('Error updating sub-tab content:', error);
+  static async updateSubTabContent(conversationId: string, subTabId: string, content: string): Promise<void> {
+    const conversations = await this.getConversations();
+    const conversation = conversations[conversationId];
+    
+    if (!conversation || !conversation.subtabs) {
+      throw new Error('Conversation or sub-tabs not found');
     }
+
+    const updatedSubTabs = conversation.subtabs.map(tab => 
+      tab.id === subTabId 
+        ? { ...tab, content, isNew: false, status: 'loaded' as const }
+        : tab
+    );
+
+    await this.updateConversation(conversationId, {
+      subtabs: updatedSubTabs,
+      updatedAt: Date.now()
+    });
   }
 
   /**
-   * Updates the active session state for a conversation.
+   * Get a specific conversation by ID
    */
-  public static async setSessionState(conversationId: string, isActive: boolean): Promise<void> {
-    try {
-      await this.updateConversation(conversationId, { isActiveSession: isActive });
-    } catch (error) {
-      console.error('Error updating session state:', error);
-    }
+  static async getConversation(conversationId: string): Promise<Conversation | null> {
+    const conversations = await this.getConversations();
+    return conversations[conversationId] || null;
   }
 
   /**
-   * Updates the game progress and active objective.
+   * Update session state for a conversation
    */
-  public static async updateGameProgress(conversationId: string, progress: number, objective: string): Promise<void> {
-    try {
-      await this.updateConversation(conversationId, { 
-        gameProgress: progress, 
-        activeObjective: objective 
-      });
-    } catch (error) {
-      console.error('Error updating game progress:', error);
-    }
+  static async setSessionState(conversationId: string, isActive: boolean): Promise<void> {
+    await this.updateConversation(conversationId, {
+      isActiveSession: isActive,
+      updatedAt: Date.now()
+    });
   }
 
+  /**
+   * Update game progress and active objective
+   */
+  static async updateGameProgress(conversationId: string, progress: number, objective: string): Promise<void> {
+    await this.updateConversation(conversationId, {
+      gameProgress: progress,
+      activeObjective: objective,
+      updatedAt: Date.now()
+    });
+  }
 }
