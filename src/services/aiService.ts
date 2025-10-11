@@ -1,11 +1,11 @@
-import { GoogleGenerativeAI, GenerativeModel } from "@google/generative-ai";
+import { GoogleGenerativeAI, GenerativeModel, SchemaType } from "@google/generative-ai";
 import { parseOtakonTags } from './otakonTags';
-import { AIResponse, Conversation, User, insightTabsConfig } from '../types';
+import { AIResponse, Conversation, User, insightTabsConfig, PlayerProfile } from '../types';
 import { cacheService } from './cacheService';
 import { getPromptForPersona } from './promptSystem';
-import { sessionSummaryService } from './sessionSummaryService';
 import { errorRecoveryService } from './errorRecoveryService';
 import { characterImmersionService } from './characterImmersionService';
+import { profileAwareTabService } from './profileAwareTabService';
 
 const API_KEY = (import.meta as any).env.VITE_GEMINI_API_KEY;
 
@@ -19,9 +19,9 @@ class AIService {
       throw new Error("VITE_GEMINI_API_KEY is not set in the environment variables.");
     }
     this.genAI = new GoogleGenerativeAI(API_KEY);
-    // Using the latest stable models as recommended
-    this.flashModel = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    this.proModel = this.genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+    // Using the latest preview models (September 2025) for enhanced performance
+    this.flashModel = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite-preview-09-2025" });
+    this.proModel = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-09-2025" });
   }
 
   /**
@@ -33,30 +33,34 @@ class AIService {
     userMessage: string,
     isActiveSession: boolean,
     hasImages: boolean = false,
-    imageData?: string
+    imageData?: string,
+    abortSignal?: AbortSignal
   ): Promise<AIResponse> {
     // Create cache key for this request
     const cacheKey = `ai_response_${conversation.id}_${userMessage.substring(0, 50)}_${isActiveSession}`;
     
-    // Check cache first
-    const cachedResponse = await cacheService.get<AIResponse>(cacheKey);
+    // Check cache first (memory only for speed - skip Supabase for real-time operations)
+    const cachedResponse = await cacheService.get<AIResponse>(cacheKey, true); // true = memory only
     if (cachedResponse) {
       return { ...cachedResponse, metadata: { ...cachedResponse.metadata, fromCache: true } };
     }
 
-    // Get session context if available
+    // Skip session context for now - it's returning null and slowing things down
+    // TODO: Implement proper session context when needed
     let sessionContext = '';
-    try {
-      const latestSummary = await sessionSummaryService.getLatestSessionSummary(conversation.id);
-      if (latestSummary) {
-        sessionContext = `\n\n**Previous Session Context:**\n${latestSummary.summary}`;
-      }
-    } catch (error) {
-      console.warn('Failed to get session context:', error);
-    }
 
-    // Use the enhanced prompt system with session context
-    const basePrompt = getPromptForPersona(conversation, userMessage, user, isActiveSession, hasImages);
+    // Get player profile from user preferences
+    const playerProfile = user.profileData as any; // PlayerProfile is stored in profileData
+    
+    // Use the enhanced prompt system with session context and player profile
+    const basePrompt = getPromptForPersona(
+      conversation, 
+      userMessage, 
+      user, 
+      isActiveSession, 
+      hasImages,
+      playerProfile
+    );
     
     // Add immersion context for game conversations
     let immersionContext = '';
@@ -77,6 +81,11 @@ class AIService {
       imageDataLength: imageData?.length,
       conversationId: conversation.id 
     });
+    
+    // Check if request was aborted before starting
+    if (abortSignal?.aborted) {
+      throw new DOMException('Request was aborted', 'AbortError');
+    }
     
     try {
       const modelToUse = conversation.id === 'everything-else' ? this.flashModel : this.flashModel;
@@ -106,6 +115,12 @@ class AIService {
       }
       
       const result = await modelToUse.generateContent(content);
+      
+      // Check if request was aborted after API call but before processing
+      if (abortSignal?.aborted) {
+        throw new DOMException('Request was aborted', 'AbortError');
+      }
+      
       const rawContent = await result.response.text();
       const { cleanContent, tags } = parseOtakonTags(rawContent);
 
@@ -115,15 +130,16 @@ class AIService {
         otakonTags: tags,
         rawContent: rawContent,
         metadata: {
-          model: 'gemini-2.5-flash',
+          model: 'gemini-2.5-flash-lite-preview-09-2025',
           timestamp: Date.now(),
           cost: 0, // Placeholder
           tokens: 0, // Placeholder
         }
       };
       
-      // Cache the response for 1 hour
-      await cacheService.set(cacheKey, aiResponse, 60 * 60 * 1000);
+      // Cache the response for 1 hour (non-blocking - fire and forget)
+      cacheService.set(cacheKey, aiResponse, 60 * 60 * 1000)
+        .catch(error => console.warn('Failed to cache AI response:', error));
       
       return aiResponse;
 
@@ -144,7 +160,7 @@ class AIService {
       
       if (recoveryAction.type === 'retry') {
         // Retry the request
-        return this.getChatResponse(conversation, user, userMessage, isActiveSession, hasImages, imageData);
+        return this.getChatResponse(conversation, user, userMessage, isActiveSession, hasImages, imageData, abortSignal);
       } else if (recoveryAction.type === 'user_notification') {
         // Return a user-friendly error response
         return {
@@ -165,11 +181,262 @@ class AIService {
     }
   }
 
+  /**
+   * Enhanced method to get AI chat response with structured data
+   * Returns enhanced AIResponse with optional fields for better integration
+   * Falls back to OTAKON_TAG parsing if JSON mode fails
+   */
+  public async getChatResponseWithStructure(
+    conversation: Conversation,
+    user: User,
+    userMessage: string,
+    isActiveSession: boolean,
+    hasImages: boolean = false,
+    imageData?: string,
+    abortSignal?: AbortSignal
+  ): Promise<AIResponse> {
+    // Create cache key for this request
+    const cacheKey = `ai_structured_${conversation.id}_${userMessage.substring(0, 50)}_${isActiveSession}`;
+    
+    // Check cache first
+    const cachedResponse = await cacheService.get<AIResponse>(cacheKey, true);
+    if (cachedResponse) {
+      return { ...cachedResponse, metadata: { ...cachedResponse.metadata, fromCache: true } };
+    }
+
+    // Get enhanced prompt with context
+    const basePrompt = getPromptForPersona(conversation, userMessage, user, isActiveSession, hasImages);
+    
+    // Add immersion context
+    let immersionContext = '';
+    if (conversation.id !== 'everything-else' && conversation.gameTitle && conversation.genre) {
+      immersionContext = characterImmersionService.generateImmersionContext({
+        gameTitle: conversation.gameTitle,
+        genre: conversation.genre,
+        currentLocation: conversation.activeObjective,
+        playerProgress: conversation.gameProgress
+      });
+    }
+
+    // Add structured response instructions
+    const structuredInstructions = `
+
+**ENHANCED RESPONSE FORMAT:**
+In addition to your regular response, provide structured data in the following optional fields:
+
+1. **followUpPrompts** (array of 3-4 strings): Generate contextual follow-up questions directly related to your response content
+2. **progressiveInsightUpdates** (array): If conversation provides new info, update existing subtabs (e.g., story_so_far, characters)
+3. **stateUpdateTags** (array): Detect game events (e.g., "OBJECTIVE_COMPLETE: true", "TRIUMPH: Boss Name")
+4. **gamePillData** (object): ${conversation.id === 'everything-else' ? 'Set shouldCreate: true if user asks about a specific game, and include game details with pre-filled wikiContent' : 'Set shouldCreate: false (already in game tab)'}
+
+Note: These are optional enhancements. If not applicable, omit or return empty arrays.
+`;
+    
+    const prompt = basePrompt + immersionContext + structuredInstructions;
+    
+    console.log('🤖 [AIService] Processing structured request:', { 
+      hasImages, 
+      conversationId: conversation.id,
+      useStructuredMode: !hasImages // Only use JSON mode for text
+    });
+    
+    // Check if request was aborted
+    if (abortSignal?.aborted) {
+      throw new DOMException('Request was aborted', 'AbortError');
+    }
+    
+    try {
+      const modelToUse = this.flashModel;
+      
+      // Prepare content
+      let content: any;
+      if (hasImages && imageData) {
+        const mimeType = imageData.split(';')[0].split(':')[1] || 'image/jpeg';
+        const base64Data = imageData.split(',')[1];
+        
+        content = [
+          { text: prompt },
+          { inlineData: { mimeType, data: base64Data } }
+        ];
+        
+        // For images, use regular mode (not JSON) because images don't work well with JSON schema
+        const result = await modelToUse.generateContent(content);
+        const rawContent = await result.response.text();
+        const { cleanContent, tags } = parseOtakonTags(rawContent);
+        
+        const aiResponse: AIResponse = {
+          content: cleanContent,
+          suggestions: tags.get('SUGGESTIONS') || [],
+          otakonTags: tags,
+          rawContent: rawContent,
+          metadata: {
+            model: 'gemini-2.5-flash-lite-preview-09-2025',
+            timestamp: Date.now(),
+            cost: 0,
+            tokens: 0,
+          }
+        };
+        
+        cacheService.set(cacheKey, aiResponse, 60 * 60 * 1000).catch(err => console.warn(err));
+        return aiResponse;
+      }
+      
+      // For text-only, try JSON schema mode for structured response
+      try {
+        const result = await modelToUse.generateContent({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: SchemaType.OBJECT,
+              properties: {
+                content: { type: SchemaType.STRING, description: "The main chat response for the user" },
+                followUpPrompts: { 
+                  type: SchemaType.ARRAY, 
+                  items: { type: SchemaType.STRING },
+                  description: "3-4 contextual follow-up questions"
+                },
+                progressiveInsightUpdates: {
+                  type: SchemaType.ARRAY,
+                  items: {
+                    type: SchemaType.OBJECT,
+                    properties: {
+                      tabId: { type: SchemaType.STRING },
+                      title: { type: SchemaType.STRING },
+                      content: { type: SchemaType.STRING }
+                    }
+                  }
+                },
+                stateUpdateTags: {
+                  type: SchemaType.ARRAY,
+                  items: { type: SchemaType.STRING }
+                },
+                gamePillData: {
+                  type: SchemaType.OBJECT,
+                  properties: {
+                    shouldCreate: { type: SchemaType.BOOLEAN },
+                    gameName: { type: SchemaType.STRING },
+                    genre: { type: SchemaType.STRING },
+                    wikiContent: { 
+                      type: SchemaType.STRING,
+                      description: "JSON string containing pre-filled subtab content"
+                    }
+                  }
+                }
+              },
+              required: ["content"]
+            }
+          }
+        });
+        
+        const rawResponse = await result.response.text();
+        const structuredData = JSON.parse(rawResponse);
+        
+        // Parse wikiContent if it's a JSON string
+        let gamePillData = structuredData.gamePillData;
+        if (gamePillData && typeof gamePillData.wikiContent === 'string') {
+          try {
+            gamePillData = {
+              ...gamePillData,
+              wikiContent: JSON.parse(gamePillData.wikiContent)
+            };
+          } catch {
+            // If parsing fails, keep it as is
+            console.warn('Failed to parse wikiContent as JSON');
+          }
+        }
+        
+        // Build enhanced AIResponse
+        const aiResponse: AIResponse = {
+          content: structuredData.content || '',
+          suggestions: structuredData.followUpPrompts || [],
+          otakonTags: new Map(), // Empty for JSON mode
+          rawContent: rawResponse,
+          metadata: {
+            model: 'gemini-2.5-flash-lite-preview-09-2025',
+            timestamp: Date.now(),
+            cost: 0,
+            tokens: 0,
+          },
+          // Enhanced fields
+          followUpPrompts: structuredData.followUpPrompts,
+          progressiveInsightUpdates: structuredData.progressiveInsightUpdates,
+          stateUpdateTags: structuredData.stateUpdateTags,
+          gamePillData
+        };
+        
+        cacheService.set(cacheKey, aiResponse, 60 * 60 * 1000).catch(err => console.warn(err));
+        return aiResponse;
+        
+      } catch (jsonError) {
+        console.warn('JSON mode failed, falling back to OTAKON_TAG parsing:', jsonError);
+        
+        // Fallback to regular OTAKON_TAG parsing
+        const result = await modelToUse.generateContent(prompt);
+        const rawContent = await result.response.text();
+        const { cleanContent, tags } = parseOtakonTags(rawContent);
+        
+        const aiResponse: AIResponse = {
+          content: cleanContent,
+          suggestions: tags.get('SUGGESTIONS') || [],
+          otakonTags: tags,
+          rawContent: rawContent,
+          metadata: {
+            model: 'gemini-2.5-flash-lite-preview-09-2025',
+            timestamp: Date.now(),
+            cost: 0,
+            tokens: 0,
+          }
+        };
+        
+        cacheService.set(cacheKey, aiResponse, 60 * 60 * 1000).catch(err => console.warn(err));
+        return aiResponse;
+      }
+      
+    } catch (error) {
+      console.error("Structured AI Service Error:", error);
+      
+      // Use error recovery
+      const recoveryAction = await errorRecoveryService.handleAIError(
+        error as Error,
+        {
+          operation: 'getChatResponseWithStructure',
+          conversationId: conversation.id,
+          userId: user.id,
+          timestamp: Date.now(),
+          retryCount: 0
+        }
+      );
+      
+      if (recoveryAction.type === 'retry') {
+        return this.getChatResponseWithStructure(conversation, user, userMessage, isActiveSession, hasImages, imageData, abortSignal);
+      } else if (recoveryAction.type === 'user_notification') {
+        return {
+          content: recoveryAction.message || "I'm having trouble thinking right now. Please try again later.",
+          suggestions: ["Try again", "Check your connection", "Contact support"],
+          otakonTags: new Map(),
+          rawContent: recoveryAction.message || "Error occurred",
+          metadata: {
+            model: 'error',
+            timestamp: Date.now(),
+            cost: 0,
+            tokens: 0
+          }
+        };
+      }
+      
+      throw new Error("Failed to get structured response from AI service.");
+    }
+  }
 
   /**
    * Generates initial sub-tab content for a new game
    */
-  public async generateInitialInsights(gameTitle: string, genre: string): Promise<Record<string, string>> {
+  public async generateInitialInsights(
+    gameTitle: string, 
+    genre: string,
+    playerProfile?: PlayerProfile
+  ): Promise<Record<string, string>> {
     const cacheKey = `insights_${gameTitle.toLowerCase().replace(/\s+/g, '-')}`;
     
     // Check cache first
@@ -183,9 +450,16 @@ class AIService {
       .map(tab => `- ${tab.title} (${tab.id}): ${tab.instruction}`)
       .join('\n');
 
+    // Get player profile context if available
+    const profile = playerProfile || profileAwareTabService.getDefaultProfile();
+    const profileContext = profileAwareTabService.buildProfileContext(profile);
+
     const prompt = `
       **Task:** Generate initial content for ${gameTitle} (${genre} game)
       **Format:** Respond with a single JSON object where keys are tab IDs and values are content strings
+      
+      **Player Profile:**
+      ${profileContext}
       
       **Instructions:**
       ${instructions}
@@ -195,6 +469,7 @@ class AIService {
       - Output must be valid JSON: {"walkthrough":"content","tips":"content",...}
       - Each content should be 2-3 paragraphs maximum
       - Use markdown formatting for better readability
+      - **IMPORTANT: Adapt content style based on the Player Profile above**
     `;
 
     try {

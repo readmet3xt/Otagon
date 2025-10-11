@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { SubTab } from '../../types';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 
 interface SubTabsProps {
   subtabs: SubTab[];
@@ -11,12 +12,13 @@ interface SubTabsProps {
 }
 
 const SubTabs: React.FC<SubTabsProps> = ({ 
-  subtabs, 
+  subtabs = [], 
   activeTabId, 
   onTabClick, 
   isLoading = false 
 }) => {
   const [localActiveTab, setLocalActiveTab] = useState<string>(activeTabId || subtabs[0]?.id || '');
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
 
   const currentActiveTab = activeTabId || localActiveTab;
   const activeTab = subtabs.find(tab => tab.id === currentActiveTab);
@@ -26,48 +28,68 @@ const SubTabs: React.FC<SubTabsProps> = ({
     onTabClick?.(tabId);
   };
 
+  const toggleExpanded = () => {
+    setIsExpanded(!isExpanded);
+  };
+
+  // Return null if no subtabs (after hooks)
   if (!subtabs || subtabs.length === 0) {
     return null;
   }
 
   return (
-    <div className="mb-4 bg-[#1C1C1C]/60 border border-[#424242]/40 rounded-xl backdrop-blur-sm">
-      {/* Tab Headers */}
-      <div className="flex flex-wrap gap-1 p-2 border-b border-[#424242]/40">
-        {subtabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => handleTabClick(tab.id)}
-            className={`
-              px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200
-              ${currentActiveTab === tab.id
-                ? 'bg-[#FF4D4D] text-white shadow-lg'
-                : 'bg-[#2E2E2E]/60 text-[#A3A3A3] hover:bg-[#424242]/60 hover:text-[#F5F5F5]'
-              }
-              ${tab.isNew ? 'ring-2 ring-[#FF4D4D]/50' : ''}
-            `}
-            disabled={isLoading}
-          >
-            <div className="flex items-center gap-2">
-              {tab.isNew && (
-                <div className="w-2 h-2 bg-[#FF4D4D] rounded-full animate-pulse" />
-              )}
-              <span>{tab.title}</span>
-              {tab.status === 'loading' && (
-                <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
-              )}
-              {tab.status === 'error' && (
-                <div className="w-3 h-3 text-red-400">⚠</div>
-              )}
-            </div>
-          </button>
-        ))}
+    <div className="mb-4 bg-[#1C1C1C]/60 border border-[#424242]/40 rounded-xl backdrop-blur-sm transition-all duration-300">
+      {/* Tab Headers with Expand/Collapse Button */}
+      <div className={`flex items-center gap-2 p-2 ${isExpanded ? 'border-b border-[#424242]/40' : ''}`}>
+        <div className="flex flex-wrap gap-1 flex-1">
+          {subtabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => handleTabClick(tab.id)}
+              className={`
+                px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200
+                ${currentActiveTab === tab.id
+                  ? 'bg-[#FF4D4D] text-white shadow-lg'
+                  : 'bg-[#2E2E2E]/60 text-[#A3A3A3] hover:bg-[#424242]/60 hover:text-[#F5F5F5]'
+                }
+                ${tab.isNew ? 'ring-2 ring-[#FF4D4D]/50' : ''}
+              `}
+              disabled={isLoading}
+            >
+              <div className="flex items-center gap-2">
+                {tab.isNew && (
+                  <div className="w-2 h-2 bg-[#FF4D4D] rounded-full animate-pulse" />
+                )}
+                <span>{tab.title}</span>
+                {tab.status === 'loading' && (
+                  <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
+                )}
+                {tab.status === 'error' && (
+                  <div className="w-3 h-3 text-red-400">⚠</div>
+                )}
+              </div>
+            </button>
+          ))}
+        </div>
+        
+        {/* Expand/Collapse Button */}
+        <button
+          onClick={toggleExpanded}
+          className="flex-shrink-0 p-2 rounded-lg bg-[#2E2E2E]/60 text-[#A3A3A3] hover:bg-[#424242]/60 hover:text-[#F5F5F5] transition-all duration-200"
+          aria-label={isExpanded ? 'Collapse content' : 'Expand content'}
+        >
+          {isExpanded ? (
+            <ChevronDownIcon className="w-4 h-4" />
+          ) : (
+            <ChevronUpIcon className="w-4 h-4" />
+          )}
+        </button>
       </div>
 
-      {/* Tab Content */}
-      {activeTab && (
-        <div className="p-4 max-h-64 overflow-y-auto">
-          {isLoading && activeTab.status === 'loading' ? (
+      {/* Tab Content - Only shown when expanded */}
+      {isExpanded && activeTab && (
+        <div className="p-4 max-h-64 overflow-y-auto transition-all duration-300">
+          {activeTab.status === 'loading' || (!activeTab.content && isLoading) ? (
             <div className="flex items-center justify-center py-8">
               <div className="flex items-center gap-3 text-[#A3A3A3]">
                 <div className="w-5 h-5 border-2 border-[#FF4D4D] border-t-transparent rounded-full animate-spin" />
@@ -80,7 +102,7 @@ const SubTabs: React.FC<SubTabsProps> = ({
               <p>Failed to load {activeTab.title} content</p>
               <p className="text-sm mt-1">Please try again later</p>
             </div>
-          ) : (
+          ) : activeTab.content ? (
             <div className="prose prose-invert prose-sm max-w-none">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
@@ -131,6 +153,10 @@ const SubTabs: React.FC<SubTabsProps> = ({
               >
                 {activeTab.content}
               </ReactMarkdown>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-[#A3A3A3]">
+              <p>No content available for {activeTab.title}</p>
             </div>
           )}
         </div>

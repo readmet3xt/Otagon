@@ -13,6 +13,7 @@ import SuggestedPrompts from './SuggestedPrompts';
 import { ActiveSessionToggle } from '../ui/ActiveSessionToggle';
 import SubTabs from './SubTabs';
 import { gameTabService } from '../../services/gameTabService';
+import { tabManagementService } from '../../services/tabManagementService';
 // import { LoadingSpinner } from '../ui/LoadingSpinner';
 
 interface ChatInterfaceProps {
@@ -29,6 +30,8 @@ interface ChatInterfaceProps {
   onSuggestedPromptClick?: (prompt: string) => void;
   activeSession?: ActiveSessionState;
   onToggleActiveSession?: () => void;
+  initialMessage?: string;
+  onMessageChange?: (message: string) => void;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
@@ -45,14 +48,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onSuggestedPromptClick,
   activeSession,
   onToggleActiveSession,
+  initialMessage = '',
+  onMessageChange,
 }) => {
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState(initialMessage);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isFocused, setIsFocused] = useState(false);
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const [autocompleteSuggestions, setAutocompleteSuggestions] = useState<string[]>([]);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const autocompleteRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -74,12 +83,62 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   // Handle textarea value change
   const handleValueChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setMessage(e.target.value);
+    const newValue = e.target.value;
+    setMessage(newValue);
     adjustTextareaHeight();
+    // Notify parent of message change
+    onMessageChange?.(newValue);
+
+    // Check for @ command to show autocomplete
+    if (conversation && newValue.startsWith('@')) {
+      const availableTabs = tabManagementService.getAvailableTabNames(conversation);
+      if (availableTabs.length > 0) {
+        setAutocompleteSuggestions(availableTabs);
+        setShowAutocomplete(true);
+        setSelectedSuggestionIndex(0);
+      } else {
+        setShowAutocomplete(false);
+      }
+    } else {
+      setShowAutocomplete(false);
+    }
+  };
+
+  // Handle suggestion selection
+  const handleSelectSuggestion = (tabId: string) => {
+    setMessage(`@${tabId} `);
+    setShowAutocomplete(false);
+    textareaRef.current?.focus();
   };
 
   // Handle key down events
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Handle autocomplete navigation
+    if (showAutocomplete && autocompleteSuggestions.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedSuggestionIndex(prev => 
+          prev < autocompleteSuggestions.length - 1 ? prev + 1 : 0
+        );
+        return;
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedSuggestionIndex(prev => 
+          prev > 0 ? prev - 1 : autocompleteSuggestions.length - 1
+        );
+        return;
+      } else if (e.key === 'Tab' || (e.key === 'Enter' && showAutocomplete)) {
+        e.preventDefault();
+        handleSelectSuggestion(autocompleteSuggestions[selectedSuggestionIndex]);
+        return;
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setShowAutocomplete(false);
+        return;
+      }
+    }
+
+    // Handle normal Enter key
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit(e as any);
@@ -94,6 +153,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   useEffect(() => {
     adjustTextareaHeight();
   }, [message]);
+
+  // Update message when initialMessage prop changes (e.g., after tab switch)
+  useEffect(() => {
+    if (initialMessage !== undefined && initialMessage !== message) {
+      setMessage(initialMessage);
+    }
+  }, [initialMessage]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -321,6 +387,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                         prompts={suggestedPrompts}
                         onPromptClick={onSuggestedPromptClick}
                         isLoading={isLoading}
+                        conversationId={conversation?.id}
                       />
                     </div>
                   )}
@@ -407,6 +474,47 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             boxShadow: '0 0 20px rgba(255, 77, 77, 0.3), 0 0 40px rgba(255, 171, 64, 0.2), 0 0 60px rgba(0, 0, 0, 0.1)'
           }}>
           
+          {/* Autocomplete Dropdown */}
+          {showAutocomplete && autocompleteSuggestions.length > 0 && (
+            <div 
+              ref={autocompleteRef}
+              className="absolute bottom-full mb-2 left-3 right-3 bg-[#1C1C1C] border border-[#424242] rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto"
+            >
+              <div className="p-2">
+                <div className="text-xs text-[#A3A3A3] mb-2 px-2">
+                  Select a subtab to update:
+                </div>
+                {autocompleteSuggestions.map((tabId, index) => {
+                  const tab = conversation?.subtabs?.find(t => t.id === tabId);
+                  return (
+                    <button
+                      key={tabId}
+                      type="button"
+                      onClick={() => handleSelectSuggestion(tabId)}
+                      className={`w-full text-left px-3 py-2 rounded transition-colors ${
+                        index === selectedSuggestionIndex
+                          ? 'bg-[#E53A3A]/20 border border-[#E53A3A]/60'
+                          : 'hover:bg-[#2A2A2A] border border-transparent'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-[#E53A3A] font-mono text-sm">@{tabId}</span>
+                        {tab && (
+                          <span className="text-[#888888] text-xs">- {tab.title}</span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="px-3 py-2 border-t border-[#424242]/30 bg-[#1A1A1A]/50">
+                <div className="text-xs text-[#888888]">
+                  Use ↑↓ to navigate, Tab/Enter to select, Esc to cancel
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Textarea Container - Grows upward */}
           <div className="relative mb-2">
             <textarea

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Conversation, Conversations } from '../types';
+import { User, Conversation, Conversations, newsPrompts } from '../types';
 import { ConversationService } from '../services/conversationService';
 import { authService } from '../services/authService';
 import { aiService } from '../services/aiService';
@@ -10,6 +10,7 @@ import { gameTabService } from '../services/gameTabService';
 import { errorRecoveryService } from '../services/errorRecoveryService';
 import { UserService } from '../services/userService';
 import { SupabaseService } from '../services/supabaseService';
+import { tabManagementService } from '../services/tabManagementService';
 import Sidebar from './layout/Sidebar';
 import ChatInterface from './features/ChatInterface';
 import SettingsModal from './modals/SettingsModal';
@@ -20,7 +21,9 @@ import CreditIndicator from './ui/CreditIndicator';
 import { LoadingSpinner } from './ui/LoadingSpinner';
 import SettingsContextMenu from './ui/SettingsContextMenu';
 import { ConnectionStatus } from '../types';
-import { connect, disconnect } from '../services/websocketService';
+import HandsFreeModal from './modals/HandsFreeModal';
+import HandsFreeToggle from './ui/HandsFreeToggle';
+import { ttsService } from '../services/ttsService';
 
 interface MainAppProps {
   onLogout: () => void;
@@ -69,6 +72,9 @@ const MainApp: React.FC<MainAppProps> = ({
   const [connectionCode, setConnectionCode] = useState<string | null>(null);
   const [lastSuccessfulConnection, setLastSuccessfulConnection] = useState<Date | null>(null);
   
+  // Input preservation for tab switching
+  const [currentInputMessage, setCurrentInputMessage] = useState<string>('');
+  
   // Settings context menu state
   const [settingsContextMenu, setSettingsContextMenu] = useState<{
     isOpen: boolean;
@@ -78,16 +84,20 @@ const MainApp: React.FC<MainAppProps> = ({
     position: { x: 0, y: 0 },
   });
   
-  // Use props for connection state, fallback to local state if not provided
-  const connectionStatus = propConnectionStatus ?? ConnectionStatus.DISCONNECTED;
-  const connectionError = propConnectionError ?? null;
+  // Handsfree mode state
+  const [isHandsFreeMode, setIsHandsFreeMode] = useState(false);
+  const [handsFreeModalOpen, setHandsFreeModalOpen] = useState(false);
+  
+  // Use props for connection state (centralized in App.tsx)
+  // No fallback to prevent state inconsistencies
+  const connectionStatus = propConnectionStatus || ConnectionStatus.DISCONNECTED;
+  const connectionError = propConnectionError || null;
   
   // Debug connection state
-  console.log('🔍 [MainApp] Connection state:', {
-    propConnectionStatus,
+  console.log('🔍 [MainApp] Connection state (from props):', {
     connectionStatus,
-    propConnectionError,
-    connectionError
+    connectionError,
+    isConnected: connectionStatus === ConnectionStatus.CONNECTED
   });
 
   // Restore connection state from localStorage on mount
@@ -100,6 +110,13 @@ const MainApp: React.FC<MainAppProps> = ({
         setLastSuccessfulConnection(new Date(lastConnection));
       }
     }
+  }, []);
+
+  // Initialize TTS service on mount
+  useEffect(() => {
+    ttsService.init().catch(err => {
+      console.warn('Failed to initialize TTS service:', err);
+    });
   }, []);
 
   // Handle WebSocket messages for screenshot processing
@@ -132,32 +149,6 @@ const MainApp: React.FC<MainAppProps> = ({
     }
   }, [propOnWebSocketMessage, activeConversation]);
 
-  // Listen for sub-tab updates from background generation
-  useEffect(() => {
-    const handleSubTabUpdate = (event: CustomEvent) => {
-      const { conversationId, subtabs } = event.detail;
-      console.log('🔄 [MainApp] Received sub-tab update:', { conversationId, subtabs });
-      
-      setConversations(prev => {
-        const updated = { ...prev };
-        if (updated[conversationId]) {
-          updated[conversationId] = {
-            ...updated[conversationId],
-            subtabs,
-            updatedAt: Date.now()
-          };
-        }
-        return updated;
-      });
-    };
-
-    window.addEventListener('subtab-updated', handleSubTabUpdate as EventListener);
-    
-    return () => {
-      window.removeEventListener('subtab-updated', handleSubTabUpdate as EventListener);
-    };
-  }, []);
-
   useEffect(() => {
     const loadData = async (retryCount = 0) => {
       try {
@@ -170,8 +161,29 @@ const MainApp: React.FC<MainAppProps> = ({
         }
 
         console.log('🔍 [MainApp] Loading conversations (attempt', retryCount + 1, ')');
-        const userConversations = await ConversationService.getConversations();
+        let userConversations = await ConversationService.getConversations();
         console.log('🔍 [MainApp] Loaded conversations:', userConversations);
+        
+        // Migration: Fix "Everything else" conversation ID if needed
+        const everythingElseConv = Object.values(userConversations).find(
+          conv => conv.title === 'Everything else' && conv.id !== 'everything-else'
+        );
+        
+        if (everythingElseConv) {
+          console.log('🔍 [MainApp] Migrating "Everything else" conversation from ID', everythingElseConv.id, 'to everything-else');
+          const migratedConv = { ...everythingElseConv, id: 'everything-else' };
+          
+          // Remove old conversation
+          await ConversationService.deleteConversation(everythingElseConv.id);
+          
+          // Add with new ID
+          await ConversationService.addConversation(migratedConv);
+          
+          // Reload conversations
+          userConversations = await ConversationService.getConversations();
+          console.log('🔍 [MainApp] Migration complete, reloaded conversations');
+        }
+        
         setConversations(userConversations);
 
         const active = await ConversationService.getActiveConversation();
@@ -184,28 +196,43 @@ const MainApp: React.FC<MainAppProps> = ({
           
           // Check if there's already an "Everything else" conversation
           const existingEverythingElse = Object.values(userConversations).find(
-            conv => conv.title === 'Everything else'
+            conv => conv.title === 'Everything else' || conv.id === 'everything-else'
           );
           
           if (existingEverythingElse) {
             // Use the existing "Everything else" conversation
-            console.log('🔍 [MainApp] Using existing "Everything else" conversation');
+            console.log('🔍 [MainApp] Using existing "Everything else" conversation with ID:', existingEverythingElse.id);
             await ConversationService.setActiveConversation(existingEverythingElse.id);
             setActiveConversation(existingEverythingElse);
           } else {
-            // Create a new conversation
-            console.log('🔍 [MainApp] Creating new conversation...');
-            const newConversation = ConversationService.createConversation();
+            // Create a new "Everything else" conversation with correct ID
+            console.log('🔍 [MainApp] Creating new "Everything else" conversation with ID: everything-else');
+            const newConversation = ConversationService.createConversation('Everything else', 'everything-else');
             await ConversationService.addConversation(newConversation);
             await ConversationService.setActiveConversation(newConversation.id);
             
             const updatedConversations = await ConversationService.getConversations();
             setConversations(updatedConversations);
             setActiveConversation(newConversation);
-            console.log('🔍 [MainApp] New conversation created and set as active');
+            console.log('🔍 [MainApp] New "Everything else" conversation created and set as active with ID:', newConversation.id);
           }
         } else if (active) {
-          console.log('🔍 [MainApp] Found active conversation:', active.title);
+          console.log('🔍 [MainApp] Found active conversation:', active.title, 'with ID:', active.id);
+          
+          // Set initial suggested prompts for the active conversation
+          if (active.id === 'everything-else') {
+            // For Everything Else tab, show news prompts if no messages
+            if (!active.messages || active.messages.length === 0) {
+              setSuggestedPrompts(newsPrompts);
+            } else {
+              const fallbackPrompts = suggestedPromptsService.getFallbackSuggestions(active.id);
+              setSuggestedPrompts(fallbackPrompts);
+            }
+          } else {
+            // For game tabs, show fallback prompts
+            const fallbackPrompts = suggestedPromptsService.getFallbackSuggestions(active.id);
+            setSuggestedPrompts(fallbackPrompts);
+          }
         }
         
         // Mark initialization as complete
@@ -230,6 +257,66 @@ const MainApp: React.FC<MainAppProps> = ({
     loadData();
   }, []);
 
+  // Poll for conversation updates when subtabs are loading (optimized)
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout | null = null;
+    let isActive = true;
+    
+    const pollForSubtabUpdates = async () => {
+      if (!isActive) return;
+      
+      // Check if any conversation has loading subtabs
+      const hasLoadingSubtabs = Object.values(conversations).some(conv => 
+        conv.subtabs?.some(tab => tab.status === 'loading')
+      );
+
+      if (hasLoadingSubtabs) {
+        console.log('🔄 [MainApp] Polling for subtab updates...');
+        try {
+          const updatedConversations = await ConversationService.getConversations();
+          
+          if (!isActive) return; // Component unmounted, don't update state
+          
+          // Force new object reference to trigger React re-render
+          const freshConversations = { ...updatedConversations };
+          setConversations(freshConversations);
+          
+          // Update active conversation if it changed
+          if (activeConversation && updatedConversations[activeConversation.id]) {
+            setActiveConversation(updatedConversations[activeConversation.id]);
+          }
+        } catch (error) {
+          console.error('🔄 [MainApp] Error polling for subtab updates:', error);
+        }
+      } else if (intervalId) {
+        // No more loading subtabs, stop polling
+        console.log('🔄 [MainApp] All subtabs loaded, stopping poll');
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
+
+    // Only start polling if there are loading subtabs
+    const hasLoadingSubtabs = Object.values(conversations).some(conv => 
+      conv.subtabs?.some(tab => tab.status === 'loading')
+    );
+    
+    if (hasLoadingSubtabs && !intervalId) {
+      console.log('🔄 [MainApp] Starting subtab poll (5s interval)');
+      // Increased to 5 seconds to reduce load, run immediately then poll
+      pollForSubtabUpdates();
+      intervalId = setInterval(pollForSubtabUpdates, 5000);
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      isActive = false;
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [conversations, activeConversation]);
+
   // Function to refresh user data (for credit updates)
   const refreshUserData = async () => {
     try {
@@ -244,36 +331,13 @@ const MainApp: React.FC<MainAppProps> = ({
     }
   };
 
-  // WebSocket message handling (only if using local websocket)
+  // WebSocket connection is fully managed by App.tsx
+  // No local WebSocket management to prevent state duplication
   useEffect(() => {
-    if (propOnConnect) {
-      // Using App.tsx connection state, no local websocket needed
-      return;
-    }
-
-
-    const handleWebSocketError = (error: string) => {
-      console.error('WebSocket error:', error);
-    };
-
-    const handleWebSocketOpen = () => {
-      console.log('🔌 WebSocket connected');
-    };
-
-    const handleWebSocketClose = () => {
-      console.log('🔌 WebSocket disconnected');
-    };
-
-    // Check if we have a stored connection code and try to reconnect
-    const storedCode = localStorage.getItem('otakon_connection_code');
-    if (storedCode) {
-      setConnectionCode(storedCode);
-      connect(storedCode, handleWebSocketOpen, handleWebSocketMessage, handleWebSocketError, handleWebSocketClose);
-    }
-
-    // Note: Removed automatic disconnect on unmount to maintain persistent connection
-    // WebSocket should only disconnect when user explicitly disconnects or logs out
-  }, [activeConversation, propOnConnect]);
+    console.log('🔌 [MainApp] Using centralized WebSocket from App.tsx');
+    // All connection logic is handled in App.tsx and passed via props
+    // This component only receives and displays the connection state
+  }, []);
 
 
   const handleConversationSelect = async (id: string) => {
@@ -282,25 +346,63 @@ const MainApp: React.FC<MainAppProps> = ({
     setConversations(updatedConversations);
     setActiveConversation(updatedConversations[id]);
     setSidebarOpen(false);
+
+    // Set initial suggested prompts for Everything Else tab
+    if (id === 'everything-else') {
+      const conversation = updatedConversations[id];
+      // If no messages yet, show news prompts (they will be displayed by SuggestedPrompts component)
+      if (!conversation.messages || conversation.messages.length === 0) {
+        // SuggestedPrompts component will handle showing newsPrompts for everything-else
+        // We just need to ensure prompts array is not empty
+        setSuggestedPrompts(newsPrompts);
+      } else {
+        // If there are messages, show contextual fallback prompts
+        const fallbackPrompts = suggestedPromptsService.getFallbackSuggestions(id);
+        setSuggestedPrompts(fallbackPrompts);
+      }
+    } else {
+      // For game tabs, set appropriate fallback prompts
+      const fallbackPrompts = suggestedPromptsService.getFallbackSuggestions(id);
+      setSuggestedPrompts(fallbackPrompts);
+    }
   };
 
   const handleDeleteConversation = async (id: string) => {
-    await ConversationService.deleteConversation(id);
-    const updatedConversations = await ConversationService.getConversations();
-    setConversations(updatedConversations);
+    const wasActive = activeConversation?.id === id;
     
-    if (activeConversation?.id === id) {
+    // Delete the conversation
+    await ConversationService.deleteConversation(id);
+    
+    // Get fresh conversations from service
+    const updatedConversations = await ConversationService.getConversations();
+    
+    // Force a new object reference to ensure React detects the change
+    const freshConversations = { ...updatedConversations };
+    
+    // Update conversations state immediately
+    setConversations(freshConversations);
+    
+    if (wasActive) {
       // If we're deleting the current active conversation, switch to "Everything Else" tab
-      const everythingElseTab = updatedConversations['everything-else'];
+      const everythingElseTab = freshConversations['everything-else'];
       if (everythingElseTab) {
+        // Persist the active conversation change
+        await ConversationService.setActiveConversation('everything-else');
         setActiveConversation(everythingElseTab);
         // Also clear any active session since we're switching away from a game tab
         setActiveSession('', false);
       } else {
-        // Fallback to any available conversation
-        const newActive = await ConversationService.getActiveConversation();
-        setActiveConversation(newActive);
+        // Fallback to first available conversation
+        const firstConversation = Object.values(freshConversations)[0] || null;
+        if (firstConversation) {
+          await ConversationService.setActiveConversation(firstConversation.id);
+          setActiveConversation(firstConversation);
+        } else {
+          setActiveConversation(null);
+        }
       }
+      // Close sidebar on mobile after switching
+      setSidebarOpen(false);
     }
   };
 
@@ -363,6 +465,23 @@ const MainApp: React.FC<MainAppProps> = ({
     setConnectionModalOpen(false);
   };
 
+  const handleHandsFreeToggle = () => {
+    const newHandsFreeMode = !isHandsFreeMode;
+    setIsHandsFreeMode(newHandsFreeMode);
+    // Open modal when enabling hands-free mode for configuration
+    if (newHandsFreeMode) {
+      setHandsFreeModalOpen(true);
+    }
+  };
+
+  const handleHandsFreeModalClose = () => {
+    setHandsFreeModalOpen(false);
+  };
+
+  const handleToggleHandsFreeFromModal = () => {
+    setIsHandsFreeMode(!isHandsFreeMode);
+  };
+
   // Settings context menu handlers
   const handleSettingsContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -396,36 +515,23 @@ const MainApp: React.FC<MainAppProps> = ({
     localStorage.setItem('otakon_connection_code', code);
     localStorage.setItem('otakon_last_connection', new Date().toISOString());
     
-    // Use prop handler if available, otherwise use local websocket
+    // Always use the centralized handler from App.tsx
     if (propOnConnect) {
       propOnConnect(code);
     } else {
-      // Fallback to local websocket connection
-      connect(
-        code,
-        () => {
-          setLastSuccessfulConnection(new Date());
-          localStorage.setItem('otakonHasConnectedBefore', 'true');
-        },
-        (data: any) => {
-          console.log('Connection message:', data);
-        },
-        (error: string) => {
-          console.error('Connection error:', error);
-        },
-        () => {
-          console.log('Connection closed');
-        }
-      );
+      console.warn('🔌 [MainApp] No connection handler provided from App.tsx');
     }
   };
 
   const handleDisconnect = () => {
+    // Always use the centralized handler from App.tsx
     if (propOnDisconnect) {
       propOnDisconnect();
     } else {
-      disconnect();
+      console.warn('🔌 [MainApp] No disconnect handler provided from App.tsx');
     }
+    
+    // Clear local connection state
     setConnectionCode(null);
     setLastSuccessfulConnection(null);
     localStorage.removeItem('otakon_connection_code');
@@ -435,6 +541,61 @@ const MainApp: React.FC<MainAppProps> = ({
   // Handle suggested prompt clicks
   const handleSuggestedPromptClick = (prompt: string) => {
     handleSendMessage(prompt);
+  };
+
+  // Handle input message change
+  const handleInputMessageChange = (message: string) => {
+    setCurrentInputMessage(message);
+  };
+
+  // Helper function to extract the most relevant game help content for hands-free mode
+  const extractGameHelpFromResponse = (response: string, userQuery: string): string => {
+    // First, try to find the most relevant section based on the user's query
+    const queryLower = userQuery.toLowerCase();
+    
+    // Look for direct answers to common game help queries
+    if (queryLower.includes('how') || queryLower.includes('what') || queryLower.includes('where') || queryLower.includes('why')) {
+      // Try to find the first complete sentence that seems to answer the question
+      const sentences = response.split(/[.!?]+/).filter(s => s.trim().length > 10);
+      for (const sentence of sentences) {
+        const sentenceLower = sentence.toLowerCase();
+        if (sentenceLower.includes('you can') || sentenceLower.includes('try') || sentenceLower.includes('look for') || 
+            sentenceLower.includes('check') || sentenceLower.includes('find') || sentenceLower.includes('go to')) {
+          return sentence.trim() + '.';
+        }
+      }
+    }
+    
+    // Look for hint-like content
+    const hintPatterns = [
+      /(?:hint|tip|suggestion|advice)[:\s]*([^.!?]+[.!?])/i,
+      /(?:you should|try to|look for|check|find|go to)[^.!?]*[.!?]/i,
+      /(?:the key is|the solution is|you need to)[^.!?]*[.!?]/i
+    ];
+    
+    for (const pattern of hintPatterns) {
+      const match = response.match(pattern);
+      if (match) {
+        return match[0].trim();
+      }
+    }
+    
+    // Fallback: return the first meaningful paragraph (first 2-3 sentences)
+    const paragraphs = response.split('\n\n').filter(p => p.trim().length > 20);
+    if (paragraphs.length > 0) {
+      const firstParagraph = paragraphs[0];
+      if (firstParagraph) {
+        const sentences = firstParagraph.split(/[.!?]+/).filter(s => s.trim().length > 10);
+        if (sentences.length >= 2) {
+          return sentences.slice(0, 2).join('. ').trim() + '.';
+        } else if (sentences.length === 1) {
+          return sentences[0]?.trim() + '.';
+        }
+      }
+    }
+    
+    // Last resort: return the first 200 characters of the response
+    return response.substring(0, 200).trim() + (response.length > 200 ? '...' : '');
   };
 
   // Handle active session toggle with session summaries
@@ -523,34 +684,72 @@ const MainApp: React.FC<MainAppProps> = ({
     }
   };
 
+  // Poll for subtab updates when background insights are being generated
+  const pollForSubtabUpdates = async (conversationId: string, attempts = 0, maxAttempts = 30) => {
+    // Stop after 30 attempts (30 seconds)
+    if (attempts >= maxAttempts) {
+      console.log('🎮 [MainApp] ⏱️ Stopped polling for subtab updates after', attempts, 'attempts');
+      return;
+    }
+
+    // Wait 1 second before checking
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    try {
+      const updatedConversations = await ConversationService.getConversations();
+      const targetConv = updatedConversations[conversationId];
+
+      if (targetConv) {
+        const stillLoading = targetConv.subtabs?.some(tab => tab.status === 'loading');
+        
+        if (!stillLoading) {
+          // Subtabs have finished loading!
+          console.log('🎮 [MainApp] ✅ Background subtabs loaded successfully');
+          setConversations(updatedConversations);
+          if (activeConversation?.id === conversationId) {
+            setActiveConversation(targetConv);
+          }
+          return;
+        }
+
+        // Still loading, continue polling
+        console.log('🎮 [MainApp] 🔄 Subtabs still loading, polling again... (attempt', attempts + 1, ')');
+        pollForSubtabUpdates(conversationId, attempts + 1, maxAttempts);
+      }
+    } catch (error) {
+      console.error('Error polling for subtab updates:', error);
+    }
+  };
+
   // Placeholder for game tab creation - will be implemented in Week 3
-  const handleCreateGameTab = async (gameInfo: { gameTitle: string; genre?: string }, triggerMessages?: { userMessageId: string; aiMessageId: string }) => {
+  const handleCreateGameTab = async (gameInfo: { gameTitle: string; genre?: string; aiResponse?: any }): Promise<Conversation | null> => {
     console.log('🎮 [MainApp] Game tab creation requested:', gameInfo);
     
     try {
       const user = authService.getCurrentUser();
       if (!user) {
         console.error('User not authenticated for game tab creation');
-        return;
+        return null;
       }
 
-      // Generate unique conversation ID
-      const conversationId = gameTabService.generateGameConversationId(gameInfo.gameTitle);
+      // Generate unique conversation ID based on game title (without timestamp for consistency)
+      const sanitizedTitle = gameInfo.gameTitle.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
+      const conversationId = `game-${sanitizedTitle}`;
       
       // Check if game tab already exists
       const existingConversation = conversations[conversationId];
       if (existingConversation) {
-        console.log('🎮 [MainApp] Game tab already exists, switching to it');
-        setActiveConversation(existingConversation);
-        return;
+        console.log('🎮 [MainApp] Game tab already exists, returning it');
+        return existingConversation;
       }
 
-      // Create new game tab
+      // Create new game tab with AI response data
       const newGameTab = await gameTabService.createGameTab({
         gameTitle: gameInfo.gameTitle,
         genre: gameInfo.genre || 'Action RPG',
         conversationId,
-        userId: user.id
+        userId: user.id,
+        aiResponse: gameInfo.aiResponse // Pass AI response for subtab population
       });
 
       // Add to conversations state
@@ -559,42 +758,11 @@ const MainApp: React.FC<MainAppProps> = ({
         [conversationId]: newGameTab
       }));
 
-      // Switch to the new game tab
-      setActiveConversation(newGameTab);
-
-      // Auto-switch to Playing mode for new game tabs
-      setActiveSession(conversationId, true);
-
-      // Clean up trigger messages from Everything Else tab if provided
-      if (triggerMessages && conversations['everything-else']) {
-        console.log('🧹 [MainApp] Cleaning up trigger messages from Everything Else tab');
-        setConversations(prev => {
-          const updated = { ...prev };
-          if (updated['everything-else']) {
-            const filteredMessages = updated['everything-else'].messages.filter(
-              msg => msg.id !== triggerMessages.userMessageId && msg.id !== triggerMessages.aiMessageId
-            );
-            updated['everything-else'] = {
-              ...updated['everything-else'],
-              messages: filteredMessages,
-              updatedAt: Date.now()
-            };
-          }
-          return updated;
-        });
-
-        // Also update in the service
-        await ConversationService.updateConversation('everything-else', {
-          messages: conversations['everything-else'].messages.filter(
-            msg => msg.id !== triggerMessages.userMessageId && msg.id !== triggerMessages.aiMessageId
-          )
-        });
-      }
-
       console.log('🎮 [MainApp] Game tab created successfully:', newGameTab.title);
+      return newGameTab;
     } catch (error) {
       console.error('Failed to create game tab:', error);
-      // You could show a user-friendly error message here
+      return null;
     }
   };
 
@@ -643,8 +811,20 @@ const MainApp: React.FC<MainAppProps> = ({
       return updated;
     });
 
-    // Add message to service
+    // Add message to service - MUST await to ensure it's saved before potential migration
     await ConversationService.addMessage(activeConversation.id, newMessage);
+
+    // Clear the input message after sending
+    setCurrentInputMessage('');
+
+    // Check if message contains a tab command (for Command Centre)
+    if (tabManagementService.hasTabCommand(message)) {
+      const command = tabManagementService.parseTabCommand(message, activeConversation);
+      if (command) {
+        console.log('📝 [MainApp] Tab command detected:', command);
+        console.log('📝 [MainApp] Command description:', tabManagementService.describeCommand(command));
+      }
+    }
 
     // Track credit usage based on query type
     const hasImage = !!imageUrl;
@@ -674,25 +854,31 @@ const MainApp: React.FC<MainAppProps> = ({
         return updated;
       });
       
-      await ConversationService.addMessage(activeConversation.id, errorMessage);
+      // Save error message (non-blocking)
+      ConversationService.addMessage(activeConversation.id, errorMessage)
+        .catch(error => console.error('Failed to save error message:', error));
       return;
     }
 
     // Increment usage count
     UserService.incrementUsage(queryType);
     
-    // Also update in Supabase
+    // Update in Supabase (non-blocking - fire and forget)
     if (user?.authUserId) {
-      try {
-        const supabaseService = new SupabaseService();
-        await supabaseService.incrementUsage(user.authUserId, queryType);
-        console.log(`📊 [MainApp] Credit usage updated: ${queryType} query`);
-        
-        // Refresh user data to update credit indicator
-        await refreshUserData();
-      } catch (error) {
-        console.warn('Failed to update usage in Supabase:', error);
-      }
+      const supabaseService = new SupabaseService();
+      const updateUsageAsync = async () => {
+        try {
+          await supabaseService.incrementUsage(user.authUserId, queryType);
+          console.log(`📊 [MainApp] Credit usage updated: ${queryType} query`);
+          // Refresh user data in background to update credit indicator
+          await refreshUserData();
+        } catch (error) {
+          console.warn('Failed to update usage in Supabase:', error);
+          // Silently fail - user can still continue using the app
+        }
+      };
+      
+      updateUsageAsync();
     }
 
     // Clear previous suggestions and start loading
@@ -707,14 +893,21 @@ const MainApp: React.FC<MainAppProps> = ({
       const user = authService.getCurrentUser();
       if (!user) throw new Error('User not authenticated');
 
-      const response = await aiService.getChatResponse(
+      const response = await aiService.getChatResponseWithStructure(
         activeConversation,
         user,
         message,
         session.isActive && session.currentGameId === activeConversation.id,
         !!imageUrl,
-        imageUrl
+        imageUrl,
+        controller.signal
       );
+
+      // Check if request was aborted before adding response to conversation
+      if (controller.signal.aborted) {
+        console.log('AI request was aborted, skipping response');
+        return;
+      }
 
       const aiMessage = {
         id: `msg_${Date.now() + 1}`,
@@ -736,12 +929,41 @@ const MainApp: React.FC<MainAppProps> = ({
         return updated;
       });
 
-      // Add message to service
+      // Add message to service - MUST await to ensure it's saved before potential migration
       await ConversationService.addMessage(activeConversation.id, aiMessage);
 
-      // Process suggested prompts
+      // Handle hands-free TTS reading
+      if (isHandsFreeMode) {
+        console.log('🎤 [MainApp] Hands-free mode enabled, extracting content to speak');
+        
+        // Try to extract game help/hint section from response
+        let textToSpeak = '';
+        
+        // Look for explicit Hint: section
+        const hintMatch = response.content.match(/(?:^|\n)Hint:\s*(.+?)(?:\n\n|$)/s);
+        
+        if (hintMatch?.[1]) {
+          // Use the explicitly marked game help section
+          textToSpeak = hintMatch[1].trim();
+          console.log('🎤 [MainApp] Using explicit Hint section for TTS');
+        } else {
+          // Fallback: Extract the most relevant part of the response
+          textToSpeak = extractGameHelpFromResponse(response.content, message);
+          console.log('🎤 [MainApp] Using extracted game help for TTS');
+        }
+        
+        if (textToSpeak) {
+          console.log('🎤 [MainApp] Speaking:', textToSpeak.substring(0, 100) + '...');
+          ttsService.speak(textToSpeak).catch(error => {
+            console.error('🎤 [MainApp] TTS error:', error);
+          });
+        }
+      }
+
+      // Process suggested prompts (prefer followUpPrompts from enhanced response)
       console.log('🔍 [MainApp] Raw suggestions from AI:', response.suggestions);
-      const processedSuggestions = suggestedPromptsService.processAISuggestions(response.suggestions);
+      const suggestionsToUse = response.followUpPrompts || response.suggestions;
+      const processedSuggestions = suggestedPromptsService.processAISuggestions(suggestionsToUse);
       console.log('🔍 [MainApp] Processed suggestions:', processedSuggestions);
       
       if (processedSuggestions.length > 0) {
@@ -753,20 +975,277 @@ const MainApp: React.FC<MainAppProps> = ({
         setSuggestedPrompts(fallbackSuggestions);
       }
 
+      // Handle progressive insight updates (if AI provided updates to existing subtabs)
+      if (response.progressiveInsightUpdates && response.progressiveInsightUpdates.length > 0) {
+        console.log('📝 [MainApp] AI provided progressive insight updates:', response.progressiveInsightUpdates.length);
+        
+        // Update subtabs in background (non-blocking)
+        gameTabService.updateSubTabsFromAIResponse(
+          activeConversation.id,
+          response.progressiveInsightUpdates
+        ).then(() => {
+          console.log('📝 [MainApp] Subtabs updated successfully');
+          
+          // Refresh conversations to show updated subtabs
+          ConversationService.getConversations().then(updatedConversations => {
+            setConversations(updatedConversations);
+            
+            // Update active conversation to reflect changes
+            const refreshedConversation = updatedConversations[activeConversation.id];
+            if (refreshedConversation) {
+              setActiveConversation(refreshedConversation);
+            }
+          });
+        }).catch(error => {
+          console.error('📝 [MainApp] Failed to update subtabs:', error);
+        });
+      }
+
+      // Handle tab management commands (Command Centre)
+      if (response.otakonTags.has('OTAKON_INSIGHT_UPDATE') || 
+          response.otakonTags.has('OTAKON_INSIGHT_MODIFY_PENDING') || 
+          response.otakonTags.has('OTAKON_INSIGHT_DELETE_REQUEST')) {
+        
+        console.log('📝 [MainApp] Processing tab management commands from AI');
+
+        // Handle INSIGHT_UPDATE (update content of existing tab)
+        if (response.otakonTags.has('OTAKON_INSIGHT_UPDATE')) {
+          const updateData = response.otakonTags.get('OTAKON_INSIGHT_UPDATE');
+          console.log('📝 [MainApp] INSIGHT_UPDATE:', updateData);
+          
+          if (typeof updateData === 'string') {
+            try {
+              const parsed = JSON.parse(updateData);
+              if (parsed.id && parsed.content) {
+                gameTabService.updateSubTabsFromAIResponse(
+                  activeConversation.id,
+                  [{ tabId: parsed.id, title: '', content: parsed.content }]
+                ).then(() => {
+                  console.log('📝 [MainApp] Tab updated via command:', parsed.id);
+                  // Refresh UI
+                  ConversationService.getConversations().then(updatedConversations => {
+                    setConversations(updatedConversations);
+                    const refreshedConversation = updatedConversations[activeConversation.id];
+                    if (refreshedConversation) setActiveConversation(refreshedConversation);
+                  });
+                }).catch(error => console.error('Failed to update tab:', error));
+              }
+            } catch (error) {
+              console.error('Failed to parse INSIGHT_UPDATE:', error);
+            }
+          }
+        }
+
+        // Handle INSIGHT_MODIFY_PENDING (modify/rename tab)
+        if (response.otakonTags.has('OTAKON_INSIGHT_MODIFY_PENDING')) {
+          const modifyData = response.otakonTags.get('OTAKON_INSIGHT_MODIFY_PENDING');
+          console.log('📝 [MainApp] INSIGHT_MODIFY_PENDING:', modifyData);
+          
+          if (typeof modifyData === 'string') {
+            try {
+              const parsed = JSON.parse(modifyData);
+              if (parsed.id && (parsed.title || parsed.content)) {
+                gameTabService.updateSubTabsFromAIResponse(
+                  activeConversation.id,
+                  [{ tabId: parsed.id, title: parsed.title || '', content: parsed.content || '' }]
+                ).then(() => {
+                  console.log('📝 [MainApp] Tab modified via command:', parsed.id);
+                  // Refresh UI
+                  ConversationService.getConversations().then(updatedConversations => {
+                    setConversations(updatedConversations);
+                    const refreshedConversation = updatedConversations[activeConversation.id];
+                    if (refreshedConversation) setActiveConversation(refreshedConversation);
+                  });
+                }).catch(error => console.error('Failed to modify tab:', error));
+              }
+            } catch (error) {
+              console.error('Failed to parse INSIGHT_MODIFY_PENDING:', error);
+            }
+          }
+        }
+
+        // Handle INSIGHT_DELETE_REQUEST (delete tab)
+        if (response.otakonTags.has('OTAKON_INSIGHT_DELETE_REQUEST')) {
+          const deleteData = response.otakonTags.get('OTAKON_INSIGHT_DELETE_REQUEST');
+          console.log('📝 [MainApp] INSIGHT_DELETE_REQUEST:', deleteData);
+          
+          if (typeof deleteData === 'string') {
+            try {
+              const parsed = JSON.parse(deleteData);
+              if (parsed.id) {
+                // Remove the subtab from conversation
+                const updatedSubtabs = activeConversation.subtabs?.filter(tab => tab.id !== parsed.id) || [];
+                ConversationService.updateConversation(activeConversation.id, {
+                  subtabs: updatedSubtabs
+                }).then(() => {
+                  console.log('📝 [MainApp] Tab deleted via command:', parsed.id);
+                  // Refresh UI
+                  ConversationService.getConversations().then(updatedConversations => {
+                    setConversations(updatedConversations);
+                    const refreshedConversation = updatedConversations[activeConversation.id];
+                    if (refreshedConversation) setActiveConversation(refreshedConversation);
+                  });
+                }).catch(error => console.error('Failed to delete tab:', error));
+              }
+            } catch (error) {
+              console.error('Failed to parse INSIGHT_DELETE_REQUEST:', error);
+            }
+          }
+        }
+      }
+
       // Handle game tab creation if game is identified
       if (response.otakonTags.has('GAME_ID')) {
-        const gameInfo = {
-          gameTitle: response.otakonTags.get('GAME_ID'),
-          genre: response.otakonTags.get('GENRE') || 'Default'
-        };
-        
-        // Pass message IDs for cleanup if we're in Everything Else tab
-        const triggerMessages = activeConversation.id === 'everything-else' ? {
-          userMessageId: newMessage.id,
-          aiMessageId: aiMessage.id
-        } : undefined;
-        
-        await handleCreateGameTab(gameInfo, triggerMessages);
+        const gameTitle = response.otakonTags.get('GAME_ID');
+        const confidence = response.otakonTags.get('CONFIDENCE');
+        const isUnreleased = response.otakonTags.get('GAME_STATUS') === 'unreleased';
+        const genre = response.otakonTags.get('GENRE') || 'Default';
+
+        console.log('🎮 [MainApp] Game detection:', { 
+          gameTitle, 
+          confidence, 
+          isUnreleased, 
+          genre,
+          currentTab: activeConversation.id,
+          messageIds: { user: newMessage.id, ai: aiMessage.id }
+        });
+
+        // Only create game tab if:
+        // 1. Confidence is high
+        // 2. Game is released (not unreleased)
+        // Note: Any game screen (menu, gameplay, etc.) means they own the game, so we create a tab
+        const shouldCreateTab = 
+          confidence === 'high' && 
+          !isUnreleased;
+
+        if (shouldCreateTab) {
+          // Check if game tab already exists
+          const existingGameTab = Object.values(conversations).find(
+            conv => conv.gameTitle?.toLowerCase() === gameTitle.toLowerCase()
+          );
+
+          let targetConversationId: string;
+          
+          if (existingGameTab) {
+            console.log('🎮 [MainApp] Found existing game tab:', existingGameTab.title);
+            targetConversationId = existingGameTab.id;
+          } else {
+            console.log('🎮 [MainApp] Creating new game tab for:', gameTitle);
+            const gameInfo = { gameTitle, genre, aiResponse: response };
+            const newGameTab = await handleCreateGameTab(gameInfo);
+            targetConversationId = newGameTab?.id || '';
+          }
+
+          // Move the user message and AI response to the game tab if we're currently in "Everything Else"
+          const shouldMigrateMessages = targetConversationId && activeConversation.id === 'everything-else';
+          console.log('🎮 [MainApp] Should migrate messages?', shouldMigrateMessages, {
+            hasTargetConversation: !!targetConversationId,
+            currentConversationId: activeConversation.id,
+            isEverythingElse: activeConversation.id === 'everything-else'
+          });
+          
+          if (shouldMigrateMessages) {
+            console.log('🎮 [MainApp] ✅ Starting message migration from Everything Else to game tab');
+            console.log('🎮 [MainApp] Message IDs to move:', { userMsgId: newMessage.id, aiMsgId: aiMessage.id });
+            
+            // Get the messages to move
+            const messagesToMove = [newMessage, aiMessage];
+            
+            // Transaction-like behavior: save state for rollback
+            const rollbackState = {
+              targetConversationId,
+              messagesToMove,
+              originalEverythingElse: await ConversationService.getConversation('everything-else')
+            };
+            
+            try {
+              // Step 1: Add messages to game tab
+              console.log('🎮 [MainApp] Adding messages to game tab:', targetConversationId);
+              for (const msg of messagesToMove) {
+                const result = await ConversationService.addMessage(targetConversationId, msg);
+                if (!result.success) {
+                  throw new Error(`Failed to add message to game tab: ${result.reason}`);
+                }
+              }
+              console.log('🎮 [MainApp] ✅ Messages added to game tab');
+              
+              // Step 2: Get fresh conversation data
+              const currentConversations = await ConversationService.getConversations();
+              const everythingElseConv = currentConversations['everything-else'];
+              
+              if (everythingElseConv) {
+                console.log('🎮 [MainApp] Everything Else has', everythingElseConv.messages.length, 'messages before removal');
+                
+                // Remove the messages we just moved
+                const updatedMessages = everythingElseConv.messages.filter(
+                  msg => msg.id !== newMessage.id && msg.id !== aiMessage.id
+                );
+                
+                console.log('🎮 [MainApp] Everything Else will have', updatedMessages.length, 'messages after removal');
+                
+                await ConversationService.updateConversation('everything-else', {
+                  messages: updatedMessages,
+                  updatedAt: Date.now()
+                });
+                console.log('🎮 [MainApp] ✅ Messages removed from Everything Else');
+              }
+              
+              // Step 3: Update state with fresh data
+              const updatedConversations = await ConversationService.getConversations();
+              setConversations(updatedConversations);
+              
+              // Step 4: Switch to the game tab
+              const gameTab = updatedConversations[targetConversationId];
+              if (gameTab) {
+                console.log('🎮 [MainApp] ✅ Switching to game tab:', gameTab.title, 'with', gameTab.messages.length, 'messages');
+                await ConversationService.setActiveConversation(targetConversationId);
+                setActiveConversation(gameTab);
+                // Auto-switch to Playing mode for new/existing game tabs
+                setActiveSession(targetConversationId, true);
+                // Close sidebar on mobile
+                setSidebarOpen(false);
+                
+                // Poll for subtab updates if they're still loading
+                const hasLoadingSubtabs = gameTab.subtabs?.some(tab => tab.status === 'loading');
+                if (hasLoadingSubtabs) {
+                  console.log('🎮 [MainApp] 🔄 Starting background refresh for loading subtabs');
+                  pollForSubtabUpdates(targetConversationId);
+                }
+              }
+            } catch (migrationError) {
+              console.error('🎮 [MainApp] ❌ Message migration failed, attempting rollback:', migrationError);
+              
+              // Rollback: restore original state
+              try {
+                if (rollbackState.originalEverythingElse) {
+                  await ConversationService.updateConversation('everything-else', {
+                    messages: rollbackState.originalEverythingElse.messages,
+                    updatedAt: Date.now()
+                  });
+                  console.log('🎮 [MainApp] ✅ Rollback successful - messages restored to Everything Else');
+                }
+                
+                // Refresh UI
+                const refreshedConversations = await ConversationService.getConversations();
+                setConversations(refreshedConversations);
+              } catch (rollbackError) {
+                console.error('🎮 [MainApp] ❌ Rollback failed:', rollbackError);
+              }
+              
+              // Show error to user
+              errorRecoveryService.displayError(
+                'Failed to move messages to game tab. Your messages are safe in "Everything Else".',
+                'error'
+              );
+            }
+          } else {
+            console.log('🎮 [MainApp] ⚠️ Skipping message migration - not in Everything Else tab or no target');
+          }
+        } else {
+          console.log('🎮 [MainApp] Not creating game tab:', { 
+            reason: !confidence ? 'no confidence' : confidence !== 'high' ? 'low confidence' : 'unreleased game'
+          });
+        }
       }
 
     } catch (error) {
@@ -873,6 +1352,11 @@ const MainApp: React.FC<MainAppProps> = ({
                 onClick={handleCreditModalOpen}
               />
             </div>
+
+            <HandsFreeToggle
+              isHandsFree={isHandsFreeMode}
+              onToggle={handleHandsFreeToggle}
+            />
             
             <button
               onClick={handleConnectionModalOpen}
@@ -946,6 +1430,8 @@ const MainApp: React.FC<MainAppProps> = ({
                 onSuggestedPromptClick={handleSuggestedPromptClick}
                 activeSession={session}
                 onToggleActiveSession={handleToggleActiveSession}
+                initialMessage={currentInputMessage}
+                onMessageChange={handleInputMessageChange}
               />
             </div>
         </div>
@@ -976,6 +1462,14 @@ const MainApp: React.FC<MainAppProps> = ({
         error={connectionError}
         connectionCode={connectionCode}
         lastSuccessfulConnection={lastSuccessfulConnection}
+      />
+
+      {/* Hands-Free Modal */}
+      <HandsFreeModal
+        isOpen={handsFreeModalOpen}
+        onClose={handleHandsFreeModalClose}
+        isHandsFree={isHandsFreeMode}
+        onToggleHandsFree={handleToggleHandsFreeFromModal}
       />
 
       {/* Settings Context Menu */}

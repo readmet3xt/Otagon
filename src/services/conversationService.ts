@@ -188,12 +188,13 @@ export class ConversationService {
     }
   }
 
-  static createConversation(title?: string): Conversation {
+  static createConversation(title?: string, id?: string): Conversation {
     const now = Date.now();
-    const id = `conv_${now}`;
+    // Use 'everything-else' as ID for the default conversation
+    const conversationId = id || (title === DEFAULT_CONVERSATION_TITLE ? 'everything-else' : `conv_${now}`);
     
     return {
-      id,
+      id: conversationId,
       title: title || DEFAULT_CONVERSATION_TITLE,
       messages: [],
       createdAt: now,
@@ -259,9 +260,14 @@ export class ConversationService {
   static async deleteConversation(id: string): Promise<void> {
     const conversations = await this.getConversations();
     delete conversations[id];
+    
+    // ✅ SCALABILITY: Clear main conversations cache to force refresh
+    await cacheService.delete(STORAGE_KEYS.CONVERSATIONS);
+    
+    // Update conversations in storage and cache
     await this.setConversations(conversations);
     
-    // ✅ SCALABILITY: Remove from cache
+    // ✅ SCALABILITY: Remove individual conversation from cache
     await cacheService.delete(`conversation:${id}`);
   }
 
@@ -291,31 +297,42 @@ export class ConversationService {
         .reduce((total, conv) => total + conv.messages.length, 0);
       
       if (totalMessages > totalMessageLimit) {
-        await this.cleanupOldMessages(conversations);
+        // Cleanup in background (non-blocking)
+        this.cleanupOldMessages(conversations).catch(error => 
+          console.warn('Failed to cleanup old messages:', error)
+        );
       }
       
       await this.setConversations(conversations);
       
-      // ✅ SCALABILITY: Save individual conversation to cache
-      await chatMemoryService.saveConversation(conversation);
+      // ✅ SCALABILITY: Save individual conversation to cache (non-blocking)
+      chatMemoryService.saveConversation(conversation)
+        .catch(error => {
+          console.warn('Failed to save conversation to cache:', error);
+          // Silently fail - not critical for user experience
+        });
       
-      // ✅ SCALABILITY: Save chat context for AI memory
-      try {
-        // Try to get actual user ID from auth service
-        const { authService } = await import('./authService');
-        const user = authService.getCurrentUser();
-        if (user?.authUserId) {
-          // Use the auth user ID for cache operations (app_cache table references auth.users)
-          await chatMemoryService.saveChatContext(user.authUserId, {
-            recentMessages: conversation.messages.slice(-10), // Last 10 messages
-            userPreferences: {}, // This would come from user service
-            gameContext: {}, // This would come from game context
-            conversationSummary: conversation.title
-          });
+      // ✅ SCALABILITY: Save chat context for AI memory (non-blocking)
+      // Fire and forget - don't block on this operation
+      const saveContextAsync = async () => {
+        try {
+          const { authService } = await import('./authService');
+          const user = authService.getCurrentUser();
+          if (user?.authUserId) {
+            await chatMemoryService.saveChatContext(user.authUserId, {
+              recentMessages: conversation.messages.slice(-10), // Last 10 messages
+              userPreferences: {}, // This would come from user service
+              gameContext: {}, // This would come from game context
+              conversationSummary: conversation.title
+            });
+          }
+        } catch (error) {
+          console.warn('Failed to save chat context:', error);
+          // Silently fail - not critical for user experience
         }
-      } catch (error) {
-        console.warn('Failed to save chat context:', error);
-      }
+      };
+      
+      saveContextAsync();
       
       return { success: true };
     }

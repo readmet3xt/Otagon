@@ -9,9 +9,10 @@ class CacheService {
   private readonly DEFAULT_TTL = 5 * 60 * 1000; // 5 minutes
   private readonly CACHE_TABLE = 'app_cache';
   private readonly MAX_MEMORY_CACHE_SIZE = 100; // Prevent memory bloat
+  private readonly REQUEST_TIMEOUT = 10000; // 10 second timeout for pending requests
   
   // Request deduplication - prevent multiple simultaneous calls for the same key
-  private pendingRequests = new Map<string, Promise<any>>();
+  private pendingRequests = new Map<string, { promise: Promise<any>; timeout: NodeJS.Timeout }>();
 
   /**
    * Set a value in both memory and Supabase cache
@@ -56,12 +57,20 @@ class CacheService {
   /**
    * Get a value from cache (memory first, then Supabase)
    * Implements request deduplication to prevent multiple simultaneous calls
+   * @param key - Cache key
+   * @param memoryOnly - If true, only check memory cache (faster for real-time operations)
    */
-  async get<T>(key: string): Promise<T | null> {
+  async get<T>(key: string, memoryOnly: boolean = false): Promise<T | null> {
     // Check if there's already a pending request for this key
-    if (this.pendingRequests.has(key)) {
+    const pending = this.pendingRequests.get(key);
+    if (pending) {
       console.log(`[CacheService] Request deduplication: waiting for pending request for key: ${key}`);
-      return await this.pendingRequests.get(key) as T | null;
+      try {
+        return await pending.promise as T | null;
+      } catch (error) {
+        console.warn(`[CacheService] Pending request failed for key ${key}:`, error);
+        return null;
+      }
     }
     
     // Try memory cache first
@@ -76,13 +85,39 @@ class CacheService {
       this.memoryCache.delete(key);
     }
     
-    // Create a promise for the Supabase request and store it
+    // If memory-only mode, return null instead of checking Supabase
+    if (memoryOnly) {
+      console.log(`[CacheService] Cache MISS (memory-only mode): ${key}`);
+      return null;
+    }
+    
+    // Create a promise for the Supabase request with timeout
     const supabaseRequest = this.fetchFromSupabase<T>(key);
-    this.pendingRequests.set(key, supabaseRequest);
+    
+    // Create timeout promise
+    const timeoutPromise = new Promise<T | null>((_, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error(`Cache request timeout for key: ${key}`));
+      }, this.REQUEST_TIMEOUT);
+      return timeout;
+    });
+    
+    // Race between the actual request and timeout
+    const timeoutId = setTimeout(() => {
+      this.pendingRequests.delete(key);
+      console.warn(`[CacheService] Request timeout for key: ${key}`);
+    }, this.REQUEST_TIMEOUT);
+    
+    this.pendingRequests.set(key, { promise: supabaseRequest, timeout: timeoutId });
     
     try {
-      const result = await supabaseRequest;
+      const result = await Promise.race([supabaseRequest, timeoutPromise]);
+      clearTimeout(timeoutId);
       return result;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      console.warn(`[CacheService] Error fetching cache for key ${key}:`, error);
+      return null;
     } finally {
       // Clean up the pending request
       this.pendingRequests.delete(key);
@@ -168,7 +203,8 @@ class CacheService {
     // Clear memory cache
     this.memoryCache.clear();
     
-    // Clear pending requests
+    // Clear pending requests and their timeouts
+    this.pendingRequests.forEach(({ timeout }) => clearTimeout(timeout));
     this.pendingRequests.clear();
     
     // Clear Supabase cache

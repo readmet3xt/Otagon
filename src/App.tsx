@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { AuthState, ConnectionStatus } from './types';
+import { AuthState, ConnectionStatus, AppState, ActiveModal } from './types';
 import { authService } from './services/authService';
 import { onboardingService } from './services/onboardingService';
 import { connect, disconnect } from './services/websocketService';
@@ -27,9 +27,9 @@ function App() {
     error: null,
   });
   const [hasEverLoggedIn, setHasEverLoggedIn] = useState(false);
-  const [appState, setAppState] = useState({
-    view: 'landing' as 'landing' | 'app',
-    onboardingStatus: 'initial' as any,
+  const [appState, setAppState] = useState<AppState>({
+    view: 'landing',
+    onboardingStatus: 'initial',
     activeSubView: 'chat',
     isConnectionModalOpen: false,
     isHandsFreeModalOpen: false,
@@ -37,7 +37,7 @@ function App() {
     isCreditModalOpen: false,
     isOtakuDiaryModalOpen: false,
     isWishlistModalOpen: false,
-    activeModal: null as string | null,
+    activeModal: null,
     isHandsFreeMode: false,
     showUpgradeScreen: false,
     showDailyCheckin: false,
@@ -50,24 +50,20 @@ function App() {
     confirmationModal: null,
     trialEligibility: null,
   });
-  const [activeModal, setActiveModal] = useState<string | null>(null);
+  const [activeModal, setActiveModal] = useState<ActiveModal>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(ConnectionStatus.DISCONNECTED);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   
-  // Add refs to prevent race conditions
-  const initializationRef = useRef(false);
-  const authProcessedRef = useRef(false);
-  const lastProcessedUserIdRef = useRef<string | null>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Simplified ref management
   const mainAppMessageHandlerRef = useRef<((data: any) => void) | null>(null);
-  const appStateRef = useRef(appState);
+  const authSubscriptionRef = useRef<(() => void) | null>(null);
+  const isProcessingAuthRef = useRef(false);
 
   // Debug app state changes
   useEffect(() => {
-    appStateRef.current = appState;
     console.log('🎯 [App] App state changed:', {
       view: appState.view,
       onboardingStatus: appState.onboardingStatus,
@@ -111,183 +107,67 @@ function App() {
     }
   }, [appState.view, appState.onboardingStatus, appState.activeSubView, appState.isHandsFreeMode, appState.showUpgradeScreen, appState.showDailyCheckin, appState.isFirstTime, authState.user]);
 
-  // Comprehensive auth state handler with race condition prevention
+  // Simplified auth state handler
   useEffect(() => {
     let isMounted = true;
     
     const processAuthState = async (newAuthState: AuthState) => {
+      // Skip if already processing or not loaded
+      if (isProcessingAuthRef.current || newAuthState.isLoading) {
+        return;
+      }
+      
+      isProcessingAuthRef.current = true;
+      
       console.log('🎯 [App] Processing auth state:', { 
-        isLoading: newAuthState.isLoading, 
         hasUser: !!newAuthState.user,
         userEmail: newAuthState.user?.email,
-        onboardingCompleted: newAuthState.user?.onboardingCompleted,
-        authProcessed: authProcessedRef.current,
-        initialized: initializationRef.current
+        onboardingCompleted: newAuthState.user?.onboardingCompleted
       });
       
-      // Prevent multiple processing of the same auth state
-      if (authProcessedRef.current && newAuthState.user?.authUserId === lastProcessedUserIdRef.current) {
-        console.log('🎯 [App] Auth state already processed for this user, skipping');
-        return;
-      }
-      
-      // Reset auth processed flag if this is a different user or if user logged out
-      if (newAuthState.user?.authUserId !== lastProcessedUserIdRef.current || 
-          (!newAuthState.user && lastProcessedUserIdRef.current !== null)) {
-        console.log('🎯 [App] Different user detected or user logged out, resetting auth processed flag');
-        authProcessedRef.current = false;
-      }
-      
-      // Don't reset auth processed flag if user data is just being refreshed
-      // Only reset if the user actually changed or if we're starting fresh
-      if (newAuthState.user?.authUserId === lastProcessedUserIdRef.current && 
-          newAuthState.user && 
-          appStateRef.current.onboardingStatus !== 'login' && 
-          appStateRef.current.onboardingStatus !== 'initial') {
-        console.log('🎯 [App] Same user, skipping auth processing to prevent onboarding reset');
-        return;
-      }
-      
-      // Only process if auth is not loading and we haven't already processed this user
-      if (!newAuthState.isLoading && !authProcessedRef.current) {
-        console.log('🎯 [App] Processing auth state - setting flags');
-        console.log('🎯 [App] Current app view:', appState.view);
-        
-        if (!initializationRef.current) {
-          initializationRef.current = true;
-        }
-        authProcessedRef.current = true;
-        
-        try {
-          if (newAuthState.user) {
-            // User is authenticated
-            lastProcessedUserIdRef.current = newAuthState.user.authUserId;
-            setHasEverLoggedIn(true); // Mark that user has logged in
-            const savedAppState = newAuthState.user.appState || {};
-            
-            // Process onboarding if we're in the app view OR if we have a user and need to transition to app
-            // But only if we haven't already set an onboarding status
-            const needsOnboarding = newAuthState.user && !newAuthState.user.onboardingCompleted;
-            const isInAppView = appStateRef.current.view === 'app';
-            
-            const shouldProcessOnboarding = (isInAppView || needsOnboarding);
-            
-            if (shouldProcessOnboarding && 
-                (appStateRef.current.onboardingStatus === 'login' || appStateRef.current.onboardingStatus === 'initial')) {
-              // Use the onboarding service to determine the next step
-              console.log('🎯 [App] Determining onboarding status for user...');
-              console.log('🎯 [App] User authUserId:', newAuthState.user.authUserId);
-              console.log('🎯 [App] User onboarding flags:', {
-                onboardingCompleted: newAuthState.user.onboardingCompleted,
-                hasSeenSplashScreens: newAuthState.user.hasSeenSplashScreens,
-                hasSeenHowToUse: newAuthState.user.hasSeenHowToUse,
-                hasSeenFeaturesConnected: newAuthState.user.hasSeenFeaturesConnected,
-                hasSeenProFeatures: newAuthState.user.hasSeenProFeatures,
-                pcConnected: newAuthState.user.pcConnected,
-                pcConnectionSkipped: newAuthState.user.pcConnectionSkipped
-              });
-              
-              // Determine the next onboarding step using the service
-              const nextStep = await onboardingService.getNextOnboardingStep(newAuthState.user.authUserId);
-              console.log('🎯 [App] Next onboarding step:', nextStep);
-              
-              // Additional check: If user has been active recently and has seen splash screens,
-              // they should be considered as having completed onboarding
-              const hasAppActivity = newAuthState.user.lastActivity && 
-                (Date.now() - newAuthState.user.lastActivity) < (30 * 24 * 60 * 60 * 1000); // 30 days
-              
-              const shouldSkipOnboarding = nextStep === 'complete' || 
-                (hasAppActivity && newAuthState.user.hasSeenSplashScreens);
-              
-              if (shouldSkipOnboarding) {
-                console.log('🎯 [App] User onboarding completed, going to main app');
-                console.log('🎯 [App] Skip onboarding details:', {
-                  nextStep,
-                  hasAppActivity,
-                  hasSeenSplashScreens: newAuthState.user.hasSeenSplashScreens,
-                  lastActivity: newAuthState.user.lastActivity,
-                  timeSinceActivity: newAuthState.user.lastActivity ? (Date.now() - newAuthState.user.lastActivity) / (1000 * 60 * 60 * 24) : 'N/A'
-                });
-                if (isMounted) {
-                  setAppState(prev => ({ 
-                    ...prev, 
-                    view: 'app', 
-                    onboardingStatus: 'complete',
-                    ...savedAppState
-                  }));
-                }
-              } else {
-                
-                if (isMounted) {
-                  console.log('🎯 [App] Setting app state with onboarding status:', nextStep);
-                  console.log('🎯 [App] Current app state before update:', appState);
-                  
-                  setAppState(prev => {
-                    const newState = { 
-                      ...prev, 
-                      view: 'app' as const, 
-                      onboardingStatus: nextStep,
-                      ...savedAppState
-                    };
-                    console.log('🎯 [App] New app state:', newState);
-                    return newState;
-                  });
-                  
-                  // Force a re-render by updating state again if needed
-                  setTimeout(() => {
-                    console.log('🎯 [App] Checking app state after update:', appState);
-                    if (appState.onboardingStatus !== nextStep) {
-                      console.log('🎯 [App] State not updated, forcing update...');
-                      setAppState(prev => ({
-                        ...prev,
-                        view: 'app' as const,
-                        onboardingStatus: nextStep
-                      }));
-                    }
-                  }, 100);
-                } else {
-                  console.log('🎯 [App] Component not mounted, skipping app state update');
-                }
-              }
-            } else {
-              console.log('🎯 [App] Not processing onboarding. Current view:', appState.view, 'Current onboarding status:', appState.onboardingStatus);
-            }
-          } else {
-            // User is not authenticated
-            console.log('🎯 [App] User not authenticated, hasEverLoggedIn:', hasEverLoggedIn);
-            if (isMounted) {
-              if (hasEverLoggedIn) {
-                // User has logged in before, show login page
-                console.log('🎯 [App] User has logged in before, showing login page');
-                setAppState(prev => ({ 
-                  ...prev, 
-                  view: 'app', 
-                  onboardingStatus: 'login' 
-                }));
-              } else {
-                // User has never logged in, show landing page
-                console.log('🎯 [App] User has never logged in, showing landing page');
-                setAppState(prev => ({ 
-                  ...prev, 
-                  view: 'landing', 
-                  onboardingStatus: 'login' 
-                }));
-              }
-            }
-            // Reset refs when user logs out
-            lastProcessedUserIdRef.current = null;
-          }
+      try {
+        if (newAuthState.user) {
+          // User is authenticated
+          setHasEverLoggedIn(true);
+          const savedAppState = newAuthState.user.appState || {};
           
-          // Mark initialization as complete
+          // Determine onboarding status
+          const nextStep = await onboardingService.getNextOnboardingStep(newAuthState.user.authUserId);
+          console.log('🎯 [App] Next onboarding step:', nextStep);
+          
+          // Check if should skip onboarding
+          const hasRecentActivity = newAuthState.user.lastActivity && 
+            (Date.now() - newAuthState.user.lastActivity) < (30 * 24 * 60 * 60 * 1000);
+          const shouldSkipOnboarding = nextStep === 'complete' || 
+            (hasRecentActivity && newAuthState.user.hasSeenSplashScreens);
+          
           if (isMounted) {
+            setAppState((prev: AppState) => ({ 
+              ...prev, 
+              view: 'app', 
+              onboardingStatus: shouldSkipOnboarding ? 'complete' : nextStep,
+              ...savedAppState
+            }));
             setIsInitializing(false);
           }
-        } catch (error) {
-          console.error('🎯 [App] Error during initialization:', error);
+        } else {
+          // User is not authenticated
           if (isMounted) {
+            setAppState((prev: AppState) => ({ 
+              ...prev, 
+              view: hasEverLoggedIn ? 'app' : 'landing', 
+              onboardingStatus: 'login' 
+            }));
             setIsInitializing(false);
           }
         }
+      } catch (error) {
+        console.error('🎯 [App] Error during auth processing:', error);
+        if (isMounted) {
+          setIsInitializing(false);
+        }
+      } finally {
+        isProcessingAuthRef.current = false;
       }
     };
     
@@ -295,30 +175,21 @@ function App() {
     const unsubscribe = authService.subscribe((newAuthState) => {
       setAuthState(newAuthState);
       
-      // Reset the processed flag when auth state changes
-      authProcessedRef.current = false;
-      
-      // Clear any existing timeout
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+      // Process auth state immediately (no debouncing needed)
+      if (isMounted && !newAuthState.isLoading) {
+        processAuthState(newAuthState);
       }
-      
-      // Process auth state with debouncing
-      timeoutRef.current = setTimeout(() => {
-        if (isMounted) {
-          processAuthState(newAuthState);
-        }
-      }, 50); // Reduced debounce time
     });
+    
+    authSubscriptionRef.current = unsubscribe;
 
     return () => {
       isMounted = false;
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+      if (authSubscriptionRef.current) {
+        authSubscriptionRef.current();
       }
-      unsubscribe();
     };
-  }, []); // Empty dependency array to prevent re-subscription
+  }, []); // Empty dependency array - only subscribe once
 
   // Fallback: Force initialization to complete after 10 seconds to prevent infinite loading
   useEffect(() => {
@@ -343,14 +214,14 @@ function App() {
   }, []);
 
   const handleGetStarted = () => {
-    setAppState(prev => ({ ...prev, view: 'app', onboardingStatus: 'login' }));
+    setAppState((prev: AppState) => ({ ...prev, view: 'app', onboardingStatus: 'login' }));
   };
 
   const handleLoginComplete = async () => {
     console.log('🎯 [App] Email login completed, setting view to app');
     // Set view to app immediately to prevent flash
-    setAppState(prev => {
-      const newState = { ...prev, view: 'app' as const, onboardingStatus: 'loading' as const };
+    setAppState((prev: AppState) => {
+      const newState: AppState = { ...prev, view: 'app', onboardingStatus: 'loading' };
       console.log('🎯 [App] Setting view to app with loading status:', newState);
       return newState;
     });
@@ -361,7 +232,7 @@ function App() {
 
   const handleBackToLanding = () => {
     console.log('🔙 [App] Back to landing clicked, resetting to landing page');
-    setAppState(prev => ({ 
+    setAppState((prev: AppState) => ({ 
       ...prev, 
       view: 'landing',
       onboardingStatus: 'initial' // Reset to show actual landing page, not login
@@ -373,7 +244,7 @@ function App() {
     // Clear the OAuth callback URL
     window.history.replaceState({}, document.title, '/');
     // Force a re-render by updating the app state
-        setAppState(prev => ({ ...prev, view: 'app' }));
+        setAppState((prev: AppState) => ({ ...prev, view: 'app' }));
     // The auth service will handle user creation and state updates
     // The useEffect will automatically handle the navigation based on auth state
   };
@@ -381,7 +252,7 @@ function App() {
   const handleOAuthError = (error: string) => {
     console.error('🔐 [App] OAuth authentication error:', error);
     // Redirect back to landing page on error
-    setAppState(prev => ({ ...prev, view: 'landing' }));
+    setAppState((prev: AppState) => ({ ...prev, view: 'landing' }));
   };
 
   const handleLogout = () => {
@@ -396,21 +267,19 @@ function App() {
     await authService.signOut();
     
     // Reset all app state (but keep hasEverLoggedIn = true)
-    setAppState(prev => ({ 
+    setAppState((prev: AppState) => ({ 
       ...prev,
       view: 'landing', 
       onboardingStatus: 'login' 
     }));
     
-    // Reset all refs to prevent state conflicts
-    initializationRef.current = false;
-    authProcessedRef.current = false;
-    lastProcessedUserIdRef.current = null;
+    // Reset processing ref
+    isProcessingAuthRef.current = false;
     
     console.log('🎯 [App] Logout completed, showing login page (user has logged in before)');
   };
 
-  const openModal = (modal: string) => {
+  const openModal = (modal: ActiveModal) => {
     setActiveModal(modal);
   };
 
@@ -425,7 +294,7 @@ function App() {
     if (authState.user) {
       // Update UI immediately for better UX
       const nextStep = await onboardingService.getNextOnboardingStep(authState.user.authUserId);
-      setAppState(prev => ({ 
+      setAppState((prev: AppState) => ({ 
         ...prev, 
         onboardingStatus: nextStep 
       }));
@@ -470,21 +339,23 @@ function App() {
     setConnectionStatus(ConnectionStatus.CONNECTED);
     setConnectionError(null);
     
-    // Update database to mark PC connection as successful
+    // Update database to mark PC connection as successful (non-blocking - fire and forget)
     if (authState.user) {
-      await onboardingService.updateOnboardingStatus(authState.user.authUserId, 'how-to-use', {
+      // Fire and forget - don't await these operations
+      onboardingService.updateOnboardingStatus(authState.user.authUserId, 'how-to-use', {
         has_seen_how_to_use: true,
         pc_connected: true,
         pc_connection_skipped: false
-      });
-      // Refresh user data to reflect the changes
-      await authService.refreshUser();
+      }).catch(error => console.error('Failed to update onboarding status:', error));
+      
+      // Refresh user data in background
+      authService.refreshUser().catch(error => console.error('Failed to refresh user:', error));
     }
     
     // Show success message for 0.5 seconds, then navigate to features-connected
     setTimeout(() => {
       console.log('🔗 [App] Navigating to features-connected splash screen after connection success');
-      setAppState(prev => ({ 
+      setAppState((prev: AppState) => ({ 
         ...prev, 
         onboardingStatus: 'features-connected' 
       }));
@@ -557,7 +428,7 @@ function App() {
     }
     
     // Skip directly to pro-features screen
-    setAppState(prev => ({ 
+    setAppState((prev: AppState) => ({ 
       ...prev, 
       onboardingStatus: 'pro-features' 
     }));
@@ -731,7 +602,7 @@ function App() {
               await authService.refreshUser();
             }
             // Go directly to pro-features screen
-            setAppState(prev => ({ 
+            setAppState((prev: AppState) => ({ 
               ...prev, 
               onboardingStatus: 'pro-features' 
             }));
@@ -765,7 +636,7 @@ function App() {
             
             console.log('🎯 [App] Setting onboardingStatus to complete');
             // Go directly to main app (chat screen)
-            setAppState(prev => ({ 
+            setAppState((prev: AppState) => ({ 
               ...prev, 
               onboardingStatus: 'complete' 
             }));

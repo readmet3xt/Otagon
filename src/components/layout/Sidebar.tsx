@@ -40,21 +40,24 @@ const Sidebar: React.FC<SidebarProps> = ({
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const longPressDelay = 1500; // 1.5 seconds
 
-  // Sort conversations: Everything Else first, then pinned, then by creation date
+  // Sort conversations: Everything else first, then pinned, then others (newest last)
   const conversationList = Object.values(conversations).sort((a, b) => {
-    // Everything Else tab always first
-    if (a.id === 'everything-else' && b.id !== 'everything-else') return -1;
-    if (a.id !== 'everything-else' && b.id === 'everything-else') return 1;
+    // "Everything else" always at top
+    const aIsEverythingElse = a.id === 'everything-else' || a.title === 'Everything else';
+    const bIsEverythingElse = b.id === 'everything-else' || b.title === 'Everything else';
     
-    // If both are Everything Else, no change needed
-    if (a.id === 'everything-else' && b.id === 'everything-else') return 0;
+    if (aIsEverythingElse && !bIsEverythingElse) return -1;
+    if (!aIsEverythingElse && bIsEverythingElse) return 1;
     
-    // Pinned conversations next
+    // Pinned conversations next (sorted by pinned date, oldest pinned first)
     if (a.isPinned && !b.isPinned) return -1;
     if (!a.isPinned && b.isPinned) return 1;
+    if (a.isPinned && b.isPinned) {
+      return (a.pinnedAt || 0) - (b.pinnedAt || 0);
+    }
     
-    // Then by creation date (newest first)
-    return b.createdAt - a.createdAt;
+    // Then by creation date (oldest first, newest last)
+    return a.createdAt - b.createdAt;
   });
 
   const handleContextMenu = (e: React.MouseEvent, conversationId: string) => {
@@ -96,24 +99,28 @@ const Sidebar: React.FC<SidebarProps> = ({
   const handleDelete = () => {
     if (contextMenu.conversationId) {
       onDeleteConversation(contextMenu.conversationId);
+      closeContextMenu();
     }
   };
 
   const handlePin = () => {
     if (contextMenu.conversationId && onPinConversation) {
       onPinConversation(contextMenu.conversationId);
+      closeContextMenu();
     }
   };
 
   const handleUnpin = () => {
     if (contextMenu.conversationId && onUnpinConversation) {
       onUnpinConversation(contextMenu.conversationId);
+      closeContextMenu();
     }
   };
 
   const handleClearConversation = () => {
     if (contextMenu.conversationId && onClearConversation) {
       onClearConversation(contextMenu.conversationId);
+      closeContextMenu();
     }
   };
 
