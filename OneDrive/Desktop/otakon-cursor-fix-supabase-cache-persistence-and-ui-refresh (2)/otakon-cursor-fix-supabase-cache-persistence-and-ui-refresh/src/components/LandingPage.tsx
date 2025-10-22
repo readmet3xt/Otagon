@@ -944,11 +944,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                                     Amaan
                                 </h3>
                                 <p className="text-xl md:text-2xl text-neutral-300 font-medium">
-                                    Vibecoder and Designer
-              </p>
-            </div>
-
-                            {/* Personal Quote - Centered */}
+                                    Service Designer
+                                </p>
+                            </div>                            {/* Personal Quote - Centered */}
                             <div className="max-w-4xl mx-auto mb-12">
                                 <div className="bg-gradient-to-r from-[#0F0F0F]/60 to-[#1A1A1A]/60 border-2 border-neutral-700/60 rounded-2xl p-8 md:p-10 backdrop-blur-sm">
                                     <p className="text-[#CFCFCF] leading-relaxed text-lg md:text-xl italic">

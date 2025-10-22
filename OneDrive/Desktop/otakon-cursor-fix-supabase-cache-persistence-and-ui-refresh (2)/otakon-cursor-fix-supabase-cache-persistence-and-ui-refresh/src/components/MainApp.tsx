@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { User, Conversation, Conversations, newsPrompts, ConnectionStatus } from '../types';
 import { GAME_HUB_ID } from '../constants';
 import { ConversationService } from '../services/conversationService';
@@ -99,6 +99,13 @@ const MainApp: React.FC<MainAppProps> = ({
   // Welcome screen state
   const [showWelcomeScreen, setShowWelcomeScreen] = useState(false);
   
+  // ✅ PERFORMANCE: Loading guards to prevent concurrent conversation loading
+  const isLoadingConversationsRef = useRef(false);
+  const hasLoadedConversationsRef = useRef(false);
+  
+  // ✅ PERFORMANCE: Memoize currentUser to prevent re-creating object on every render
+  const currentUser = useMemo(() => user || { tier: 'free' } as User, [user]);
+  
   // Add Game modal state
   const [addGameModalOpen, setAddGameModalOpen] = useState(false);
   
@@ -129,14 +136,6 @@ const MainApp: React.FC<MainAppProps> = ({
   // Use props for connection state, fallback to local state if not provided
   const connectionStatus = propConnectionStatus ?? ConnectionStatus.DISCONNECTED;
   const connectionError = propConnectionError ?? null;
-  
-  // Debug connection state
-  console.log('🔍 [MainApp] Connection state:', {
-    propConnectionStatus,
-    connectionStatus,
-    propConnectionError,
-    connectionError
-  });
 
   // Restore connection state from localStorage on mount
   useEffect(() => {
@@ -197,6 +196,20 @@ const MainApp: React.FC<MainAppProps> = ({
 
   useEffect(() => {
     const loadData = async (retryCount = 0) => {
+      // ✅ PERFORMANCE: Guard against concurrent loads
+      if (isLoadingConversationsRef.current) {
+        console.log('🔍 [MainApp] Already loading conversations, skipping...');
+        return;
+      }
+      
+      // ✅ PERFORMANCE: Skip if already loaded (unless retry)
+      if (hasLoadedConversationsRef.current && retryCount === 0) {
+        console.log('🔍 [MainApp] Conversations already loaded, skipping...');
+        return;
+      }
+      
+      isLoadingConversationsRef.current = true;
+      
       try {
         // Get user from AuthService instead of UserService
         const currentUser = authService.getCurrentUser();
@@ -212,7 +225,7 @@ const MainApp: React.FC<MainAppProps> = ({
         }
 
         console.log('🔍 [MainApp] Loading conversations (attempt', retryCount + 1, ')');
-        let userConversations = await ConversationService.getConversations();
+        const userConversations = await ConversationService.getConversations();
         console.log('🔍 [MainApp] Loaded conversations:', userConversations);
         
         // Check if this is a new user and show welcome screen
@@ -306,6 +319,9 @@ const MainApp: React.FC<MainAppProps> = ({
         
         // Mark initialization as complete
         setIsInitializing(false);
+        
+        // ✅ PERFORMANCE: Mark conversations as successfully loaded
+        hasLoadedConversationsRef.current = true;
       } catch (error) {
         console.error('🔍 [MainApp] Error loading data:', error);
         
@@ -326,6 +342,9 @@ const MainApp: React.FC<MainAppProps> = ({
           setActiveConversation(null);
           setIsInitializing(false);
         }
+      } finally {
+        // ✅ PERFORMANCE: Always clear the loading flag
+        isLoadingConversationsRef.current = false;
       }
     };
 
@@ -1477,9 +1496,6 @@ const MainApp: React.FC<MainAppProps> = ({
       </div>
     );
   }
-
-  // Type guard: At this point, user must exist due to the checks above
-  const currentUser = user || { tier: 'free' } as User;
 
   return (
     <div className="h-screen bg-background flex overflow-hidden">

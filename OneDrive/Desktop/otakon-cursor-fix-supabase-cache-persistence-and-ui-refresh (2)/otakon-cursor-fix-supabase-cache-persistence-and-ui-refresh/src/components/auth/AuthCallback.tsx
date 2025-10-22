@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { authService } from '../../services/authService';
 
@@ -10,13 +10,17 @@ interface AuthCallbackProps {
 const AuthCallback: React.FC<AuthCallbackProps> = ({ onAuthSuccess, onAuthError }) => {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [error, setError] = useState<string | null>(null);
-  const [hasProcessed, setHasProcessed] = useState(false);
+  const hasProcessedRef = useRef(false);
+  const subscriptionRef = useRef<{ unsubscribe: () => void } | null>(null);
 
   useEffect(() => {
-    // Prevent multiple processing
-    if (hasProcessed) {
+    // Prevent multiple processing using ref (more reliable than state)
+    if (hasProcessedRef.current) {
+      console.log('🔐 [AuthCallback] Already processed, skipping...');
       return;
     }
+    
+    hasProcessedRef.current = true;
     
     const handleAuthCallback = async () => {
       try {
@@ -24,7 +28,6 @@ const AuthCallback: React.FC<AuthCallbackProps> = ({ onAuthSuccess, onAuthError 
         console.log('🔐 [AuthCallback] Current URL:', window.location.href);
         console.log('🔐 [AuthCallback] URL search params:', window.location.search);
         console.log('🔐 [AuthCallback] URL hash:', window.location.hash);
-        setHasProcessed(true);
 
         // Check for OAuth errors in URL parameters
         const urlParams = new URLSearchParams(window.location.search);
@@ -124,6 +127,9 @@ const AuthCallback: React.FC<AuthCallbackProps> = ({ onAuthSuccess, onAuthError 
           }
         });
         
+        // Store subscription in ref for cleanup
+        subscriptionRef.current = subscription;
+        
         // Also try to get the current session
         const { data, error } = await supabase.auth.getSession();
         console.log('🔐 [AuthCallback] Current session:', { data, error });
@@ -208,7 +214,15 @@ const AuthCallback: React.FC<AuthCallbackProps> = ({ onAuthSuccess, onAuthError 
     };
 
     handleAuthCallback();
-  }, [onAuthSuccess, onAuthError, hasProcessed, status]);
+    
+    // Cleanup function
+    return () => {
+      if (subscriptionRef.current) {
+        subscriptionRef.current.unsubscribe();
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps - only run once on mount
 
   if (status === 'loading') {
     return (

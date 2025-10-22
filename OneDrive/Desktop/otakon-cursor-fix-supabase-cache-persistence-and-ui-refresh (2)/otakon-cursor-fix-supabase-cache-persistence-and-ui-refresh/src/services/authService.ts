@@ -17,6 +17,9 @@ export class AuthService {
   
   // ✅ SCALABILITY: Using centralized cache and error services
   
+  // ✅ PERFORMANCE: Request deduplication for user loading
+  private pendingUserLoads = new Map<string, Promise<void>>();
+  
   // ✅ SCALABILITY: Memory leak prevention
   private cleanupFunctions: (() => void)[] = [];
   private isDestroyed = false;
@@ -239,6 +242,28 @@ export class AuthService {
   }
 
   async loadUserFromSupabase(authUserId: string) {
+    // ✅ PERFORMANCE: Check if there's already a pending load for this user
+    const existingLoad = this.pendingUserLoads.get(authUserId);
+    if (existingLoad) {
+      console.log('🔐 [AuthService] Deduplicating user load request for:', authUserId);
+      return await existingLoad;
+    }
+
+    // Create a new load promise and store it
+    const loadPromise = (async () => {
+      try {
+        await this._loadUserFromSupabaseInternal(authUserId);
+      } finally {
+        // Clean up the pending request after completion
+        this.pendingUserLoads.delete(authUserId);
+      }
+    })();
+    
+    this.pendingUserLoads.set(authUserId, loadPromise);
+    return await loadPromise;
+  }
+
+  private async _loadUserFromSupabaseInternal(authUserId: string) {
     try {
       // ✅ SCALABILITY: Check cache first
       const cachedUser = await this.getCachedUser(authUserId);
@@ -386,7 +411,8 @@ export class AuthService {
           onboardingCompleted: user.onboardingCompleted
         });
 
-
+        // ✅ SCALABILITY: Cache user data
+        await this.setCachedUser(authUserId, user);
         this.updateAuthState({ user, isLoading: false, error: null });
       } else {
         // User not found - try to create manually
@@ -396,8 +422,8 @@ export class AuthService {
           if (authUser) {
             console.log('🔐 [AuthService] Creating user record for auth user:', authUser.email);
             await this.createUserRecord(authUser);
-            // Try loading again after creation
-            await this.loadUserFromSupabase(authUserId);
+            // ✅ PERFORMANCE: Call internal function directly to avoid deadlock with deduplication Map
+            await this._loadUserFromSupabaseInternal(authUserId);
           } else {
             this.updateAuthState({ user: null, isLoading: false, error: 'User not found and could not create user record' });
           }

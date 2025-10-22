@@ -17,6 +17,9 @@ const supabaseService = SupabaseService.getInstance();
 // See: users table (text_count, image_count, text_limit, image_limit, last_reset)
 
 export class ConversationService {
+  // ✅ PERFORMANCE: Deduplicate conversation creation attempts
+  private static pendingCreations = new Map<string, Promise<{ success: boolean; reason?: string }>>();
+  
   // ✅ Get current user ID for Supabase operations
   private static async getCurrentUserId(): Promise<string | null> {
     try {
@@ -228,6 +231,26 @@ export class ConversationService {
   }
 
   static async addConversation(conversation: Conversation): Promise<{ success: boolean; reason?: string }> {
+    // ✅ PERFORMANCE: Check if there's already a pending creation for this conversation
+    if (this.pendingCreations.has(conversation.id)) {
+      console.log('🔍 [ConversationService] Deduplicating conversation creation for:', conversation.id);
+      return await this.pendingCreations.get(conversation.id)!;
+    }
+
+    // Create a new promise and store it
+    const creationPromise = this._addConversationInternal(conversation);
+    this.pendingCreations.set(conversation.id, creationPromise);
+
+    try {
+      const result = await creationPromise;
+      return result;
+    } finally {
+      // Clean up the pending request
+      this.pendingCreations.delete(conversation.id);
+    }
+  }
+
+  private static async _addConversationInternal(conversation: Conversation): Promise<{ success: boolean; reason?: string }> {
     const userId = await this.getCurrentUserId();
     
     // ✅ QUERY-BASED LIMITS: Conversations are unlimited, no need to check count

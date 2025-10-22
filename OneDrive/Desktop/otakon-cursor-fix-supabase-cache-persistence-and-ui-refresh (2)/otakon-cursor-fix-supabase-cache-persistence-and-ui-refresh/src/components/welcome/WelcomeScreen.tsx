@@ -2,13 +2,12 @@ import React, { useState } from 'react';
 
 interface WelcomeScreenProps {
   onStartChat: () => void;
-  isRevisit?: boolean;
   onAddGame?: () => void;
 }
 
 type TabType = 'overview' | 'features' | 'hotkeys' | 'best-practices';
 
-const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartChat, isRevisit = false, onAddGame }) => {
+const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartChat, onAddGame }) => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
 
   const tabs = [
@@ -83,7 +82,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartChat, isRevisit = 
               onClick={onStartChat}
               className="inline-flex items-center gap-2 px-6 sm:px-8 py-2.5 sm:py-3 text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] hover:from-[#D42A2A] hover:to-[#C87A1A] rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95"
             >
-              <span>{isRevisit ? 'Back to Chat' : 'Start Chatting'}</span>
+              <span>Start Chatting</span>
               <svg 
                 className="w-5 h-5 flex-shrink-0" 
                 fill="none" 
