@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI, GenerativeModel, SchemaType } from "@google/generative-ai";
+import { GoogleGenerativeAI, GenerativeModel, SchemaType, HarmCategory, HarmBlockThreshold, SafetySetting } from "@google/generative-ai";
 import { parseOtakonTags } from './otakonTags';
 import { AIResponse, Conversation, User, insightTabsConfig, PlayerProfile } from '../types';
 import { cacheService } from './cacheService';
@@ -9,6 +9,26 @@ import { profileAwareTabService } from './profileAwareTabService';
 import { toastService } from './toastService';
 
 const API_KEY = (import.meta as any).env.VITE_GEMINI_API_KEY;
+
+// ✅ FIX 1: Gemini API Safety Settings
+const SAFETY_SETTINGS: SafetySetting[] = [
+  {
+    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+  },
+];
 
 class AIService {
   private genAI: GoogleGenerativeAI;
@@ -21,8 +41,46 @@ class AIService {
     }
     this.genAI = new GoogleGenerativeAI(API_KEY);
     // Using the latest preview models (September 2025) for enhanced performance
-    this.flashModel = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite-preview-09-2025" });
-    this.proModel = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-09-2025" });
+    // ✅ FIX 2: Apply safety settings to all model initializations
+    this.flashModel = this.genAI.getGenerativeModel({ 
+      model: "gemini-2.5-flash-lite-preview-09-2025",
+      safetySettings: SAFETY_SETTINGS
+    });
+    this.proModel = this.genAI.getGenerativeModel({ 
+      model: "gemini-2.5-flash-preview-09-2025",
+      safetySettings: SAFETY_SETTINGS
+    });
+  }
+
+  /**
+   * ✅ FIX 3: Check if AI response was blocked by safety filters
+   */
+  private checkSafetyResponse(result: any): { safe: boolean; reason?: string } {
+    // Check if prompt was blocked
+    if (result.response.promptFeedback?.blockReason) {
+      return {
+        safe: false,
+        reason: `Content blocked: ${result.response.promptFeedback.blockReason}`
+      };
+    }
+    
+    // Check if response was blocked by safety filters
+    const candidate = result.response.candidates?.[0];
+    if (!candidate) {
+      return {
+        safe: false,
+        reason: 'No response generated'
+      };
+    }
+    
+    if (candidate.finishReason === 'SAFETY') {
+      return {
+        safe: false,
+        reason: 'Response blocked by safety filters'
+      };
+    }
+    
+    return { safe: true };
   }
 
   /**
@@ -131,6 +189,13 @@ class AIService {
       
       const result = await modelToUse.generateContent(content);
       
+      // ✅ FIX 4: Check safety response
+      const safetyCheck = this.checkSafetyResponse(result);
+      if (!safetyCheck.safe) {
+        toastService.error('Unable to generate response due to content policy');
+        throw new Error(safetyCheck.reason);
+      }
+      
       // Check if request was aborted after API call but before processing
       if (abortSignal?.aborted) {
         throw new DOMException('Request was aborted', 'AbortError');
@@ -171,6 +236,14 @@ class AIService {
 
     } catch (error) {
       console.error("AI Service Error:", error);
+      
+      // ✅ FIX 4: Enhanced error handling for safety blocks
+      const errorMessage = (error as Error).message || '';
+      if (errorMessage.includes('blocked') || errorMessage.includes('SAFETY') || errorMessage.includes('content policy')) {
+        toastService.error('Your message contains inappropriate content');
+        throw new Error('Content blocked by safety filters');
+      }
+      
       toastService.error('AI response failed. Please try again.');
       
       // Use error recovery service
@@ -356,6 +429,13 @@ Note: These are optional enhancements. If not applicable, omit or return empty a
           }
         });
         
+        // ✅ FIX 5: Check safety response
+        const safetyCheck = this.checkSafetyResponse(result);
+        if (!safetyCheck.safe) {
+          toastService.error('Unable to generate response due to content policy');
+          throw new Error(safetyCheck.reason);
+        }
+        
         const rawResponse = await result.response.text();
         const structuredData = JSON.parse(rawResponse);
         
@@ -400,6 +480,14 @@ Note: These are optional enhancements. If not applicable, omit or return empty a
         
         // Fallback to regular OTAKON_TAG parsing
         const result = await modelToUse.generateContent(prompt);
+        
+        // ✅ FIX 5: Check safety response in fallback
+        const safetyCheck = this.checkSafetyResponse(result);
+        if (!safetyCheck.safe) {
+          toastService.error('Unable to generate response due to content policy');
+          throw new Error(safetyCheck.reason);
+        }
+        
         const rawContent = await result.response.text();
         const { cleanContent, tags } = parseOtakonTags(rawContent);
         
@@ -422,6 +510,14 @@ Note: These are optional enhancements. If not applicable, omit or return empty a
       
     } catch (error) {
       console.error("Structured AI Service Error:", error);
+      
+      // ✅ FIX 5: Enhanced error handling for safety blocks
+      const errorMessage = (error as Error).message || '';
+      if (errorMessage.includes('blocked') || errorMessage.includes('SAFETY') || errorMessage.includes('content policy')) {
+        toastService.error('Your message contains inappropriate content');
+        throw new Error('Content blocked by safety filters');
+      }
+      
       toastService.error('AI response failed. Please try again.');
       
       // Use error recovery
@@ -502,6 +598,14 @@ Note: These are optional enhancements. If not applicable, omit or return empty a
 
     try {
       const result = await this.proModel.generateContent(prompt);
+      
+      // ✅ FIX 6: Check safety response
+      const safetyCheck = this.checkSafetyResponse(result);
+      if (!safetyCheck.safe) {
+        toastService.error('Unable to generate insights due to content policy');
+        throw new Error(safetyCheck.reason);
+      }
+      
       const rawJson = await result.response.text();
       const cleanedJson = rawJson.replace(/```json\n?|\n?```/g, '').trim();
       const insights = JSON.parse(cleanedJson);
@@ -512,6 +616,14 @@ Note: These are optional enhancements. If not applicable, omit or return empty a
 
     } catch (error) {
       console.error("Failed to generate initial insights:", error);
+      
+      // ✅ FIX 6: Enhanced error handling for safety blocks
+      const errorMessage = (error as Error).message || '';
+      if (errorMessage.includes('blocked') || errorMessage.includes('SAFETY') || errorMessage.includes('content policy')) {
+        toastService.warning('Unable to generate insights due to content policy');
+        return {};
+      }
+      
       toastService.warning('Failed to generate game insights. You can still continue chatting!');
       return {};
     }

@@ -1482,8 +1482,7 @@ const MainApp: React.FC<MainAppProps> = ({
 
   // Show welcome screen for new users or when guide is opened
   if (showWelcomeScreen) {
-    const isFirstTimeWelcome = !localStorage.getItem('otakon_welcome_shown');
-    return <WelcomeScreen onStartChat={handleStartChat} isRevisit={!isFirstTimeWelcome} onAddGame={handleAddGame} />;
+    return <WelcomeScreen onStartChat={handleStartChat} onAddGame={handleAddGame} />;
   }
 
   // If no user but we have initialization done, still show error or redirect
