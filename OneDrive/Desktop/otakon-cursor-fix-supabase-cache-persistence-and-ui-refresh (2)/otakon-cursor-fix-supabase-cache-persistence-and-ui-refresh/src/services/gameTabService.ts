@@ -17,11 +17,41 @@ export interface GameTabCreationData {
 
 class GameTabService {
   /**
-   * Create a new game-specific conversation tab
+   * Create a new game-specific conversation tab (IDEMPOTENT)
+   * If tab already exists, returns it and optionally updates subtabs with new AI insights
    */
   async createGameTab(data: GameTabCreationData): Promise<Conversation> {
     console.log('🎮 [GameTabService] Creating game tab:', data);
 
+    // ✅ IDEMPOTENT: Check if tab already exists
+    const existingConv = await ConversationService.getConversation(data.conversationId);
+    
+    if (existingConv) {
+      console.log('🎮 [GameTabService] Tab already exists:', existingConv.title);
+      
+      // ✅ Update subtabs if they're loading and we have new AI response
+      if (data.aiResponse && existingConv.subtabs?.some(tab => tab.status === 'loading' || tab.content === 'Loading...')) {
+        console.log('🎮 [GameTabService] Updating loading subtabs with new AI insights');
+        const updatedSubtabs = this.extractInsightsFromAIResponse(
+          data.aiResponse, 
+          existingConv.subtabs
+        );
+        
+        await ConversationService.updateConversation(existingConv.id, {
+          subtabs: updatedSubtabs,
+          updatedAt: Date.now()
+        });
+        
+        return { ...existingConv, subtabs: updatedSubtabs };
+      }
+      
+      // Return existing tab as-is
+      return existingConv;
+    }
+
+    // Tab doesn't exist - create new one
+    console.log('🎮 [GameTabService] Creating new tab for:', data.gameTitle);
+    
     // For unreleased games, don't generate subtabs
     let subTabs: SubTab[] = [];
     
@@ -191,9 +221,20 @@ class GameTabService {
 
       console.log('🤖 [GameTabService] ✅ Background insights generated successfully');
 
+      // ✅ CRITICAL FIX: Read fresh conversation data from DB before updating
+      // The conversation parameter might be stale (from before message migration)
+      // We need to get the LATEST version with migrated messages
+      const conversations = await ConversationService.getConversations(true); // skipCache = true
+      const freshConversation = conversations[conversation.id];
+      
+      if (!freshConversation) {
+        console.error('🤖 [GameTabService] Conversation not found:', conversation.id);
+        return;
+      }
+
       // Update sub-tabs with generated content
-      const updatedSubTabs = conversation.subtabs?.map(subTab => {
-        const content = insights[subTab.id] || `Welcome to ${subTab.title} for ${conversation.gameTitle}!`;
+      const updatedSubTabs = freshConversation.subtabs?.map(subTab => {
+        const content = insights[subTab.id] || `Welcome to ${subTab.title} for ${freshConversation.gameTitle}!`;
         return {
           ...subTab,
           content,
@@ -202,9 +243,9 @@ class GameTabService {
         };
       }) || [];
 
-      // Update conversation with new sub-tab content
+      // Use fresh conversation data (with migrated messages) + new subtabs
       const updatedConversation = {
-        ...conversation,
+        ...freshConversation,  // ✅ Use FRESH data with messages!
         subtabs: updatedSubTabs,
         updatedAt: Date.now()
       };
@@ -217,21 +258,34 @@ class GameTabService {
       console.error('🤖 [GameTabService] ❌ Failed to generate initial insights:', error);
       toastService.warning('Failed to load game insights. You can still chat about the game!');
       
-      // Set error state for sub-tabs
-      const errorSubTabs = conversation.subtabs?.map(subTab => ({
-        ...subTab,
-        content: `Failed to load ${subTab.title} content. Please try again later.`,
-        isNew: false,
-        status: 'error' as const
-      })) || [];
+      // ✅ CRITICAL FIX: Read fresh conversation before updating error state
+      try {
+        const conversations = await ConversationService.getConversations(true); // skipCache = true
+        const freshConversation = conversations[conversation.id];
+        
+        if (!freshConversation) {
+          console.error('🤖 [GameTabService] Conversation not found for error update:', conversation.id);
+          return;
+        }
+        
+        // Set error state for sub-tabs
+        const errorSubTabs = freshConversation.subtabs?.map(subTab => ({
+          ...subTab,
+          content: `Failed to load ${subTab.title} content. Please try again later.`,
+          isNew: false,
+          status: 'error' as const
+        })) || [];
 
-      const updatedConversation = {
-        ...conversation,
-        subtabs: errorSubTabs,
-        updatedAt: Date.now()
-      };
+        const updatedConversation = {
+          ...freshConversation,  // ✅ Use FRESH data with messages!
+          subtabs: errorSubTabs,
+          updatedAt: Date.now()
+        };
 
-      await ConversationService.updateConversation(conversation.id, updatedConversation);
+        await ConversationService.updateConversation(conversation.id, updatedConversation);
+      } catch (updateError) {
+        console.error('🤖 [GameTabService] Failed to update error state:', updateError);
+      }
     }
   }
 

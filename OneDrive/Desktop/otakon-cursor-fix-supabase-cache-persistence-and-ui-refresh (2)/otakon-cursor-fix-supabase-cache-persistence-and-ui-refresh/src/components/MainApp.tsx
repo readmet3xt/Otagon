@@ -14,6 +14,7 @@ import { SupabaseService } from '../services/supabaseService';
 import { tabManagementService } from '../services/tabManagementService';
 import { ttsService } from '../services/ttsService';
 import { toastService } from '../services/toastService';
+import { MessageRoutingService } from '../services/messageRoutingService';
 import Sidebar from './layout/Sidebar';
 import ChatInterface from './features/ChatInterface';
 import SettingsModal from './modals/SettingsModal';
@@ -28,6 +29,7 @@ import { LoadingSpinner } from './ui/LoadingSpinner';
 import SettingsContextMenu from './ui/SettingsContextMenu';
 import ProfileSetupBanner from './ui/ProfileSetupBanner';
 import WelcomeScreen from './welcome/WelcomeScreen';
+import GameProgressBar from './features/GameProgressBar';
 import { connect, disconnect } from '../services/websocketService';
 
 interface MainAppProps {
@@ -385,24 +387,53 @@ const MainApp: React.FC<MainAppProps> = ({
 
       if (hasLoadingSubtabs) {
         console.log('🔄 [MainApp] Polling for subtab updates...');
+        
+        // ✅ FIX 1: Only update subtabs, don't overwrite entire conversations state
+        // This prevents wiping out messages that were just migrated
         const updatedConversations = await ConversationService.getConversations();
         
-        // Deep clone to ensure React detects changes in nested objects
-        const freshConversations = deepCloneConversations(updatedConversations);
-        
-        console.log('🔄 [MainApp] Updated conversations with fresh references');
-        setConversations(freshConversations);
-        
-        // IMPORTANT: Update active conversation with new reference to trigger re-render
-        if (activeConversation && freshConversations[activeConversation.id]) {
-          console.log('🔄 [MainApp] Updating active conversation:', activeConversation.id);
-          setActiveConversation(freshConversations[activeConversation.id]);
-        }
+        // ✅ FIX 2: Only update if subtabs actually changed (prevents unnecessary re-renders)
+        setConversations(prevConversations => {
+          const freshConversations = deepCloneConversations(updatedConversations);
+          
+          // Check if subtabs have actually been updated
+          let hasChanges = false;
+          Object.keys(freshConversations).forEach(convId => {
+            const prev = prevConversations[convId];
+            const curr = freshConversations[convId];
+            
+            if (prev && curr && prev.subtabs && curr.subtabs) {
+              const prevLoadingCount = prev.subtabs.filter(t => t.status === 'loading').length;
+              const currLoadingCount = curr.subtabs.filter(t => t.status === 'loading').length;
+              
+              if (prevLoadingCount !== currLoadingCount) {
+                hasChanges = true;
+              }
+            }
+          });
+          
+          // Only update if subtabs changed
+          if (hasChanges) {
+            console.log('🔄 [MainApp] Subtabs updated, refreshing state');
+            
+            // ✅ CRITICAL: Always update activeConversation when subtabs change
+            // This ensures the user sees newly loaded content immediately without switching tabs
+            if (activeConversation && freshConversations[activeConversation.id]) {
+              console.log('🔄 [MainApp] Updating active conversation with fresh data (including subtab content)');
+              setActiveConversation(freshConversations[activeConversation.id]);
+            }
+            
+            return freshConversations;
+          }
+          
+          console.log('🔄 [MainApp] No subtab changes, keeping current state');
+          return prevConversations; // Keep existing state (preserves messages)
+        });
       }
     };
 
-    // Poll every 2 seconds when there are loading subtabs
-    const interval = setInterval(pollForSubtabUpdates, 2000);
+    // ✅ FIX 3: Reduce polling frequency to 3 seconds (was 2 seconds)
+    const interval = setInterval(pollForSubtabUpdates, 3000);
     
     // Cleanup on unmount
     return () => clearInterval(interval);
@@ -867,7 +898,12 @@ const MainApp: React.FC<MainAppProps> = ({
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     try {
-      const updatedConversations = await ConversationService.getConversations();
+      // ✅ CRITICAL FIX: Skip cache to ensure we get fresh data after Supabase sync
+      // When subtabs finish loading, gameTabService calls updateConversation which:
+      // 1. Updates Supabase (async)
+      // 2. Calls setConversations which syncs (async)
+      // 3. If we use cache here, we might get OLD data before sync completes!
+      const updatedConversations = await ConversationService.getConversations(true); // skipCache = true
       const targetConv = updatedConversations[conversationId];
 
       if (targetConv) {
@@ -991,6 +1027,8 @@ const MainApp: React.FC<MainAppProps> = ({
           messages: [...updated[activeConversation.id].messages, newMessage],
           updatedAt: Date.now()
         };
+        // Update activeConversation immediately so UI reflects the new message
+        setActiveConversation(updated[activeConversation.id]);
       }
       return updated;
     });
@@ -1034,6 +1072,8 @@ const MainApp: React.FC<MainAppProps> = ({
             messages: [...updated[activeConversation.id].messages, errorMessage],
             updatedAt: Date.now()
           };
+          // Update activeConversation immediately so UI reflects the error message
+          setActiveConversation(updated[activeConversation.id]);
         }
         return updated;
       });
@@ -1129,6 +1169,8 @@ const MainApp: React.FC<MainAppProps> = ({
             messages: [...updated[activeConversation.id].messages, aiMessage],
             updatedAt: Date.now()
           };
+          // Update activeConversation immediately so UI reflects the new message
+          setActiveConversation(updated[activeConversation.id]);
         }
         return updated;
       });
@@ -1157,20 +1199,12 @@ const MainApp: React.FC<MainAppProps> = ({
         }
       }
 
-      // Process suggested prompts (prefer followUpPrompts from enhanced response)
+      // ✅ DEFERRED: Process suggested prompts AFTER tab migration (moved to after tab switch)
+      // This ensures prompts are based on the FINAL active tab, not the intermediate Game Hub state
       console.log('🔍 [MainApp] Raw suggestions from AI:', response.suggestions);
       const suggestionsToUse = response.followUpPrompts || response.suggestions;
       const processedSuggestions = suggestedPromptsService.processAISuggestions(suggestionsToUse);
       console.log('🔍 [MainApp] Processed suggestions:', processedSuggestions);
-      
-      if (processedSuggestions.length > 0) {
-        setSuggestedPrompts(processedSuggestions);
-      } else {
-        // Use fallback suggestions if AI doesn't provide any
-        const fallbackSuggestions = suggestedPromptsService.getFallbackSuggestions(activeConversation.id, activeConversation.isGameHub);
-        console.log('🔍 [MainApp] Using fallback suggestions:', fallbackSuggestions);
-        setSuggestedPrompts(fallbackSuggestions);
-      }
 
       // Handle progressive insight updates (if AI provided updates to existing subtabs)
       if (response.progressiveInsightUpdates && response.progressiveInsightUpdates.length > 0) {
@@ -1323,10 +1357,9 @@ const MainApp: React.FC<MainAppProps> = ({
         const shouldCreateTab = confidence === 'high';
 
         if (shouldCreateTab) {
-          // Check if game tab already exists
-          const existingGameTab = Object.values(conversations).find(
-            conv => conv.gameTitle?.toLowerCase() === gameTitle.toLowerCase()
-          );
+          // ✅ Check if game tab already exists using service (not stale state)
+          const targetConvId = gameTabService.generateGameConversationId(gameTitle);
+          const existingGameTab = await ConversationService.getConversation(targetConvId);
 
           let targetConversationId: string;
           
@@ -1349,39 +1382,16 @@ const MainApp: React.FC<MainAppProps> = ({
           });
           
           if (shouldMigrateMessages) {
-            console.log('🎮 [MainApp] ✅ Starting message migration from Game Hub to game tab');
+            console.log('🎮 [MainApp] ✅ Starting ATOMIC message migration from Game Hub to game tab');
             console.log('🎮 [MainApp] Message IDs to move:', { userMsgId: newMessage.id, aiMsgId: aiMessage.id });
             
-            // Get the last two messages (user query and AI response)
-            const messagesToMove = [newMessage, aiMessage];
-            
-            // Add messages to the game tab
-            console.log('🎮 [MainApp] Adding messages to game tab:', targetConversationId);
-            for (const msg of messagesToMove) {
-              await ConversationService.addMessage(targetConversationId, msg);
-            }
-            console.log('🎮 [MainApp] ✅ Messages added to game tab');
-            
-            // Get fresh conversation data from service
-            const currentConversations = await ConversationService.getConversations();
-            const gameHubConv = currentConversations[GAME_HUB_ID] || currentConversations['game-hub'];
-            
-            if (gameHubConv) {
-              console.log('🎮 [MainApp] Game Hub has', gameHubConv.messages.length, 'messages before removal');
-              
-              // Remove the messages we just moved
-              const updatedMessages = gameHubConv.messages.filter(
-                msg => msg.id !== newMessage.id && msg.id !== aiMessage.id
-              );
-              
-              console.log('🎮 [MainApp] Game Hub will have', updatedMessages.length, 'messages after removal');
-              
-              await ConversationService.updateConversation(gameHubConv.id, {
-                messages: updatedMessages,
-                updatedAt: Date.now()
-              });
-              console.log('🎮 [MainApp] ✅ Messages removed from Game Hub');
-            }
+            // ✅ Use atomic migration service to prevent race conditions
+            await MessageRoutingService.migrateMessagesAtomic(
+              [newMessage.id, aiMessage.id],
+              activeConversation.id,
+              targetConversationId
+            );
+            console.log('🎮 [MainApp] ✅ Atomic migration complete');
             
             // Update state to reflect the changes
             const updatedConversations = await ConversationService.getConversations();
@@ -1398,6 +1408,16 @@ const MainApp: React.FC<MainAppProps> = ({
               // Close sidebar on mobile
               setSidebarOpen(false);
               
+              // ✅ Set suggested prompts AFTER tab switch (based on FINAL active tab)
+              if (processedSuggestions.length > 0) {
+                setSuggestedPrompts(processedSuggestions);
+              } else {
+                // Use fallback suggestions based on the GAME TAB, not Game Hub
+                const fallbackSuggestions = suggestedPromptsService.getFallbackSuggestions(gameTab.id, false);
+                console.log('🔍 [MainApp] Using fallback suggestions for game tab:', fallbackSuggestions);
+                setSuggestedPrompts(fallbackSuggestions);
+              }
+              
               // Poll for subtab updates if they're still loading
               const hasLoadingSubtabs = gameTab.subtabs?.some(tab => tab.status === 'loading');
               if (hasLoadingSubtabs) {
@@ -1407,6 +1427,15 @@ const MainApp: React.FC<MainAppProps> = ({
             }
           } else {
             console.log('🎮 [MainApp] ⚠️ Skipping message migration - not in Everything Else tab or no target');
+            
+            // ✅ No migration - set prompts for current tab (Game Hub or existing game tab)
+            if (processedSuggestions.length > 0) {
+              setSuggestedPrompts(processedSuggestions);
+            } else {
+              const fallbackSuggestions = suggestedPromptsService.getFallbackSuggestions(activeConversation.id, activeConversation.isGameHub);
+              console.log('🔍 [MainApp] Using fallback suggestions:', fallbackSuggestions);
+              setSuggestedPrompts(fallbackSuggestions);
+            }
           }
         } else {
           console.log('🎮 [MainApp] Not creating game tab:', { 
@@ -1453,6 +1482,8 @@ const MainApp: React.FC<MainAppProps> = ({
             messages: [...updated[activeConversation.id].messages, errorMessage],
             updatedAt: Date.now()
           };
+          // Update activeConversation immediately so UI reflects the error message
+          setActiveConversation(updated[activeConversation.id]);
         }
         return updated;
       });
@@ -1593,6 +1624,16 @@ const MainApp: React.FC<MainAppProps> = ({
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Game Progress Bar - Show for game conversations (not Game Hub) */}
+          {activeConversation && !activeConversation.isGameHub && activeConversation.gameTitle && (
+            <div className="px-3 sm:px-4 lg:px-6 pb-3 sm:pb-4 flex-shrink-0">
+              <GameProgressBar 
+                progress={activeConversation.gameProgress || 0}
+                className="px-3 sm:px-4"
+              />
             </div>
           )}
 

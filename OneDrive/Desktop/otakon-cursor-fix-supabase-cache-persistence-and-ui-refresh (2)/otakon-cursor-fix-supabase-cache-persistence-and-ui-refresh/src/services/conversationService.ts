@@ -112,9 +112,19 @@ export class ConversationService {
     }
   }
 
-  static async getConversations(): Promise<Conversations> {
+  // ✅ In-memory cache to reduce Supabase reads during polling
+  private static conversationsCache: { data: Conversations; timestamp: number } | null = null;
+  private static CACHE_TTL = 2000; // 2 second cache (short TTL for near-real-time)
+
+  static async getConversations(skipCache = false): Promise<Conversations> {
     const userId = await this.getCurrentUserId();
     let conversations: Conversations = {};
+    
+    // ✅ PERFORMANCE: Check in-memory cache first (unless explicitly skipped)
+    if (!skipCache && this.conversationsCache && Date.now() - this.conversationsCache.timestamp < this.CACHE_TTL) {
+      console.log('🔍 [ConversationService] Using cached conversations (age:', Date.now() - this.conversationsCache.timestamp, 'ms)');
+      return this.conversationsCache.data;
+    }
     
     // ✅ PRIMARY: Load from Supabase
     if (userId) {
@@ -129,6 +139,12 @@ export class ConversationService {
         }, {} as Conversations);
         
         console.log('🔍 [ConversationService] Loaded', Object.keys(conversations).length, 'conversations from Supabase');
+        
+        // ✅ Update cache
+        this.conversationsCache = {
+          data: conversations,
+          timestamp: Date.now()
+        };
         
         // Also update localStorage as backup
         if (Object.keys(conversations).length > 0) {
@@ -172,15 +188,18 @@ export class ConversationService {
     return conversations;
   }
 
-  static async setConversations(conversations: Conversations): Promise<void> {
+  static async setConversations(conversations: Conversations, retryCount = 0): Promise<void> {
     const userId = await this.getCurrentUserId();
     console.log('🔍 [ConversationService] Saving', Object.keys(conversations).length, 'conversations');
+    
+    // ✅ Invalidate cache when writing
+    this.conversationsCache = null;
     
     // Always save to localStorage as backup
     StorageService.set(STORAGE_KEYS.CONVERSATIONS, conversations);
     console.log('🔍 [ConversationService] Saved to localStorage');
     
-    // ✅ PRIMARY: Save to Supabase if user is logged in
+    // ✅ PRIMARY: Save to Supabase if user is logged in (with retry logic)
     if (userId) {
       try {
         console.log('🔍 [ConversationService] Syncing to Supabase...');
@@ -201,6 +220,7 @@ export class ConversationService {
             }
           } catch (error) {
             console.warn(`Failed to save conversation ${conv.id} to Supabase:`, error);
+            throw error; // Re-throw to trigger retry
           }
         });
         
@@ -209,6 +229,21 @@ export class ConversationService {
         
       } catch (error) {
         console.error('🔍 [ConversationService] Failed to sync to Supabase:', error);
+        
+        // ✅ Retry with exponential backoff (3 attempts)
+        if (retryCount < 3) {
+          const delay = 1000 * Math.pow(2, retryCount); // 1s, 2s, 4s
+          console.warn(`🔄 [ConversationService] Retrying in ${delay}ms (attempt ${retryCount + 1}/3)...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return this.setConversations(conversations, retryCount + 1);
+        } else {
+          // ✅ Final failure - notify user
+          console.error('❌ [ConversationService] Supabase sync failed after 3 attempts');
+          // Import toastService dynamically to avoid circular dependency
+          import('./toastService').then(({ toastService }) => {
+            toastService.warning('Changes saved locally. Will sync when online.');
+          }).catch(err => console.error('Failed to show toast:', err));
+        }
       }
     }
   }
@@ -361,6 +396,13 @@ export class ConversationService {
     const conversations = await this.getConversations();
     if (conversations[conversationId]) {
       const conversation = conversations[conversationId];
+      
+      // ✅ Check for duplicates to prevent race condition issues
+      const exists = conversation.messages.some(m => m.id === message.id);
+      if (exists) {
+        console.warn(`⚠️ [ConversationService] Message ${message.id} already exists in conversation ${conversationId}, skipping`);
+        return { success: true, reason: 'Message already exists' };
+      }
       
       // Simply add the message - no limits
       conversation.messages.push(message);
