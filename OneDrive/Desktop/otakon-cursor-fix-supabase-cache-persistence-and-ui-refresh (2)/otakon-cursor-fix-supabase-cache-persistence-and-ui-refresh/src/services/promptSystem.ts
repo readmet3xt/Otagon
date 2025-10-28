@@ -91,6 +91,11 @@ const getGameCompanionPrompt = (
     .map(m => `${m.role === 'user' ? 'User' : 'Otagon'}: ${m.content}`)
     .join('\n');
 
+  // Include historical context summary if available
+  const historicalContext = conversation.contextSummary
+    ? `**Historical Context (Previous Sessions):**\n${conversation.contextSummary}\n\n`
+    : '';
+
   // Get player profile context if available
   const profile = playerProfile || profileAwareTabService.getDefaultProfile();
   const profileContext = profileAwareTabService.buildProfileContext(profile);
@@ -112,7 +117,7 @@ ${profileContext}
 **Current Subtabs (Your Knowledge Base):**
 ${subtabContext}
 
-**Recent Conversation History:**
+${historicalContext}**Recent Conversation History:**
 ${recentMessages}
 
 **User Query:** "${userMessage}"

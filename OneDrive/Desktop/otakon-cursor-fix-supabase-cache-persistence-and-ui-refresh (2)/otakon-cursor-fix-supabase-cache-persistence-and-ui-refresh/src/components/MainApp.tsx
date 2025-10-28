@@ -120,10 +120,12 @@ const MainApp: React.FC<MainAppProps> = ({
     Object.keys(conversations).forEach(key => {
       cloned[key] = {
         ...conversations[key],
-        // Force new subtabs array reference if it exists
-        subtabs: conversations[key].subtabs ? [...conversations[key].subtabs!] : undefined,
-        // Force new messages array reference
-        messages: [...conversations[key].messages]
+        // ✅ DEEP CLONE: Clone array AND each subtab object (fixes React change detection)
+        subtabs: conversations[key].subtabs 
+          ? conversations[key].subtabs!.map(tab => ({ ...tab }))
+          : undefined,
+        // ✅ DEEP CLONE: Clone each message object
+        messages: conversations[key].messages.map(msg => ({ ...msg }))
       };
     });
     return cloned;

@@ -118,6 +118,8 @@ export interface Conversation {
   pinnedAt?: number;
   isGameHub?: boolean; // Identifies the default Game Hub conversation - only one per user
   isUnreleased?: boolean; // True for unreleased/upcoming games - no Playing mode, no subtabs
+  contextSummary?: string; // AI-generated summary of conversation history (max 500 words, text-only)
+  lastSummarizedAt?: number; // Unix timestamp (ms) of when context_summary was last updated
 }
 
 export interface Conversations {

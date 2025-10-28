@@ -392,17 +392,32 @@ class GameTabService {
         return;
       }
 
-      // Update the specific subtabs
+      // Update the specific subtabs with linear progression (append, not overwrite)
       let updatedCount = 0;
       const updatedSubTabs = conversation.subtabs.map(tab => {
         const update = updates.find(u => u.tabId === tab.id);
         if (update) {
           updatedCount++;
           console.log('📝 [GameTabService] Updating subtab:', { tabId: tab.id, title: update.title });
+          
+          // ✅ LINEAR PROGRESSION: Append new content with timestamp separator
+          const timestamp = new Date().toLocaleString();
+          const separator = '\n\n---\n**Updated: ' + timestamp + '**\n\n';
+          
+          // Only append if there's existing content (not "Loading...")
+          const shouldAppend = tab.content && 
+                               tab.content.trim().length > 0 && 
+                               tab.content !== 'Loading...' &&
+                               tab.status === 'loaded';
+          
+          const newContent = shouldAppend
+            ? tab.content + separator + update.content  // ✅ Append to existing
+            : update.content;  // First update or loading state
+          
           return {
             ...tab,
             title: update.title || tab.title, // Update title if provided
-            content: update.content,
+            content: newContent,  // ✅ Accumulated history
             isNew: true, // Mark as new to show indicator
             status: 'loaded' as const
           };

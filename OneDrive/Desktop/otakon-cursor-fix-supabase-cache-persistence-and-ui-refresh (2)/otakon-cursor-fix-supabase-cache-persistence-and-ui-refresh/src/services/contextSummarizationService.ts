@@ -205,11 +205,20 @@ Provide ONLY the summary, no additional commentary.`;
     // Build new message array: [summary] + [recent messages]
     const updatedMessages = [summaryMessage, ...toKeep];
 
+    // Store text-only summary (max 500 words) for persistence
+    const textOnlySummary = summaryResult.summary.replace(/!\[.*?\]\(data:image\/.*?\)/g, '');
+    const words = textOnlySummary.split(/\s+/).filter(w => w.length > 0);
+    const cappedSummary = words.length > 500 
+      ? words.slice(0, 500).join(' ') + '...'
+      : textOnlySummary;
+
     console.log(`✅ [ContextSummarization] Context optimized: ${conversation.messages.length} messages → ${updatedMessages.length} (${summaryResult.originalWordCount} words → ${summaryResult.wordCount} + recent)`);
 
     return {
       ...conversation,
       messages: updatedMessages,
+      contextSummary: cappedSummary,  // Store persistent summary (500 word cap)
+      lastSummarizedAt: Date.now(),   // Track when summarization occurred
       updatedAt: Date.now()
     };
   }
