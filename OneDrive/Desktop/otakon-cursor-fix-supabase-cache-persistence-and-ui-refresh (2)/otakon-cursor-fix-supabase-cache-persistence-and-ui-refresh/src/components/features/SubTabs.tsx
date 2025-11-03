@@ -31,12 +31,21 @@ const SubTabs: React.FC<SubTabsProps> = ({
       return;
     }
 
+    // Check if all subtabs are still loading
+    const allLoading = subtabs.every(tab => tab.status === 'loading');
+    
     // Check if we have subtabs that are loaded (not loading and have content)
     const hasLoadedContent = subtabs.some(tab => 
       tab.status === 'loaded' && tab.content && tab.content.trim().length > 0
     );
     
-    // Auto-expand if we have loaded content and we're not already expanded
+    // ✅ Collapse if all loading
+    if (allLoading && isExpanded) {
+      console.log('📂 [SubTabs] Collapsing subtabs - all loading');
+      setIsExpanded(false);
+    }
+    
+    // ✅ Expand when first content loads
     if (hasLoadedContent && !isExpanded) {
       console.log('📂 [SubTabs] Auto-expanding subtabs with loaded content');
       setIsExpanded(true);

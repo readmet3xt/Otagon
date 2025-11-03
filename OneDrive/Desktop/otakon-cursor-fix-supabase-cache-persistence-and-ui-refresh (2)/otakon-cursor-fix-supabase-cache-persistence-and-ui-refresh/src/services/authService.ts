@@ -470,7 +470,10 @@ export class AuthService {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            prompt: 'select_account' // Force Google account selection
+          }
         }
       });
 
@@ -742,17 +745,34 @@ export class AuthService {
     try {
       console.log('🔐 [AuthService] Starting sign out process...');
       
-      // Clear all local storage
+      // Sign out from Supabase FIRST to clear session tokens
+      await supabase.auth.signOut();
+      
+      // Clear ALL Supabase-related localStorage keys (they start with 'sb-')
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('sb-')) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      console.log('🔐 [AuthService] Cleared Supabase localStorage keys:', keysToRemove);
+      
+      // Clear all app-specific local storage
       localStorage.removeItem('otakon_auth_method');
       localStorage.removeItem('otakon_remember_me');
       localStorage.removeItem('otakon_remembered_email');
       localStorage.removeItem('otakon_discord_auth_attempt');
+      localStorage.removeItem('otakon_has_used_app');
+      localStorage.removeItem('otakon_user');
+      localStorage.removeItem('otakon_conversations');
       
       // Clear any stored app state
       localStorage.removeItem('otakon_app_state');
       
-      // Sign out from Supabase
-      await supabase.auth.signOut();
+      // Clear sessionStorage
+      sessionStorage.clear();
       
       // ✅ SCALABILITY: Clear cache
       this.clearCache();

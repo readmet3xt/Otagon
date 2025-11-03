@@ -3,6 +3,8 @@ import { aiService } from './aiService';
 import { ConversationService } from './conversationService';
 import { profileAwareTabService, GameContext, ProfileSpecificTab } from './profileAwareTabService';
 import { toastService } from './toastService';
+import { subtabsService } from './subtabsService';
+import { FEATURE_FLAGS } from '../constants';
 
 export interface GameTabCreationData {
   gameTitle: string;
@@ -56,20 +58,58 @@ class GameTabService {
     let subTabs: SubTab[] = [];
     
     if (!data.isUnreleased) {
-      // Generate initial sub-tabs based on genre and profile for released games
-      subTabs = this.generateInitialSubTabs(
-        data.genre, 
-        data.playerProfile,
-        data.gameContext
-      );
-      
-      // If AI response provided, extract insights from it
       if (data.aiResponse) {
-        console.log('🎮 [GameTabService] Using AI response for initial insights');
-        subTabs = this.extractInsightsFromAIResponse(data.aiResponse, subTabs);
+        console.error('🎮 [GameTabService] Extracting subtabs from AI response');
+        
+        // ✅ PRIORITY 1: Check if AI provided pre-filled subtab content (gamePillData.wikiContent)
+        if (data.aiResponse.gamePillData?.wikiContent && Object.keys(data.aiResponse.gamePillData.wikiContent).length > 0) {
+          console.error('🎮 [GameTabService] Found gamePillData.wikiContent with', Object.keys(data.aiResponse.gamePillData.wikiContent).length, 'tabs');
+          
+          // Convert wikiContent to SubTab array
+          subTabs = Object.entries(data.aiResponse.gamePillData.wikiContent).map(([tabId, content]) => ({
+            id: tabId,
+            title: this.formatTabTitle(tabId),
+            type: this.determineTabType(tabId),
+            content: content,
+            isNew: false,
+            status: 'loaded' as const
+          }));
+          console.error('🎮 [GameTabService] Created', subTabs.length, 'subtabs from gamePillData.wikiContent');
+        }
+        // ✅ PRIORITY 2: Check for progressiveInsightUpdates
+        else if (data.aiResponse.progressiveInsightUpdates && data.aiResponse.progressiveInsightUpdates.length > 0) {
+          console.error('🎮 [GameTabService] Found progressiveInsightUpdates with', data.aiResponse.progressiveInsightUpdates.length, 'updates');
+          
+          subTabs = data.aiResponse.progressiveInsightUpdates.map(update => ({
+            id: update.tabId,
+            title: update.title,
+            type: this.determineTabType(update.tabId),
+            content: update.content,
+            isNew: false,
+            status: 'loaded' as const
+          }));
+          console.error('🎮 [GameTabService] Created', subTabs.length, 'subtabs from progressiveInsightUpdates');
+        }
+        // ✅ PRIORITY 3: Try to extract INSIGHT_UPDATE tags from AI content
+        else {
+          const extractedSubtabs = this.extractInsightsFromAIResponse(data.aiResponse, []);
+          
+          if (extractedSubtabs.length > 0) {
+            subTabs = extractedSubtabs;
+            console.error('🎮 [GameTabService] Created', subTabs.length, 'subtabs from INSIGHT_UPDATE tags');
+          } else {
+            // ✅ FALLBACK: Create template subtabs and populate them via background AI call
+            subTabs = this.generateInitialSubTabs(data.genre || 'Default', data.playerProfile);
+            console.error('🎮 [GameTabService] Created', subTabs.length, 'template subtabs (will populate via background AI using conversation context)');
+          }
+        }
+      } else {
+        // No AI response - create template subtabs
+        subTabs = this.generateInitialSubTabs(data.genre || 'Default', data.playerProfile);
+        console.error('🎮 [GameTabService] Created', subTabs.length, 'initial template subtabs (no AI response)');
       }
     } else {
-      console.log('🎮 [GameTabService] Creating unreleased game tab (no subtabs, Discuss mode only)');
+      console.error('🎮 [GameTabService] Creating unreleased game tab (no subtabs, Discuss mode only)');
     }
     
     // Create the conversation
@@ -94,19 +134,27 @@ class GameTabService {
     // Save to database
     await ConversationService.addConversation(conversation);
 
+    // Save subtabs using the subtabsService (handles both JSONB and normalized approaches)
+    if (subTabs.length > 0) {
+      console.error('🎮 [GameTabService] Saving', subTabs.length, 'subtabs for conversation:', conversation.id);
+      console.error('🎮 [GameTabService] Subtabs:', JSON.stringify(subTabs, null, 2));
+      await subtabsService.setSubtabs(conversation.id, subTabs);
+    } else {
+      console.error('🎮 [GameTabService] No subtabs to save for conversation:', conversation.id);
+    }
+
     // Generate AI insights in background (non-blocking)
     // Only generate if we didn't already get them from the response
     if (!data.aiResponse) {
-      console.log('🎮 [GameTabService] Generating initial insights in background (no AI response provided)');
-      this.generateInitialInsights(conversation, data.playerProfile).catch(error => 
+      this.generateInitialInsights(conversation, data.playerProfile, data.aiResponse).catch(error => 
         console.error('Background insight generation failed:', error)
       );
     } else {
       // If some subtabs still have "Loading..." content, generate insights for them in background
       const needsInsights = conversation.subtabs?.some(tab => tab.content === 'Loading...');
       if (needsInsights) {
-        console.log('🎮 [GameTabService] Some subtabs need insights, generating in background');
-        this.generateInitialInsights(conversation, data.playerProfile).catch(error => 
+        // ✅ CRITICAL: Pass aiResponse so the AI has context from the screenshot
+        this.generateInitialInsights(conversation, data.playerProfile, data.aiResponse).catch(error => 
           console.error('Background insight generation failed:', error)
         );
       }
@@ -118,7 +166,9 @@ class GameTabService {
 
   /**
    * Generate initial sub-tabs based on game genre and player profile
+   * Note: Currently unused - tab generation now handled via Edge Function
    */
+  // @ts-ignore - Kept for future reference
   private generateInitialSubTabs(
     genre: string,
     playerProfile?: PlayerProfile,
@@ -134,7 +184,7 @@ class GameTabService {
     
     // If player profile exists, add profile-specific tabs
     if (playerProfile) {
-      console.log('🎮 [GameTabService] Generating profile-specific tabs for:', playerProfile.playerFocus);
+      console.error('🎮 [GameTabService] Generating profile-specific tabs for:', playerProfile.playerFocus);
       const profileTabs = profileAwareTabService.generateProfileSpecificTabs(
         playerProfile,
         gameContext
@@ -161,44 +211,83 @@ class GameTabService {
 
   /**
    * Extract subtab insights from AI response tags
+   * ✅ NEW: Creates subtabs dynamically based on actual AI insights, not templates
    */
-  private extractInsightsFromAIResponse(aiResponse: AIResponse, subtabs: SubTab[]): SubTab[] {
-    console.log('🤖 [GameTabService] Extracting insights from AI response');
+  private extractInsightsFromAIResponse(aiResponse: AIResponse, existingSubtabs: SubTab[]): SubTab[] {
+    console.error('🤖 [GameTabService] Extracting dynamic insights from AI response');
     
     // Check if AI provided INSIGHT_UPDATE tags
     const insightUpdates = aiResponse.otakonTags.get('INSIGHT_UPDATE');
     
     if (insightUpdates) {
-      console.log('🤖 [GameTabService] Found INSIGHT_UPDATE:', insightUpdates);
+      console.error('🤖 [GameTabService] Found INSIGHT_UPDATE:', insightUpdates);
       
-      // Update the matching subtab
-      return subtabs.map(tab => {
-        if (tab.id === insightUpdates.id) {
-          return {
-            ...tab,
-            content: insightUpdates.content,
-            isNew: false,
-            status: 'loaded' as const
-          };
-        }
-        return tab;
-      });
+      // Check if subtab already exists
+      const existingTab = existingSubtabs.find(tab => tab.id === insightUpdates.id);
+      
+      if (existingTab) {
+        // Update existing subtab
+        return existingSubtabs.map(tab => 
+          tab.id === insightUpdates.id
+            ? {
+                ...tab,
+                content: insightUpdates.content,
+                isNew: true,
+                status: 'loaded' as const
+              }
+            : tab
+        );
+      } else {
+        // ✅ Create new subtab dynamically
+        const newTab: SubTab = {
+          id: insightUpdates.id,
+          title: this.formatTabTitle(insightUpdates.id),
+          type: this.determineTabType(insightUpdates.id),
+          content: insightUpdates.content,
+          isNew: true,
+          status: 'loaded' as const
+        };
+        return [...existingSubtabs, newTab];
+      }
     }
     
-    // Fallback: Use the AI response content as initial content for the first subtab (chat/tips)
-    if (aiResponse.content && subtabs.length > 0) {
-      console.log('🤖 [GameTabService] Using AI response content for first subtab');
-      const updatedSubtabs = [...subtabs];
-      updatedSubtabs[0] = {
-        ...updatedSubtabs[0],
-        content: aiResponse.content,
-        isNew: false,
-        status: 'loaded' as const
-      };
-      return updatedSubtabs;
+    // No specific insight tags - return existing subtabs unchanged
+    return existingSubtabs;
+  }
+
+  /**
+   * Format subtab ID into readable title
+   */
+  private formatTabTitle(tabId: string): string {
+    return tabId
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }
+
+  /**
+   * Determine tab type based on ID
+   */
+  private determineTabType(tabId: string): 'chat' | 'walkthrough' | 'tips' | 'strategies' | 'story' | 'characters' | 'items' {
+    if (tabId.includes('story')) {
+      return 'story';
     }
-    
-    return subtabs;
+    if (tabId.includes('character')) {
+      return 'characters';
+    }
+    if (tabId.includes('strategy') || tabId.includes('tips')) {
+      return 'tips';
+    }
+    if (tabId.includes('boss')) {
+      return 'strategies';
+    }
+    if (tabId.includes('quest') || tabId.includes('walkthrough')) {
+      return 'walkthrough';
+    }
+    if (tabId.includes('item')) {
+      return 'items';
+    }
+    return 'chat';
   }
 
   /**
@@ -207,19 +296,46 @@ class GameTabService {
    */
   private async generateInitialInsights(
     conversation: Conversation,
-    playerProfile?: PlayerProfile
+    playerProfile?: PlayerProfile,
+    aiResponse?: AIResponse // ✅ NEW: AI response from screenshot analysis
   ): Promise<void> {
-    console.log('🤖 [GameTabService] 🔄 Generating initial insights in background for:', conversation.gameTitle);
+    console.error('🤖 [GameTabService] 🔄 Generating initial insights in background for:', conversation.gameTitle);
 
     try {
+      // ✅ CRITICAL: Use AI response content as context (not conversation.messages which is empty at creation time!)
+      // Priority 1: Use AI response content (from screenshot analysis)
+      // Priority 2: Use conversation messages (if migrated already)
+      let conversationContext = '';
+      
+      if (aiResponse?.content) {
+        conversationContext = `AI Analysis: ${aiResponse.content}`;
+        console.error('🤖 [GameTabService] Using AI response as context (length:', aiResponse.content.length, ')');
+      } else if (conversation.messages.length > 0) {
+        conversationContext = conversation.messages
+          .map(msg => `${msg.role === 'user' ? 'User' : 'AI'}: ${msg.content}`)
+          .join('\n\n');
+        console.error('🤖 [GameTabService] Using conversation messages as context (count:', conversation.messages.length, ')');
+      } else {
+        console.error('🤖 [GameTabService] ⚠️ No context available, will generate generic subtabs');
+      }
+      
+      console.error('🤖 [GameTabService] Context preview:', conversationContext.substring(0, 200));
+      
       // Generate insights for each sub-tab (this is the slow AI call)
       const insights = await aiService.generateInitialInsights(
         conversation.gameTitle || 'Unknown Game',
         conversation.genre || 'Action RPG',
-        playerProfile
+        playerProfile,
+        conversationContext // ✅ Pass actual conversation for context-aware generation
       );
 
-      console.log('🤖 [GameTabService] ✅ Background insights generated successfully');
+      // ✅ Check if insights were actually generated (not empty object from error fallback)
+      const hasInsights = insights && Object.keys(insights).length > 0;
+      if (!hasInsights) {
+        console.error('🤖 [GameTabService] ⚠️ AI returned empty insights, using fallback content');
+      } else {
+        console.error('🤖 [GameTabService] ✅ Background insights generated successfully:', Object.keys(insights).length, 'tabs');
+      }
 
       // ✅ CRITICAL FIX: Read fresh conversation data from DB before updating
       // The conversation parameter might be stale (from before message migration)
@@ -252,7 +368,7 @@ class GameTabService {
 
       // Save updated conversation (this will trigger UI update)
       await ConversationService.updateConversation(conversation.id, updatedConversation);
-      console.log('🤖 [GameTabService] ✅ Subtabs updated in conversation');
+      console.error('🤖 [GameTabService] ✅ Subtabs updated in conversation');
 
     } catch (error) {
       console.error('🤖 [GameTabService] ❌ Failed to generate initial insights:', error);
@@ -297,7 +413,7 @@ class GameTabService {
     subTabId: string, 
     content: string
   ): Promise<void> {
-    console.log('📝 [GameTabService] Updating sub-tab content:', { conversationId, subTabId });
+    console.error('📝 [GameTabService] Updating sub-tab content:', { conversationId, subTabId });
 
     try {
       // Get current conversation
@@ -380,7 +496,7 @@ class GameTabService {
     conversationId: string,
     updates: Array<{ tabId: string; title: string; content: string }>
   ): Promise<void> {
-    console.log('📝 [GameTabService] Updating subtabs from AI response:', { conversationId, updateCount: updates.length });
+    console.error('📝 [GameTabService] Updating subtabs from AI response:', { conversationId, updateCount: updates.length });
 
     try {
       // Get current conversation
@@ -398,7 +514,7 @@ class GameTabService {
         const update = updates.find(u => u.tabId === tab.id);
         if (update) {
           updatedCount++;
-          console.log('📝 [GameTabService] Updating subtab:', { tabId: tab.id, title: update.title });
+          console.error('📝 [GameTabService] Updating subtab:', { tabId: tab.id, title: update.title });
           
           // ✅ LINEAR PROGRESSION: Append new content with timestamp separator
           const timestamp = new Date().toLocaleString();
@@ -427,7 +543,7 @@ class GameTabService {
 
       // Only update if something changed
       if (updatedCount === 0) {
-        console.log('📝 [GameTabService] No subtabs matched for update');
+        console.error('📝 [GameTabService] No subtabs matched for update');
         return;
       }
 
@@ -437,7 +553,7 @@ class GameTabService {
         updatedAt: Date.now()
       });
 
-      console.log('📝 [GameTabService] Successfully updated', updatedCount, 'subtabs');
+      console.error('📝 [GameTabService] Successfully updated', updatedCount, 'subtabs');
     } catch (error) {
       console.error('📝 [GameTabService] Failed to update subtabs from AI response:', error);
       throw error;

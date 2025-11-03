@@ -24,8 +24,9 @@ export class MessageRoutingService {
       });
     }
 
-    // Get current state from service
-    const conversations = await ConversationService.getConversations();
+    // ✅ CRITICAL FIX: Skip cache to get fresh data with newly created game tab
+    // The cache might not include the destination conversation if it was just created
+    const conversations = await ConversationService.getConversations(true); // skipCache = true
     
     const fromConv = conversations[fromConversationId];
     const toConv = conversations[toConversationId];

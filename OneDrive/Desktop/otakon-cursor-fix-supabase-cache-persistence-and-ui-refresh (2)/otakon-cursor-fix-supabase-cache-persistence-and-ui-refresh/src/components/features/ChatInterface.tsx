@@ -475,6 +475,38 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       )}
 
+      {/* Game Hub Quick Prompts - Only show in Game Hub tab */}
+      {conversation?.isGameHub && (
+        <div className="flex-shrink-0 px-3 pb-3">
+          <div className="mb-2 text-xs font-semibold text-[#A3A3A3] uppercase tracking-wider">
+            Quick Actions
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { text: "What's the latest gaming news?", shape: "✕" },
+              { text: "Which games are releasing soon?", shape: "■" },
+              { text: "What are the latest game reviews?", shape: "▲" },
+              { text: "Show me the hottest new game trailers.", shape: "◯" }
+            ].map((prompt) => (
+              <button
+                key={prompt.text}
+                onClick={() => onSuggestedPromptClick?.(prompt.text)}
+                disabled={isLoading}
+                className="group relative px-3 py-3 rounded-xl bg-gradient-to-br from-[#1C1C1C] to-[#0F0F0F] hover:from-[#252525] hover:to-[#1A1A1A] border border-[#424242]/30 hover:border-[#E53A3A]/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-left overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-[#E53A3A]/10 to-[#FF6B35]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+                <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                  <span className="text-lg flex-shrink-0 text-[#E53A3A] font-bold leading-none">{prompt.shape}</span>
+                  <span className="text-xs sm:text-sm text-[#E5E5E5] font-medium group-hover:text-white transition-colors leading-tight">
+                    {prompt.text}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Floating Chat Input Section with Gradient Border */}
       <div className="flex-shrink-0 bg-background/95 backdrop-blur-sm">
         <div className="mx-3 my-3 rounded-2xl p-px transition-all duration-300" style={{

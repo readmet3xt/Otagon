@@ -138,27 +138,36 @@ export class SupabaseService {
   // Conversation operations
   async getConversations(userId: string): Promise<Conversation[]> {
     try {
-      // First get the user's internal ID from auth_user_id
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('auth_user_id', userId)
-        .single();
-
-      if (userError || !userData) {
-        console.error('Error getting user ID:', userError);
-        return [];
-      }
-
+      // ✅ OPTIMIZED: Use single JOIN query instead of N+1 pattern
+      // Previously: 1st query to get user.id, then 2nd query for conversations
+      // Now: Single query with JOIN eliminates extra round-trip
       const { data, error } = await supabase
         .from('conversations')
-        .select('*')
-        .eq('user_id', userData.id)
+        .select(`
+          *,
+          users!inner(auth_user_id)
+        `)
+        .eq('users.auth_user_id', userId)
         .order('updated_at', { ascending: false });
 
       if (error) {
         console.error('Error getting conversations:', error);
         return [];
+      }
+
+      // 🔍 DEBUG: Log what we're getting from Supabase
+      if (process.env.NODE_ENV === 'development' && data.length > 0) {
+        const sample = data[0];
+        const messages = sample.messages as any;
+        const subtabs = sample.subtabs as any;
+        console.error('🔍 [Supabase] Sample conversation from DB:', {
+          id: sample.id,
+          title: sample.title,
+          messageCount: Array.isArray(messages) ? messages.length : 0,
+          hasMessagesField: 'messages' in sample,
+          messagesType: typeof messages,
+          subtabCount: Array.isArray(subtabs) ? subtabs.length : 0
+        });
       }
 
       return data.map(conv => ({
@@ -179,6 +188,9 @@ export class SupabaseService {
         isPinned: conv.is_pinned,
         pinnedAt: conv.pinned_at ? new Date(conv.pinned_at).getTime() : undefined,
         isGameHub: conv.is_game_hub,
+        isUnreleased: conv.is_unreleased,
+        contextSummary: conv.context_summary,
+        lastSummarizedAt: conv.last_summarized_at ? new Date(conv.last_summarized_at).getTime() : undefined,
       }));
     } catch (error) {
       console.error('Error getting conversations:', error);
@@ -188,22 +200,21 @@ export class SupabaseService {
 
   async createConversation(userId: string, conversation: Omit<Conversation, 'id' | 'createdAt' | 'updatedAt'>): Promise<string | null> {
     try {
-      // First get the user's internal ID from auth_user_id
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('auth_user_id', userId)
-        .single();
+      // ✅ OPTIMIZED: Use database function to resolve user_id in single query
+      // Previously: 1st query to get user.id, then 2nd query to insert (N+1 pattern)
+      // Now: Call get_user_id_from_auth_id() RPC function first, then insert with result
+      const { data: userIdData, error: userIdError } = await supabase
+        .rpc('get_user_id_from_auth_id', { p_auth_user_id: userId });
 
-      if (userError || !userData) {
-        console.error('Error getting user ID:', userError);
+      if (userIdError || !userIdData) {
+        console.error('Error resolving user ID:', userIdError);
         return null;
       }
 
       const { data, error } = await supabase
         .from('conversations')
         .insert({
-          user_id: userData.id,
+          user_id: userIdData,
           title: conversation.title,
           messages: conversation.messages,
           game_id: conversation.gameId,
@@ -253,6 +264,9 @@ export class SupabaseService {
           is_pinned: updates.isPinned,
           pinned_at: updates.pinnedAt ? new Date(updates.pinnedAt).toISOString() : null,
           is_game_hub: updates.isGameHub,
+          is_unreleased: updates.isUnreleased,
+          context_summary: updates.contextSummary,
+          last_summarized_at: updates.lastSummarizedAt ? new Date(updates.lastSummarizedAt).toISOString() : null,
           updated_at: new Date().toISOString(),
         })
         .eq('id', conversationId);
@@ -291,22 +305,12 @@ export class SupabaseService {
   // Game operations
   async getGames(userId: string): Promise<Game[]> {
     try {
-      // First get the user's internal ID from auth_user_id
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('auth_user_id', userId)
-        .single();
-
-      if (userError || !userData) {
-        console.error('Error getting user ID:', userError);
-        return [];
-      }
-
+      // ✅ OPTIMIZED: Direct auth_user_id comparison (no JOIN needed)
+      // RLS policy enforces ownership via games.auth_user_id = auth.uid()
       const { data, error } = await supabase
         .from('games')
         .select('*')
-        .eq('user_id', userData.id)
+        .eq('auth_user_id', userId)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -335,22 +339,20 @@ export class SupabaseService {
 
   async createGame(userId: string, game: Omit<Game, 'id' | 'createdAt' | 'updatedAt'>): Promise<string | null> {
     try {
-      // First get the user's internal ID from auth_user_id
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('auth_user_id', userId)
-        .single();
+      // ✅ OPTIMIZED: Use database function to resolve user_id in single operation
+      const { data: userIdData, error: userIdError } = await supabase
+        .rpc('get_user_id_from_auth_id', { p_auth_user_id: userId });
 
-      if (userError || !userData) {
-        console.error('Error getting user ID:', userError);
+      if (userIdError || !userIdData) {
+        console.error('Error resolving user ID:', userIdError);
         return null;
       }
 
       const { data, error } = await supabase
         .from('games')
         .insert({
-          user_id: userData.id,
+          user_id: userIdData,
+          auth_user_id: userId, // ✅ Store auth_user_id for direct RLS checks
           title: game.title,
           notes: game.description,
           genre: game.genre,
@@ -557,8 +559,6 @@ export class SupabaseService {
   // ✅ Query-based usage tracking (replaces message-based limits)
   async recordQuery(authUserId: string, queryType: 'text' | 'image'): Promise<boolean> {
     try {
-      console.log(`📊 [SupabaseService] Recording ${queryType} query for user:`, authUserId);
-      
       const { data, error } = await supabase.rpc('increment_user_usage', {
         p_auth_user_id: authUserId,
         p_query_type: queryType,
@@ -570,7 +570,6 @@ export class SupabaseService {
         return false;
       }
 
-      console.log(`✅ [SupabaseService] Successfully recorded ${queryType} query`);
       return data === true;
     } catch (error) {
       console.error('Error recording query:', error);

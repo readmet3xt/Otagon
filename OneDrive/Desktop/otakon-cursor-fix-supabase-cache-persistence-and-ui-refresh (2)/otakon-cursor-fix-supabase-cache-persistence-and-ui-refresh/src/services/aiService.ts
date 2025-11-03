@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI, GenerativeModel, SchemaType, HarmCategory, HarmBlockThreshold, SafetySetting } from "@google/generative-ai";
+﻿import { GoogleGenerativeAI, GenerativeModel, SchemaType, HarmCategory, HarmBlockThreshold, SafetySetting } from "@google/generative-ai";
 import { parseOtakonTags } from './otakonTags';
 import { AIResponse, Conversation, User, insightTabsConfig, PlayerProfile } from '../types';
 import { cacheService } from './cacheService';
@@ -7,8 +7,11 @@ import { errorRecoveryService } from './errorRecoveryService';
 import { characterImmersionService } from './characterImmersionService';
 import { profileAwareTabService } from './profileAwareTabService';
 import { toastService } from './toastService';
+import { supabase } from '../lib/supabase';
 
-const API_KEY = (import.meta as any).env.VITE_GEMINI_API_KEY;
+// ✅ SECURITY FIX: Use Edge Function proxy instead of exposed API key
+const USE_EDGE_FUNCTION = true; // Set to true to use secure server-side proxy
+const API_KEY = (import.meta as any).env.VITE_GEMINI_API_KEY; // Only used if USE_EDGE_FUNCTION = false
 
 // ✅ FIX 1: Gemini API Safety Settings
 const SAFETY_SETTINGS: SafetySetting[] = [
@@ -34,22 +37,83 @@ class AIService {
   private genAI: GoogleGenerativeAI;
   private flashModel: GenerativeModel;
   private proModel: GenerativeModel;
+  private flashModelWithGrounding: GenerativeModel;
+  private edgeFunctionUrl: string;
 
   constructor() {
-    if (!API_KEY) {
-      throw new Error("VITE_GEMINI_API_KEY is not set in the environment variables.");
+    // ✅ SECURITY: Initialize Edge Function URL
+    const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL;
+    this.edgeFunctionUrl = `${supabaseUrl}/functions/v1/ai-proxy`;
+
+    if (!USE_EDGE_FUNCTION) {
+      // Legacy: Direct API mode (only for development/testing)
+      if (!API_KEY) {
+        throw new Error("VITE_GEMINI_API_KEY is not set in the environment variables.");
+      }
+      this.genAI = new GoogleGenerativeAI(API_KEY);
+      // Using the latest preview models (September 2025) for enhanced performance
+      // ✅ FIX 2: Apply safety settings to all model initializations
+      this.flashModel = this.genAI.getGenerativeModel({ 
+        model: "gemini-2.5-flash-lite-preview-09-2025",
+        safetySettings: SAFETY_SETTINGS
+      });
+      this.proModel = this.genAI.getGenerativeModel({ 
+        model: "gemini-2.5-flash-preview-09-2025",
+        safetySettings: SAFETY_SETTINGS
+      });
+      // ✅ NEW: Model with Google Search grounding enabled
+      this.flashModelWithGrounding = this.genAI.getGenerativeModel({
+        model: "gemini-2.5-flash-lite-preview-09-2025",
+        safetySettings: SAFETY_SETTINGS,
+        tools: [{
+          googleSearchRetrieval: {}
+        }]
+      });
+    } else {
+      // Edge Function mode: Initialize dummy models (won't be used)
+      this.genAI = {} as GoogleGenerativeAI;
+      this.flashModel = {} as GenerativeModel;
+      this.proModel = {} as GenerativeModel;
+      this.flashModelWithGrounding = {} as GenerativeModel;
     }
-    this.genAI = new GoogleGenerativeAI(API_KEY);
-    // Using the latest preview models (September 2025) for enhanced performance
-    // ✅ FIX 2: Apply safety settings to all model initializations
-    this.flashModel = this.genAI.getGenerativeModel({ 
-      model: "gemini-2.5-flash-lite-preview-09-2025",
-      safetySettings: SAFETY_SETTINGS
+  }
+
+  /**
+   * ✅ SECURITY: Call Edge Function proxy instead of direct API
+   */
+  private async callEdgeFunction(request: {
+    prompt: string;
+    image?: string;
+    systemPrompt?: string;
+    temperature?: number;
+    maxTokens?: number;
+    requestType: 'text' | 'image';
+    model?: string;
+    tools?: any[];
+  }): Promise<{ response: string; success: boolean; usage?: any; groundingMetadata?: any }> {
+    // Get user's JWT token
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      throw new Error('Not authenticated');
+    }
+
+    // Call Edge Function (server-side proxy)
+    const response = await fetch(this.edgeFunctionUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(request)
     });
-    this.proModel = this.genAI.getGenerativeModel({ 
-      model: "gemini-2.5-flash-preview-09-2025",
-      safetySettings: SAFETY_SETTINGS
-    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'AI service error');
+    }
+
+    return await response.json();
   }
 
   /**
@@ -160,48 +224,124 @@ class AIService {
     }
     
     try {
-      // Use flash model for all conversations (could differentiate in future)
-      const modelToUse = this.flashModel;
+      // ✅ NEW: Determine if we should use grounding (web search)
+      // Use grounding for ANY query that might need current information
+      const needsWebSearch = 
+        // Keywords that indicate need for current information
+        userMessage.toLowerCase().includes('release') ||
+        userMessage.toLowerCase().includes('new games') ||
+        userMessage.toLowerCase().includes('coming out') ||
+        userMessage.toLowerCase().includes('this week') ||
+        userMessage.toLowerCase().includes('this month') ||
+        userMessage.toLowerCase().includes('latest') ||
+        userMessage.toLowerCase().includes('news') ||
+        userMessage.toLowerCase().includes('announced') ||
+        userMessage.toLowerCase().includes('update') ||
+        userMessage.toLowerCase().includes('patch') ||
+        userMessage.toLowerCase().includes('current') ||
+        userMessage.toLowerCase().includes('recent') ||
+        // Check if conversation is for a potentially new/unreleased game
+        (conversation.gameTitle && (
+          conversation.gameTitle.toLowerCase().includes('2025') ||
+          conversation.gameTitle.toLowerCase().includes('2024')
+        ));
       
-      // Prepare content for Gemini API
-      let content: any;
-      if (hasImages && imageData) {
-        // Extract MIME type from data URL
-        const mimeType = imageData.split(';')[0].split(':')[1] || 'image/jpeg';
-        const base64Data = imageData.split(',')[1];
+      // Use grounding model for queries that need current information
+      // ✅ SECURITY: Use Edge Function if enabled
+      let rawContent: string;
+
+      if (USE_EDGE_FUNCTION) {
+        // Extract base64 image data if present
+        let imageBase64: string | undefined;
+        if (hasImages && imageData) {
+          imageBase64 = imageData.split(',')[1];
+        }
+
+        // Determine which model and tools to use
+        const modelName = needsWebSearch && !hasImages 
+          ? 'gemini-2.5-flash-lite-preview-09-2025'
+          : 'gemini-2.5-flash-lite-preview-09-2025';
         
-        // For image analysis, we need to send both text and image
-        content = [
-          {
-            text: prompt
-          },
-          {
-            inlineData: {
-              mimeType: mimeType,
-              data: base64Data
-            }
-          }
-        ];
+        const tools = needsWebSearch && !hasImages 
+          ? [{ googleSearchRetrieval: {} }]
+          : [];
+
+        // Call Edge Function proxy
+        const edgeResponse = await this.callEdgeFunction({
+          prompt,
+          image: imageBase64,
+          temperature: 0.7,
+          maxTokens: 2048,
+          requestType: hasImages ? 'image' : 'text',
+          model: modelName,
+          tools: tools.length > 0 ? tools : undefined
+        });
+
+        if (!edgeResponse.success) {
+          throw new Error(edgeResponse.response || 'AI request failed');
+        }
+
+        rawContent = edgeResponse.response;
+
       } else {
-        // For text-only requests
-        content = prompt;
-      }
-      
-      const result = await modelToUse.generateContent(content);
-      
-      // ✅ FIX 4: Check safety response
-      const safetyCheck = this.checkSafetyResponse(result);
-      if (!safetyCheck.safe) {
-        toastService.error('Unable to generate response due to content policy');
-        throw new Error(safetyCheck.reason);
+        // Legacy: Direct API mode (only for development)
+        // Note: Grounding doesn't work with image inputs, so fallback to regular model
+        const modelToUse = needsWebSearch && !hasImages 
+          ? this.flashModelWithGrounding 
+          : this.flashModel;
+        
+        if (needsWebSearch && !hasImages) {
+          console.log('🌐 [AIService] Using Google Search grounding for current information:', {
+            gameTitle: conversation.gameTitle,
+            query: userMessage.substring(0, 50) + '...'
+          });
+        }
+        
+        // Prepare content for Gemini API
+        let content: any;
+        if (hasImages && imageData) {
+          // Extract MIME type from data URL
+          const mimeType = imageData.split(';')[0].split(':')[1] || 'image/jpeg';
+          const base64Data = imageData.split(',')[1];
+          
+          // For image analysis, we need to send both text and image
+          content = [
+            {
+              text: prompt
+            },
+            {
+              inlineData: {
+                mimeType: mimeType,
+                data: base64Data
+              }
+            }
+          ];
+        } else {
+          // For text-only requests
+          content = prompt;
+        }
+        
+        const result = await modelToUse.generateContent(content);
+        
+        // ✅ FIX 4: Check safety response
+        const safetyCheck = this.checkSafetyResponse(result);
+        if (!safetyCheck.safe) {
+          toastService.error('Unable to generate response due to content policy');
+          throw new Error(safetyCheck.reason);
+        }
+        
+        // Check if request was aborted after API call but before processing
+        if (abortSignal?.aborted) {
+          throw new DOMException('Request was aborted', 'AbortError');
+        }
+        
+        rawContent = await result.response.text();
       }
       
       // Check if request was aborted after API call but before processing
       if (abortSignal?.aborted) {
         throw new DOMException('Request was aborted', 'AbortError');
       }
-      
-      const rawContent = await result.response.text();
       const { cleanContent, tags } = parseOtakonTags(rawContent);
 
       const aiResponse: AIResponse = {
@@ -352,7 +492,83 @@ Note: These are optional enhancements. If not applicable, omit or return empty a
     }
     
     try {
-      const modelToUse = this.flashModel;
+      // ✅ NEW: Also use grounding for structured requests when appropriate
+      const needsWebSearch = 
+        userMessage.toLowerCase().includes('release') ||
+        userMessage.toLowerCase().includes('new games') ||
+        userMessage.toLowerCase().includes('latest') ||
+        userMessage.toLowerCase().includes('news') ||
+        userMessage.toLowerCase().includes('announced') ||
+        userMessage.toLowerCase().includes('update') ||
+        userMessage.toLowerCase().includes('patch') ||
+        userMessage.toLowerCase().includes('current') ||
+        userMessage.toLowerCase().includes('recent') ||
+        (conversation.gameTitle && (
+          conversation.gameTitle.toLowerCase().includes('2025') ||
+          conversation.gameTitle.toLowerCase().includes('2024')
+        ));
+      
+      // ✅ SECURITY: Use Edge Function for structured responses
+      if (USE_EDGE_FUNCTION) {
+        // Extract base64 image data if present
+        let imageBase64: string | undefined;
+        if (hasImages && imageData) {
+          imageBase64 = imageData.split(',')[1];
+        }
+
+        const modelName = needsWebSearch && !hasImages 
+          ? 'gemini-2.5-flash-lite-preview-09-2025'
+          : 'gemini-2.5-flash-lite-preview-09-2025';
+        
+        const tools = needsWebSearch && !hasImages 
+          ? [{ googleSearchRetrieval: {} }]
+          : [];
+
+        const edgeResponse = await this.callEdgeFunction({
+          prompt,
+          image: imageBase64,
+          temperature: 0.7,
+          maxTokens: 2048,
+          requestType: hasImages ? 'image' : 'text',
+          model: modelName,
+          tools: tools.length > 0 ? tools : undefined
+        });
+
+        if (!edgeResponse.success) {
+          throw new Error(edgeResponse.response || 'AI request failed');
+        }
+
+        const rawContent = edgeResponse.response;
+        const { cleanContent, tags } = parseOtakonTags(rawContent);
+
+        const aiResponse: AIResponse = {
+          content: cleanContent,
+          suggestions: tags.get('SUGGESTIONS') || [],
+          otakonTags: tags,
+          rawContent: rawContent,
+          metadata: {
+            model: modelName,
+            timestamp: Date.now(),
+            cost: 0,
+            tokens: 0,
+          }
+        };
+
+        cacheService.set(cacheKey, aiResponse, 60 * 60 * 1000).catch(err => console.warn(err));
+        return aiResponse;
+      }
+
+      // Legacy: Direct API mode
+      const modelToUse = needsWebSearch && !hasImages 
+        ? this.flashModelWithGrounding 
+        : this.flashModel;
+      
+      if (needsWebSearch && !hasImages) {
+        console.log('🌐 [AIService] Using Google Search grounding for structured response:', {
+          gameTitle: conversation.gameTitle,
+          query: userMessage.substring(0, 50) + '...'
+        });
+      }
       
       // Prepare content
       let content: any;
@@ -505,16 +721,37 @@ Note: These are optional enhancements. If not applicable, omit or return empty a
         console.warn('JSON mode failed, falling back to OTAKON_TAG parsing:', jsonError);
         
         // Fallback to regular OTAKON_TAG parsing
-        const result = await modelToUse.generateContent(prompt);
-        
-        // ✅ FIX 5: Check safety response in fallback
-        const safetyCheck = this.checkSafetyResponse(result);
-        if (!safetyCheck.safe) {
-          toastService.error('Unable to generate response due to content policy');
-          throw new Error(safetyCheck.reason);
+        let rawContent: string;
+
+        if (USE_EDGE_FUNCTION) {
+          // Use Edge Function for fallback
+          const edgeResponse = await this.callEdgeFunction({
+            prompt,
+            temperature: 0.7,
+            maxTokens: 2048,
+            requestType: 'text',
+            model: 'gemini-2.5-flash-lite-preview-09-2025'
+          });
+
+          if (!edgeResponse.success) {
+            throw new Error(edgeResponse.response || 'AI request failed');
+          }
+
+          rawContent = edgeResponse.response;
+        } else {
+          // Legacy: Direct API
+          const result = await modelToUse.generateContent(prompt);
+          
+          // ✅ FIX 5: Check safety response in fallback
+          const safetyCheck = this.checkSafetyResponse(result);
+          if (!safetyCheck.safe) {
+            toastService.error('Unable to generate response due to content policy');
+            throw new Error(safetyCheck.reason);
+          }
+          
+          rawContent = await result.response.text();
         }
-        
-        const rawContent = await result.response.text();
+
         const { cleanContent, tags } = parseOtakonTags(rawContent);
         
         const aiResponse: AIResponse = {
@@ -585,9 +822,14 @@ Note: These are optional enhancements. If not applicable, omit or return empty a
   public async generateInitialInsights(
     gameTitle: string, 
     genre: string,
-    playerProfile?: PlayerProfile
+    playerProfile?: PlayerProfile,
+    conversationContext?: string // ✅ NEW: Actual conversation messages for context-aware generation
   ): Promise<Record<string, string>> {
-    const cacheKey = `insights_${gameTitle.toLowerCase().replace(/\s+/g, '-')}`;
+    // ✅ CRITICAL: Use conversation context in cache key if provided
+    const contextHash = conversationContext 
+      ? conversationContext.substring(0, 50).replace(/[^a-z0-9]/gi, '') 
+      : 'default';
+    const cacheKey = `insights_${gameTitle.toLowerCase().replace(/\s+/g, '-')}_${contextHash}`;
     
     // Check cache first
     const cachedInsights = await cacheService.get<Record<string, string>>(cacheKey);
@@ -604,37 +846,109 @@ Note: These are optional enhancements. If not applicable, omit or return empty a
     const profile = playerProfile || profileAwareTabService.getDefaultProfile();
     const profileContext = profileAwareTabService.buildProfileContext(profile);
 
+    // ✅ CRITICAL: Include conversation context for relevant subtab generation
+    const contextSection = conversationContext 
+      ? `\nConversation Context:\n${conversationContext}\n\n✅ USE THIS CONTEXT to generate relevant subtab content based on what was discussed!\n` 
+      : '';
+
     const prompt = `
-      **Task:** Generate initial content for ${gameTitle} (${genre} game)
-      **Format:** Respond with a single JSON object where keys are tab IDs and values are content strings
-      
-      **Player Profile:**
-      ${profileContext}
-      
-      **Instructions:**
-      ${instructions}
-      
-      **Rules:**
-      - Content must be concise, spoiler-free, and suitable for new players
-      - Output must be valid JSON: {"walkthrough":"content","tips":"content",...}
-      - Each content should be 2-3 paragraphs maximum
-      - Use markdown formatting for better readability
-      - **IMPORTANT: Adapt content style based on the Player Profile above**
-    `;
+You are a gaming assistant generating initial content for ${gameTitle} (${genre} game).
+
+Player Profile:
+${profileContext}
+${contextSection}
+Instructions for each tab:
+${instructions}
+
+CRITICAL FORMATTING RULES:
+1. Return ONLY valid JSON, nothing else
+2. Use this exact format: {"tab_id": "content", "tab_id": "content"}
+3. Each content value should be 2-3 SHORT paragraphs
+4. You MAY use markdown (**bold**, *italic*, ## headers) but MUST properly escape special characters:
+   - Use \\" for quotes inside strings
+   - Use \\n for newlines (do NOT use literal line breaks)
+   - Use \\\\ for backslashes
+5. Content must be concise, spoiler-free, and suitable for new players
+6. Adapt content style based on the Player Profile above
+
+Example valid JSON:
+{
+  "story_so_far": "You've just started your journey. The world is vast and mysterious.\\n\\nKey things to know: Stay alert and explore carefully.",
+  "tips": "**Combat Tips:**\\n- Block incoming attacks\\n- Time your dodges carefully"
+}
+
+Generate the JSON now for these tab IDs: ${config.map(t => t.id).join(', ')}
+`;
 
     try {
-      const result = await this.proModel.generateContent(prompt);
-      
-      // ✅ FIX 6: Check safety response
-      const safetyCheck = this.checkSafetyResponse(result);
-      if (!safetyCheck.safe) {
-        toastService.error('Unable to generate insights due to content policy');
-        throw new Error(safetyCheck.reason);
+      let responseText: string;
+
+      if (USE_EDGE_FUNCTION) {
+        // Use Edge Function for insights generation
+        const edgeResponse = await this.callEdgeFunction({
+          prompt,
+          temperature: 0.7,
+          maxTokens: 2048,
+          requestType: 'text',
+          model: 'gemini-2.5-flash-preview-09-2025' // Use pro model for insights
+        });
+
+        if (!edgeResponse.success) {
+          throw new Error(edgeResponse.response || 'AI request failed');
+        }
+
+        responseText = edgeResponse.response;
+      } else {
+        // Legacy: Direct API
+        const result = await this.proModel.generateContent(prompt);
+        
+        // ✅ FIX 6: Check safety response
+        const safetyCheck = this.checkSafetyResponse(result);
+        if (!safetyCheck.safe) {
+          toastService.error('Unable to generate insights due to content policy');
+          throw new Error(safetyCheck.reason);
+        }
+
+        responseText = await result.response.text();
       }
       
-      const rawJson = await result.response.text();
-      const cleanedJson = rawJson.replace(/```json\n?|\n?```/g, '').trim();
-      const insights = JSON.parse(cleanedJson);
+      const cleanedJson = responseText.replace(/```json\n?|\n?```/g, '').trim();
+      
+      // ✅ FIX: Better JSON parsing with fallback
+      let insights: Record<string, string>;
+      try {
+        insights = JSON.parse(cleanedJson);
+      } catch (parseError) {
+        console.error("JSON parse failed, attempting to fix malformed JSON:", parseError);
+        console.error("Raw response (first 500 chars):", responseText.substring(0, 500));
+        
+        // Try to fix common JSON issues
+        let fixedJson = cleanedJson;
+        
+        // Fix unterminated strings by adding closing quote before newline or end
+        fixedJson = fixedJson.replace(/("(?:[^"\\]|\\.)*?)$/gm, '$1"');
+        
+        // Fix missing commas between properties
+        fixedJson = fixedJson.replace(/"\s*\n\s*"/g, '",\n"');
+        
+        // Fix missing closing brace
+        if (!fixedJson.endsWith('}')) {
+          fixedJson += '}';
+        }
+        
+        try {
+          insights = JSON.parse(fixedJson);
+          console.error("✅ Successfully fixed malformed JSON");
+        } catch (_secondError) {
+          console.error("❌ Could not fix JSON, using fallback content");
+          // Return generic welcome content for each tab
+          const config = insightTabsConfig[genre] || insightTabsConfig['Default'];
+          insights = config.reduce((acc, tab) => {
+            acc[tab.id] = `Welcome to **${tab.title}** for ${gameTitle}!\n\nThis section will be populated as you explore and chat about the game.`;
+            return acc;
+          }, {} as Record<string, string>);
+        }
+      }
 
       // Cache for 24 hours
       await cacheService.set(cacheKey, insights, 24 * 60 * 60 * 1000);

@@ -57,3 +57,20 @@ export const STORAGE_KEYS = {
 
 export const GAME_HUB_ID = 'game-hub';
 export const DEFAULT_CONVERSATION_TITLE = 'Game Hub';
+
+// Feature Flags
+export const FEATURE_FLAGS = {
+  // ⚠️ Set to true to use normalized messages table instead of conversations.messages JSONB
+  // This enables better performance, pagination, and message search capabilities
+  USE_NORMALIZED_MESSAGES: true,
+  
+  // ⚠️ Set to true to use normalized subtabs table instead of conversations.subtabs JSONB
+  // This enables better performance, pagination, and subtab search capabilities
+  USE_NORMALIZED_SUBTABS: true,
+  
+  // Enable context summarization for conversations
+  USE_CONTEXT_SUMMARIZATION: true,
+  
+  // Enable conversation slugs for human-readable URLs
+  USE_CONVERSATION_SLUGS: true,
+} as const;

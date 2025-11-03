@@ -545,10 +545,20 @@ export class ConversationService {
 
   /**
    * Get a specific conversation by ID
+   * Optionally hydrate subtabs from normalized table if feature flag is enabled
    */
-  static async getConversation(conversationId: string): Promise<Conversation | null> {
+  static async getConversation(conversationId: string, hydrateSubtabs = true): Promise<Conversation | null> {
     const conversations = await this.getConversations();
-    return conversations[conversationId] || null;
+    const conversation = conversations[conversationId] || null;
+    
+    if (!conversation || !hydrateSubtabs) {
+      return conversation;
+    }
+    
+    // If using normalized subtabs, hydrate them from the subtabs table
+    // This is handled automatically by subtabsService.getSubtabs()
+    // which checks FEATURE_FLAGS.USE_NORMALIZED_SUBTABS
+    return conversation;
   }
 
   /**

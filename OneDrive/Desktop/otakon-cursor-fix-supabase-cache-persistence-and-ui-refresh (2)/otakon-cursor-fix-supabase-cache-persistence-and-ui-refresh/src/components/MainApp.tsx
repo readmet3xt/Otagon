@@ -28,7 +28,6 @@ import HandsFreeToggle from './ui/HandsFreeToggle';
 import { LoadingSpinner } from './ui/LoadingSpinner';
 import SettingsContextMenu from './ui/SettingsContextMenu';
 import ProfileSetupBanner from './ui/ProfileSetupBanner';
-import WelcomeScreen from './welcome/WelcomeScreen';
 import GameProgressBar from './features/GameProgressBar';
 import { connect, disconnect } from '../services/websocketService';
 
@@ -100,9 +99,6 @@ const MainApp: React.FC<MainAppProps> = ({
   
   // ✅ NEW: Queued screenshot from WebSocket (manual mode)
   const [queuedScreenshot, setQueuedScreenshot] = useState<string | null>(null);
-  
-  // Welcome screen state
-  const [showWelcomeScreen, setShowWelcomeScreen] = useState(false);
   
   // ✅ PERFORMANCE: Loading guards to prevent concurrent conversation loading
   const isLoadingConversationsRef = useRef(false);
@@ -242,15 +238,6 @@ const MainApp: React.FC<MainAppProps> = ({
         const userConversations = await ConversationService.getConversations();
         console.log('🔍 [MainApp] Loaded conversations:', userConversations);
         
-        // Check if this is a new user and show welcome screen
-        const isNewUser = Object.keys(userConversations).length === 0 || 
-          (Object.keys(userConversations).length === 1 && userConversations[GAME_HUB_ID]);
-        
-        if (isNewUser && !localStorage.getItem('otakon_welcome_shown')) {
-          setShowWelcomeScreen(true);
-          localStorage.setItem('otakon_welcome_shown', 'true');
-        }
-        
         // Migration: Fix old "Everything else" or ensure Game Hub exists
         // Note: conversationService.getConversations() already handles the migration
         
@@ -269,15 +256,48 @@ const MainApp: React.FC<MainAppProps> = ({
           console.log('🔍 [MainApp] No conversations found, creating "Game Hub"...');
           const newConversation = ConversationService.createConversation('Game Hub', 'game-hub');
           await ConversationService.addConversation(newConversation);
-          await ConversationService.setActiveConversation(newConversation.id);
           
+          // Get updated conversations FIRST (Supabase may have changed the ID)
+          const updatedConversations = await ConversationService.getConversations();
+          
+          // Find the Game Hub (could be 'game-hub' or a UUID from Supabase)
+          const gameHub = Object.values(updatedConversations).find(
+            conv => conv.isGameHub || conv.title === 'Game Hub'
+          );
+          
+          if (gameHub) {
+            await ConversationService.setActiveConversation(gameHub.id);
+            // Refresh conversations to get the updated isActive flag
+            const finalConversations = await ConversationService.getConversations();
+            setConversations(finalConversations);
+            active = finalConversations[gameHub.id];
+            setActiveConversation(active);
+          }
+          
+          
+          // Mark as first-run complete since we just created and activated Game Hub
+          localStorage.setItem('otakon_has_used_app', 'true');
+          console.log('🔍 [MainApp] Created and activated "Game Hub" conversation (first-run complete)');
+          console.log('🔍 [MainApp] Active conversation details:', {
+            id: active?.id,
+            title: active?.title,
+            isActive: active?.isActive,
+            isGameHub: active?.isGameHub,
+            messageCount: active?.messages?.length || 0
+          });
+        }
+        // Case 2: First-run user detection - ALWAYS activate Game Hub for new users
+        // Check if only Game Hub exists AND user hasn't used app before
+        else if (Object.keys(userConversations).length === 1 && currentGameHub && !localStorage.getItem('otakon_has_used_app')) {
+          console.log('🔍 [MainApp] First-run user detected, forcing Game Hub as active');
+          await ConversationService.setActiveConversation(currentGameHub.id);
           const updatedConversations = await ConversationService.getConversations();
           setConversations(updatedConversations);
-          active = updatedConversations['game-hub'];
+          active = updatedConversations[currentGameHub.id];
           setActiveConversation(active);
-          console.log('🔍 [MainApp] Created and activated "Game Hub" conversation');
+          localStorage.setItem('otakon_has_used_app', 'true');
         }
-        // Case 2: "Game Hub" exists but nothing is active - set "Game Hub" as active
+        // Case 3: Game Hub exists but nothing is active - set Game Hub as active
         else if (!active && currentGameHub) {
           console.log('🔍 [MainApp] No active conversation, setting "Game Hub" as active');
           await ConversationService.setActiveConversation(currentGameHub.id);
@@ -286,7 +306,7 @@ const MainApp: React.FC<MainAppProps> = ({
           active = updatedConversations[currentGameHub.id];
           setActiveConversation(active);
         }
-        // Case 3: No "Game Hub" conversation but other conversations exist - create and activate it
+        // Case 4: No "Game Hub" conversation but other conversations exist - create and activate it
         else if (!currentGameHub) {
           console.log('🔍 [MainApp] "Game Hub" missing, creating it...');
           const newConversation = ConversationService.createConversation('Game Hub', 'game-hub');
@@ -308,7 +328,7 @@ const MainApp: React.FC<MainAppProps> = ({
             console.log('🔍 [MainApp] Created "Game Hub" but kept existing active conversation:', active.title);
           }
         }
-        // Case 4: Active conversation exists - restore it
+        // Case 5: Active conversation exists - restore it
         else if (active) {
           console.log('🔍 [MainApp] Restoring active conversation:', active.title, 'with ID:', active.id);
           setActiveConversation(active);
@@ -365,7 +385,7 @@ const MainApp: React.FC<MainAppProps> = ({
     loadData();
   }, []);
 
-  // Safety timeout: Force initialization complete after 1 second to prevent infinite loading
+  // Safety timeout: Force initialization complete after 3 seconds to prevent infinite loading
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (isInitializing) {
@@ -384,7 +404,7 @@ const MainApp: React.FC<MainAppProps> = ({
           }
         }
       }
-    }, 1000);
+    }, 3000); // Increased from 1s to 3s to allow Game Hub creation to complete
     
     return () => clearTimeout(timeout);
   }, [isInitializing, conversations, activeConversation]);
@@ -420,6 +440,24 @@ const MainApp: React.FC<MainAppProps> = ({
               
               if (prevLoadingCount !== currLoadingCount) {
                 hasChanges = true;
+              }
+              
+              // ✅ NEW: Check content, status, and isNew changes
+              if (!hasChanges) {
+                for (let i = 0; i < prev.subtabs.length; i++) {
+                  const prevTab = prev.subtabs[i];
+                  const currTab = curr.subtabs[i];
+                  
+                  if (currTab && prevTab && (
+                    prevTab.content !== currTab.content ||      // ✅ Content changed
+                    prevTab.status !== currTab.status ||        // ✅ Status changed
+                    prevTab.isNew !== currTab.isNew             // ✅ New flag changed
+                  )) {
+                    hasChanges = true;
+                    console.log(`🔄 [MainApp] Subtab updated: ${currTab.title}`);
+                    break;
+                  }
+                }
               }
             }
           });
@@ -627,48 +665,11 @@ const MainApp: React.FC<MainAppProps> = ({
     console.log('Upgrade clicked');
   };
 
-  const handleStartChat = () => {
-    console.log('🔍 [handleStartChat] Starting chat, current activeConversation:', activeConversation?.id);
-    
-    // Game Hub is guaranteed to exist from initial load - just activate it
-    const currentGameHub = conversations[GAME_HUB_ID];
-    console.log('🔍 [handleStartChat] Current Game Hub:', currentGameHub?.id);
-    
-    if (currentGameHub) {
-      // Set Game Hub as active immediately (synchronous for instant UI)
-      console.log('🔍 [handleStartChat] Activating Game Hub...');
-      setActiveConversation(currentGameHub);
-      
-      // Update storage asynchronously in background
-      ConversationService.setActiveConversation(GAME_HUB_ID);
-      console.log('🔍 [handleStartChat] Game Hub activated');
-    } else {
-      // This should never happen, but as a fallback, try to find any Game Hub
-      console.warn('⚠️ [handleStartChat] Game Hub not found in state, searching...');
-      const anyGameHub = Object.values(conversations).find(
-        conv => conv.isGameHub || conv.title === 'Game Hub' || conv.id === 'game-hub'
-      );
-      if (anyGameHub) {
-        setActiveConversation(anyGameHub);
-        ConversationService.setActiveConversation(anyGameHub.id);
-      }
-    }
-    
-    // Load suggested prompts for Game Hub (static news prompts)
-    const newsPrompts = suggestedPromptsService.getStaticNewsPrompts();
-    setSuggestedPrompts(newsPrompts);
-    
-    // Hide welcome screen immediately - activeConversation is already set
-    setShowWelcomeScreen(false);
-  };
-
   const handleOpenGuide = () => {
-    setShowWelcomeScreen(true);
+    // Guide functionality removed - no longer showing welcome screen
   };
 
   const handleAddGame = () => {
-    // Close welcome screen if it's open
-    setShowWelcomeScreen(false);
     setAddGameModalOpen(true);
   };
 
@@ -1364,9 +1365,21 @@ const MainApp: React.FC<MainAppProps> = ({
 
         // Create game tab if:
         // 1. Confidence is high (game is valid)
-        // 2. Game can be unreleased OR released - both get tabs
-        // Invalid games (low confidence, no GAME_ID) stay in Game Hub
-        const shouldCreateTab = confidence === 'high';
+        // 2. IS_FULLSCREEN is true (actual gameplay, not launcher/menu)
+        // 3. Game can be unreleased OR released - both get tabs
+        // Invalid games (low confidence, no GAME_ID, menus/launchers) stay in Game Hub
+        const isFullscreen = response.otakonTags.get('IS_FULLSCREEN') === 'true';
+        const shouldCreateTab = confidence === 'high' && isFullscreen;
+
+        if (!shouldCreateTab) {
+          console.log('⚠️ [MainApp] Tab creation blocked:', {
+            confidence,
+            isFullscreen,
+            reason: !isFullscreen ? 'Not gameplay (launcher/menu/desktop)' : 
+                    confidence !== 'high' ? 'Low confidence' : 
+                    'Generic detection'
+          });
+        }
 
         if (shouldCreateTab) {
           // ✅ Check if game tab already exists using service (not stale state)
@@ -1521,11 +1534,6 @@ const MainApp: React.FC<MainAppProps> = ({
         </div>
       </div>
     );
-  }
-
-  // Show welcome screen for new users or when guide is opened
-  if (showWelcomeScreen) {
-    return <WelcomeScreen onStartChat={handleStartChat} onAddGame={handleAddGame} />;
   }
 
   // If no user but we have initialization done, still show error or redirect

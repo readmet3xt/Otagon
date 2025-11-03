@@ -1,13 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
+import { Database } from '../types/database';
 
 const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL || 'https://qajcxgkqloumogioomiz.supabase.co';
 const supabaseAnonKey = (import.meta as any).env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_GoW6G_umt1lFF-KPbbm-Ow_D2PYxPLw';
 
-console.log('Supabase URL:', supabaseUrl);
-console.log('Supabase Key:', supabaseAnonKey ? 'Present' : 'Missing');
-console.log('Supabase Key (first 10 chars):', supabaseAnonKey ? supabaseAnonKey.substring(0, 10) + '...' : 'Missing');
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
@@ -15,8 +12,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 });
 
-// Database types
-export interface Database {
+// Re-export Database type for convenience
+export type { Database } from '../types/database';
+
+// Legacy Database types (kept for backward compatibility)
+// NOTE: Use generated types from src/types/database.ts instead
+export interface LegacyDatabase {
   public: {
     Tables: {
       users: {
