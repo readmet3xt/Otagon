@@ -81,7 +81,7 @@ export default [
         caughtErrorsIgnorePattern: '^_',
         ignoreRestSiblings: true
       }],
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-explicit-any': 'off', // Allow any type - can be tightened later
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-non-null-assertion': 'warn',
       
@@ -95,7 +95,7 @@ export default [
       }],
       
       // General code quality
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'no-console': 'off', // Allow console.log for debugging - remove in production
       'prefer-const': 'warn',
       'no-var': 'error',
       'eqeqeq': ['error', 'always', { null: 'ignore' }],

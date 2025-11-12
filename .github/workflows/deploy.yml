@@ -37,10 +37,10 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          # Frontend environment variables
-          # Note: GEMINI_KEY is stored securely in Supabase Edge Function secrets
+          # Add your environment variables here
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
           
       - name: Setup Pages
         uses: actions/configure-pages@v4

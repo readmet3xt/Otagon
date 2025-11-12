@@ -324,7 +324,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     if (initialMessage !== undefined && initialMessage !== message) {
       setMessage(initialMessage);
     }
-  }, [initialMessage]);
+  }, [initialMessage, message]);
 
   // ✅ NEW: Handle queued image from WebSocket (manual mode)
   useEffect(() => {
@@ -339,7 +339,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       // Notify parent that image was accepted
       onImageQueued?.();
     }
-  }, [queuedImage, isManualUploadMode]);
+  }, [queuedImage, isManualUploadMode, imagePreview, onImageQueued]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

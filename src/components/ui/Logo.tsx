@@ -4,10 +4,11 @@ interface LogoProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   spin?: boolean;
+  spinOnce?: boolean; // New: rotates once and stops
   bounce?: boolean;
 }
 
-const Logo: React.FC<LogoProps> = ({ className = '', size = 'md', spin = false, bounce = false }) => {
+const Logo: React.FC<LogoProps> = ({ className = '', size = 'md', spin = false, spinOnce = false, bounce = false }) => {
   const sizeClasses = {
     sm: 'w-8 h-8',
     md: 'w-12 h-12',
@@ -20,7 +21,9 @@ const Logo: React.FC<LogoProps> = ({ className = '', size = 'md', spin = false, 
     if (bounce) {
       animations.push('bounce 2s infinite');
     }
-    if (spin) {
+    if (spinOnce) {
+      animations.push('spin-once 2s ease-in-out forwards');
+    } else if (spin) {
       animations.push('spin 6s linear infinite');
     }
     return animations.length > 0 ? animations.join(', ') : 'none';
@@ -32,9 +35,10 @@ const Logo: React.FC<LogoProps> = ({ className = '', size = 'md', spin = false, 
       alt="Otagon Logo"
       className={`${sizeClasses[size]} ${className}`}
       style={{ 
-        filter: 'drop-shadow(0 0 24px rgba(255, 140, 0, 0.3))',
         objectFit: 'contain',
-        animation: getAnimation()
+        animation: getAnimation(),
+        transform: 'scale(1)', // Prevent any zoom effects
+        transition: 'none' // Disable any transitions
       }}
     />
   );

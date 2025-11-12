@@ -44,10 +44,8 @@ interface MainAppProps {
   onConnect?: (_code: string) => void;
   onDisconnect?: () => void;
   onClearConnectionError?: () => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onWebSocketMessage?: (_data: any) => void;
   showProfileSetupBanner?: boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onProfileSetupComplete?: (_profileData: any) => void;
   onProfileSetupDismiss?: () => void;
 }
@@ -126,7 +124,7 @@ const MainApp: React.FC<MainAppProps> = ({
         ...conversations[key],
         // ✅ DEEP CLONE: Clone array AND each subtab object (fixes React change detection)
         subtabs: conversations[key].subtabs 
-          ? conversations[key].subtabs!.map(tab => ({ ...tab }))
+          ? conversations[key].subtabs?.map(tab => ({ ...tab }))
           : undefined,
         // ✅ DEEP CLONE: Clone each message object
         messages: conversations[key].messages.map(msg => ({ ...msg }))
@@ -173,7 +171,6 @@ const MainApp: React.FC<MainAppProps> = ({
   }, [isManualUploadMode]);
 
   // Handle WebSocket messages for screenshot processing
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleWebSocketMessage = useCallback((data: any) => {
     console.log('🔗 [MainApp] Received WebSocket message:', data);
     
@@ -584,7 +581,7 @@ const MainApp: React.FC<MainAppProps> = ({
 
     // Note: Removed automatic disconnect on unmount to maintain persistent connection
     // WebSocket should only disconnect when user explicitly disconnects or logs out
-  }, [activeConversation, propOnConnect]);
+  }, [activeConversation, propOnConnect, handleWebSocketMessage]);
 
 
   const handleConversationSelect = async (id: string) => {
@@ -1123,6 +1120,7 @@ const MainApp: React.FC<MainAppProps> = ({
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleSendMessage = async (message: string, imageUrl?: string) => {
     if (!activeConversation || isLoading) {
       return;

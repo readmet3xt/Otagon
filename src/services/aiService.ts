@@ -268,7 +268,7 @@ class AIService {
 
     // Skip session context for now - it's returning null and slowing things down
     // TODO: Implement proper session context when needed
-    let sessionContext = '';
+    const sessionContext = '';
 
     // Get player profile from user preferences
     const playerProfile = user.profileData as any; // PlayerProfile is stored in profileData

@@ -13,35 +13,22 @@ This guide will help you deploy your Otagon app to GitHub Pages with your custom
 
 ## 📋 Step-by-Step Deployment Instructions
 
-### Step 1: Set Up Vertex AI (Backend)
-
-**⚠️ IMPORTANT**: Before deploying the frontend, you must set up Vertex AI for your backend.
-
-1. Follow the complete guide: **`VERTEX_AI_SETUP.md`**
-2. This sets up:
-   - Google Cloud Vertex AI API
-   - Service account credentials
-   - Supabase Edge Function secrets
-
-**This step is critical** - your app won't work without it!
-
-### Step 2: Add Environment Secrets to GitHub
+### Step 1: Add Environment Secrets to GitHub
 
 1. Go to your GitHub repository: `https://github.com/readmet3xt/otakon-cursor`
 2. Click **Settings** → **Secrets and variables** → **Actions**
 3. Click **New repository secret** and add these secrets:
    - `VITE_SUPABASE_URL` - Your Supabase project URL
    - `VITE_SUPABASE_ANON_KEY` - Your Supabase anonymous key
+   - `VITE_GEMINI_API_KEY` - Your Gemini API key
 
-**Note**: You no longer need `VITE_GEMINI_API_KEY` as Vertex AI credentials are stored securely in Supabase!
-
-### Step 3: Enable GitHub Pages
+### Step 2: Enable GitHub Pages
 
 1. In your repository, go to **Settings** → **Pages**
 2. Under **Source**, select **GitHub Actions**
 3. Save the settings
 
-### Step 4: Configure Your Custom Domain
+### Step 3: Configure Your Custom Domain
 
 #### A. In GitHub Repository Settings:
 
@@ -94,7 +81,7 @@ Type: A, Name: @, Value: 185.199.111.153
 Type: CNAME, Name: www, Value: readmet3xt.github.io
 ```
 
-### Step 5: Deploy Your App
+### Step 4: Deploy Your App
 
 #### Option A: Automatic Deployment (Recommended)
 
@@ -156,10 +143,7 @@ nslookup otagon.app
 **Solution**: Check that `base: '/'` is set in `vite.config.ts`
 
 ### Issue: API Keys Not Working
-**Solution**: 
-- Verify Supabase secrets are configured (see VERTEX_AI_SETUP.md)
-- Check GitHub repository secrets are added
-- Ensure Vertex AI Edge Function is deployed
+**Solution**: Verify all secrets are added to GitHub repository settings
 
 ### Issue: Routing Issues (404 on refresh)
 **Solution**: This is already handled by the workflow. The built-in GitHub Pages configuration redirects all routes to `index.html`.

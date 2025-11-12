@@ -297,7 +297,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                     
                     <div className="container mx-auto px-6 relative overflow-visible">
                         <div className="flex flex-col items-center justify-center gap-4 mb-10 overflow-visible">
-                            <Logo className="h-32 w-32" spin={true} bounce={true} />
+                            <Logo className="h-32 w-32" spinOnce={true} />
                             <h1 
                                 className="text-6xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#FF4D4D] to-[#FFAB40] leading-none py-2"
                                 style={{
@@ -775,7 +775,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
                             </div>
 
                         {/* Vanguard Plan (center and highlighted) */}
-                        <div className="relative border-2 border-[#FFAB40] rounded-2xl p-6 bg-gradient-to-r from-[#111] to-[#0A0A0A] shadow-2xl shadow-[#D98C1F]/30 transform lg:scale-105 flex flex-col animate-fade-slide-up hover:shadow-[#D98C1F]/50 hover:scale-110 transition-all duration-500 group cursor-pointer animate-glow-pulse">
+                        <div className="relative border-2 border-[#FFAB40] rounded-2xl p-6 bg-gradient-to-r from-[#111] to-[#0A0A0A] shadow-2xl shadow-[#D98C1F]/30 transform lg:scale-105 flex flex-col animate-fade-slide-up hover:shadow-[#D98C1F]/50 hover:scale-110 hover:z-50 transition-all duration-500 group cursor-pointer animate-glow-pulse">
                                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-[#E53A3A] to-[#D98C1F] text-white text-xs font-bold px-4 py-1 rounded-full uppercase tracking-wider shadow-2xl">
                                     Limited Offer
                                 </div>
@@ -870,7 +870,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
 
 
                 {/* Earn by Playing Section */}
-                <section id="earn-by-playing" className="py-10 md:py-14 bg-transparent">
+                <section id="earn-by-playing" className="hidden py-10 md:py-14 bg-transparent">
                     <div className="container mx-auto px-6 max-w-4xl">
                         {/* Gradient border wrapper */}
                         <div className="p-[1px] bg-gradient-to-br from-[#E53A3A]/50 to-[#D98C1F]/50 rounded-xl">
