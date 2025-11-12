@@ -92,8 +92,11 @@ const MainApp: React.FC<MainAppProps> = ({
   const [connectionCode, setConnectionCode] = useState<string | null>(null);
   const [lastSuccessfulConnection, setLastSuccessfulConnection] = useState<Date | null>(null);
   
-  // Hands-free mode state
-  const [isHandsFreeMode, setIsHandsFreeMode] = useState(false);
+  // Hands-free mode state (persisted to localStorage)
+  const [isHandsFreeMode, setIsHandsFreeMode] = useState(() => {
+    const saved = localStorage.getItem('otakonHandsFreeMode');
+    return saved === 'true';
+  });
   const [handsFreeModalOpen, setHandsFreeModalOpen] = useState(false);
   
   // Input preservation for tab switching
@@ -564,6 +567,8 @@ const MainApp: React.FC<MainAppProps> = ({
 
     const handleWebSocketOpen = () => {
       console.log('🔌 WebSocket connected');
+      // Save connection time for status tracking
+      setLastSuccessfulConnection(new Date());
     };
 
     const handleWebSocketClose = () => {
@@ -802,6 +807,7 @@ const MainApp: React.FC<MainAppProps> = ({
     // This is the actual toggle that enables/disables hands-free mode
     const newMode = !isHandsFreeMode;
     setIsHandsFreeMode(newMode);
+    localStorage.setItem('otakonHandsFreeMode', String(newMode));
     
     // If disabling hands-free mode, stop any ongoing speech
     if (!newMode) {
@@ -1314,17 +1320,36 @@ const MainApp: React.FC<MainAppProps> = ({
       // 🎤 Hands-Free Mode: Read AI response aloud if enabled
       if (isHandsFreeMode && response.content) {
         try {
-          // Strip markdown and special formatting for better TTS
-          const cleanText = response.content
-            .replace(/[*_~`]/g, '') // Remove markdown formatting
-            .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Convert [text](url) to text
-            .replace(/#{1,6}\s/g, '') // Remove heading markers
-            .replace(/```[\s\S]*?```/g, '') // Remove code blocks
-            .replace(/`([^`]+)`/g, '$1') // Remove inline code markers
-            .trim();
+          // Extract only the Hint section for TTS - more precise matching
+          const hintMatch = response.content.match(/Hint:\s*\n*\s*([\s\S]*?)(?=\n\s*(?:Lore:|Places of Interest:|Strategy:)|$)/i);
+          let textToSpeak = '';
           
-          if (cleanText) {
-            await ttsService.speak(cleanText);
+          if (hintMatch && hintMatch[1]) {
+            // Found a hint section, extract only that part
+            textToSpeak = hintMatch[1]
+              .trim()
+              // Stop at first occurrence of section headers (case insensitive)
+              .split(/\n\s*(?:Lore:|Places of Interest:|Strategy:)/i)[0]
+              .trim();
+          } else if (!response.content.includes('Lore:') && !response.content.includes('Places of Interest:')) {
+            // No structured sections detected, read the entire content
+            textToSpeak = response.content;
+          }
+          
+          if (textToSpeak) {
+            // Strip markdown and special formatting for better TTS
+            const cleanText = textToSpeak
+              .replace(/[*_~`]/g, '') // Remove markdown formatting
+              .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Convert [text](url) to text
+              .replace(/#{1,6}\s/g, '') // Remove heading markers
+              .replace(/```[\s\S]*?```/g, '') // Remove code blocks
+              .replace(/`([^`]+)`/g, '$1') // Remove inline code markers
+              .trim();
+            
+            if (cleanText) {
+              // Don't await - let TTS run in background without blocking chat flow
+              ttsService.speak(cleanText).catch(err => console.error('TTS Error:', err));
+            }
           }
         } catch (ttsError) {
           console.error('TTS Error:', ttsError);

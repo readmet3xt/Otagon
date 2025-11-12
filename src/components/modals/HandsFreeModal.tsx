@@ -105,8 +105,8 @@ const HandsFreeModal: React.FC<HandsFreeModalProps> = ({
         <p className="text-[#A3A3A3] mb-6">Configure voice responses for a truly hands-free experience.</p>
         
         <div className="space-y-6">
-            <div className="flex items-center justify-between bg-[#2E2E2E]/60 p-4 rounded-lg">
-                <label htmlFor="hands-free-toggle" className="text-base font-medium text-[#F5F5F5] cursor-pointer">
+            <div className="flex items-center justify-between bg-[#2E2E2E]/60 p-4 rounded-lg gap-4">
+                <label htmlFor="hands-free-toggle" className="text-base font-medium text-[#F5F5F5] cursor-pointer flex-1 min-w-0">
                     Enable Hands-Free Mode
                 </label>
                 <button
@@ -114,10 +114,12 @@ const HandsFreeModal: React.FC<HandsFreeModalProps> = ({
                     role="switch"
                     aria-checked={isHandsFree}
                     onClick={onToggleHandsFree}
-                    className={`${isHandsFree ? 'bg-gradient-to-r from-[#E53A3A] to-[#D98C1F]' : 'bg-[#424242]'} relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#1C1C1C] focus:ring-[#FFAB40]`}
+                    style={{ width: '44px', minWidth: '44px', maxWidth: '44px', height: '24px', minHeight: '24px', maxHeight: '24px', borderRadius: '9999px' }}
+                    className={`${isHandsFree ? 'bg-gradient-to-r from-[#E53A3A] to-[#D98C1F]' : 'bg-[#424242]'} relative inline-flex flex-shrink-0 items-center transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#1C1C1C] focus:ring-[#FFAB40]`}
                 >
                     <span
-                        className={`${isHandsFree ? 'translate-x-6' : 'translate-x-1'} inline-block w-4 h-4 transform bg-white rounded-full transition-transform`}
+                        style={{ width: '16px', height: '16px' }}
+                        className={`${isHandsFree ? 'translate-x-[24px]' : 'translate-x-[4px]'} transform bg-white rounded-full transition-transform duration-200`}
                     />
                 </button>
             </div>

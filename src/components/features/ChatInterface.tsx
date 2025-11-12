@@ -9,6 +9,7 @@ import UserAvatar from '../ui/UserAvatar';
 import AIAvatar from '../ui/AIAvatar';
 import TypingIndicator from '../ui/TypingIndicator';
 import SendIcon from '../ui/SendIcon';
+import TTSControls from '../ui/TTSControls';
 import SuggestedPrompts from './SuggestedPrompts';
 import { ActiveSessionToggle } from '../ui/ActiveSessionToggle';
 import SubTabs from './SubTabs';
@@ -130,6 +131,9 @@ const ChatMessageComponent: React.FC<ChatMessageComponentProps> = ({
                 {message.content}
               </ReactMarkdown>
             </div>
+            
+            {/* TTS Controls for AI messages */}
+            {message.role === 'assistant' && <TTSControls />}
             
             {/* Show suggested prompts after AI response */}
             {message.role === 'assistant' && suggestedPrompts.length > 0 && onSuggestedPromptClick && !isLoading && (

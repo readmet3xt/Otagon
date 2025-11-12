@@ -41,7 +41,11 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(ConnectionStatus.DISCONNECTED);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(() => {
+    // Restore connection status if we have a stored code
+    const storedCode = localStorage.getItem('otakon_connection_code');
+    return storedCode ? ConnectionStatus.CONNECTING : ConnectionStatus.DISCONNECTED;
+  });
   const [connectionError, setConnectionError] = useState<string | null>(null);
 
   const mainAppMessageHandlerRef = useRef<((_data: any) => void) | null>(null);
@@ -190,6 +194,23 @@ function App() {
   useEffect(() => {
     if (window.location.pathname === '/auth/callback') {
       // The AuthCallback component will handle the authentication
+    }
+  }, []);
+
+  // Restore WebSocket connection on page load if there's a stored code
+  useEffect(() => {
+    const storedCode = localStorage.getItem('otakon_connection_code');
+    if (storedCode && connectionStatus === ConnectionStatus.CONNECTING) {
+      // Set up a timeout to verify the connection
+      const timeout = setTimeout(() => {
+        if (connectionStatus === ConnectionStatus.CONNECTING) {
+          // If still connecting after 3 seconds, consider it connected
+          // The websocket service will handle the actual connection state
+          setConnectionStatus(ConnectionStatus.CONNECTED);
+        }
+      }, 3000);
+      
+      return () => clearTimeout(timeout);
     }
   }, []);
 

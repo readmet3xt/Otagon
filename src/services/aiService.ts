@@ -245,8 +245,20 @@ class AIService {
     
     console.log(`📊 [AIService] Query limit check passed. ${hasImages ? 'Image' : 'Text'} queries: ${queryCheck.used}/${queryCheck.limit}`);
     
-    // Create cache key for this request
-    const cacheKey = `ai_response_${conversation.id}_${userMessage.substring(0, 50)}_${isActiveSession}`;
+    // Create cache key for this request - use full message hash to avoid collisions
+    // Simple hash function for cache key
+    const hashString = (str: string) => {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32-bit integer
+      }
+      return hash.toString(36);
+    };
+    
+    const messageHash = hashString(userMessage + (imageData || ''));
+    const cacheKey = `ai_response_${conversation.id}_${messageHash}_${isActiveSession}_${hasImages}`;
     
     // Check cache first (memory only for speed - skip Supabase for real-time operations)
     const cachedResponse = await cacheService.get<AIResponse>(cacheKey, true); // true = memory only
@@ -506,8 +518,19 @@ class AIService {
     imageData?: string,
     abortSignal?: AbortSignal
   ): Promise<AIResponse> {
-    // Create cache key for this request
-    const cacheKey = `ai_structured_${conversation.id}_${userMessage.substring(0, 50)}_${isActiveSession}`;
+    // Create cache key for this request - use full message hash to avoid collisions
+    const hashString = (str: string) => {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+      }
+      return hash.toString(36);
+    };
+    
+    const messageHash = hashString(userMessage + (imageData || ''));
+    const cacheKey = `ai_structured_${conversation.id}_${messageHash}_${isActiveSession}_${hasImages}`;
     
     // Check cache first
     const cachedResponse = await cacheService.get<AIResponse>(cacheKey, true);
@@ -738,13 +761,15 @@ Note: These are optional enhancements. If not applicable, omit or return empty a
         cleanContent = cleanContent
           // ✅ FIX: Remove ANY leading brackets/JSON artifacts more aggressively
           .replace(/^[\s\]}\[{),]+/g, '') // eslint-disable-line no-useless-escape
-          // ✅ NEW: Add line break after "Hint:" pattern for better readability
-          .replace(/(Hint:)(\s*)([A-Z])/g, '$1\n\n$3')
+          // ✅ CRITICAL: Remove entire JSON block at the end (starts with { and contains "followUpPrompts")
+          .replace(/\s*\{[\s\S]*?"followUpPrompts"[\s\S]*?\}\s*$/gi, '')
+          // Alternative: Remove JSON block if it starts with newline + {
+          .replace(/\n\s*\{[\s\S]*$/g, '')
           // ✅ FIX: Remove trailing brackets/JSON at the end (before metadata sections)
           .replace(/\s*[\]}\s]*(?=\s*(?:Enhanced Response Data|followUpPrompts|progressiveInsightUpdates|stateUpdateTags|gamePillData|$))/gi, '')
           // Remove "Enhanced Response Data" header if present
           .replace(/Enhanced Response Data\s*/gi, '')
-          // Remove followUpPrompts section
+          // Remove followUpPrompts section (non-JSON format)
           .replace(/followUpPrompts:\s*\[[\s\S]*?\](?=\s*(?:progressiveInsightUpdates|stateUpdateTags|gamePillData|$))/gi, '')
           // Remove progressiveInsightUpdates section
           .replace(/progressiveInsightUpdates:\s*\[[\s\S]*?\](?=\s*(?:followUpPrompts|stateUpdateTags|gamePillData|$))/gi, '')
@@ -756,10 +781,13 @@ Note: These are optional enhancements. If not applicable, omit or return empty a
           .replace(/^\s*[\]}]\s*$/gm, '')
           // Clean up any remaining JSON artifacts
           .replace(/\{[\s\S]*?"OTAKON_[A-Z_]+":[\s\S]*?\}/g, '')
-          // ✅ NEW: Improve paragraph structure with proper spacing
-          .replace(/([.!?])([A-Z])/g, '$1\n\n$2') // Add line breaks between sentences that start new thoughts
+          // ✅ NEW: Add proper line breaks ONLY before major section headers (not all sentences)
+          .replace(/(Hint:)\s*/gi, '$1\n\n')
+          .replace(/\s+(Lore:)\s*/gi, '\n\n$1\n\n')
+          .replace(/\s+(Places of Interest:)\s*/gi, '\n\n$1\n\n')
+          .replace(/\s+(Strategy:)\s*/gi, '\n\n$1\n\n')
           // Remove excessive newlines (but keep double newlines for paragraphs)
-          .replace(/\n{4,}/g, '\n\n')
+          .replace(/\n{3,}/g, '\n\n')
           .trim();
         
         // Parse wikiContent if it's a JSON string

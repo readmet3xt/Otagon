@@ -1,6 +1,9 @@
 let synth: SpeechSynthesis;
 let voices: SpeechSynthesisVoice[] = [];
 let isInitialized = false;
+let currentUtterance: SpeechSynthesisUtterance | null = null;
+let currentText = '';
+let isPaused = false;
 
 const SPEECH_RATE_KEY = 'otakonSpeechRate';
 
@@ -34,9 +37,47 @@ const cancel = () => {
     if (synth && synth.speaking) {
         synth.cancel();
     }
+    currentUtterance = null;
+    currentText = '';
+    isPaused = false;
     if ('mediaSession' in navigator && navigator.mediaSession.playbackState !== 'none') {
         navigator.mediaSession.playbackState = 'paused';
     }
+    // Dispatch event for UI updates
+    window.dispatchEvent(new CustomEvent('otakon:ttsStopped'));
+};
+
+const pause = () => {
+    if (synth && synth.speaking && !synth.paused) {
+        synth.pause();
+        isPaused = true;
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'paused';
+        }
+        window.dispatchEvent(new CustomEvent('otakon:ttsPaused'));
+    }
+};
+
+const resume = () => {
+    if (synth && synth.paused) {
+        synth.resume();
+        isPaused = false;
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'playing';
+        }
+        window.dispatchEvent(new CustomEvent('otakon:ttsResumed'));
+    }
+};
+
+const restart = async () => {
+    if (currentText) {
+        cancel();
+        await speak(currentText);
+    }
+};
+
+const isSpeaking = (): boolean => {
+    return synth ? synth.speaking : false;
 };
 
 const cancelAndDisableHandsFree = () => {
@@ -89,7 +130,10 @@ const speak = async (text: string): Promise<void> => {
 
             cancel(); // Cancel any ongoing speech
 
+            currentText = text; // Store for restart functionality
             const utterance = new SpeechSynthesisUtterance(text);
+            currentUtterance = utterance;
+            
             const storedRate = localStorage.getItem(SPEECH_RATE_KEY);
             utterance.rate = storedRate ? parseFloat(storedRate) : 0.94; // Use stored rate or default to 94%
             
@@ -119,6 +163,7 @@ const speak = async (text: string): Promise<void> => {
             }
 
             utterance.onstart = () => {
+                isPaused = false;
                 if ('mediaSession' in navigator) {
                     navigator.mediaSession.playbackState = 'playing';
                     navigator.mediaSession.metadata = new MediaMetadata({
@@ -128,10 +173,17 @@ const speak = async (text: string): Promise<void> => {
                         artwork: [{ src: '/icon.svg', sizes: 'any', type: 'image/svg+xml' }]
                     });
                 }
+                window.dispatchEvent(new CustomEvent('otakon:ttsStarted'));
             };
 
             utterance.onend = () => {
-                cancel();
+                currentUtterance = null;
+                currentText = '';
+                isPaused = false;
+                if ('mediaSession' in navigator) {
+                    navigator.mediaSession.playbackState = 'paused';
+                }
+                window.dispatchEvent(new CustomEvent('otakon:ttsStopped'));
                 resolve();
             };
             
@@ -154,6 +206,10 @@ export const ttsService = {
     getAvailableVoices,
     speak,
     cancel,
+    pause,
+    resume,
+    restart,
+    isSpeaking,
 };
 
 
