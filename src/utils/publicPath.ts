@@ -3,11 +3,21 @@
  * Use this for assets in the public folder
  */
 export function getPublicPath(path: string): string {
+  // In development, Vite serves public assets from root
+  // In production, they're served from the base path
+  const isDev = (import.meta as any).env.DEV;
+  
   // Remove leading slash if present
   const cleanPath = path.startsWith('/') ? path.slice(1) : path;
   
-  // Combine with base URL from Vite config
-  const base = (import.meta as any).env.BASE_URL;
+  // In development, just return the path with leading slash
+  if (isDev) {
+    return `/${cleanPath}`;
+  }
   
-  return `${base}${cleanPath}`;
+  // In production, combine with base URL from Vite config
+  const base = (import.meta as any).env.BASE_URL || '/';
+  const normalizedBase = base.endsWith('/') ? base : `${base}/`;
+  
+  return `${normalizedBase}${cleanPath}`;
 }
