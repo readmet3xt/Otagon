@@ -1029,3 +1029,4 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onOpenAbout, on
 };
 
 export default LandingPage;
+
